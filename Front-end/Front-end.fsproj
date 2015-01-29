@@ -52,6 +52,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Utilities.fs" />
+    <Compile Include="BottomUpPriorityParser.fs" />
     <Compile Include="ParserMonad.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />

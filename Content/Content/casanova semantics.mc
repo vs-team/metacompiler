@@ -54,9 +54,9 @@ exprEval M expr => M', res
 
 
 
-M, rule => M', rule'
+M, r => M', r'
 -----------------------------
-ruleEval M rule => M', rule'
+ruleEval M r => M', r'
 
   M[f -> res] => M'
   ---------------------------
@@ -69,30 +69,30 @@ ruleEval M rule => M', rule'
 
   M, b => unit
   -----------------------------------------------
-  M, rule FS = (b, b0) => M', rule FS = (b0, b0)
+  M, rule FS := (b, b0) => M', rule FS := (b0, b0)
 
   M, b => cont(yield res; b')
   assignFields M FS res => M'
   -----------------------------------------------
-  M, rule FS = (b, b0) => M', rule FS = (b', b0)
+  M, rule FS := (b, b0) => M', rule FS := (b', b0)
 
   M, b => cont(wait c; b')
   ----------------------------------------------
-  M, rule FS = (b, b0) => M, rule FS = (b', b0)
+  M, rule FS := (b, b0) => M, rule FS := (b', b0)
 
   -----------------------------
   assignFields M unit res => M
 
 
-M, rules => M', rules'
+M, rs => M', rs'
 --------------------------------
-rulesEval M rules => M', rules'
+rulesEval M rs => M', rs'
 
   -------------
   M, unit => M
 
-  ruleEval M rule => M', rule'
-  rulesEval M' rules => M'', rules'
+  ruleEval M r => M', r'
+  rulesEval M' rs => M'', rs'
   -------------------------------------
-  M, rule; rules => M'', rule'; rules'
+  M, r; rs => M'', r'; rs'
 

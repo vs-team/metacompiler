@@ -3,6 +3,31 @@
 open Utilities
 open ParserMonad
 
+type CustomKeyword = { Name : string; LeftAriety : int; RightAriety : int; Priority : int }
+
+let customKeywords =
+  [
+    { Name = ","; LeftAriety = 1; RightAriety = 1; Priority = 25 }
+    { Name = ";"; LeftAriety = 1; RightAriety = 1; Priority = 26 }
+    { Name = "->"; LeftAriety = 1; RightAriety = 1; Priority = 27 }
+
+    { Name = "rule"; LeftAriety = 0; RightAriety = 3; Priority = 50 }
+
+    { Name = "if"; LeftAriety = 0; RightAriety = 5; Priority = 100 }
+
+    { Name = "-"; LeftAriety = 1; RightAriety = 1; Priority = 500 }
+    { Name = "+"; LeftAriety = 1; RightAriety = 1; Priority = 501 }
+    { Name = "/"; LeftAriety = 1; RightAriety = 1; Priority = 502 }
+    { Name = "*"; LeftAriety = 1; RightAriety = 1; Priority = 503 }
+
+    { Name = "then"; LeftAriety = 0; RightAriety = 0; Priority = 1000 }
+    { Name = "else"; LeftAriety = 0; RightAriety = 0; Priority = 1001 }
+    { Name = ":="; LeftAriety = 0; RightAriety = 0; Priority = 1002 }
+  ]
+  
+let customKeywordsMap = customKeywords |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
+
+
 type Var = { Name : string }
   with 
     override this.ToString() =
@@ -120,70 +145,91 @@ and clause depth =
     return Application(Bracket.Regular, Keyword DoubleArrow :: i :: o :: [])
   }
 
-and operator =
-  p{
-    let! op = ((character ',' + character ';') + (word "->" + character '+')) + ((character '-' + character '*') + (character '=' + character '/'))
-    let! bs = !!(character ' ' + newline)
-    let singleton x = [x]
-    let extracted_op = op.Fold (fun x -> x.Fold (fun x -> x.Fold singleton singleton) (fun x -> x.Fold id singleton))
-                               (fun x -> x.Fold (fun x -> x.Fold singleton singleton) (fun x -> x.Fold singleton singleton))
-    return extracted_op
-  }
-
-and split_by_priority (es:BasicExpression<_,_,_>[]) (l:int,u:int) (keywords_by_priority:List<int>) =
-  if l > u then
-    Application(Regular, es.[l .. u] |> Array.toList)
-  elif l = u then
-    es.[l]
-  else
-    match keywords_by_priority with
-    | [] -> Application(Regular, es.[l .. u] |> Array.toList)
-    | k::ks -> 
-      let ks_first,ks_second = ks |> List.partition (fun x -> x < k-1)
-      let es_first = split_by_priority es (l,k-1) ks_first
-      let es_second = split_by_priority es (k+1,u) ks_second
-      Application(Regular, es.[k] :: es_first :: es_second :: [])
+and customKeyword =
+  let rec customKeyword = 
+    function 
+    | [] -> fail()
+    | (k : CustomKeyword) :: ks ->
+      p{
+        let! r = word k.Name + customKeyword ks
+        match r with 
+        | First w -> return w
+        | Second w' -> return w'
+      }
+  customKeyword customKeywords
 
 and expr() = 
   let shrink bracket_type (es:List<BasicExpression<_,_,_>>) : BasicExpression<_,_,_> =
-    Application(bracket_type, es) // "Should use keyword priority"
+    let ariety (b:BasicExpression<_,_,_>) = 
+      match b with
+      | BasicExpression.Extension(k:Var) ->
+        if customKeywordsMap |> Map.containsKey k.Name then
+          let kw = customKeywordsMap.[k.Name]
+          kw.LeftAriety, kw.RightAriety
+        else
+          0,0
+      | _ -> 0,0
+    let priority (b:BasicExpression<_,_,_>,index:int) = 
+      match b with
+      | BasicExpression.Extension(k:Var) ->
+        if customKeywordsMap |> Map.containsKey k.Name then
+          let kw = customKeywordsMap.[k.Name]
+          kw.Priority,-index
+        else
+          -1,-index
+      | _ -> -1,-index
+
+    let merge n l r =
+      Application(Regular, n :: l @ r)
+    let prioritize_es = BottomUpPriorityParser.prioritize es ariety priority merge
+//    do printfn "%A" es
+//    do printfn "is prioritized into %A" prioritize_es
+//    do printfn ""
+//    let _ = System.Console.ReadLine()
+    match prioritize_es with
+    | [x] -> x
+    | l -> Application(bracket_type, l)
   let rec base_expr bracket_type = 
     p{
       let! e = inner_expr
-      match e with 
+      match e with
       | e::es ->
         return shrink bracket_type (e :: es)
       | _ -> return failwith "Unsupported zero-length expression"
     }
-  and inner_expr = 
+  and inner_expr =
     p{
-      let open_bracket = (character '(' + character '[') + (character '{' + word "<<")
-      let closed_bracket = (character ')' + character ']') + (character '}' + word ">>")
-      let! e = (open_bracket + !!closed_bracket) + (identifier + operator)
-      match e with
-      | First(First(actual_open_bracket)) -> 
-        let extracted_open_bracket = actual_open_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun _ -> '≪'))
-        let! bs = blank_space
-        let! i_e = base_expr (Bracket.FromChar extracted_open_bracket)
-        let! bs = blank_space
-        let! actual_closed_bracket = closed_bracket
-        let extracted_closed_bracket = actual_closed_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun _ -> '≫'))
-        if matching_brackets extracted_open_bracket extracted_closed_bracket then 
+      let! end_line = !!(word "--") + p{ return () }
+      match end_line with
+      | First _ -> return! fail()
+      | Second _ ->
+        let open_bracket = (character '(' + character '[') + (character '{' + word "<<")
+        let closed_bracket = (character ')' + character ']') + (character '}' + word ">>")
+        let! e = (open_bracket + !!closed_bracket) + (customKeyword + identifier)
+        match e with
+        | First(First(actual_open_bracket)) -> 
+          let extracted_open_bracket = actual_open_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun _ -> '≪'))
           let! bs = blank_space
-          let! r_es = maybe_inner_expr
-          return i_e :: r_es
-        else
-          return! fail()
-      | First(Second(closed_bracket)) -> 
-        return []
-      | Second(e) ->
-        let be = 
-          match e with
-          | First(id) -> Extension { Var.Name = new System.String(id |> Seq.toArray) }
-          | Second(op) -> Extension { Var.Name = new System.String(op |> Seq.toArray) }
-        let! bs = blank_space
-        let! bes = maybe_inner_expr
-        return be::bes
+          let! i_e = base_expr (Bracket.FromChar extracted_open_bracket)
+          let! bs = blank_space
+          let! actual_closed_bracket = closed_bracket
+          let extracted_closed_bracket = actual_closed_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun _ -> '≫'))
+          if matching_brackets extracted_open_bracket extracted_closed_bracket then 
+            let! bs = blank_space
+            let! r_es = maybe_inner_expr
+            return i_e :: r_es
+          else
+            return! fail()
+        | First(Second(closed_bracket)) -> 
+          return []
+        | Second(e) ->
+          let be = 
+            match e with
+            | First(k) -> Keyword(Custom(new System.String(k |> Seq.toArray)))
+            | Second(id) -> Extension { Var.Name = new System.String(id |> Seq.toArray) }
+          let! bs = blank_space
+          let! bes = maybe_inner_expr
+          return be::bes
     }
   and maybe_inner_expr = 
     p{
