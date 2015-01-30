@@ -1,4 +1,28 @@
-﻿M, expr => res
+﻿Keyword = "," LeftAriety = 1 RightAriety = 1 Priority = 25
+Keyword = ";" LeftAriety = 1 RightAriety = 1 Priority = 26
+Keyword = "->" LeftAriety = 1 RightAriety = 1 Priority = 27
+Keyword = "exprEval" LeftAriety = 0 RightAriety = 2 Priority = 47
+Keyword = "assignFields" LeftAriety = 0 RightAriety = 3 Priority = 48
+Keyword = "rulesEval" LeftAriety = 0 RightAriety = 2 Priority = 49
+Keyword = "ruleEval" LeftAriety = 0 RightAriety = 2 Priority = 49
+Keyword = "rule" LeftAriety = 0 RightAriety = 3 Priority = 50
+Keyword = "cont" LeftAriety = 0 RightAriety = 1 Priority = 51
+Keyword = "yield" LeftAriety = 0 RightAriety = 1 Priority = 52
+Keyword = "wait" LeftAriety = 0 RightAriety = 1 Priority = 53
+Keyword = "unit" LeftAriety = 0 RightAriety = 0 Priority = 54
+Keyword = "if" LeftAriety = 0 RightAriety = 5 Priority = 100
+Keyword = "-" LeftAriety = 1 RightAriety = 1 Priority = 500
+Keyword = "+" LeftAriety = 1 RightAriety = 1 Priority = 501
+Keyword = "/" LeftAriety = 1 RightAriety = 1 Priority = 502
+Keyword = "*" LeftAriety = 1 RightAriety = 1 Priority = 503
+Keyword = "arith_op" LeftAriety = 0 RightAriety = 3 Priority = 504
+Keyword = "bool_op" LeftAriety = 0 RightAriety = 3 Priority = 505
+Keyword = "then" LeftAriety = 0 RightAriety = 0 Priority = 1000
+Keyword = "else" LeftAriety = 0 RightAriety = 0 Priority = 1001
+Keyword = ":=" LeftAriety = 0 RightAriety = 0 Priority = 1002
+
+
+M, expr => res
 ---------------------------
 exprEval M expr => M', res
 
