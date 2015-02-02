@@ -5,14 +5,78 @@ open ConcreteExpressionParser
 
 let inline (++) (s:#seq<string>) (d:int) = 
   let bs = [ for i in [1..d] -> " " ] |> Seq.fold (+) ""
-  s |> Seq.map (fun x -> bs + x + "\n") |> Seq.fold (+) ""
+  s |> Seq.map (fun x -> bs + x + ";\n") |> Seq.fold (+) ""
+
+type Instruction = 
+    Var of name : string * expr : string
+  | VarAs of name : string * expr : string * as_type : string
+  | CheckNull of var_name : string
+  | Unit
+
+let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, unit>) (self:string) (prefix:List<Instruction>) =
+  match e with
+  | Keyword(Custom k) -> 
+    if self <> "this" then
+      prefix @ 
+      [
+        VarAs(sprintf "tmp_%d" tmp_id, self, k)
+        CheckNull(sprintf "tmp_%d" tmp_id)
+      ], tmp_id+1
+    else
+      prefix @
+      [
+        VarAs(sprintf "tmp_%d" tmp_id, self, k)
+      ], tmp_id+1
+  | Extension(v:Var) ->
+      prefix @
+      [
+        Var(v.Name, self)
+      ], tmp_id
+  | Application(b,(Keyword(Custom k)) :: es) ->
+    let output,self,tmp_id = 
+      if self <> "this" then
+          prefix @
+          [
+            VarAs(sprintf "tmp_%d" tmp_id, self, k)
+            CheckNull(sprintf "tmp_%d" tmp_id)
+          ], sprintf "tmp_%d" tmp_id, tmp_id+1
+      else
+          prefix @
+          [
+            Var(sprintf "tmp_%d" tmp_id, self)
+          ], sprintf "tmp_%d" tmp_id, tmp_id+1
+    // es_i -> self . P_i
+    let mutable output = output
+    let mutable tmp_id = tmp_id
+    for e,i in es |> List.mapi (fun i e -> e,(i+1)) do
+      let newOutput, newTempId = matchCast tmp_id e (sprintf "%s.P%d" self i) output
+      output <- newOutput
+      tmp_id <- newTempId
+    output, tmp_id
+  | Application(b,e::es) ->
+    failwithf "Application not starting with %A cannot be matched" e
+  | Application(b,[]) ->
+    failwith "Application with empty argument list cannot be matched"
+  | Imported() ->
+    failwith "Imported match not implemented"
+  | Keyword(_) -> 
+    failwithf "Non-custom keyword %A cannot be matched" e
+
+type Rule = {
+  Input      : BasicExpression<Keyword, Var, unit>
+  Output     : string
+  Clauses    : List<string>
+} with
+    override r.ToString() =
+      let i = matchCast 0 r.Input "this" [] |> fst
+      sprintf "(%A; iterate and match %s; yield %s)" i (r.Clauses ++ 0) r.Output
 
 type Method = {
-  Rules      : ResizeArray<string>
+  Rules      : ResizeArray<Rule>
   Path       : List<int>
 } with
     override m.ToString() =
-      sprintf "Run_%A = %s\n" m.Path (m.Rules ++ 2)
+      sprintf "Run_%A = %s\n" m.Path ((m.Rules |> Seq.map (fun r -> r.ToString())) ++ 2)
 
 type GeneratedClass = 
   {
@@ -26,7 +90,11 @@ type GeneratedClass =
 let add_rule inputClass (rule:BasicExpression<_,_,_>) path =
   if inputClass.Methods |> Map.containsKey path |> not then
     inputClass.Methods <- inputClass.Methods |> Map.add path { Rules = ResizeArray(); Path = path }
-  inputClass.Methods.[path].Rules.Add(rule.ToString())
+  match rule with
+  | Application(Regular, Keyword FractionLine :: (Application(Regular, Keyword DoubleArrow :: input :: output)) :: clauses) ->
+    inputClass.Methods.[path].Rules.Add({ Input = input; Output = output.ToString(); Clauses = [ for c in clauses -> c.ToString() ] })
+  | _ ->
+    failwithf "Cannot extract rule shape from %A" rule
 
 let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rules:List<BasicExpression<_,_,_>>) = 
   for rule,i in rules |> Seq.mapi (fun i r -> r,i) do
