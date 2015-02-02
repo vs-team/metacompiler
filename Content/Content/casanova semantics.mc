@@ -27,7 +27,7 @@ Keyword = ":=" LeftAriety = 0 RightAriety = 0 Priority = 1002
 
 M, expr => res
 ---------------------------
-exprEval M expr => M', res
+exprEval M expr => res
 
   M, c => c'
   M, if c' then a else b => res
@@ -42,30 +42,14 @@ exprEval M expr => M', res
     -----------------------------------
     M, (if false then a else b) => res
 
-  M[s] => res
-  -------------
-  M, id s => res
-
-  M, x => x'
-  M', y => y'
-  << x' op y' >> => res
-  --------------------------
-  M, (bool_op op x y) => res
-
-  M, x => x'
-  M', y => y'
-  << x' op y' >> => res
-  ---------------------------
-  M, (arith_op op x y) => res
-
   M, a => unit
-  M', b => res
+  M, b => res
   -----------------------
-  M, (a; b) => M', res
+  M, (a; b) => res
 
-  M, a => M', cont(a)
+  M, a => M', cont(a')
   ---------------------------
-  M, (a; b) => M', cont(a; b)
+  M, (a; b) => M', cont(a'; b)
 
   M, c => M', true
   ----------------------
@@ -85,27 +69,18 @@ M, r => M', r'
 -----------------------------
 ruleEval M r => M', r'
 
-  M[f -> res] => M'
-  ---------------------------
-  assignFields M f res => M'
-
-  M[f -> x] => M'
-  assignFields M' fs xs => M''
-  --------------------------------------
-  assignFields M (f, fs) (x, xs) => M''
-
-  M, b => unit
+  M, b => M', unit
   -----------------------------------------------------
   M, (rule FS := (b, b0)) => M', (rule FS := (b0, b0))
 
-  M, b => cont((yield res); b')
-  assignFields M FS res => M'
+  M, b => M', cont((yield res); b')
+  assignFields M' FS res => M''
   -------------------------------------------------
-  M, rule FS := (b, b0) => M', rule FS := (b', b0)
+  M, rule FS := (b, b0) => M'', rule FS := (b', b0)
 
-  M, b => cont((wait c); b')
+  M, b => M', cont((wait c); b')
   ----------------------------------------------------
-  M, (rule FS := (b, b0)) => M, (rule FS := (b', b0))
+  M, (rule FS := (b, b0)) => M', (rule FS := (b', b0))
 
   -----------------------------
   assignFields M unit res => M

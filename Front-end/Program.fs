@@ -3,9 +3,28 @@ open ParserMonad
 open BasicExpression
 open ConcreteExpressionParser
 
+let (!) (s:string) =
+  s
+   .Replace(":=", "_DefinedAs")
+   .Replace("->", "_Arrow")
+   .Replace("\'", "_Prime")
+   .Replace("*", "_opMultiplication")
+   .Replace("+", "_opAddition")
+   .Replace("-", "_opSubtraction")
+   .Replace("/", "_opDivision")
+   .Replace(",", "_Comma")
+   .Replace(";", "_Semicolon")
+   .Replace(":", "_Colon")
+   .Replace("if", "_If")
+   .Replace("then", "_Then")
+   .Replace("else", "_Else")
+   .Replace("for", "_For")
+   .Replace("true", "_True")
+   .Replace("false", "_False")
+
 let inline (++) (s:#seq<string>) (d:int) = 
   let bs = [ for i in [1..d] -> " " ] |> Seq.fold (+) ""
-  s |> Seq.map (fun x -> bs + x + ";\n") |> Seq.fold (+) ""
+  s |> Seq.map (fun x -> bs + x + "\n") |> Seq.fold (+) ""
 
 type Instruction = 
     Var of name : string * expr : string
@@ -13,6 +32,40 @@ type Instruction =
   | CheckNull of var_name : string
   | Iterate of var_name : string * expr:BasicExpression<Keyword, Var, unit>
   | Yield of expr:BasicExpression<Keyword, Var, unit>
+
+let rec create_element = 
+  function
+  | Keyword(Custom k) | Application(Regular,(Keyword(Custom k)) :: []) -> 
+    sprintf "new %s()" !k
+  | Application(b,(Keyword(Custom k)) :: es) ->
+    let args = es |> Seq.map create_element |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
+    sprintf "new %s(%s)" !k args
+  | Extension(v:Var) ->
+    sprintf "%s" !v.Name
+  | Application(b,e::es) ->
+    failwithf "Application not starting with %A cannot be created" e
+  | Application(b,[]) ->
+    failwith "Application with empty argument list cannot be created"
+  | Imported() ->
+    failwith "Imported match not implemented"
+  | Keyword(k) -> 
+    failwithf "Non-custom keyword %A cannot be matched" k
+
+let rec generate_instructions = 
+  function 
+  | [] -> ""
+  | x :: xs ->
+    match x with
+    | Var(name, expr) -> 
+      sprintf "var %s = %s; %s" !name expr (generate_instructions xs)
+    | VarAs(name, expr, as_type) ->
+      sprintf "var %s = %s as %s; %s" !name expr !as_type (generate_instructions xs)
+    | CheckNull(var_name) ->
+      sprintf "if (%s != null) { %s }" !var_name (generate_instructions xs)
+    | Iterate(var_name, expr) ->
+      sprintf "foreach (var %s in (%s).Run()) { %s }" !var_name (create_element expr) (generate_instructions xs)
+    | Yield(expr) ->
+      sprintf "yield return %s; %s" (create_element expr) (generate_instructions xs)
 
 let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, unit>) (self:string) (prefix:List<Instruction>) =
   match e with
@@ -73,22 +126,20 @@ type Rule = {
       let mutable o = []
       let mutable tmp_id = tmp_id
       for c_i,c_o in r.Clauses do
-        o <- Iterate(sprintf "tmp_%d" tmp_id, c_i) :: o
-        let o',tmp_id' = matchCast (tmp_id+1) c_o (sprintf "tmp_%d" tmp_id) o
-//        // ??????????????????????????????????????????????????????????????????????????????????????????????????????????
-//        let o'',tmp_id'' = matchCast tmp_id' r.Input (sprintf "tmp_%d" tmp_id') o' // ???????????????????????????????
-//        // ??????????????????????????????????????????????????????????????????????????????????????????????????????????
-        o <- o'
+        o <- o @ [Iterate(sprintf "tmp_%d" tmp_id, c_i)]
+        let o',tmp_id' = matchCast (tmp_id+1) c_o (sprintf "tmp_%d" tmp_id) []
+        o <- o @ o'
         tmp_id <- tmp_id'
       o <- i @ o @ [Yield r.Output]
-      sprintf "%A" o
+      sprintf "%s" (generate_instructions o)
 
 type Method = {
   Rules      : ResizeArray<Rule>
   Path       : List<int>
 } with
     override m.ToString() =
-      sprintf "Run_%A = %s\n" m.Path ((m.Rules |> Seq.map (fun r -> r.ToString())) ++ 2)
+      let path = m.Path |> Seq.map (fun i -> string i + "_") |> Seq.fold (+) ""
+      sprintf "IEnumerable<IRunnable> Run_%s() { %s }" path ((m.Rules |> Seq.map (fun r -> r.ToString())) ++ 2)
 
 type GeneratedClass = 
   {
@@ -97,7 +148,17 @@ type GeneratedClass =
     mutable Methods     : Map<List<int>, Method>
   } with 
       override m.ToString() =
-        sprintf "class %s : IRunnable = { \n%s\n%s\n}" m.Name (m.Parameters ++ 2) ((m.Methods |> Seq.map (fun x -> x.Value.ToString())) ++ 2)
+        let cons =
+          if m.Parameters.Count <> 0 then
+            let pars = m.Parameters |> Seq.map (fun x -> sprintf "IRunnable %s" x) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
+            let args = m.Parameters |> Seq.map (fun x -> sprintf "this.%s = %s;" x x) |> Seq.reduce (fun s x -> sprintf "%s %s" s x)
+            sprintf "public %s(%s) {%s}\n" !m.Name pars args
+          else
+            sprintf "public %s() {}\n" !m.Name 
+        let parameters = 
+          m.Parameters |> Seq.map (fun p -> sprintf "public IRunnable %s;\n" p) |> Seq.fold (+) ""
+        let run_stub = "public IEnumerable<IRunnable> Run() { if (false) yield return null; }"
+        sprintf "class %s : IRunnable {\n%s\n%s\n%s\n%s\n}\n\n" !m.Name parameters cons ((m.Methods |> Seq.map (fun x -> x.Value.ToString())) ++ 2) run_stub
 
 let add_rule inputClass (rule:BasicExpression<_,_,_>) path =
   if inputClass.Methods |> Map.containsKey path |> not then
@@ -138,12 +199,6 @@ let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rul
     ()
 
 
-(*
-1. A rule that ticks calls its clauses paying attention to scope
-2. Scoped rule methods also call parent methods
-3. Define IRunnable interface with union of all possible scope methods
-*)
-
 let generateCode (e:BasicExpression<Keyword, Var, _>) (ctxt:ConcreteExpressionContext) = 
   match e with
   | Application(Regular, Keyword Sequence :: rules) ->
@@ -151,16 +206,27 @@ let generateCode (e:BasicExpression<Keyword, Var, _>) (ctxt:ConcreteExpressionCo
     for keyword in ctxt.CustomKeywords do
       let newClass = { Name = keyword.Name; Parameters = ResizeArray(); Methods = Map.empty }
       for i = 1 to keyword.LeftAriety do
-        newClass.Parameters.Add(sprintf "IRunnable P%d" i)
+        newClass.Parameters.Add(sprintf "P%d" i)
       for i = 1 to keyword.RightAriety do
-        newClass.Parameters.Add(sprintf "IRunnable P%d" (i + keyword.LeftAriety))
+        newClass.Parameters.Add(sprintf "P%d" (i + keyword.LeftAriety))
       classes <- classes.Add(keyword.Name,newClass)
 
     do process_rules classes [] rules
 
-    for c in classes do
-      let c = c.Value
-      do printfn "%s\n\n" (c.ToString())
+    let classes = classes
+    let prelude = @"using System.Collections.Generic;
+interface IRunnable {
+  IEnumerable<IRunnable> Run();
+}"
+
+    [
+      yield prelude
+      yield "\n\n\n"
+      for c in classes do
+        let c = c.Value
+        yield c.ToString()
+        //do printfn "%s\n\n" (c.ToString())
+    ] |> Seq.fold (+) "" |> (fun txt -> System.IO.File.WriteAllText("output.cs", txt))
   | _ -> failwith "Cannot extract rules from input program."
 
 [<EntryPoint>]

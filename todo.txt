@@ -1,0 +1,35 @@
+- special bracket application
+- A rule that ticks calls its clauses paying attention to scope
+- Scoped rule methods also call parent methods
+- Define IRunnable interface with union of all possible scope methods
+
+
+  M[s] => res
+  -------------
+  M, id s => res
+
+  M, x => x'
+  M', y => y'
+  << x' op y' >> => res
+  --------------------------
+  M, (bool_op op x y) => res
+
+  M, x => x'
+  M', y => y'
+  << x' op y' >> => res
+  ---------------------------
+  M, (arith_op op x y) => res
+
+
+
+
+
+  M[f -> res] => M'
+  ---------------------------
+  assignFields M f res => M'
+
+  M[f -> x] => M'
+  assignFields M' fs xs => M''
+  --------------------------------------
+  assignFields M (f, fs) (x, xs) => M''
+
