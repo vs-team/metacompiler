@@ -10,6 +10,7 @@ Keyword = "cont" LeftAriety = 0 RightAriety = 1 Priority = 51
 Keyword = "yield" LeftAriety = 0 RightAriety = 1 Priority = 52
 Keyword = "wait" LeftAriety = 0 RightAriety = 1 Priority = 53
 Keyword = "unit" LeftAriety = 0 RightAriety = 0 Priority = 54
+Keyword = "id" LeftAriety = 0 RightAriety = 1 Priority = 55
 Keyword = "if" LeftAriety = 0 RightAriety = 5 Priority = 100
 Keyword = "-" LeftAriety = 1 RightAriety = 1 Priority = 500
 Keyword = "+" LeftAriety = 1 RightAriety = 1 Priority = 501
@@ -19,6 +20,8 @@ Keyword = "arith_op" LeftAriety = 0 RightAriety = 3 Priority = 504
 Keyword = "bool_op" LeftAriety = 0 RightAriety = 3 Priority = 505
 Keyword = "then" LeftAriety = 0 RightAriety = 0 Priority = 1000
 Keyword = "else" LeftAriety = 0 RightAriety = 0 Priority = 1001
+Keyword = "true" LeftAriety = 0 RightAriety = 0 Priority = 1002
+Keyword = "false" LeftAriety = 0 RightAriety = 0 Priority = 1003
 Keyword = ":=" LeftAriety = 0 RightAriety = 0 Priority = 1002
 
 
@@ -31,17 +34,17 @@ exprEval M expr => M', res
   -------------------------------
   M, (if c then a else b) => res
 
-  M, a => res
-  ----------------------------------
-  M, (if true then a else b) => res
+    M, a => res
+    ----------------------------------
+    M, (if true then a else b) => res
 
-  M, b => res
-  -----------------------------------
-  M, (if false then a else b) => res
+    M, b => res
+    -----------------------------------
+    M, (if false then a else b) => res
 
   M[s] => res
   -------------
-  M, s => res
+  M, id s => res
 
   M, x => x'
   M', y => y'
@@ -92,17 +95,17 @@ ruleEval M r => M', r'
   assignFields M (f, fs) (x, xs) => M''
 
   M, b => unit
-  -----------------------------------------------
-  M, rule FS := (b, b0) => M', rule FS := (b0, b0)
+  -----------------------------------------------------
+  M, (rule FS := (b, b0)) => M', (rule FS := (b0, b0))
 
   M, b => cont(yield res; b')
   assignFields M FS res => M'
-  -----------------------------------------------
+  -------------------------------------------------
   M, rule FS := (b, b0) => M', rule FS := (b', b0)
 
   M, b => cont(wait c; b')
-  ----------------------------------------------
-  M, rule FS := (b, b0) => M, rule FS := (b', b0)
+  ----------------------------------------------------
+  M, (rule FS := (b, b0)) => M, (rule FS := (b', b0))
 
   -----------------------------
   assignFields M unit res => M
@@ -118,5 +121,5 @@ rulesEval M rs => M', rs'
   ruleEval M r => M', r'
   rulesEval M' rs => M'', rs'
   -------------------------------------
-  M, r; rs => M'', r'; rs'
+  (M, r); rs => (M'', r'); rs'
 

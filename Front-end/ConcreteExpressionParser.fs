@@ -136,7 +136,7 @@ and rule depth =
       let! nested_rules = rules depth1
       return Application(Bracket.Regular, Keyword Nesting :: Application(Bracket.Regular, Keyword FractionLine :: m :: cs) :: nested_rules)
     else
-      return Application(Bracket.Regular, Keyword FractionLine :: m::cs)
+      return Application(Bracket.Regular, Keyword FractionLine :: m :: cs)
   }
 
 and end_rules depth =
@@ -199,18 +199,18 @@ and expr() =
   let shrink bracket_type (es:List<BasicExpression<_,_,_>>) customKeywordsMap : BasicExpression<_,_,_> =
     let ariety (b:BasicExpression<_,_,_>) = 
       match b with
-      | BasicExpression.Extension(k:Var) ->
-        if customKeywordsMap |> Map.containsKey k.Name then
-          let kw = customKeywordsMap.[k.Name]
+      | Keyword(Custom(k)) ->
+        if customKeywordsMap |> Map.containsKey k then
+          let kw = customKeywordsMap.[k]
           kw.LeftAriety, kw.RightAriety
         else
           0,0
       | _ -> 0,0
     let priority (b:BasicExpression<_,_,_>,index:int) = 
       match b with
-      | BasicExpression.Extension(k:Var) ->
-        if customKeywordsMap |> Map.containsKey k.Name then
-          let kw = customKeywordsMap.[k.Name]
+      | Keyword(Custom(k)) ->
+        if customKeywordsMap |> Map.containsKey k then
+          let kw = customKeywordsMap.[k]
           kw.Priority,-index
         else
           -1,-index
