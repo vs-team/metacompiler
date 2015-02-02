@@ -73,11 +73,11 @@ exprEval M expr => M', res
 
   M, c => M', false
   ------------------------------------
-  M, wait c => M', cont(wait c; unit)
+  M, wait c => M', cont((wait c); unit)
 
   M, a => M', res
   ----------------------------------------
-  M, yield a => M', cont(yield res; unit)
+  M, yield a => M', cont((yield res); unit)
 
 
 
@@ -98,12 +98,12 @@ ruleEval M r => M', r'
   -----------------------------------------------------
   M, (rule FS := (b, b0)) => M', (rule FS := (b0, b0))
 
-  M, b => cont(yield res; b')
+  M, b => cont((yield res); b')
   assignFields M FS res => M'
   -------------------------------------------------
   M, rule FS := (b, b0) => M', rule FS := (b', b0)
 
-  M, b => cont(wait c; b')
+  M, b => cont((wait c); b')
   ----------------------------------------------------
   M, (rule FS := (b, b0)) => M, (rule FS := (b', b0))
 

@@ -11,7 +11,8 @@ type Instruction =
     Var of name : string * expr : string
   | VarAs of name : string * expr : string * as_type : string
   | CheckNull of var_name : string
-  | Unit
+  | Iterate of var_name : string * expr:BasicExpression<Keyword, Var, unit>
+  | Yield of expr:BasicExpression<Keyword, Var, unit>
 
 let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, unit>) (self:string) (prefix:List<Instruction>) =
   match e with
@@ -64,12 +65,23 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, unit>) (self:str
 
 type Rule = {
   Input      : BasicExpression<Keyword, Var, unit>
-  Output     : string
-  Clauses    : List<string>
+  Output     : BasicExpression<Keyword, Var, unit>
+  Clauses    : List<BasicExpression<Keyword, Var, unit> * BasicExpression<Keyword, Var, unit>>
 } with
     override r.ToString() =
-      let i = matchCast 0 r.Input "this" [] |> fst
-      sprintf "(%A; iterate and match %s; yield %s)" i (r.Clauses ++ 0) r.Output
+      let i,tmp_id = matchCast 0 r.Input "this" []
+      let mutable o = []
+      let mutable tmp_id = tmp_id
+      for c_i,c_o in r.Clauses do
+        o <- Iterate(sprintf "tmp_%d" tmp_id, c_i) :: o
+        let o',tmp_id' = matchCast (tmp_id+1) c_o (sprintf "tmp_%d" tmp_id) o
+//        // ??????????????????????????????????????????????????????????????????????????????????????????????????????????
+//        let o'',tmp_id'' = matchCast tmp_id' r.Input (sprintf "tmp_%d" tmp_id') o' // ???????????????????????????????
+//        // ??????????????????????????????????????????????????????????????????????????????????????????????????????????
+        o <- o'
+        tmp_id <- tmp_id'
+      o <- i @ o @ [Yield r.Output]
+      sprintf "%A" o
 
 type Method = {
   Rules      : ResizeArray<Rule>
@@ -91,8 +103,16 @@ let add_rule inputClass (rule:BasicExpression<_,_,_>) path =
   if inputClass.Methods |> Map.containsKey path |> not then
     inputClass.Methods <- inputClass.Methods |> Map.add path { Rules = ResizeArray(); Path = path }
   match rule with
-  | Application(Regular, Keyword FractionLine :: (Application(Regular, Keyword DoubleArrow :: input :: output)) :: clauses) ->
-    inputClass.Methods.[path].Rules.Add({ Input = input; Output = output.ToString(); Clauses = [ for c in clauses -> c.ToString() ] })
+  | Application(Regular, Keyword FractionLine :: (Application(Regular, Keyword DoubleArrow :: input :: output :: [])) :: clauses) ->
+    inputClass.Methods.[path].Rules.Add(
+      { Input = input
+        Clauses = 
+          [ for c in clauses do
+              match c with
+              | Application(_, Keyword DoubleArrow :: c_i :: c_o :: []) -> yield c_i, c_o
+              | _ -> failwithf "Cannot clause %A" c
+          ] 
+        Output = output })
   | _ ->
     failwithf "Cannot extract rule shape from %A" rule
 
