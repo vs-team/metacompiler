@@ -196,7 +196,7 @@ type GeneratedClass =
             sprintf "public override string ToString() { var res = \"%s\" + \"(\";\n%s;\nres += \")\";\nreturn res;\n}\n" c.Name print_parameters
           else
             sprintf "public override string ToString() { var res = \"%s\";\nreturn res;\n}\n" c.Name
-        sprintf "class %s : IRunnable {\n%s\n%s\n%s\n%s\n%s}\n\n" !c.Name parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString())) ++ 2) missing_methods to_string
+        sprintf "public class %s : IRunnable {\n%s\n%s\n%s\n%s\n%s}\n\n" !c.Name parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString())) ++ 2) missing_methods to_string
 
 let add_rule inputClass (rule:BasicExpression<_,_,_>) (rule_path:Path) (hasScope:bool) =
   let method_path = rule_path.Tail
@@ -240,7 +240,7 @@ let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rul
     ()
 
 
-let generateCode (rules:BasicExpression<Keyword, Var, _>) (program:BasicExpression<Keyword, Var, _>) (ctxt:ConcreteExpressionContext) = 
+let generateCode program_name (rules:BasicExpression<Keyword, Var, _>) (program:BasicExpression<Keyword, Var, _>) (ctxt:ConcreteExpressionContext) = 
   match rules with
   | Application(Regular, Keyword Sequence :: rules) ->
     let mutable classes = Map.empty
@@ -261,8 +261,8 @@ let generateCode (rules:BasicExpression<Keyword, Var, _>) (program:BasicExpressi
       } |> Seq.reduce (+)
     let run_methods =
       all_method_paths |> Seq.map (fun p -> sprintf "IEnumerable<IRunnable> Run%s();\n" (p.ToString())) |> Seq.reduce (+)
-    let prelude = sprintf "using System.Collections.Generic;\nusing System.Linq;\ninterface IRunnable { %s }" run_methods
-    let main = sprintf "class EntryPoint : IRunnable {\n public IEnumerable<IRunnable> Run()\n{\nforeach(var x in %s.Run())\nyield return x;\n}\n}\n" (create_element program)
+    let prelude = sprintf "using System.Collections.Generic;\nusing System.Linq;\nnamespace %s {\n public interface IRunnable { %s }" program_name run_methods
+    let main = sprintf "public class EntryPoint : IRunnable {\n public IEnumerable<IRunnable> Run()\n{\nforeach(var x in %s.Run())\nyield return x;\n}\n}\n" (create_element program)
     [
       yield prelude
       yield "\n\n\n"
@@ -271,6 +271,7 @@ let generateCode (rules:BasicExpression<Keyword, Var, _>) (program:BasicExpressi
         yield c.ToString all_method_paths
       yield "\n\n\n"
       yield main
+      yield "\n}\n"
     ] |> Seq.fold (+) "" |> (fun txt -> System.IO.File.WriteAllText("output.cs", txt))
   | _ -> failwith "Cannot extract rules from input program."
 
@@ -279,9 +280,9 @@ let main argv =
   let ($) p a = p.Parse a
 
   let casanova = System.IO.File.ReadAllText @"Content\casanova semantics.mc"
-  let peano = System.IO.File.ReadAllText @"Content\peano numbers.mc", "(s(s(z))) * (s(s(z)))\n"
+  let peano = "PeanoNumbers", System.IO.File.ReadAllText @"Content\peano numbers.mc", "(s(s(z))) * (s(s(z)))\n"
 
-  let rules, input = peano
+  let title, rules, input = peano
 
   match (program()).Parse (rules |> Seq.toList) ConcreteExpressionContext.Empty with
   | [] -> printfn "Parse error."
@@ -289,6 +290,8 @@ let main argv =
     match expr().Parse (input |> Seq.toList) ctxt with
     | [] -> printfn "Parse error."
     | (y,_,ctxt')::ys ->
-      //printfn "%s" (y.ToString())
-      generateCode x y ctxt
+      printfn "%s => " (y.ToString()) 
+      for z in PeanoNumbers.EntryPoint().Run() do
+        printfn "%s" (z.ToString()) 
+      generateCode title x y ctxt
   0

@@ -65,6 +65,11 @@
       <Project>{edca9158-66e7-429e-b7c7-6074d948026f}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\Output\Output.csproj">
+      <Name>Output</Name>
+      <Project>{b400d728-89d3-4967-b209-d4d8d4004920}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
