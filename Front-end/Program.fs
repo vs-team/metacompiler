@@ -272,7 +272,7 @@ let generateCode program_name (rules:BasicExpression<Keyword, Var, _>) (program:
       yield "\n\n\n"
       yield main
       yield "\n}\n"
-    ] |> Seq.fold (+) "" |> (fun txt -> System.IO.File.WriteAllText("output.cs", txt))
+    ] |> Seq.fold (+) "" |> (fun txt -> System.IO.File.WriteAllText(program_name + ".cs", txt))
   | _ -> failwith "Cannot extract rules from input program."
 
 [<EntryPoint>]
@@ -281,6 +281,7 @@ let main argv =
 
   let casanova = System.IO.File.ReadAllText @"Content\casanova semantics.mc"
   let peano = "PeanoNumbers", System.IO.File.ReadAllText @"Content\peano numbers.mc", "(s(s(z))) * (s(s(z)))\n"
+  let lambda_calculus = "LambdaCalculus", System.IO.File.ReadAllText @"Content\lambda calculus.mc", "(s(s(z))) * (s(s(z)))\n"
 
   let title, rules, input = peano
 

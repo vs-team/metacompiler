@@ -46,6 +46,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Content\lambda calculus.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Content\peano numbers.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
