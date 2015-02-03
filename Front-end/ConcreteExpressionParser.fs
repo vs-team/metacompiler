@@ -6,6 +6,9 @@ open Utilities
 open ParserMonad
 open BasicExpression
 
+let mutable debug_expr = false
+let mutable debug_rules = false
+
 type CustomKeyword = { Name : string; LeftAriety : int; RightAriety : int; Priority : int }
 
 type ConcreteExpressionContext = 
@@ -175,6 +178,8 @@ and clause depth =
     let! ar = word "=>"
     let! bs3 = blank_space()
     let! o = expr()
+    if debug_rules then
+      do printfn "%A => %A" i o
     let! bs4 = blank_space()
     return Application(Bracket.Regular, Keyword DoubleArrow :: i :: o :: [])
   }
@@ -219,10 +224,12 @@ and expr() =
     let merge n l r =
       Application(Regular, n :: l @ r)
     let prioritize_es = BottomUpPriorityParser.prioritize es ariety priority merge
-//    do printfn "%A" es
-//    do printfn "is prioritized into %A" prioritize_es
-//    do printfn ""
-//    let _ = System.Console.ReadLine()
+    if debug_expr then
+      do printfn "%A" es
+      do printfn "is prioritized into %A" prioritize_es
+      do printfn ""
+      let _ = System.Console.ReadLine()
+      ()
     match prioritize_es with
     | [x] -> x
     | l -> Application(bracket_type, l)

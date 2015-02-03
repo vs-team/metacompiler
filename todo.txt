@@ -1,7 +1,5 @@
-- special bracket application
-- A rule that ticks calls its clauses paying attention to scope
-- Scoped rule methods also call parent methods
-- Define IRunnable interface with union of all possible scope methods
+- special bracket application and concrete semantics
+- test run
 
 
   M[s] => res
