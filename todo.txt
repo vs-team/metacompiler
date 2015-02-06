@@ -1,7 +1,8 @@
 - special bracket application and concrete semantics
 - theorem prover
 - imported instructions
-
+- errors should point to original file
+- parser error reporting based on last parsed line
 
 
   M[s] => res

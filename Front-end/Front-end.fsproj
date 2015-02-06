@@ -56,10 +56,22 @@
     <Compile Include="BottomUpPriorityParser.fs" />
     <Compile Include="BasicExpression.fs" />
     <Compile Include="ConcreteExpressionParser.fs" />
+    <Compile Include="CodeGenerator.fs" />
+    <Compile Include="GUI.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Windows" />
+    <Reference Include="System.Windows.Presentation" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="UIAutomationTypes" />
+    <Reference Include="WindowsBase" />
     <ProjectReference Include="..\Content\Content.csproj">
       <Name>Content</Name>
       <Project>{edca9158-66e7-429e-b7c7-6074d948026f}</Project>
