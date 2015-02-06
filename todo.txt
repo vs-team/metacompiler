@@ -2,14 +2,10 @@
 - special bracket application and concrete semantics
 - theorem prover
 
-- better ToString with keyword ariety
-
 - class inheritance
-- literal parsing
-  - int
-  - bool
-  - float
-- dynamic compilation and linking
+
+- imported instructions
+
 
 
   M[s] => res

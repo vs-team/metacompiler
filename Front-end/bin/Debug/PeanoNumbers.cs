@@ -142,9 +142,11 @@ return "z";
 
 
 public class EntryPoint {
- public IEnumerable<IRunnable> Run()
+ static public IEnumerable<IRunnable> Run(bool printInput)
 {
-foreach(var x in new _opMultiplication(new s(new s(new z())), new s(new s(new z()))).Run())
+var p = new _opMultiplication(new s(new s(new z())), new s(new s(new z())));
+if(printInput) System.Console.WriteLine(p.ToString());
+foreach(var x in p.Run())
 yield return x;
 }
 }

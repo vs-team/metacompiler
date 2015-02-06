@@ -65,11 +65,15 @@ type Keyword = Sequence | Equals | NotEquals | DoubleArrow | FractionLine | Nest
       | Nesting -> ""
       | Custom name -> name
 
-type Literal = StringLiteral of string
+type Literal = StringLiteral of string | IntLiteral of int | BoolLiteral of bool | SingleLiteral of float32 | DoubleLiteral of float
   with 
     override this.ToString() =
       match this with
       | StringLiteral l -> sprintf "\"%s\"" l  
+      | IntLiteral i -> sprintf "%d" i
+      | BoolLiteral b -> sprintf "%b" b
+      | SingleLiteral s -> sprintf "%ff" s
+      | DoubleLiteral d -> sprintf "%f" d
 
 let rec program() = 
   p{
@@ -247,11 +251,27 @@ and customKeyword() =
   }
 
 and literal() =
+  let stringLiteral() = 
+    p{
+      let! oq = word @"""" + p{ return () }
+      let! id = longIdentifier()
+      let! cq = word @"""" + p{ return () }
+      return id
+    }
+  let boolLiteral() =
+    p{
+      let! res = word "true" + word "false"
+      match res with
+      | First _ -> return true
+      | Second _ -> return false
+    }
   p{
-    let! oq = word @"""" + p{ return () }
-    let! id = longIdentifier()
-    let! cq = word @"""" + p{ return () }
-    return id
+    let! res = (intLiteral() + floatLiteral()) + (stringLiteral() + boolLiteral())
+    match res with 
+    | First(First i) -> return IntLiteral i
+    | First(Second f) -> return DoubleLiteral f
+    | Second(First s) -> return StringLiteral s
+    | Second(Second b) -> return BoolLiteral b
   }
 
 and expr() = 
@@ -326,7 +346,7 @@ and expr() =
             match e with
             | First(k) -> Keyword(Custom(new System.String(k |> Seq.toArray)))
             | Second(First(id)) -> Extension { Var.Name = new System.String(id |> Seq.toArray) }
-            | Second(Second(l)) -> Imported(StringLiteral(new System.String(l |> Seq.toArray)))
+            | Second(Second(l)) -> Imported(l)
           let! bs = blank_space()
           let! bes = maybe_inner_expr
           return be::bes

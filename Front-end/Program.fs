@@ -2,6 +2,8 @@
 open ParserMonad
 open BasicExpression
 open ConcreteExpressionParser
+open Microsoft.CSharp
+open System.CodeDom.Compiler
 
 let (!) (s:string) =
   s
@@ -31,11 +33,8 @@ let inline (++) (s:#seq<string>) (d:int) =
   let bs = [ for i in [1..d] -> " " ] |> Seq.fold (+) ""
   s |> Seq.map (fun x -> bs + x + "\n") |> Seq.fold (+) ""
 
-
 let escape (s:string) = 
   s.Replace("\\", "\\\\")
-
-
 
 type Path = Path of List<int>
   with
@@ -78,10 +77,7 @@ let create_element (ctxt:ConcreteExpressionContext) =
       failwithf "Application not starting with %A cannot be created" e
     | Application(b,[]) ->
       failwith "Application with empty argument list cannot be created"
-    | Imported l ->
-      match l with
-      | StringLiteral l -> sprintf "\"%s\"" l, []
-      | _ -> failwith "Non-string literal not supported for element creation"
+    | Imported l -> l.ToString(), []
     | Keyword(k) -> 
       failwithf "Non-custom keyword %A cannot be matched" k
   function
@@ -97,10 +93,7 @@ let create_element (ctxt:ConcreteExpressionContext) =
     failwithf "Application not starting with %A cannot be created" e
   | Application(b,[]) ->
     failwith "Application with empty argument list cannot be created"
-  | Imported l ->
-    match l with
-    | StringLiteral l -> sprintf "\"%s\"" l, []
-    | _ -> failwith "Non-string literal not supported for element creation"
+  | Imported l -> l.ToString(), []
   | Keyword(k) -> 
     failwithf "Non-custom keyword %A cannot be matched" k
 
@@ -342,7 +335,7 @@ let generateCode program_name (rules:BasicExpression<Keyword, Var, Literal>) (pr
     let run_methods =
       all_method_paths |> Seq.map (fun p -> sprintf "IEnumerable<IRunnable> Run%s();\n" (p.ToString())) |> Seq.reduce (+)
     let prelude = sprintf "using System.Collections.Generic;\nusing System.Linq;\nnamespace %s {\n public interface IRunnable { %s }" program_name run_methods
-    let main = sprintf "public class EntryPoint {\n public IEnumerable<IRunnable> Run()\n{\nforeach(var x in %s.Run())\nyield return x;\n}\n}\n" (create_element ctxt program |> fst)
+    let main = sprintf "public class EntryPoint {\n static public IEnumerable<IRunnable> Run(bool printInput)\n{\nvar p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" (create_element ctxt program |> fst)
     [
       yield prelude
       yield "\n\n\n"
@@ -354,7 +347,7 @@ let generateCode program_name (rules:BasicExpression<Keyword, Var, Literal>) (pr
       yield "\n\n\n"
       yield main
       yield "\n}\n"
-    ] |> Seq.fold (+) "" |> (fun txt -> System.IO.File.WriteAllText(program_name + ".cs", txt))
+    ] |> Seq.fold (+) "" |> (fun txt -> System.IO.File.WriteAllText(program_name + ".cs", txt); txt)
   | _ -> failwith "Cannot extract rules from input program."
 
 [<EntryPoint>]
@@ -364,23 +357,37 @@ let main argv =
   let casanova = System.IO.File.ReadAllText @"Content\casanova semantics.mc"
   let peano = "PeanoNumbers", System.IO.File.ReadAllText @"Content\peano numbers.mc", "(s(s(z))) * (s(s(z)))\n"
   let lambda_calculus = "LambdaCalculus", System.IO.File.ReadAllText @"Content\lambda calculus.mc", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")" + "\n"
+  let tasks = 
+    [
+      peano
+      lambda_calculus
+    ]
 
-  let title, rules, input = peano
-
-//  do debug_expr <- true
-//  do debug_rules <- true
-
-  match (program()).Parse (rules |> Seq.toList) ConcreteExpressionContext.Empty with
-  | [] -> printfn "Parse error in rules."
-  | (x,_,ctxt)::xs -> 
-    do printfn "Rules parsed correctly."
-    match expr().Parse (input |> Seq.toList) ctxt with
-    | [] -> printfn "Parse error in expression %s." input
-    | (y,_,ctxt')::ys ->
-      printfn "%s => " (y.ToString())
-      for z in PeanoNumbers.EntryPoint().Run() do
-        printfn "%s" (z.ToString()) 
-      for z in LambdaCalculus.EntryPoint().Run() do
-        printfn "%s" (z.ToString()) 
-      generateCode title x y ctxt
+  for title, rules, input in tasks do
+  //  do debug_expr <- true
+  //  do debug_rules <- true
+    match (program()).Parse (rules |> Seq.toList) ConcreteExpressionContext.Empty with
+    | [] -> printfn "Parse error in rules."
+    | (x,_,ctxt)::xs -> 
+      match expr().Parse (input |> Seq.toList) ctxt with
+      | [] -> printfn "Parse error in expression %s." input
+      | (y,_,ctxt')::ys ->
+        let src = generateCode title x y ctxt
+        let args = new System.Collections.Generic.Dictionary<string, string>()
+        do args.Add("CompilerVersion", "v4.5")
+        let csc = new CSharpCodeProvider()
+        let parameters = new CompilerParameters([| "mscorlib.dll"; "System.Core.dll" |], sprintf "%s.dll" title, true)
+        let results = csc.CompileAssemblyFromSource(parameters, src)
+        if results.Errors.HasErrors then
+          for error in results.Errors
+            do printfn "%s" error.ErrorText
+        else
+          do printfn "Compilation succesful.\n"
+          let types = results.CompiledAssembly.GetTypes()
+          let entryPoint = types |> Seq.find (fun t -> t.Name = "EntryPoint")
+          let run = entryPoint.GetMethod("Run")
+          let results = run.Invoke(null, [|true|]) :?> seq<obj>
+          for r in results do
+            do printfn "%A" r
+          do printfn "\n"
   0

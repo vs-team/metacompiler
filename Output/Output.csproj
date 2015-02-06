@@ -48,12 +48,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Front-end\bin\Debug\LambdaCalculus.cs">
+    <Content Include="..\Front-end\bin\Debug\LambdaCalculus.cs">
       <Link>LambdaCalculus.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\PeanoNumbers.cs">
+    </Content>
+    <Content Include="..\Front-end\bin\Debug\PeanoNumbers.cs">
       <Link>PeanoNumbers.cs</Link>
-    </Compile>
+    </Content>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

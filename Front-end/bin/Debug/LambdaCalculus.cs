@@ -29,10 +29,12 @@ yield return result;  }
 public IEnumerable<IRunnable> Run4_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
- var res = ""; 
-; res += "$"; res += P1.ToString();
-;
-return res;
+ var res = "("; 
+
+ res += "$"; res += P1.ToString();
+
+ res += ")";
+ return res;
 }
 }
 
@@ -60,11 +62,13 @@ public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) y
 public IEnumerable<IRunnable> Run4_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
- var res = ""; 
+ var res = "("; 
 res += P1.ToString();
-; res += ":="; res += P2.ToString();
-;
-return res;
+
+ res += ":="; res += P2.ToString();
+
+ res += ")";
+ return res;
 }
 }
 
@@ -88,12 +92,14 @@ yield return result;  } } }
 public IEnumerable<IRunnable> Run4_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
- var res = ""; 
-; res += "\\"; res += P1.ToString();
+ var res = "("; 
+
+ res += "\\"; res += P1.ToString();
 res += P2.ToString();
 res += P3.ToString();
-;
-return res;
+
+ res += ")";
+ return res;
 }
 }
 
@@ -169,11 +175,13 @@ yield return result;  } } } } } } } }
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
 
 public override string ToString() {
- var res = ""; 
+ var res = "("; 
 res += P1.ToString();
-; res += "with"; res += P2.ToString();
-;
-return res;
+
+ res += "with"; res += P2.ToString();
+
+ res += ")";
+ return res;
 }
 }
 
@@ -218,11 +226,13 @@ yield return result;  } } } } }
 public IEnumerable<IRunnable> Run4_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
- var res = ""; 
+ var res = "("; 
 res += P1.ToString();
-; res += "|"; res += P2.ToString();
-;
-return res;
+
+ res += "|"; res += P2.ToString();
+
+ res += ")";
+ return res;
 }
 }
 
@@ -230,9 +240,11 @@ return res;
 
 
 public class EntryPoint {
- public IEnumerable<IRunnable> Run()
+ static public IEnumerable<IRunnable> Run(bool printInput)
 {
-foreach(var x in new _opVBar(new _opVBar(new _opSlash(new _Dollar("y"), new _opDot(), new _Dollar("y")), new _opSlash(new _Dollar("y"), new _opDot(), new _Dollar("y"))), new _opVBar(new _Dollar("x"), new _Dollar("z"))).Run())
+var p = new _opVBar(new _opVBar(new _opSlash(new _Dollar("y"), new _opDot(), new _Dollar("y")), new _opSlash(new _Dollar("y"), new _opDot(), new _Dollar("y"))), new _opVBar(new _Dollar("x"), new _Dollar("z")));
+if(printInput) System.Console.WriteLine(p.ToString());
+foreach(var x in p.Run())
 yield return x;
 }
 }
