@@ -190,13 +190,13 @@ and keyword : Parser<CustomKeyword,ConcreteExpressionContext> =
 
 and rules depth = 
   p{
-    let! r = rule depth
-    let! rs = rules depth + end_rules depth
-    match rs with
-    | First(rs1) ->       
-      return r::rs1
-    | Second(_) ->
-      return [r]
+    let! r = rule depth + (deindentation depth + p{ return () })
+    match r with
+    | First(r) ->
+      let! rs = rules depth
+      return r :: rs
+    | _ -> 
+      return []
   }
 
 and rule depth =
@@ -214,14 +214,12 @@ and rule depth =
       return Application(Bracket.Regular, Keyword FractionLine :: m :: cs)
   }
 
-and end_rules depth =
+and deindentation depth =
   p{
     let! depth1 = !!indentation
     if depth1 < depth then
-      return []
-    else
-      return! fail()
-  } + eof()
+      return ()
+  }
 
 and clauses depth = 
   let rec clauses = 

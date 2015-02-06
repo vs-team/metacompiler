@@ -128,8 +128,7 @@ type WPFWindow(samples, runDeduction) =
   do refreshProgramCache()
   do programToRun.TextChanged.Add(fun _ -> System.IO.File.WriteAllText(cachePath(), programToRun.Text))
   do programToRun.AcceptsReturn <- true
-  do programToRun.Height <- 200.0
-  do programToRun.Width <- 700.0
+  do programToRun.Height <- 225.0
   do programToRun.Padding <- Thickness(10.0)
   do programToRun.Margin <- Thickness(10.0)
   do deductionList.SelectionChanged.Add(fun _ -> refreshProgramCache(); System.IO.File.WriteAllText(deductionListCachePath, deductionList.SelectedIndex.ToString()))
@@ -138,8 +137,7 @@ type WPFWindow(samples, runDeduction) =
   do deductionOutput.TextWrapping <- TextWrapping.Wrap
   do deductionOutput.FontFamily <- FontFamily("consolas")
   do deductionOutput.IsReadOnly <- true
-  do deductionOutput.Height <- 170.0
-  do deductionOutput.Width <- 700.0
+  do deductionOutput.Height <- 150.0
   do deductionOutput.Padding <- Thickness(10.0)
   do deductionOutput.Margin <- Thickness(10.0)
 
