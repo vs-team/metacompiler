@@ -1,9 +1,7 @@
-- structural equality
 - special bracket application and concrete semantics
 - theorem prover
 
-- class inheritance
-
+- structural equality
 - imported instructions
 
 

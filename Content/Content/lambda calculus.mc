@@ -1,12 +1,12 @@
-﻿Keyword = "$" LeftArguments = [] RightArguments = [<<System.String>>] Priority = 10 Class = "Term"
-Keyword = "\" LeftArguments = [] RightArguments = [Term Dot Term] Priority = 9 Class = "Term"
+﻿Keyword = "$" LeftArguments = [] RightArguments = [<<System.String>>] Priority = 10 Class = "Id"
+Keyword = "\" LeftArguments = [] RightArguments = [Id Dot Term] Priority = 9 Class = "Term"
 Keyword = "|" LeftArguments = [Term] RightArguments = [Term] Priority = 8 Class = "Term"
 Keyword = "." LeftArguments = [] RightArguments = [] Priority = 0 Class = "Dot"
 
 Keyword = ":=" LeftArguments = [Term] RightArguments = [Term] Priority = 6 Class = "Where"
 Keyword = "with" LeftArguments = [Term] RightArguments = [Where] Priority = 5 Class = "With"
 
-
+Id inherits Term
 
 -------------
 $x => $x

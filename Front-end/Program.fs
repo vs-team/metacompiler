@@ -307,10 +307,17 @@ let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rul
     ()
 
 
+type Interface = { Name : string; BaseInterfaces : ResizeArray<string> }
+
 let generateCode program_name (rules:BasicExpression<Keyword, Var, Literal>) (program:BasicExpression<Keyword, Var, Literal>) (ctxt:ConcreteExpressionContext) = 
   match rules with
   | Application(Regular, Keyword Sequence :: rules) ->
     let mutable classes = Map.empty
+    let mutable inheritanceRelationships = Map.empty
+    for c,a in ctxt.InheritanceRelationships do
+      match inheritanceRelationships |> Map.tryFind c with
+      | Some i -> i.BaseInterfaces.Add a
+      | None -> inheritanceRelationships <- inheritanceRelationships |> Map.add c { Name = c; BaseInterfaces = ResizeArray([a]) }
     for keyword in ctxt.CustomKeywords do
       let newClass = { Name = keyword.Name; Interface = keyword.Class; Parameters = ResizeArray(); Methods = Map.empty }
       for t,i in keyword.LeftArguments |> Seq.mapi (fun i p -> p,i+1) do
@@ -323,10 +330,16 @@ let generateCode program_name (rules:BasicExpression<Keyword, Var, Literal>) (pr
 
     let classes = classes
     let interfaces = [ for k in ctxt.CustomKeywords -> k.Class ] |> Set.ofSeq
+    let inheritanceRelationships = inheritanceRelationships
     let interfacesCode = 
       [
         for i in interfaces do
-        yield sprintf "public interface %s : IRunnable {}\n" i
+          match inheritanceRelationships |> Map.tryFind i with
+          | Some ir ->
+            let explicitInterfaces = ir.BaseInterfaces
+            yield sprintf "public interface %s : %s {}\n" i (explicitInterfaces |> Seq.reduce (fun s x -> s + ", " + x))
+          | _ ->
+            yield sprintf "public interface %s : IRunnable {}\n" i
       ] |> Seq.fold (+) ""
     let all_method_paths =
       seq{
@@ -359,7 +372,7 @@ let main argv =
   let lambda_calculus = "LambdaCalculus", System.IO.File.ReadAllText @"Content\lambda calculus.mc", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")" + "\n"
   let tasks = 
     [
-      peano
+//      peano
       lambda_calculus
     ]
 

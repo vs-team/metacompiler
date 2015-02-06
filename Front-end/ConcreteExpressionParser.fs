@@ -22,12 +22,14 @@ type ConcreteExpressionContext =
     CustomKeywords : List<CustomKeyword>
     CustomKeywordsByPrefix : List<CustomKeyword>
     CustomKeywordsMap : Map<string,CustomKeyword>    
+    InheritanceRelationships : List<string * string>
   } with
       static member Empty =
         {
-          CustomKeywords          = []
-          CustomKeywordsByPrefix  = []
-          CustomKeywordsMap       = Map.empty
+          CustomKeywords           = []
+          CustomKeywordsByPrefix   = []
+          CustomKeywordsMap        = Map.empty
+          InheritanceRelationships = []
         }
 
 let getCustomKeywords() =
@@ -78,14 +80,40 @@ type Literal = StringLiteral of string | IntLiteral of int | BoolLiteral of bool
 let rec program() = 
   p{
     let! ks = keywords
-    do! setContext
+    let newContext = 
           {
             CustomKeywords = ks
             CustomKeywordsByPrefix = ks |> List.sortBy (fun k -> k.Name) |> List.rev
             CustomKeywordsMap = ks |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
+            InheritanceRelationships = []
           }
+    do! setContext newContext
+    let! inheritance = inheritanceRelationships()
+    let newContext = { newContext with InheritanceRelationships = inheritance }
+    do! setContext newContext
     let! rs = rules 0
     return Application(Regular, Keyword Sequence :: rs)
+  }
+
+and inheritanceRelationships() =
+  let singleRelation() =
+    p{
+      let! concreter = customClass()
+      let! bs = blank_space()
+      let! inherits = word "inherits"
+      let! bs = blank_space()
+      let! abstracter = customClass()
+      let! bs = blank_space()
+      let! el = empty_lines()
+      return (new System.String(concreter |> Seq.toArray), new System.String(abstracter |> Seq.toArray))
+    }
+  p{
+    let! r1 = singleRelation() + p { return () }
+    match r1 with
+    | First r ->
+      let! rest = inheritanceRelationships()
+      return r :: rest
+    | _ -> return []
   }
 
 and keywords =
@@ -232,6 +260,22 @@ and clause depth =
       return Application(Bracket.Regular, Keyword Equals :: i :: o :: [])
     | _ ->
       return Application(Bracket.Regular, Keyword NotEquals :: i :: o :: [])
+  }
+
+and customClass() =
+  let rec customClass = 
+    function 
+    | [] -> fail()
+    | (k : string) :: ks ->
+      p{
+        let! r = word k + customClass ks
+        match r with 
+        | First w -> return w
+        | Second w' -> return w'
+      }
+  p{
+    let! customKeywordsByPrefix = getCustomKeywordsByPrefix()
+    return! customClass [ for k in customKeywordsByPrefix -> k.Class ]
   }
 
 and customKeyword() =
