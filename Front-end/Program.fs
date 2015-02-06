@@ -112,12 +112,12 @@ let rec generate_instructions (ctxt:ConcreteExpressionContext) =
       let newElement1, creationConstraints1 = create_element ctxt expr1
       let newElement2, creationConstraints2 = create_element ctxt expr2
       let creationConstraints = creationConstraints1 @ creationConstraints2
-      let comparison = match comparison with | Equals -> "==" | NotEquals -> "!=" | _ -> failwith "Unsupported"
+      let comparison = match comparison with | Equals -> "" | NotEquals -> "!" | _ -> failwith "Unsupported"
       if creationConstraints.IsEmpty |> not then
         let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
-        sprintf "\nif(%s) { \nif(%s %s %s) { %s } }" creationConstraints newElement1 comparison newElement2 (generate_instructions ctxt xs)
+        sprintf "\nif(%s) { \nif(%s%s.Equals(%s)) { %s } }" creationConstraints comparison newElement1 newElement2 (generate_instructions ctxt xs)
       else 
-        sprintf "\nif(%s %s %s) { %s }" newElement1 comparison newElement2 (generate_instructions ctxt xs)
+        sprintf "\nif(%s%s.Equals(%s)) { %s }" comparison newElement1 newElement2 (generate_instructions ctxt xs)
     | Iterate(var_name, tmp_var_name, expr, path) ->
       let newElement, creationConstraints = create_element ctxt expr
       if creationConstraints.IsEmpty |> not then
@@ -261,7 +261,13 @@ type GeneratedClass =
             sprintf "public override string ToString() {\n var res = \"(\"; \n%s\n res += \"%s\"; %s\n res += \")\";\n return res;\n}\n" leftParameters (escape c.Name) rightParameters
           else
             sprintf "public override string ToString() {\nreturn \"%s\";\n}\n" (escape c.Name)
-        sprintf "public class %s : %s {\n%s\n%s\n%s\n%s\n%s}\n\n" !c.Name !c.Interface parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt))) ++ 2) missing_methods to_string
+        let equals =
+          if c.Parameters.Count > 0 then
+            let parameters = c.Parameters |> Seq.map (fun x -> sprintf "this.%s.Equals(tmp.%s)" x.Name x.Name) |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
+            sprintf "public override bool Equals(object other) {\n var tmp = other as %s;\n if(tmp != null) return %s; \n else return false; }\n" !c.Name parameters
+          else
+            sprintf "public override bool Equals(object other) {\n return other is %s; \n}\n" !c.Name
+        sprintf "public class %s : %s {\n%s\n%s\n%s\n%s\n%s\n%s}\n\n" !c.Name !c.Interface parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt))) ++ 2) missing_methods to_string equals
 
 let add_rule inputClass (rule:BasicExpression<_,_,Literal>) (rule_path:Path) (hasScope:bool) =
   let method_path = rule_path.Tail
@@ -372,8 +378,8 @@ let main argv =
   let lambda_calculus = "LambdaCalculus", System.IO.File.ReadAllText @"Content\lambda calculus.mc", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")" + "\n"
   let tasks = 
     [
-//      peano
       lambda_calculus
+      peano
     ]
 
   for title, rules, input in tasks do

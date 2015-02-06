@@ -1,7 +1,5 @@
 - special bracket application and concrete semantics
 - theorem prover
-
-- structural equality
 - imported instructions
 
 

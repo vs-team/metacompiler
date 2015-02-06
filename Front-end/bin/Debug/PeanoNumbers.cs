@@ -51,6 +51,11 @@ res += P1.ToString();
  res += ")";
  return res;
 }
+
+public override bool Equals(object other) {
+ var tmp = other as _opMultiplication;
+ if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
+ else return false; }
 }
 
 public class _opAddition : Expr {
@@ -93,6 +98,11 @@ res += P1.ToString();
  res += ")";
  return res;
 }
+
+public override bool Equals(object other) {
+ var tmp = other as _opAddition;
+ if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
+ else return false; }
 }
 
 public class s : Expr {
@@ -119,6 +129,11 @@ public override string ToString() {
  res += ")";
  return res;
 }
+
+public override bool Equals(object other) {
+ var tmp = other as s;
+ if(tmp != null) return this.P1.Equals(tmp.P1); 
+ else return false; }
 }
 
 public class z : Expr {
@@ -135,6 +150,10 @@ yield return result;
 
 public override string ToString() {
 return "z";
+}
+
+public override bool Equals(object other) {
+ return other is z; 
 }
 }
 
