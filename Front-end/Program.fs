@@ -55,9 +55,9 @@ type Instruction =
     Var of name : string * expr : string
   | VarAs of name : string * expr : string * as_type : string
   | CheckNull of var_name : string
-  | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, unit> * path : Path
-  | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, unit> * expr2:BasicExpression<Keyword, Var, unit>
-  | Yield of expr:BasicExpression<Keyword, Var, unit>
+  | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal> * path : Path
+  | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal> * expr2:BasicExpression<Keyword, Var, Literal>
+  | Yield of expr:BasicExpression<Keyword, Var, Literal>
 
 let create_element (ctxt:ConcreteExpressionContext) = 
   let rec create_element (expectedType:KeywordArgument) = 
@@ -78,8 +78,10 @@ let create_element (ctxt:ConcreteExpressionContext) =
       failwithf "Application not starting with %A cannot be created" e
     | Application(b,[]) ->
       failwith "Application with empty argument list cannot be created"
-    | Imported() ->
-      failwith "Imported match not implemented"
+    | Imported l ->
+      match l with
+      | StringLiteral l -> sprintf "\"%s\"" l, []
+      | _ -> failwith "Non-string literal not supported for element creation"
     | Keyword(k) -> 
       failwithf "Non-custom keyword %A cannot be matched" k
   function
@@ -95,8 +97,10 @@ let create_element (ctxt:ConcreteExpressionContext) =
     failwithf "Application not starting with %A cannot be created" e
   | Application(b,[]) ->
     failwith "Application with empty argument list cannot be created"
-  | Imported() ->
-    failwith "Imported match not implemented"
+  | Imported l ->
+    match l with
+    | StringLiteral l -> sprintf "\"%s\"" l, []
+    | _ -> failwith "Non-string literal not supported for element creation"
   | Keyword(k) -> 
     failwithf "Non-custom keyword %A cannot be matched" k
 
@@ -136,7 +140,7 @@ let rec generate_instructions (ctxt:ConcreteExpressionContext) =
       else
         sprintf "\nvar result = %s;\nyield return result; %s" newElement (generate_instructions ctxt xs)
 
-let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, unit>) (self:string) (prefix:List<Instruction>) =
+let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal>) (self:string) (prefix:List<Instruction>) =
   match e with
   | Keyword(Custom k) -> 
     if self <> "this" then
@@ -180,15 +184,15 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, unit>) (self:str
     failwithf "Application not starting with %A cannot be matched" e
   | Application(b,[]) ->
     failwith "Application with empty argument list cannot be matched"
-  | Imported() ->
+  | Imported(l) ->
     failwith "Imported match not implemented"
   | Keyword(_) -> 
     failwithf "Non-custom keyword %A cannot be matched" e
 
 type Rule = {
-  Input      : BasicExpression<Keyword, Var, unit>
-  Output     : BasicExpression<Keyword, Var, unit>
-  Clauses    : List<Keyword * BasicExpression<Keyword, Var, unit> * BasicExpression<Keyword, Var, unit>>
+  Input      : BasicExpression<Keyword, Var, Literal>
+  Output     : BasicExpression<Keyword, Var, Literal>
+  Clauses    : List<Keyword * BasicExpression<Keyword, Var, Literal> * BasicExpression<Keyword, Var, Literal>>
   Path       : Path
   HasScope   : bool
 } with
@@ -222,8 +226,9 @@ type Method = {
 
 type Parameter = 
   {
-    Name  : string
-    Type  : KeywordArgument
+    Name    : string
+    IsLeft  : bool
+    Type    : KeywordArgument
   }
 
 type GeneratedClass = 
@@ -258,13 +263,14 @@ type GeneratedClass =
           ] |> Seq.fold (+) ""
         let to_string =
           if c.Parameters.Count > 0 then
-            let print_parameters = c.Parameters |> Seq.map (fun x -> sprintf "res += %s.ToString();\n" x.Name) |> Seq.reduce (+)
-            sprintf "public override string ToString() { var res = \"%s\" + \"(\";\n%s;\nres += \")\";\nreturn res;\n}\n" (escape c.Name) print_parameters
+            let leftParameters = c.Parameters |> Seq.filter (fun x -> x.IsLeft) |> Seq.map (fun x -> sprintf "res += %s.ToString();\n" x.Name) |> Seq.fold (+) ""
+            let rightParameters = c.Parameters |> Seq.filter (fun x -> x.IsLeft |> not) |> Seq.map (fun x -> sprintf "res += %s.ToString();\n" x.Name) |> Seq.fold (+) ""
+            sprintf "public override string ToString() {\n var res = \"(\"; \n%s\n res += \"%s\"; %s\n res += \")\";\n return res;\n}\n" leftParameters (escape c.Name) rightParameters
           else
-            sprintf "public override string ToString() { var res = \"%s\";\nreturn res;\n}\n" (escape c.Name)
+            sprintf "public override string ToString() {\nreturn \"%s\";\n}\n" (escape c.Name)
         sprintf "public class %s : %s {\n%s\n%s\n%s\n%s\n%s}\n\n" !c.Name !c.Interface parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt))) ++ 2) missing_methods to_string
 
-let add_rule inputClass (rule:BasicExpression<_,_,_>) (rule_path:Path) (hasScope:bool) =
+let add_rule inputClass (rule:BasicExpression<_,_,Literal>) (rule_path:Path) (hasScope:bool) =
   let method_path = rule_path.Tail
   if inputClass.Methods |> Map.containsKey method_path |> not then
     inputClass.Methods <- inputClass.Methods |> Map.add method_path { Rules = ResizeArray(); Path = method_path }
@@ -286,7 +292,7 @@ let add_rule inputClass (rule:BasicExpression<_,_,_>) (rule_path:Path) (hasScope
   | _ ->
     failwithf "Cannot extract rule shape from %A" rule
 
-let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rules:List<BasicExpression<_,_,_>>) = 
+let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rules:List<BasicExpression<_,_,Literal>>) = 
   for rule,i in rules |> Seq.mapi (fun i r -> r,i) do
     let path' = i :: path
     let self,hasScope = 
@@ -308,16 +314,16 @@ let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rul
     ()
 
 
-let generateCode program_name (rules:BasicExpression<Keyword, Var, _>) (program:BasicExpression<Keyword, Var, _>) (ctxt:ConcreteExpressionContext) = 
+let generateCode program_name (rules:BasicExpression<Keyword, Var, Literal>) (program:BasicExpression<Keyword, Var, Literal>) (ctxt:ConcreteExpressionContext) = 
   match rules with
   | Application(Regular, Keyword Sequence :: rules) ->
     let mutable classes = Map.empty
     for keyword in ctxt.CustomKeywords do
       let newClass = { Name = keyword.Name; Interface = keyword.Class; Parameters = ResizeArray(); Methods = Map.empty }
       for t,i in keyword.LeftArguments |> Seq.mapi (fun i p -> p,i+1) do
-        newClass.Parameters.Add({ Name = sprintf "P%d" i; Type = t })
+        newClass.Parameters.Add({ Name = sprintf "P%d" i; IsLeft = true; Type = t })
       for t,i in keyword.RightArguments |> Seq.mapi (fun i p -> p,i+1) do
-        newClass.Parameters.Add({ Name = sprintf "P%d" (i + keyword.LeftAriety); Type = t })
+        newClass.Parameters.Add({ Name = sprintf "P%d" (i + keyword.LeftAriety); IsLeft = false; Type = t })
       classes <- classes.Add(keyword.Name,newClass)
 
     do process_rules classes [] rules
@@ -357,22 +363,24 @@ let main argv =
 
   let casanova = System.IO.File.ReadAllText @"Content\casanova semantics.mc"
   let peano = "PeanoNumbers", System.IO.File.ReadAllText @"Content\peano numbers.mc", "(s(s(z))) * (s(s(z)))\n"
-  let lambda_calculus = "LambdaCalculus", System.IO.File.ReadAllText @"Content\lambda calculus.mc", "((\y.y) | (\y.y)) | (x | z)\n"
+  let lambda_calculus = "LambdaCalculus", System.IO.File.ReadAllText @"Content\lambda calculus.mc", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")" + "\n"
 
-  let title, rules, input = lambda_calculus
+  let title, rules, input = peano
 
 //  do debug_expr <- true
 //  do debug_rules <- true
 
   match (program()).Parse (rules |> Seq.toList) ConcreteExpressionContext.Empty with
-  | [] -> printfn "Parse error."
+  | [] -> printfn "Parse error in rules."
   | (x,_,ctxt)::xs -> 
     do printfn "Rules parsed correctly."
     match expr().Parse (input |> Seq.toList) ctxt with
-    | [] -> printfn "Parse error."
+    | [] -> printfn "Parse error in expression %s." input
     | (y,_,ctxt')::ys ->
       printfn "%s => " (y.ToString())
-//      for z in PeanoNumbers.EntryPoint().Run() do
-//        printfn "%s" (z.ToString()) 
+      for z in PeanoNumbers.EntryPoint().Run() do
+        printfn "%s" (z.ToString()) 
+      for z in LambdaCalculus.EntryPoint().Run() do
+        printfn "%s" (z.ToString()) 
       generateCode title x y ctxt
   0

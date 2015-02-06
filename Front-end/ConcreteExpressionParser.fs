@@ -65,6 +65,12 @@ type Keyword = Sequence | Equals | NotEquals | DoubleArrow | FractionLine | Nest
       | Nesting -> ""
       | Custom name -> name
 
+type Literal = StringLiteral of string
+  with 
+    override this.ToString() =
+      match this with
+      | StringLiteral l -> sprintf "\"%s\"" l  
+
 let rec program() = 
   p{
     let! ks = keywords
@@ -240,6 +246,14 @@ and customKeyword() =
     return! customKeyword customKeywordsByPrefix
   }
 
+and literal() =
+  p{
+    let! oq = word @"""" + p{ return () }
+    let! id = longIdentifier()
+    let! cq = word @"""" + p{ return () }
+    return id
+  }
+
 and expr() = 
   let shrink bracket_type (es:List<BasicExpression<_,_,_>>) customKeywordsMap : BasicExpression<_,_,_> =
     let ariety (b:BasicExpression<_,_,_>) = 
@@ -261,8 +275,8 @@ and expr() =
           -1,-index
       | _ -> -1,-index
 
-    let merge n l r =
-      Application(Regular, n :: l @ r)
+    let merge (n,i) l r =
+      Application(Regular, n :: (l |> List.map fst) @ (r |> List.map fst)), i
     let prioritize_es = BottomUpPriorityParser.prioritize es ariety priority merge
     if debug_expr then
       do printfn "%A" es
@@ -290,7 +304,7 @@ and expr() =
       | Second _ ->
         let open_bracket = (character '(' + character '[') + (character '{' + word "<<")
         let closed_bracket = (character ')' + character ']') + (character '}' + word ">>")
-        let! e = (open_bracket + !!closed_bracket) + (customKeyword() + identifier())
+        let! e = (open_bracket + !!closed_bracket) + (customKeyword() + (identifier() + literal()))
         match e with
         | First(First(actual_open_bracket)) -> 
           let extracted_open_bracket = actual_open_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun _ -> '≪'))
@@ -311,7 +325,8 @@ and expr() =
           let be = 
             match e with
             | First(k) -> Keyword(Custom(new System.String(k |> Seq.toArray)))
-            | Second(id) -> Extension { Var.Name = new System.String(id |> Seq.toArray) }
+            | Second(First(id)) -> Extension { Var.Name = new System.String(id |> Seq.toArray) }
+            | Second(Second(l)) -> Imported(StringLiteral(new System.String(l |> Seq.toArray)))
           let! bs = blank_space()
           let! bes = maybe_inner_expr
           return be::bes

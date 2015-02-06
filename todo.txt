@@ -1,9 +1,15 @@
 - structural equality
-- lambda calculus
 - special bracket application and concrete semantics
 - theorem prover
-- recursively use identifier in longIdentifier
+
+- better ToString with keyword ariety
+
 - class inheritance
+- literal parsing
+  - int
+  - bool
+  - float
+- dynamic compilation and linking
 
 
   M[s] => res

@@ -126,11 +126,15 @@ let identifier() =
     return new System.String(c::cs |> Seq.toArray)
   }
 
-let longIdentifier() =
+let rec longIdentifier() =
   p{
-    let! c = character' (fun c -> isAlpha c || c = '_')
-    let! cs = takeWhile (character' (fun c -> isAlpha c || isDigit c || c = '-' || c = '_' || c = '\'' || c = '.'))
-    return new System.String(c::cs |> Seq.toArray)
+    let! id = identifier()
+    let! dot = character '.' + p { return () }
+    match dot with
+    | First _ -> 
+      let! rest = longIdentifier()
+      return id + "." + rest
+    | Second _ -> return id
   }
 
 let stringLiteral() =
@@ -152,7 +156,7 @@ let eof() =
      match buf with
      | [] -> [(),[],ctxt]
      | _ -> []) |> Parser.Make
- 
+
 let newline() = word "\r\n" + word "\n\r" + character '\n'
 
 let blank_space() = takeWhile (character ' ')
