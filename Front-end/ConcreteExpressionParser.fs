@@ -9,7 +9,13 @@ open BasicExpression
 let mutable debug_expr = false
 let mutable debug_rules = false
 
-type CustomKeyword = { Name : string; LeftAriety : int; RightAriety : int; Priority : int }
+type KeywordArgument = Native of string | Defined of string
+  with member this.Argument = match this with | Native a -> a | Defined a -> a
+
+type CustomKeyword = { Name : string; LeftArguments : List<KeywordArgument>; RightArguments : List<KeywordArgument>; Priority : int; Class : string }
+  with member this.LeftAriety = this.LeftArguments.Length
+       member this.RightAriety = this.RightArguments.Length
+       member this.Arguments = this.LeftArguments @ this.RightArguments
 
 type ConcreteExpressionContext = 
   {
@@ -47,11 +53,13 @@ type Var = { Name : string }
     override this.ToString() =
       this.Name
 
-type Keyword = Sequence | DoubleArrow | FractionLine | Nesting | Custom of name : string
+type Keyword = Sequence | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | Custom of name : string
   with 
     override this.ToString() =
       match this with
       | Sequence -> ""
+      | Equals -> "=="
+      | NotEquals -> "!="
       | DoubleArrow -> "=>"
       | FractionLine -> "\n-------------------\n"
       | Nesting -> ""
@@ -97,6 +105,23 @@ and keyword : Parser<CustomKeyword,ConcreteExpressionContext> =
       let! bs = blank_space()
       return ()
     }
+  let rec identifiers() =
+    p{
+      let! ob = word "<<" + p{ return () }
+      let! id = longIdentifier() + p{ return () }
+      let! cb = word ">>" + p{ return () }
+      match id with
+      | First id ->
+        let! bs = blank_space()
+        let! ids = identifiers()
+        match ob,cb with
+        | First _, First _ -> 
+          return Native id :: ids
+        | _ -> 
+          return Defined id :: ids        
+      | Second _ -> 
+        return []
+    }
   p{
     do! label "Keyword"
     do! equals
@@ -104,16 +129,25 @@ and keyword : Parser<CustomKeyword,ConcreteExpressionContext> =
     let! bs = blank_space()
     let! name = takeWhile' ((<>) '\"')
     do! label "\""
-    do! label "LeftAriety"
+    do! label "LeftArguments"
     do! equals
-    let! leftAriety = intLiteral()
-    do! label "RightAriety"
+    do! label "["
+    let! leftArguments = identifiers()
+    do! label "]"
+    do! label "RightArguments"
     do! equals
-    let! rightAriety = intLiteral()
+    do! label "["
+    let! rightArguments = identifiers()
+    do! label "]"
     do! label "Priority"
     do! equals
     let! priority = intLiteral()
-    return { Name = new System.String(name |> Seq.toArray); LeftAriety = leftAriety; RightAriety = rightAriety; Priority = priority }
+    do! label "Class"
+    do! equals
+    do! label "\""
+    let! className = takeWhile' ((<>) '\"')
+    do! label "\""
+    return { Name = new System.String(name |> Seq.toArray); LeftArguments = leftArguments; RightArguments = rightArguments; Priority = priority; Class = new System.String(className |> Seq.toArray) }
   }
 
 and rules depth = 
@@ -175,13 +209,19 @@ and clause depth =
     do! require_indentation depth
     let! i = expr()
     let! bs2 = blank_space()
-    let! ar = word "=>"
+    let! ar = word "=>" + (word "==" + word "!=")
     let! bs3 = blank_space()
     let! o = expr()
     if debug_rules then
       do printfn "%A => %A" i o
     let! bs4 = blank_space()
-    return Application(Bracket.Regular, Keyword DoubleArrow :: i :: o :: [])
+    match ar with
+    | First _ ->
+      return Application(Bracket.Regular, Keyword DoubleArrow :: i :: o :: [])
+    | Second(First _) ->
+      return Application(Bracket.Regular, Keyword Equals :: i :: o :: [])
+    | _ ->
+      return Application(Bracket.Regular, Keyword NotEquals :: i :: o :: [])
   }
 
 and customKeyword() =
@@ -206,7 +246,7 @@ and expr() =
       match b with
       | Keyword(Custom(k)) ->
         if customKeywordsMap |> Map.containsKey k then
-          let kw = customKeywordsMap.[k]
+          let (kw:CustomKeyword) = customKeywordsMap.[k]
           kw.LeftAriety, kw.RightAriety
         else
           0,0
@@ -278,7 +318,7 @@ and expr() =
     }
   and maybe_inner_expr = 
     p{
-      let! es = inner_expr + (!!newline() + !!(word "=>"))
+      let! es = inner_expr + (!!newline() + !!(word "=>" + word "==" + word "!="))
       match es with
       | First bes -> return bes
       | _ -> return []

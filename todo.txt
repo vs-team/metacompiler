@@ -1,5 +1,9 @@
+- structural equality
+- lambda calculus
 - special bracket application and concrete semantics
-- test run
+- theorem prover
+- recursively use identifier in longIdentifier
+- class inheritance
 
 
   M[s] => res

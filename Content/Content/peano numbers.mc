@@ -1,7 +1,7 @@
-﻿Keyword = "+" LeftAriety = 1 RightAriety = 1 Priority = 0
-Keyword = "*" LeftAriety = 1 RightAriety = 1 Priority = 1
-Keyword = "z" LeftAriety = 0 RightAriety = 0 Priority = 2
-Keyword = "s" LeftAriety = 0 RightAriety = 1 Priority = 3
+﻿Keyword = "+" LeftArguments = [Expr] RightArguments = [Expr] Priority = 0 Class = "Expr"
+Keyword = "*" LeftArguments = [Expr] RightArguments = [Expr] Priority = 1 Class = "Expr"
+Keyword = "z" LeftArguments = [] RightArguments = [] Priority = 2 Class = "Expr"
+Keyword = "s" LeftArguments = [] RightArguments = [Expr] Priority = 3 Class = "Expr"
 
 -------
 z => z

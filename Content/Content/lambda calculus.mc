@@ -1,43 +1,44 @@
-﻿Keyword = "id" LeftAriety = 0 RightAriety = 1 Priority = 0
-Keyword = ">>" LeftAriety = 1 RightAriety = 1 Priority = 1
-Keyword = "\" LeftAriety = 0 RightAriety = 3 Priority = 2
-Keyword = "." LeftAriety = 0 RightAriety = 0 Priority = 3
-Keyword = "with" LeftAriety = 1 RightAriety = 1 Priority = 4
-Keyword = ":=" LeftAriety = 1 RightAriety = 1 Priority = 5
+﻿Keyword = "." LeftArguments = [] RightArguments = [] Priority = 0 Class = "Dot"
+Keyword = "|" LeftArguments = [Term] RightArguments = [Term] Priority = 1 Class = "Term"
+Keyword = "\" LeftArguments = [] RightArguments = [Term Dot Term] Priority = 2 Class = "Term"
+Keyword = "$" LeftArguments = [] RightArguments = [<<System.String>>] Priority = 1 Class = "Term"
+Keyword = "with" LeftArguments = [Term] RightArguments = [Where] Priority = 4 Class = "With"
+Keyword = ":=" LeftArguments = [Term] RightArguments = [Term] Priority = 5 Class = "Where"
 
 
 
 -------------
-id x => id x
+$x => $x
 
 -----------------------
-\(id x).t => \(id x).t
+\($x).t => \($x).t
 
 ---------------------------
-(id x) >> u => (id x) >> u
+($x) | u => ($x) | u
 
-t with ((id x) := u) => t'
+t with (($x) := u) => t'
 ---------------------------
-(\(id x).t) >> u => t'
+(\($x).t) | u => t'
 
-  << x.Equals(y) >> => << true >>
+  x == y
   -------------------------------
-  (id y) with ((id x) := u) => u
+  ($y) with (($x) := u) => u
 
-  << x.Equals(y) >> => << false >>
+  x != y
   ------------------------------------
-  (id y) with ((id x) := u) => (id y)
+  ($y) with (($x) := u) => ($y)
 
-  << x.Equals(y) >> => << true >>
+  x == y
   --------------------------------------------
-  (\(id x).t) with ((id y) := u) => \(id x).t
+  (\($x).t) with (($y) := u) => \($x).t
 
-  << x.Equals(y) >> => << false >>
-  t with ((id y) := u) => t'
+  x != y
+  t with (($y) := u) => t'
   -----------------------------------------------
-  (\(id x).t) with ((id y) := u) => (\(id x).t')
+  (\($x).t) with (($y) := u) => (\($x).t')
 
-  t with ((id x) := v) => t'
-  u with ((id x) := v) => u'
+  t with (($x) := v) => t'
+  u with (($x) := v) => u'
   ----------------------------------------
-  (t >> u) with ((id x) := v) => t' >> u'
+  (t | u) with (($x) := v) => t' | u'
+

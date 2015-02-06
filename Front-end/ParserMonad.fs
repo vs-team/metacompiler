@@ -126,6 +126,13 @@ let identifier() =
     return new System.String(c::cs |> Seq.toArray)
   }
 
+let longIdentifier() =
+  p{
+    let! c = character' (fun c -> isAlpha c || c = '_')
+    let! cs = takeWhile (character' (fun c -> isAlpha c || isDigit c || c = '-' || c = '_' || c = '\'' || c = '.'))
+    return new System.String(c::cs |> Seq.toArray)
+  }
+
 let stringLiteral() =
   p{
     let! q1 = character '\"'
