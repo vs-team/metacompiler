@@ -3,6 +3,8 @@
 - imported instructions
 - errors should point to original file
 - parser error reporting based on last parsed line
+- parser should be more resilient to errors
+- GUI should save delayed compiler to not recompile rules unnecessarily
 
 
   M[s] => res

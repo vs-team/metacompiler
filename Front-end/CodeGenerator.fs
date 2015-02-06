@@ -5,8 +5,6 @@ open Utilities
 open ParserMonad
 open BasicExpression
 open ConcreteExpressionParser
-open Microsoft.CSharp
-open System.CodeDom.Compiler
 
 let (!) (s:string) =
   s
@@ -318,7 +316,7 @@ let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rul
 
 type Interface = { Name : string; BaseInterfaces : ResizeArray<string> }
 
-let generateCode program_name (rules:BasicExpression<Keyword, Var, Literal>) (program:BasicExpression<Keyword, Var, Literal>) (ctxt:ConcreteExpressionContext) = 
+let generateCode (program_name:string) (rules:BasicExpression<Keyword, Var, Literal>) (program:BasicExpression<Keyword, Var, Literal>) (ctxt:ConcreteExpressionContext) = 
   match rules with
   | Application(Regular, Keyword Sequence :: rules) ->
     let mutable classes = Map.empty
@@ -356,7 +354,7 @@ let generateCode program_name (rules:BasicExpression<Keyword, Var, Literal>) (pr
       } |> Seq.reduce (+)
     let run_methods =
       all_method_paths |> Seq.map (fun p -> sprintf "IEnumerable<IRunnable> Run%s();\n" (p.ToString())) |> Seq.reduce (+)
-    let prelude = sprintf "using System.Collections.Generic;\nusing System.Linq;\nnamespace %s {\n public interface IRunnable { %s }" program_name run_methods
+    let prelude = sprintf "using System.Collections.Generic;\nusing System.Linq;\nnamespace %s {\n public interface IRunnable { %s }" (program_name.Replace(" ", "_")) run_methods
     let main = sprintf "public class EntryPoint {\n static public IEnumerable<IRunnable> Run(bool printInput)\n{\nvar p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" (create_element ctxt program |> fst)
     [
       yield prelude

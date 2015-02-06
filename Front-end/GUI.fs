@@ -61,7 +61,7 @@ type RuleEditorWindow(path, file) =
 
 
 
-type WPFWindow(samples) =
+type WPFWindow(samples, runDeduction) =
   inherit Window()
 
 //  do base.Background <- new SolidColorBrush( Color.FromArgb(255uy,0uy,0uy,0uy) )
@@ -78,7 +78,7 @@ type WPFWindow(samples) =
 
   let deductionList = new ComboBox()
   do deductionList.Width <- 225.0
-  do for d in System.IO.Directory.GetDirectories(@".\") do deductionList.Items.Add(d) |> ignore
+  do for d in System.IO.Directory.GetDirectories(@".\Content") do deductionList.Items.Add(d) |> ignore
   let deductionListCachePath = "selectionCache.txt"
   do if System.IO.File.Exists deductionListCachePath then deductionList.SelectedIndex <- System.IO.File.ReadAllText deductionListCachePath |> System.Int32.Parse
   do deductionList.Margin <- Thickness(10.0)
@@ -116,7 +116,7 @@ type WPFWindow(samples) =
   do programToRun.FontFamily <- FontFamily("consolas")
   let cachePath() = 
     let currentRuleSet = (deductionList.SelectedItem :?> string).Trim([|'\\'; '.'|])
-    "programTextCache" + currentRuleSet + ".txt"
+    currentRuleSet + ".cache.txt"
   let refreshProgramCache() =
     if System.IO.File.Exists (cachePath()) then 
       programToRun.Text <- System.IO.File.ReadAllText (cachePath())
@@ -143,23 +143,23 @@ type WPFWindow(samples) =
   do deductionOutput.Padding <- Thickness(10.0)
   do deductionOutput.Margin <- Thickness(10.0)
 
-  let runDeduction = new Button()
-  do runDeduction.Content <- "Run deduction"
+  let runDeductionBtn = new Button()
+  do runDeductionBtn.Content <- "Run deduction"
   let onRunDeduction _ = 
-    //deductionOutput.Text <- RunProgram (deductionList.SelectedItem :?> string) programToRun.Text RuleValidator.Validation.None
+    deductionOutput.Text <- runDeduction (deductionList.SelectedItem :?> string) programToRun.Text
     ()
-  do runDeduction.Click.Add onRunDeduction
-  do runDeduction.Width <- 90.0
-  do runDeduction.Margin <- Thickness(10.0)
+  do runDeductionBtn.Click.Add onRunDeduction
+  do runDeductionBtn.Width <- 90.0
+  do runDeductionBtn.Margin <- Thickness(10.0)
 
   do stackPanel.Children.Add upperLineStackPanel |> ignore
   do stackPanel.Children.Add programToRun |> ignore
-  do stackPanel.Children.Add runDeduction |> ignore
+  do stackPanel.Children.Add runDeductionBtn |> ignore
   do stackPanel.Children.Add deductionOutput |> ignore
 
   do base.Content <- stackPanel
 
 
-let ShowGUI(samples) =
-  let w = new WPFWindow(samples)
+let ShowGUI samples runDeduction =
+  let w = new WPFWindow(samples, runDeduction)
   do w.ShowDialog() |> ignore
