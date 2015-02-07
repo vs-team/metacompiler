@@ -8,7 +8,8 @@ open Microsoft.CSharp
 open System.CodeDom.Compiler
 
 let runDeduction path =
-  let rules = System.IO.File.ReadAllText(System.IO.Path.Combine(path, "transform.mc"))
+  let originalFilePath = System.IO.Path.Combine(path, "transform.mc")
+  let rules = System.IO.File.ReadAllText(originalFilePath)
   let title = System.IO.Path.GetFileName path
   let timer = System.Diagnostics.Stopwatch()
   let output = ref ""
@@ -19,7 +20,7 @@ let runDeduction path =
       let input = input.Trim([|'\r'; '\n'|]) + "\n"
       match expr().Parse (input |> Seq.toList) ctxt Position.Zero with
       | (y,_,ctxt',pos')::ys,[] ->
-        let src = generateCode title x y ctxt
+        let src = generateCode originalFilePath title x y ctxt
         let args = new System.Collections.Generic.Dictionary<string, string>()
         do args.Add("CompilerVersion", "v4.5")
         let csc = new CSharpCodeProvider()
@@ -51,14 +52,13 @@ let runDeduction path =
 
 [<EntryPoint; STAThread>]
 let main argv = 
-  let ($) p a = p.Parse a
-
-  //let casanova = System.IO.File.ReadAllText @"Content\casanova semantics.mc"
   let samples = 
     [
       "Lambda calculus", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")" + "\n"
       "Peano numbers", "(s(s(z))) * (s(s(z)))\n"
     ]
+
+//  do runDeduction (System.IO.Path.Combine([| "Content"; "Lambda calculus"|])) @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")" + "\n" |> printfn "%s"
 
   do GUI.ShowGUI samples runDeduction
   0

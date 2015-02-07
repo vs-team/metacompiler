@@ -92,7 +92,8 @@ let rec program() =
     let newContext = { newContext with InheritanceRelationships = inheritance }
     do! setContext newContext
     let! rs = rules 0
-    return Application(Regular, Keyword Sequence :: rs)
+    let! p = getPosition()
+    return Application(Regular, Keyword Sequence :: rs, p)
   }
 
 and inheritanceRelationships() =
@@ -190,7 +191,7 @@ and keyword : Parser<CustomKeyword,ConcreteExpressionContext> =
 
 and rules depth = 
   p{
-    let! r = rule depth + (deindentation depth + p{ return () })
+    let! r = rule depth + (deindentation depth + end_rules)
     match r with
     | First(r) ->
       let! rs = rules depth
@@ -201,6 +202,7 @@ and rules depth =
 
 and rule depth =
   p{
+    let! pos = getPosition()
     let! cs = clauses depth
     let! nl1 = newline()
     let! m = clause depth
@@ -209,9 +211,9 @@ and rule depth =
     let! depth1 = !!indentation
     if depth1 > depth then
       let! nested_rules = rules depth1
-      return Application(Bracket.Regular, Keyword Nesting :: Application(Bracket.Regular, Keyword FractionLine :: m :: cs) :: nested_rules)
+      return Application(Bracket.Regular, Keyword Nesting :: Application(Bracket.Regular, Keyword FractionLine :: m :: cs, pos) :: nested_rules, pos)
     else
-      return Application(Bracket.Regular, Keyword FractionLine :: m :: cs)
+      return Application(Bracket.Regular, Keyword FractionLine :: m :: cs, pos)
   }
 
 and deindentation depth =
@@ -219,6 +221,14 @@ and deindentation depth =
     let! depth1 = !!indentation
     if depth1 < depth then
       return ()
+    else
+      return! fail()
+  }
+
+and end_rules = 
+  p{
+    let! el = empty_lines() + eof()
+    return! eof()
   }
 
 and clauses depth = 
@@ -242,6 +252,7 @@ and clauses depth =
 
 and clause depth =
   p{
+    let! pos = getPosition()
     do! require_indentation depth
     let! i = expr()
     let! bs2 = blank_space()
@@ -253,11 +264,11 @@ and clause depth =
     let! bs4 = blank_space()
     match ar with
     | First _ ->
-      return Application(Bracket.Regular, Keyword DoubleArrow :: i :: o :: [])
+      return Application(Bracket.Regular, Keyword DoubleArrow :: i :: o :: [], pos)
     | Second(First _) ->
-      return Application(Bracket.Regular, Keyword Equals :: i :: o :: [])
+      return Application(Bracket.Regular, Keyword Equals :: i :: o :: [], pos)
     | _ ->
-      return Application(Bracket.Regular, Keyword NotEquals :: i :: o :: [])
+      return Application(Bracket.Regular, Keyword NotEquals :: i :: o :: [], pos)
   }
 
 and customClass() =
@@ -317,8 +328,8 @@ and literal() =
   }
 
 and expr() = 
-  let shrink bracket_type (es:List<BasicExpression<_,_,_>>) customKeywordsMap : BasicExpression<_,_,_> =
-    let ariety (b:BasicExpression<_,_,_>) = 
+  let shrink pos bracket_type (es:List<BasicExpression<_,_,_,_>>) customKeywordsMap : BasicExpression<_,_,_,_> =
+    let ariety (b:BasicExpression<_,_,_,_>) = 
       match b with
       | Keyword(Custom(k)) ->
         if customKeywordsMap |> Map.containsKey k then
@@ -327,7 +338,7 @@ and expr() =
         else
           0,0
       | _ -> 0,0
-    let priority (b:BasicExpression<_,_,_>,index:int) = 
+    let priority (b:BasicExpression<_,_,_,_>,index:int) = 
       match b with
       | Keyword(Custom(k)) ->
         if customKeywordsMap |> Map.containsKey k then
@@ -338,7 +349,7 @@ and expr() =
       | _ -> -1,-index
 
     let merge (n,i) l r =
-      Application(Regular, n :: (l |> List.map fst) @ (r |> List.map fst)), i
+      Application(Regular, n :: (l |> List.map fst) @ (r |> List.map fst), pos), i
     let prioritize_es = BottomUpPriorityParser.prioritize es ariety priority merge
     if debug_expr then
       do printfn "%A" es
@@ -348,18 +359,20 @@ and expr() =
       ()
     match prioritize_es with
     | [x] -> x
-    | l -> Application(bracket_type, l)
+    | l -> Application(bracket_type, l, pos)
   let rec base_expr bracket_type = 
     p{
+      let! pos = getPosition()
       let! e = inner_expr
       match e with
       | e::es ->
         let! customKeywordsMap = getCustomKeywordsMap()
-        return shrink bracket_type (e :: es) customKeywordsMap
+        return shrink pos bracket_type (e :: es) customKeywordsMap
       | _ -> return failwith "Unsupported zero-length expression"
     }
   and inner_expr =
     p{
+      let! pos = getPosition()
       let! end_line = !!(word "--") + p{ return () }
       match end_line with
       | First _ -> return! fail()
@@ -388,7 +401,7 @@ and expr() =
             match e with
             | First(k) -> Keyword(Custom(new System.String(k |> Seq.toArray)))
             | Second(First(id)) -> Extension { Var.Name = new System.String(id |> Seq.toArray) }
-            | Second(Second(l)) -> Imported(l)
+            | Second(Second(l)) -> Imported(l,pos)
           let! bs = blank_space()
           let! bes = maybe_inner_expr
           return be::bes

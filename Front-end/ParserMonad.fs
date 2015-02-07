@@ -31,7 +31,7 @@ type Parser<'a, 'ctxt> = { Parse : List<char> -> 'ctxt -> Position -> List<'a * 
         let all_res,err = p.Parse buf ctxt pos
         [
           for x,res_buf, ctxt', pos' in all_res do
-          yield x, buf, ctxt', pos'
+          yield x, buf, ctxt', pos
         ], []) |> Parser.Make
 and ParserBuilder() =
   member this.Bind(p:Parser<'a,'ctxt>, k:'a->Parser<'b,'ctxt>) : Parser<'b,'ctxt> =
@@ -70,7 +70,13 @@ let fail() =
 let character(c:char) : Parser<char, 'ctxt> = 
  (fun buf ctxt (pos:Position) ->
   match buf with
-  | x::cs when x = c -> [c, cs, ctxt, if c = '\n' then pos.NextLine else pos],[]
+  | x::cs when x = c -> 
+    let pos' = 
+      if x = '\n' then 
+        pos.NextLine 
+      else 
+        pos
+    [c, cs, ctxt, pos'],[]
   | _ -> [],[Error pos]) |> Parser.Make
 
 let word (s:string) =
@@ -186,9 +192,13 @@ let empty_line() =
 
 let rec empty_lines() = 
   p{
-    let! el = empty_line()
-    let! els = empty_lines() + p.Zero()
-    return ()
+    let! el = empty_line() + p{ return () }
+    match el with
+    | First el ->
+      let! els = empty_lines()
+      return ()
+    | Second _ ->
+      return ()
   }
 
 let getContext() =
@@ -198,4 +208,4 @@ let setContext ctxt' =
   (fun buf ctxt pos -> [(),buf,ctxt',pos],[]) |> Parser.Make
 
 let getPosition() =
-  (fun buf ctxt pos -> [ctxt,buf,ctxt,pos],[]) |> Parser.Make
+  (fun buf ctxt pos -> [pos,buf,ctxt,pos],[]) |> Parser.Make

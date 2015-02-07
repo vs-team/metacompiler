@@ -43,6 +43,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Front-end\bin\Debug\Lambda calculus.cs">
+      <Link>Lambda calculus.cs</Link>
+    </Compile>
+    <Compile Include="..\Front-end\bin\Debug\Peano numbers.cs">
+      <Link>Peano numbers.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

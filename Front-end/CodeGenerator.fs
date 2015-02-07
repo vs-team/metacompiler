@@ -55,16 +55,16 @@ type Instruction =
     Var of name : string * expr : string
   | VarAs of name : string * expr : string * as_type : string
   | CheckNull of var_name : string
-  | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal> * path : Path
-  | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal> * expr2:BasicExpression<Keyword, Var, Literal>
-  | Yield of expr:BasicExpression<Keyword, Var, Literal>
+  | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal, Position> * path : Path
+  | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal, Position> * expr2:BasicExpression<Keyword, Var, Literal, Position>
+  | Yield of expr:BasicExpression<Keyword, Var, Literal, Position>
 
 let create_element (ctxt:ConcreteExpressionContext) = 
   let rec create_element (expectedType:KeywordArgument) = 
     function
-    | Keyword(Custom k) | Application(Regular,(Keyword(Custom k)) :: []) -> 
+    | Keyword(Custom k) | Application(Regular,(Keyword(Custom k)) :: [], _) -> 
       sprintf "new %s()" !k, []
-    | Application(b,(Keyword(Custom k)) :: es) ->
+    | Application(b,(Keyword(Custom k)) :: es, pos) ->
       let actualKeyword = ctxt.CustomKeywordsMap.[k]
       let args,cargs = es |> Seq.mapi (fun i e -> create_element actualKeyword.Arguments.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
       sprintf "new %s(%s)" !k args, cargs
@@ -74,41 +74,42 @@ let create_element (ctxt:ConcreteExpressionContext) =
         | Native t -> t
         | Defined d -> !d
       sprintf "%s as %s" !v.Name expectedType, [sprintf "%s is %s" !v.Name expectedType]
-    | Application(b,e::es) ->
+    | Application(b,e::es,pos) ->
       failwithf "Application not starting with %A cannot be created" e
-    | Application(b,[]) ->
+    | Application(b,[],pos) ->
       failwith "Application with empty argument list cannot be created"
-    | Imported l -> l.ToString(), []
+    | Imported(l,pos) -> l.ToString(), []
     | Keyword(k) -> 
       failwithf "Non-custom keyword %A cannot be matched" k
   function
-  | Keyword(Custom k) | Application(Regular,(Keyword(Custom k)) :: []) -> 
+  | Keyword(Custom k) | Application(Regular,(Keyword(Custom k)) :: [],_) -> 
     sprintf "new %s()" !k, []
-  | Application(b,(Keyword(Custom k)) :: es) ->
+  | Application(b,(Keyword(Custom k)) :: es,pos) ->
     let actualKeyword = ctxt.CustomKeywordsMap.[k]
     let args,cargs = es |> Seq.mapi (fun i e -> create_element actualKeyword.Arguments.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
     sprintf "new %s(%s)" !k args, cargs
   | Extension(v:Var) ->
     sprintf "%s" !v.Name, []
-  | Application(b,e::es) ->
+  | Application(b,e::es,pos) ->
     failwithf "Application not starting with %A cannot be created" e
-  | Application(b,[]) ->
+  | Application(b,[],pos) ->
     failwith "Application with empty argument list cannot be created"
-  | Imported l -> l.ToString(), []
+  | Imported(l,pos) -> l.ToString(), []
   | Keyword(k) -> 
     failwithf "Non-custom keyword %A cannot be matched" k
 
-let rec generate_instructions (ctxt:ConcreteExpressionContext) = 
+let rec generate_instructions (debugPosition:Position) (originalFilePath:string) (ctxt:ConcreteExpressionContext) = 
   function 
   | [] -> ""
   | x :: xs ->
+    let newLine = sprintf "\n #line %d \"%s\"\n" debugPosition.Line originalFilePath
     match x with
     | Var(name, expr) -> 
-      sprintf "var %s = %s; %s" !name expr (generate_instructions ctxt xs)
+      sprintf "var %s = %s; %s" !name expr (generate_instructions debugPosition originalFilePath ctxt xs)
     | VarAs(name, expr, as_type) ->
-      sprintf "var %s = %s as %s; %s" !name expr !as_type (generate_instructions ctxt xs)
+      sprintf "var %s = %s as %s; %s" !name expr !as_type (generate_instructions debugPosition originalFilePath  ctxt xs)
     | CheckNull(var_name) ->
-      sprintf "\nif (%s != null) { %s }" !var_name (generate_instructions ctxt xs)
+      sprintf "%sif (%s != null) { %s }" newLine !var_name (generate_instructions debugPosition originalFilePath  ctxt xs)
     | Compare(comparison, expr1, expr2) ->
       let newElement1, creationConstraints1 = create_element ctxt expr1
       let newElement2, creationConstraints2 = create_element ctxt expr2
@@ -116,25 +117,25 @@ let rec generate_instructions (ctxt:ConcreteExpressionContext) =
       let comparison = match comparison with | Equals -> "" | NotEquals -> "!" | _ -> failwith "Unsupported"
       if creationConstraints.IsEmpty |> not then
         let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
-        sprintf "\nif(%s) { \nif(%s%s.Equals(%s)) { %s } }" creationConstraints comparison newElement1 newElement2 (generate_instructions ctxt xs)
+        sprintf "%sif(%s) { %sif(%s%s.Equals(%s)) { %s } }" newLine creationConstraints newLine comparison newElement1 newElement2 (generate_instructions debugPosition originalFilePath  ctxt xs)
       else 
-        sprintf "\nif(%s%s.Equals(%s)) { %s }" comparison newElement1 newElement2 (generate_instructions ctxt xs)
+        sprintf "%sif(%s%s.Equals(%s)) { %s }" newLine comparison newElement1 newElement2 (generate_instructions debugPosition originalFilePath  ctxt xs)
     | Iterate(var_name, tmp_var_name, expr, path) ->
       let newElement, creationConstraints = create_element ctxt expr
       if creationConstraints.IsEmpty |> not then
         let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
-        sprintf "\nif(%s) { \nvar %s = %s;\nforeach (var %s in %s.Run%s()) { %s } }" creationConstraints !tmp_var_name newElement !var_name !tmp_var_name (path.ToString()) (generate_instructions ctxt xs)
+        sprintf "%sif(%s) { %svar %s = %s;%sforeach (var %s in %s.Run%s()) { %s } }" newLine creationConstraints newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generate_instructions debugPosition originalFilePath  ctxt xs)
       else 
-        sprintf "\nvar %s = %s;\nforeach (var %s in %s.Run%s()) { %s }" !tmp_var_name newElement !var_name !tmp_var_name (path.ToString()) (generate_instructions ctxt xs)
+        sprintf "%svar %s = %s;%sforeach (var %s in %s.Run%s()) { %s }" newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generate_instructions debugPosition originalFilePath ctxt xs)
     | Yield(expr) ->
       let newElement, creationConstraints = create_element ctxt expr
       if creationConstraints.IsEmpty |> not then
         let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
-        sprintf "\nif(%s) { \nvar result = %s;\nyield return result; %s }" creationConstraints newElement (generate_instructions ctxt xs)
+        sprintf "%sif(%s) { %svar result = %s;%syield return result; %s }" newLine creationConstraints newLine newElement newLine (generate_instructions debugPosition originalFilePath ctxt xs)
       else
-        sprintf "\nvar result = %s;\nyield return result; %s" newElement (generate_instructions ctxt xs)
+        sprintf "%svar result = %s;%syield return result; %s" newLine newElement newLine (generate_instructions debugPosition originalFilePath ctxt xs)
 
-let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal>) (self:string) (prefix:List<Instruction>) =
+let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position>) (self:string) (prefix:List<Instruction>) =
   match e with
   | Keyword(Custom k) -> 
     if self <> "this" then
@@ -153,7 +154,7 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal>) (self:
       [
         Var(v.Name, self)
       ], tmp_id
-  | Application(b,(Keyword(Custom k)) :: es) ->
+  | Application(b,(Keyword(Custom k)) :: es,pos) ->
     let output,self,tmp_id = 
       if self <> "this" then
           prefix @
@@ -174,23 +175,24 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal>) (self:
       output <- newOutput
       tmp_id <- newTempId
     output, tmp_id
-  | Application(b,e::es) ->
+  | Application(b,e::es,pos) ->
     failwithf "Application not starting with %A cannot be matched" e
-  | Application(b,[]) ->
+  | Application(b,[],pos) ->
     failwith "Application with empty argument list cannot be matched"
-  | Imported(l) ->
+  | Imported(l,pos) ->
     failwith "Imported match not implemented"
   | Keyword(_) -> 
     failwithf "Non-custom keyword %A cannot be matched" e
 
 type Rule = {
-  Input      : BasicExpression<Keyword, Var, Literal>
-  Output     : BasicExpression<Keyword, Var, Literal>
-  Clauses    : List<Keyword * BasicExpression<Keyword, Var, Literal> * BasicExpression<Keyword, Var, Literal>>
+  Position   : Position
+  Input      : BasicExpression<Keyword, Var, Literal, Position>
+  Output     : BasicExpression<Keyword, Var, Literal, Position>
+  Clauses    : List<Keyword * BasicExpression<Keyword, Var, Literal, Position> * BasicExpression<Keyword, Var, Literal, Position>>
   Path       : Path
   HasScope   : bool
 } with
-    member r.ToString (ctxt:ConcreteExpressionContext) =
+    member r.ToString (ctxt:ConcreteExpressionContext,originalFilePath) =
       let path = 
         if r.HasScope then
           r.Path
@@ -209,14 +211,14 @@ type Rule = {
         | Equals | NotEquals -> o <- o @ [Compare(k, c_i, c_o)]
         | _ -> failwithf "Unsupported clause keyword %A for code generation" k
       o <- i @ o @ [Yield r.Output]
-      sprintf "{\n%s\n}" (generate_instructions ctxt o)
+      sprintf "\n { \n #line %d \"%s\"\n%s\n } \n" r.Position.Line originalFilePath (generate_instructions r.Position originalFilePath ctxt o)
 
 type Method = {
   Rules      : ResizeArray<Rule>
   Path       : Path
 } with
-    member m.ToString(ctxt:ConcreteExpressionContext) =
-      sprintf "public IEnumerable<IRunnable> Run%s() { %s %s }" (m.Path.ToString()) ((m.Rules |> Seq.map (fun r -> r.ToString(ctxt))) ++ 2) m.Path.ParentCall
+    member m.ToString(ctxt:ConcreteExpressionContext,originalFilePath) =
+      sprintf "public IEnumerable<IRunnable> Run%s() { %s %s }" (m.Path.ToString()) ((m.Rules |> Seq.map (fun r -> r.ToString(ctxt,originalFilePath))) ++ 2) m.Path.ParentCall
 
 type Parameter = 
   {
@@ -233,7 +235,7 @@ type GeneratedClass =
     mutable Methods     : Map<Path, Method>
   } with
       member this.MethodPaths = seq{ for x in this.Methods -> x.Key } |> Set.ofSeq
-      member c.ToString(all_method_paths:Set<Path>, ctxt:ConcreteExpressionContext) =
+      member c.ToString(all_method_paths:Set<Path>, ctxt:ConcreteExpressionContext, originalFilePath) =
         let cons =
           if c.Parameters.Count <> 0 then
             let pars = c.Parameters |> Seq.map (fun x -> sprintf "%s %s" x.Type.Argument x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
@@ -268,22 +270,23 @@ type GeneratedClass =
             sprintf "public override bool Equals(object other) {\n var tmp = other as %s;\n if(tmp != null) return %s; \n else return false; }\n" !c.Name parameters
           else
             sprintf "public override bool Equals(object other) {\n return other is %s; \n}\n" !c.Name
-        sprintf "public class %s : %s {\n%s\n%s\n%s\n%s\n%s\n%s}\n\n" !c.Name !c.Interface parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt))) ++ 2) missing_methods to_string equals
+        sprintf "public class %s : %s {\n%s\n%s\n%s\n%s\n%s\n%s}\n\n" !c.Name !c.Interface parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath))) ++ 2) missing_methods to_string equals
 
-let add_rule inputClass (rule:BasicExpression<_,_,Literal>) (rule_path:Path) (hasScope:bool) =
+let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position>) (rule_path:Path) (hasScope:bool) =
   let method_path = rule_path.Tail
   if inputClass.Methods |> Map.containsKey method_path |> not then
     inputClass.Methods <- inputClass.Methods |> Map.add method_path { Rules = ResizeArray(); Path = method_path }
   match rule with
-  | Application(Regular, Keyword FractionLine :: (Application(Regular, Keyword DoubleArrow :: input :: output :: [])) :: clauses) ->
+  | Application(Regular, Keyword FractionLine :: (Application(Regular, Keyword DoubleArrow :: input :: output :: [], innerPos)) :: clauses, pos) ->
     inputClass.Methods.[method_path].Rules.Add(
-      { Input = input
+      { Position = pos
+        Input = input
         Clauses = 
           [ for c in clauses do
               match c with
-              | Application(_, Keyword DoubleArrow :: c_i :: c_o :: []) -> yield DoubleArrow, c_i, c_o
-              | Application(_, Keyword Equals :: c_i :: c_o :: []) -> yield Equals, c_i, c_o
-              | Application(_, Keyword NotEquals :: c_i :: c_o :: []) -> yield NotEquals, c_i, c_o
+              | Application(_, Keyword DoubleArrow :: c_i :: c_o :: [], clausePos) -> yield DoubleArrow, c_i, c_o
+              | Application(_, Keyword Equals :: c_i :: c_o :: [], clausePos) -> yield Equals, c_i, c_o
+              | Application(_, Keyword NotEquals :: c_i :: c_o :: [], clausePos) -> yield NotEquals, c_i, c_o
               | _ -> failwithf "Cannot process clause %A" c
           ] 
         Output   = output
@@ -292,21 +295,21 @@ let add_rule inputClass (rule:BasicExpression<_,_,Literal>) (rule_path:Path) (ha
   | _ ->
     failwithf "Cannot extract rule shape from %A" rule
 
-let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rules:List<BasicExpression<_,_,Literal>>) = 
+let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rules:List<BasicExpression<_,_,Literal,Position>>) = 
   for rule,i in rules |> Seq.mapi (fun i r -> r,i) do
     let path' = i :: path
     let self,hasScope = 
       match rule with
-      | Application(_, Keyword Nesting :: self :: children) -> 
+      | Application(_, Keyword Nesting :: self :: children, pos) -> 
         do process_rules classes path' children
         self,true
       | self -> self,false
     match self with
-    | Application(Regular, Keyword FractionLine :: (Application(Regular, Keyword DoubleArrow :: input :: output)) :: clauses) ->
+    | Application(Regular, Keyword FractionLine :: (Application(Regular, Keyword DoubleArrow :: input :: output, clausesPos)) :: clauses, pos) ->
       let inputKeyword = 
         match input with
         | Keyword(Custom(k)) -> k
-        | Application(Regular, Keyword(Custom(k)) :: _) -> k
+        | Application(Regular, Keyword(Custom(k)) :: _, pos) -> k
         | _ -> failwithf "Cannot extract input keyword from %A" input
       let inputClass = classes.[inputKeyword]
       do add_rule inputClass self (Path path') hasScope
@@ -316,9 +319,9 @@ let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rul
 
 type Interface = { Name : string; BaseInterfaces : ResizeArray<string> }
 
-let generateCode (program_name:string) (rules:BasicExpression<Keyword, Var, Literal>) (program:BasicExpression<Keyword, Var, Literal>) (ctxt:ConcreteExpressionContext) = 
+let generateCode (originalFilePath:string) (program_name:string) (rules:BasicExpression<Keyword, Var, Literal, Position>) (program:BasicExpression<Keyword, Var, Literal, Position>) (ctxt:ConcreteExpressionContext) = 
   match rules with
-  | Application(Regular, Keyword Sequence :: rules) ->
+  | Application(Regular, Keyword Sequence :: rules, pos) ->
     let mutable classes = Map.empty
     let mutable inheritanceRelationships = Map.empty
     for c,a in ctxt.InheritanceRelationships do
@@ -363,7 +366,7 @@ let generateCode (program_name:string) (rules:BasicExpression<Keyword, Var, Lite
       yield "\n\n\n"
       for c in classes do
         let c = c.Value
-        yield c.ToString(all_method_paths, ctxt)
+        yield c.ToString(all_method_paths, ctxt, originalFilePath)
       yield "\n\n\n"
       yield main
       yield "\n}\n"

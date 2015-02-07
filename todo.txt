@@ -1,14 +1,6 @@
 - special bracket application and concrete semantics
 - theorem prover
 - imported instructions
-
-
-- errors should point to original file (#ExternalSource("c:\wwwroot\inetpub\test.aspx", 30)
-        Console.WriteLine("In test.aspx")
-#End ExternalSource)
-
- 
-- parser error reporting based on last parsed line
 - GUI should save delayed compiler to not recompile rules unnecessarily
 
 
