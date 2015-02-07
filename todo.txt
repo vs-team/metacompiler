@@ -1,6 +1,6 @@
 - special bracket application and concrete semantics
 - theorem prover
-- imported instructions
+- imported instructions; single method or operator call
 - GUI should save delayed compiler to not recompile rules unnecessarily
 
 

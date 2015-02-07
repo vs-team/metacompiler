@@ -58,7 +58,7 @@ let main argv =
       "Peano numbers", "(s(s(z))) * (s(s(z)))\n"
     ]
 
-//  do runDeduction (System.IO.Path.Combine([| "Content"; "Lambda calculus"|])) @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")" + "\n" |> printfn "%s"
+  do runDeduction (System.IO.Path.Combine([| "Content"; "Lambda calculus"|])) @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")" + "\n" |> printfn "%s"
 
-  do GUI.ShowGUI samples runDeduction
+//  do GUI.ShowGUI samples runDeduction
   0

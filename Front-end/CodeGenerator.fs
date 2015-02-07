@@ -55,6 +55,7 @@ type Instruction =
     Var of name : string * expr : string
   | VarAs of name : string * expr : string * as_type : string
   | CheckNull of var_name : string
+  | CustomCheck of condition : string
   | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal, Position> * path : Path
   | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal, Position> * expr2:BasicExpression<Keyword, Var, Literal, Position>
   | Yield of expr:BasicExpression<Keyword, Var, Literal, Position>
@@ -127,6 +128,8 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
         sprintf "%sif(%s) { %svar %s = %s;%sforeach (var %s in %s.Run%s()) { %s } }" newLine creationConstraints newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generate_instructions debugPosition originalFilePath  ctxt xs)
       else 
         sprintf "%svar %s = %s;%sforeach (var %s in %s.Run%s()) { %s }" newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generate_instructions debugPosition originalFilePath ctxt xs)
+    | CustomCheck(condition) ->
+      sprintf "%sif (%s) { %s }" newLine condition (generate_instructions debugPosition originalFilePath  ctxt xs)
     | Yield(expr) ->
       let newElement, creationConstraints = create_element ctxt expr
       if creationConstraints.IsEmpty |> not then
@@ -209,6 +212,14 @@ type Rule = {
           o <- o @ o'
           tmp_id <- tmp_id'
         | Equals | NotEquals -> o <- o @ [Compare(k, c_i, c_o)]
+        | DefinedAs -> 
+          match c_i with
+          | Extension(iVar) ->
+            let oExpr,constraints = create_element ctxt c_o
+            if constraints.IsEmpty |> not then
+              o <- o @ [CustomCheck(constraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x))]
+            o <- o @ [Var(iVar.Name, oExpr)]
+          | _ -> failwithf "Invalid definition. Expected a variable name, found %A" c_i
         | _ -> failwithf "Unsupported clause keyword %A for code generation" k
       o <- i @ o @ [Yield r.Output]
       sprintf "\n { \n #line %d \"%s\"\n%s\n } \n" r.Position.Line originalFilePath (generate_instructions r.Position originalFilePath ctxt o)
@@ -287,6 +298,7 @@ let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position>) (rule_path
               | Application(_, Keyword DoubleArrow :: c_i :: c_o :: [], clausePos) -> yield DoubleArrow, c_i, c_o
               | Application(_, Keyword Equals :: c_i :: c_o :: [], clausePos) -> yield Equals, c_i, c_o
               | Application(_, Keyword NotEquals :: c_i :: c_o :: [], clausePos) -> yield NotEquals, c_i, c_o
+              | Application(_, Keyword DefinedAs :: c_i :: c_o :: [], clausePos) -> yield DefinedAs, c_i, c_o
               | _ -> failwithf "Cannot process clause %A" c
           ] 
         Output   = output

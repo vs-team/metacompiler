@@ -55,7 +55,7 @@ type Var = { Name : string }
     override this.ToString() =
       this.Name
 
-type Keyword = Sequence | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | Custom of name : string
+type Keyword = Sequence | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Custom of name : string
   with 
     override this.ToString() =
       match this with
@@ -63,6 +63,7 @@ type Keyword = Sequence | Equals | NotEquals | DoubleArrow | FractionLine | Nest
       | Equals -> "=="
       | NotEquals -> "!="
       | DoubleArrow -> "=>"
+      | DefinedAs -> ":="
       | FractionLine -> "\n-------------------\n"
       | Nesting -> ""
       | Custom name -> name
@@ -256,7 +257,7 @@ and clause depth =
     do! require_indentation depth
     let! i = expr()
     let! bs2 = blank_space()
-    let! ar = word "=>" + (word "==" + word "!=")
+    let! ar = word "=>" + ((word "==" + word "!=") + word ":=")
     let! bs3 = blank_space()
     let! o = expr()
     if debug_rules then
@@ -265,10 +266,12 @@ and clause depth =
     match ar with
     | First _ ->
       return Application(Bracket.Regular, Keyword DoubleArrow :: i :: o :: [], pos)
-    | Second(First _) ->
+    | Second(First(First _)) ->
       return Application(Bracket.Regular, Keyword Equals :: i :: o :: [], pos)
-    | _ ->
+    | Second(First(Second _)) ->
       return Application(Bracket.Regular, Keyword NotEquals :: i :: o :: [], pos)
+    | Second(Second _) ->
+      return Application(Bracket.Regular, Keyword DefinedAs :: i :: o :: [], pos)
   }
 
 and customClass() =
@@ -408,7 +411,7 @@ and expr() =
     }
   and maybe_inner_expr = 
     p{
-      let! es = inner_expr + (!!newline() + !!(word "=>" + word "==" + word "!="))
+      let! es = inner_expr + (!!newline() + !!(word "=>" + word "==" + word "!=" + word ":="))
       match es with
       | First bes -> return bes
       | _ -> return []
