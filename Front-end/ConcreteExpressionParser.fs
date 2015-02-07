@@ -31,6 +31,26 @@ type ConcreteExpressionContext =
           CustomKeywordsMap        = Map.empty
           InheritanceRelationships = []
         }
+      static member CSharp =
+        let ks = 
+          [
+            { Name = "."
+              LeftArguments = [Defined "Expr"]
+              RightArguments = [Defined "Expr"]
+              Priority = 100
+              Class = "Expr" }
+            { Name = "+"
+              LeftArguments = [Defined "Expr"]
+              RightArguments = [Defined "Expr"]
+              Priority = 10
+              Class = "Expr" }
+          ]
+        {
+            CustomKeywords = ks
+            CustomKeywordsByPrefix = ks |> List.sortBy (fun k -> k.Name) |> List.rev
+            CustomKeywordsMap = ks |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
+            InheritanceRelationships = []
+        }
 
 let getCustomKeywords() =
   p{
@@ -55,10 +75,11 @@ type Var = { Name : string }
     override this.ToString() =
       this.Name
 
-type Keyword = Sequence | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Custom of name : string
+type Keyword = Sequence | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of name : string
   with 
     override this.ToString() =
       match this with
+      | Inlined -> "<<>>"
       | Sequence -> ""
       | Equals -> "=="
       | NotEquals -> "!="
@@ -256,22 +277,26 @@ and clause depth =
     let! pos = getPosition()
     do! require_indentation depth
     let! i = expr()
-    let! bs2 = blank_space()
-    let! ar = word "=>" + ((word "==" + word "!=") + word ":=")
-    let! bs3 = blank_space()
-    let! o = expr()
-    if debug_rules then
-      do printfn "%A => %A" i o
-    let! bs4 = blank_space()
-    match ar with
-    | First _ ->
-      return Application(Bracket.Regular, Keyword DoubleArrow :: i :: o :: [], pos)
-    | Second(First(First _)) ->
-      return Application(Bracket.Regular, Keyword Equals :: i :: o :: [], pos)
-    | Second(First(Second _)) ->
-      return Application(Bracket.Regular, Keyword NotEquals :: i :: o :: [], pos)
-    | Second(Second _) ->
-      return Application(Bracket.Regular, Keyword DefinedAs :: i :: o :: [], pos)
+    match i with
+    | Application(Angle, args, di) ->
+      return Application(Angle, Keyword Inlined :: args, di)
+    | _ ->
+      let! bs2 = blank_space()
+      let! ar = word "=>" + ((word "==" + word "!=") + word ":=")
+      let! bs3 = blank_space()
+      let! o = expr()
+      if debug_rules then
+        do printfn "%A => %A" i o
+      let! bs4 = blank_space()
+      match ar with
+      | First _ ->
+        return Application(Bracket.Regular, Keyword DoubleArrow :: i :: o :: [], pos)
+      | Second(First(First _)) ->
+        return Application(Bracket.Regular, Keyword Equals :: i :: o :: [], pos)
+      | Second(First(Second _)) ->
+        return Application(Bracket.Regular, Keyword NotEquals :: i :: o :: [], pos)
+      | Second(Second _) ->
+        return Application(Bracket.Regular, Keyword DefinedAs :: i :: o :: [], pos)
   }
 
 and customClass() =
@@ -307,13 +332,6 @@ and customKeyword() =
   }
 
 and literal() =
-  let stringLiteral() = 
-    p{
-      let! oq = word @"""" + p{ return () }
-      let! id = longIdentifier()
-      let! cq = word @"""" + p{ return () }
-      return id
-    }
   let boolLiteral() =
     p{
       let! res = word "true" + word "false"
@@ -326,7 +344,7 @@ and literal() =
     match res with 
     | First(First i) -> return IntLiteral i
     | First(Second f) -> return DoubleLiteral f
-    | Second(First s) -> return StringLiteral s
+    | Second(First s) -> return StringLiteral(new System.String(s |> Seq.toArray))
     | Second(Second b) -> return BoolLiteral b
   }
 
@@ -371,7 +389,8 @@ and expr() =
       | e::es ->
         let! customKeywordsMap = getCustomKeywordsMap()
         return shrink pos bracket_type (e :: es) customKeywordsMap
-      | _ -> return failwith "Unsupported zero-length expression"
+      | _ -> 
+        return Application(bracket_type, [], pos)
     }
   and inner_expr =
     p{
@@ -387,11 +406,24 @@ and expr() =
         | First(First(actual_open_bracket)) -> 
           let extracted_open_bracket = actual_open_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun _ -> '≪'))
           let! bs = blank_space()
+          let! contextToRestore = 
+            if extracted_open_bracket = '≪' then
+              p{
+                let! customContext = getContext()
+                do! setContext ConcreteExpressionContext.CSharp
+                return customContext
+              }
+            else
+              p{
+                let! customContext = getContext()
+                return customContext
+              }
           let! i_e = base_expr (Bracket.FromChar extracted_open_bracket)
           let! bs = blank_space()
           let! actual_closed_bracket = closed_bracket
           let extracted_closed_bracket = actual_closed_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun _ -> '≫'))
           if matching_brackets extracted_open_bracket extracted_closed_bracket then 
+            do! setContext contextToRestore
             let! bs = blank_space()
             let! r_es = maybe_inner_expr
             return i_e :: r_es

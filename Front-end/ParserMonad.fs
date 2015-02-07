@@ -162,7 +162,7 @@ let rec longIdentifier() =
 let stringLiteral() =
   p{
     let! q1 = character '\"'
-    let! s = identifier()
+    let! s = takeWhile' ((<>) '\"')
     let! q2 = character '\"'
     return s
   }

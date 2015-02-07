@@ -1,7 +1,8 @@
-- special bracket application and concrete semantics
 - theorem prover
-- imported instructions; single method or operator call
+- keywords with generic types
+
 - GUI should save delayed compiler to not recompile rules unnecessarily
+- special bracket application and concrete semantics
 
 
   M[s] => res

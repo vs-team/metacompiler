@@ -58,6 +58,7 @@ type Instruction =
   | CustomCheck of condition : string
   | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal, Position> * path : Path
   | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal, Position> * expr2:BasicExpression<Keyword, Var, Literal, Position>
+  | Inline of e:BasicExpression<Keyword, Var, Literal, Position>
   | Yield of expr:BasicExpression<Keyword, Var, Literal, Position>
 
 let create_element (ctxt:ConcreteExpressionContext) = 
@@ -99,6 +100,31 @@ let create_element (ctxt:ConcreteExpressionContext) =
   | Keyword(k) -> 
     failwithf "Non-custom keyword %A cannot be matched" k
 
+let rec generate_inline =
+  function
+  | Keyword(Custom k) ->
+    sprintf "%s" k
+  | Application(_, [], _) ->
+    ""
+  | Application(Regular,(Keyword(Custom k)) :: [],_) -> 
+    sprintf "%s" k
+  | Application(Regular,(Keyword(Custom k)) :: l :: r :: [],pos) when ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k].LeftAriety = 1 ->
+    sprintf "%s %s %s" (l |> generate_inline) k (r |> generate_inline)
+  | Extension(v:Var) ->
+    sprintf "%s" v.Name
+  | Application(Angle, Keyword Inlined :: args, di) ->
+    Application(Regular, args, di) |> generate_inline
+  | Application(_, a :: [], _) ->
+    a |> generate_inline
+  | Application(_, a :: args, _) ->
+    let args' = [ for x in args -> x |> generate_inline ] |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
+    sprintf "%s(%s)" (a |> generate_inline) args'
+  | Imported(l,di) ->
+    l.ToString()
+  | i -> 
+    failwithf "Unsupported inline pattern %A" i
+  
+
 let rec generate_instructions (debugPosition:Position) (originalFilePath:string) (ctxt:ConcreteExpressionContext) = 
   function 
   | [] -> ""
@@ -130,6 +156,8 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
         sprintf "%svar %s = %s;%sforeach (var %s in %s.Run%s()) { %s }" newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generate_instructions debugPosition originalFilePath ctxt xs)
     | CustomCheck(condition) ->
       sprintf "%sif (%s) { %s }" newLine condition (generate_instructions debugPosition originalFilePath  ctxt xs)
+    | Inline(c) -> 
+      sprintf "%s%s;%s%s" newLine (generate_inline c) newLine (generate_instructions debugPosition originalFilePath  ctxt xs)
     | Yield(expr) ->
       let newElement, creationConstraints = create_element ctxt expr
       if creationConstraints.IsEmpty |> not then
@@ -220,6 +248,8 @@ type Rule = {
               o <- o @ [CustomCheck(constraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x))]
             o <- o @ [Var(iVar.Name, oExpr)]
           | _ -> failwithf "Invalid definition. Expected a variable name, found %A" c_i
+        | Inlined ->
+            o <- o @ [Inline(c_i)]
         | _ -> failwithf "Unsupported clause keyword %A for code generation" k
       o <- i @ o @ [Yield r.Output]
       sprintf "\n { \n #line %d \"%s\"\n%s\n } \n" r.Position.Line originalFilePath (generate_instructions r.Position originalFilePath ctxt o)
@@ -295,6 +325,7 @@ let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position>) (rule_path
         Clauses = 
           [ for c in clauses do
               match c with
+              | Application(_, Keyword Inlined :: _, clausePos) -> yield Inlined, c, c
               | Application(_, Keyword DoubleArrow :: c_i :: c_o :: [], clausePos) -> yield DoubleArrow, c_i, c_o
               | Application(_, Keyword Equals :: c_i :: c_o :: [], clausePos) -> yield Equals, c_i, c_o
               | Application(_, Keyword NotEquals :: c_i :: c_o :: [], clausePos) -> yield NotEquals, c_i, c_o

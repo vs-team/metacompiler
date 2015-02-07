@@ -23,9 +23,9 @@ v' | w => res
 (u | v) | w => res
 
 term := t with $x -> u
-<<System.Console.WriteLine("Debug log " + term.ToString())>>
+<<System.Console.WriteLine("Debug log: " + (term.ToString()))>>
 term => t'
--------------------------------------------------------------
+-----------------------------------
 \$x.t | u => t'
 
   x == y
