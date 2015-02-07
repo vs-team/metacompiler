@@ -41,10 +41,10 @@ let runDeduction path =
           let types = results.CompiledAssembly.GetTypes()
           let entryPoint = types |> Seq.find (fun t -> t.Name = "EntryPoint")
           let run = entryPoint.GetMethod("Run")
-          do timer.Start()
           let results = run.Invoke(null, [|false|]) :?> seq<obj> |> Seq.toList
-//          for i = 1 to 10000 do
-//            do run.Invoke(null, [|false|]) :?> seq<obj> |> Seq.toList |> ignore
+          do timer.Start()
+          for i = 1 to 10000 do
+            do run.Invoke(null, [|false|]) :?> seq<obj> |> Seq.toList |> ignore
           do timer.Stop()
           for r in results do sprintf "%A" r  |> addOutput 
           do "\n" |> addOutput 

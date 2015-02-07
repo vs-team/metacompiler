@@ -155,7 +155,7 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
   function 
   | [] -> ""
   | x :: xs ->
-    let newLine = "" //sprintf "\n #line %d \"%s\"\n" debugPosition.Line originalFilePath
+    let newLine = sprintf "\n #line %d \"%s\"\n" debugPosition.Line originalFilePath
     match x with
     | Var(name, expr) -> 
       sprintf "var %s = %s; %s" !name expr (generate_instructions debugPosition originalFilePath ctxt xs)
@@ -278,8 +278,8 @@ type Rule = {
             o <- o @ [Inline(c_i)]
         | _ -> failwithf "Unsupported clause keyword %A for code generation" k
       o <- i @ o @ [Yield r.Output]
-      //sprintf "\n { \n #line %d \"%s\"\n%s\n } \n" r.Position.Line originalFilePath (generate_instructions r.Position originalFilePath ctxt o)
-      sprintf "\n { \n %s\n } \n" (generate_instructions r.Position originalFilePath ctxt o)
+      sprintf "\n { \n #line %d \"%s\"\n%s\n } \n" r.Position.Line originalFilePath (generate_instructions r.Position originalFilePath ctxt o)
+      //sprintf "\n { \n %s\n } \n" (generate_instructions r.Position originalFilePath ctxt o)
 
 type Method = {
   Rules      : ResizeArray<Rule>
@@ -327,8 +327,14 @@ type GeneratedClass =
           ] |> Seq.fold (+) ""
         let to_string =
           if c.Parameters.Count > 0 then
-            let leftParameters = c.Parameters |> Seq.filter (fun x -> x.IsLeft) |> Seq.map (fun x -> sprintf "res += %s.ToString();\n" x.Name) |> Seq.fold (+) ""
-            let rightParameters = c.Parameters |> Seq.filter (fun x -> x.IsLeft |> not) |> Seq.map (fun x -> sprintf "res += %s.ToString();\n" x.Name) |> Seq.fold (+) ""
+            let printParameter (p:Parameter) = 
+              match p.Type with
+              | Generic _ ->
+                sprintf "if (%s is System.Collections.IEnumerable) { res += \"{\"; foreach(var x in %s as System.Collections.IEnumerable) res += x.ToString(); res += \"}\";  } else { res += %s.ToString(); } \n" p.Name p.Name p.Name
+              | _ -> 
+                sprintf "res += %s.ToString(); \n" p.Name
+            let leftParameters = c.Parameters |> Seq.filter (fun x -> x.IsLeft) |> Seq.map (fun x -> printParameter x) |> Seq.fold (+) ""
+            let rightParameters = c.Parameters |> Seq.filter (fun x -> x.IsLeft |> not) |> Seq.map (fun x -> printParameter x) |> Seq.fold (+) ""
             sprintf "public override string ToString() {\n var res = \"(\"; \n%s\n res += \"%s\"; %s\n res += \")\";\n return res;\n}\n" leftParameters (escape c.Name) rightParameters
           else
             sprintf "public override string ToString() {\nreturn \"%s\";\n}\n" (escape c.Name)

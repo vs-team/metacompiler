@@ -21,7 +21,7 @@ public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) y
 public override string ToString() {
  var res = "("; 
 
- res += "$"; res += P1.ToString();
+ res += "$"; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -42,7 +42,16 @@ public add(MapIntString P1, int P2, string P3) {this.P1 = P1; this.P2 = P2; this
 
   public IEnumerable<IRunnable> Run() {   
  { 
- var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Dollar; if (tmp_1 != null) { var M = tmp_1.P1; var k = tmp_0.P2; var v = tmp_0.P3; var M_Prime = M.Add(k,v); if(M_Prime is System.Collections.Immutable.ImmutableDictionary<int, string>) { var result = new _Dollar(M_Prime as System.Collections.Immutable.ImmutableDictionary<int, string>);yield return result;  } }
+ #line 6 "Content\Maps test\transform.mc"
+var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Dollar; 
+ #line 6 "Content\Maps test\transform.mc"
+if (tmp_1 != null) { var M = tmp_1.P1; var k = tmp_0.P2; var v = tmp_0.P3; var M_Prime = M.Add(k,v); 
+ #line 6 "Content\Maps test\transform.mc"
+if(M_Prime is System.Collections.Immutable.ImmutableDictionary<int, string>) { 
+ #line 6 "Content\Maps test\transform.mc"
+var result = new _Dollar(M_Prime as System.Collections.Immutable.ImmutableDictionary<int, string>);
+ #line 6 "Content\Maps test\transform.mc"
+yield return result;  } }
  } 
 
   }
@@ -50,10 +59,10 @@ public add(MapIntString P1, int P2, string P3) {this.P1 = P1; this.P2 = P2; this
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString();
+res += P1.ToString(); 
 
- res += "add"; res += P2.ToString();
-res += P3.ToString();
+ res += "add"; res += P2.ToString(); 
+res += P3.ToString(); 
 
  res += ")";
  return res;
@@ -72,7 +81,30 @@ public run(MapIntString P1) {this.P1 = P1;}
 
   public IEnumerable<IRunnable> Run() {   
  { 
- var tmp_0 = this; var M = tmp_0.P1; if(M is MapIntString) { var tmp_2 = new add(M as MapIntString, 1, "one");foreach (var tmp_1 in tmp_2.Run()) { var M1 = tmp_1; if(M1 is MapIntString) { var tmp_4 = new add(M1 as MapIntString, 2, "two");foreach (var tmp_3 in tmp_4.Run()) { var M2 = tmp_3; if(M2 is MapIntString) { var tmp_6 = new add(M2 as MapIntString, 3, "three");foreach (var tmp_5 in tmp_6.Run()) { var M3 = tmp_5; var result = M3;yield return result;  } } } } } }
+ #line 10 "Content\Maps test\transform.mc"
+var tmp_0 = this; var M = tmp_0.P1; 
+ #line 10 "Content\Maps test\transform.mc"
+if(M is MapIntString) { 
+ #line 10 "Content\Maps test\transform.mc"
+var tmp_2 = new add(M as MapIntString, 1, "one");
+ #line 10 "Content\Maps test\transform.mc"
+foreach (var tmp_1 in tmp_2.Run()) { var M1 = tmp_1; 
+ #line 10 "Content\Maps test\transform.mc"
+if(M1 is MapIntString) { 
+ #line 10 "Content\Maps test\transform.mc"
+var tmp_4 = new add(M1 as MapIntString, 2, "two");
+ #line 10 "Content\Maps test\transform.mc"
+foreach (var tmp_3 in tmp_4.Run()) { var M2 = tmp_3; 
+ #line 10 "Content\Maps test\transform.mc"
+if(M2 is MapIntString) { 
+ #line 10 "Content\Maps test\transform.mc"
+var tmp_6 = new add(M2 as MapIntString, 3, "three");
+ #line 10 "Content\Maps test\transform.mc"
+foreach (var tmp_5 in tmp_6.Run()) { var M3 = tmp_5; 
+ #line 10 "Content\Maps test\transform.mc"
+var result = M3;
+ #line 10 "Content\Maps test\transform.mc"
+yield return result;  } } } } } }
  } 
 
   }
@@ -81,7 +113,7 @@ public run(MapIntString P1) {this.P1 = P1;}
 public override string ToString() {
  var res = "("; 
 
- res += "run"; res += P1.ToString();
+ res += "run"; res += P1.ToString(); 
 
  res += ")";
  return res;
