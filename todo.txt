@@ -1,7 +1,6 @@
 - theorem prover
-- keywords and rules with generic types
-
 - generic keywords
+- pretty printer for IEnumerable parameters
 - GUI should save delayed compiler to not recompile rules unnecessarily
 - special bracket application and concrete semantics
 

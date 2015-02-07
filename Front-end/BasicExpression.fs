@@ -1,9 +1,10 @@
 ﻿module BasicExpression
 
-type Bracket = Square | Curly | Angle | SingleAngle | Regular
+type Bracket = Implicit | Square | Curly | Angle | SingleAngle | Regular
   with 
     static member FromChar = 
       function
+      | '\000' -> Implicit
       | '(' -> Regular
       | '[' -> Square
       | '{' -> Curly
@@ -24,6 +25,7 @@ type BasicExpression<'k, 'e, 'i, 'di> =
       | Application(b,l,di) -> 
         let ls = l |> Seq.fold (fun s x -> s + " " + x.ToString()) ""
         match b with
+        | Implicit -> sprintf "%s @ %s" ls (di.ToString())
         | Regular -> sprintf "(%s) @ %s" ls (di.ToString())
         | Square -> sprintf "[%s] @ %s" ls (di.ToString())
         | Curly -> sprintf "{%s} @ %s" ls (di.ToString())

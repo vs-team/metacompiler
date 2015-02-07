@@ -6,6 +6,10 @@ open ConcreteExpressionParser
 open CodeGenerator
 open Microsoft.CSharp
 open System.CodeDom.Compiler
+open System.IO
+open System.Runtime.Serialization
+open System.Xml.Serialization
+
 
 let runDeduction path =
   let originalFilePath = System.IO.Path.Combine(path, "transform.mc")
@@ -25,23 +29,24 @@ let runDeduction path =
         do args.Add("CompilerVersion", "v4.5")
         let csc = new CSharpCodeProvider()
 
-        let parameters = new CompilerParameters([| "mscorlib.dll"; "System.Core.dll"; "System.Collections.Immutable.dll" |], sprintf "%s.dll" title, true)
+        let parameters = new CompilerParameters([| "mscorlib.dll"; "System.dll"; "System.Runtime.dll"; "System.Core.dll"; "System.Collections.Immutable.dll" |], sprintf "%s.dll" title, true)
         do parameters.GenerateInMemory <- true
         do parameters.CompilerOptions <- @"/optimize+"
         let results = csc.CompileAssemblyFromSource(parameters, src)
         if results.Errors.HasErrors then
-          for error in results.Errors
-            do sprintf "%s at %d: %s" error.FileName error.Line error.ErrorText |> addOutput 
+          for error in results.Errors do
+            if error.IsWarning |> not then
+              do sprintf "%s at %d: %s" error.FileName error.Line error.ErrorText |> addOutput 
         else
           let types = results.CompiledAssembly.GetTypes()
           let entryPoint = types |> Seq.find (fun t -> t.Name = "EntryPoint")
           let run = entryPoint.GetMethod("Run")
-          let results = run.Invoke(null, [|false|]) :?> seq<obj> |> Seq.toList
-          for r in results do sprintf "%A" r  |> addOutput 
           do timer.Start()
-          for i = 1 to 10000 do
-            do run.Invoke(null, [|false|]) :?> seq<obj> |> Seq.toList |> ignore
+          let results = run.Invoke(null, [|false|]) :?> seq<obj> |> Seq.toList
+//          for i = 1 to 10000 do
+//            do run.Invoke(null, [|false|]) :?> seq<obj> |> Seq.toList |> ignore
           do timer.Stop()
+          for r in results do sprintf "%A" r  |> addOutput 
           do "\n" |> addOutput 
           do sprintf "Total elapsed time = %dms" timer.ElapsedMilliseconds |> addOutput
         output.Value
@@ -58,7 +63,7 @@ let runDeduction path =
 let main argv = 
   let samples = 
     [
-//      "Maps test", "run($<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>)\n"
+      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>\n"
       "Lambda calculus", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")" + "\n"
       "Peano numbers", "(s(s(z))) * (s(s(z)))\n"
     ]

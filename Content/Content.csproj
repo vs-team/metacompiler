@@ -35,6 +35,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>..\packages\Microsoft.Bcl.Immutable.1.0.34\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+    </Reference>
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -45,6 +48,9 @@
   <ItemGroup>
     <Compile Include="..\Front-end\bin\Debug\Lambda calculus.cs">
       <Link>Lambda calculus.cs</Link>
+    </Compile>
+    <Compile Include="..\Front-end\bin\Debug\Maps test.cs">
+      <Link>Maps test.cs</Link>
     </Compile>
     <Compile Include="..\Front-end\bin\Debug\Peano numbers.cs">
       <Link>Peano numbers.cs</Link>
@@ -64,6 +70,7 @@
     <None Include="Content\Casanova semantics\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

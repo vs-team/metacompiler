@@ -10,7 +10,12 @@ let mutable debug_expr = false
 let mutable debug_rules = false
 
 type KeywordArgument = Native of string | Defined of string | Generic of string * List<KeywordArgument>
-  with member this.Argument = match this with | Native a -> a | Defined a -> a | Generic(a,_) -> a
+  with member this.Argument = 
+         match this with 
+         | Native a -> a 
+         | Defined a -> a 
+         | Generic(a,args) -> 
+           sprintf "%s<%s>" a (args |> Seq.map (fun a -> a.Argument) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
 
 type CustomKeyword = { Name : string; LeftArguments : List<KeywordArgument>; RightArguments : List<KeywordArgument>; Priority : int; Class : string }
   with member this.LeftAriety = this.LeftArguments.Length
@@ -98,7 +103,7 @@ type Literal = StringLiteral of string | IntLiteral of int | BoolLiteral of bool
   with 
     override this.ToString() =
       match this with
-      | StringLiteral l -> sprintf "\"%s\"" l  
+      | StringLiteral l -> sprintf "\"%s\"" l
       | IntLiteral i -> sprintf "%d" i
       | BoolLiteral b -> sprintf "%b" b
       | SingleLiteral s -> sprintf "%ff" s
@@ -120,7 +125,7 @@ let rec program() =
     do! setContext newContext
     let! rs = rules 0
     let! p = getPosition()
-    return Application(Regular, Keyword Sequence :: rs, p)
+    return Application(Implicit, Keyword Sequence :: rs, p)
   }
 
 and inheritanceRelationships() =
@@ -171,41 +176,48 @@ and keyword : Parser<CustomKeyword,ConcreteExpressionContext> =
       let! bs = blank_space()
       return ()
     }
-  let rec identifiers() =
-    let separator() = 
+  let identifiers() =
+    let commaSeparator() = 
       p{
         let! sep = character ',' + blank_space()
         let! bs = blank_space()
-        return sep,bs
+        return ()
       }
-    p{
-      let! ob = word "<<" + p{ return () }
-      let! id = longIdentifier() + p{ return () }
-      match id with
-      | First id ->
-        match ob with
-        | First _ ->
-          let! openBracket = word "<" + p{return () }
-          match openBracket with
+    let blankSpaceSeparator() =
+      p{
+        let! bs = blank_space()
+        return ()
+      }
+    let rec identifiers separator =
+      p{
+        let! ob = word "<<" + p{ return () }
+        let! id = longIdentifier() + p{ return () }
+        match id with
+        | First id ->
+          match ob with
           | First _ ->
-            let! innerIdentifiers = identifiers()
-            let! closedBracket = word ">"
-            let! cb = word ">>" + p{ return () }
+            let! openBracket = word "<" + p{return () }
+            match openBracket with
+            | First _ ->
+              let! innerIdentifiers = identifiers commaSeparator
+              let! closedBracket = word ">"
+              let! cb = word ">>" + p{ return () }
+              let! bs = separator()
+              let! ids = identifiers separator
+              return Generic(id,innerIdentifiers) :: ids
+            | _ -> 
+              let! cb = word ">>" + p{ return () }
+              let! bs = separator()
+              let! ids = identifiers separator
+              return Native id :: ids
+          | _ ->
             let! bs = separator()
-            let! ids = identifiers()
-            return Generic(id,innerIdentifiers) :: ids
-          | _ -> 
-            let! cb = word ">>" + p{ return () }
-            let! bs = separator()
-            let! ids = identifiers()
-            return Native id :: ids
-        | _ ->
-          let! bs = separator()
-          let! ids = identifiers()
-          return Defined id :: ids        
-      | Second _ -> 
-        return []
-    }
+            let! ids = identifiers separator
+            return Defined id :: ids        
+        | Second _ -> 
+          return []
+      }
+    identifiers blankSpaceSeparator
   p{
     do! label "Keyword"
     do! equals
@@ -256,9 +268,9 @@ and rule depth =
     let! depth1 = !!indentation
     if depth1 > depth then
       let! nested_rules = rules depth1
-      return Application(Bracket.Regular, Keyword Nesting :: Application(Bracket.Regular, Keyword FractionLine :: m :: cs, pos) :: nested_rules, pos)
+      return Application(Bracket.Implicit, Keyword Nesting :: Application(Bracket.Implicit, Keyword FractionLine :: m :: cs, pos) :: nested_rules, pos)
     else
-      return Application(Bracket.Regular, Keyword FractionLine :: m :: cs, pos)
+      return Application(Bracket.Implicit, Keyword FractionLine :: m :: cs, pos)
   }
 
 and deindentation depth =
@@ -313,13 +325,13 @@ and clause depth =
       let! bs4 = blank_space()
       match ar with
       | First _ ->
-        return Application(Bracket.Regular, Keyword DoubleArrow :: i :: o :: [], pos)
+        return Application(Bracket.Implicit, Keyword DoubleArrow :: i :: o :: [], pos)
       | Second(First(First _)) ->
-        return Application(Bracket.Regular, Keyword Equals :: i :: o :: [], pos)
+        return Application(Bracket.Implicit, Keyword Equals :: i :: o :: [], pos)
       | Second(First(Second _)) ->
-        return Application(Bracket.Regular, Keyword NotEquals :: i :: o :: [], pos)
+        return Application(Bracket.Implicit, Keyword NotEquals :: i :: o :: [], pos)
       | Second(Second _) ->
-        return Application(Bracket.Regular, Keyword DefinedAs :: i :: o :: [], pos)
+        return Application(Bracket.Implicit, Keyword DefinedAs :: i :: o :: [], pos)
   }
 
 and customClass() =
@@ -391,9 +403,8 @@ and expr() =
         else
           -1,-index
       | _ -> -1,-index
-
     let merge (n,i) l r =
-      Application(Regular, n :: (l |> List.map fst) @ (r |> List.map fst), pos), i
+      Application(Implicit, n :: (l |> List.map fst) @ (r |> List.map fst), pos), i
     let prioritize_es = BottomUpPriorityParser.prioritize es ariety priority merge
     if debug_expr then
       do printfn "%A" es
@@ -411,7 +422,9 @@ and expr() =
       match e with
       | e::es ->
         let! customKeywordsMap = getCustomKeywordsMap()
-        return shrink bracket_type pos (e :: es) customKeywordsMap
+        match shrink bracket_type pos (e :: es) customKeywordsMap with
+        | Application(Implicit, args, di) -> return Application(bracket_type, args, di)
+        | e -> return e
       | _ -> 
         return Application(bracket_type, [], pos)
     }
@@ -471,7 +484,7 @@ and expr() =
       | First bes -> return bes
       | _ -> return []
     }
-  base_expr Bracket.Regular  
+  base_expr Bracket.Implicit
 
 and end_clauses depth =
   p{
