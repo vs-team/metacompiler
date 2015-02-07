@@ -9,8 +9,8 @@ open BasicExpression
 let mutable debug_expr = false
 let mutable debug_rules = false
 
-type KeywordArgument = Native of string | Defined of string
-  with member this.Argument = match this with | Native a -> a | Defined a -> a
+type KeywordArgument = Native of string | Defined of string | Generic of string * List<KeywordArgument>
+  with member this.Argument = match this with | Native a -> a | Defined a -> a | Generic(a,_) -> a
 
 type CustomKeyword = { Name : string; LeftArguments : List<KeywordArgument>; RightArguments : List<KeywordArgument>; Priority : int; Class : string }
   with member this.LeftAriety = this.LeftArguments.Length
@@ -34,15 +34,20 @@ type ConcreteExpressionContext =
       static member CSharp =
         let ks = 
           [
-            { Name = "."
+            { Name = ","
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
-              Priority = 100
+              Priority = 1
               Class = "Expr" }
             { Name = "+"
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 10
+              Class = "Expr" }
+            { Name = "."
+              LeftArguments = [Defined "Expr"]
+              RightArguments = [Defined "Expr"]
+              Priority = 100
               Class = "Expr" }
           ]
         {
@@ -167,18 +172,36 @@ and keyword : Parser<CustomKeyword,ConcreteExpressionContext> =
       return ()
     }
   let rec identifiers() =
+    let separator() = 
+      p{
+        let! sep = character ',' + blank_space()
+        let! bs = blank_space()
+        return sep,bs
+      }
     p{
       let! ob = word "<<" + p{ return () }
       let! id = longIdentifier() + p{ return () }
-      let! cb = word ">>" + p{ return () }
       match id with
       | First id ->
-        let! bs = blank_space()
-        let! ids = identifiers()
-        match ob,cb with
-        | First _, First _ -> 
-          return Native id :: ids
-        | _ -> 
+        match ob with
+        | First _ ->
+          let! openBracket = word "<" + p{return () }
+          match openBracket with
+          | First _ ->
+            let! innerIdentifiers = identifiers()
+            let! closedBracket = word ">"
+            let! cb = word ">>" + p{ return () }
+            let! bs = separator()
+            let! ids = identifiers()
+            return Generic(id,innerIdentifiers) :: ids
+          | _ -> 
+            let! cb = word ">>" + p{ return () }
+            let! bs = separator()
+            let! ids = identifiers()
+            return Native id :: ids
+        | _ ->
+          let! bs = separator()
+          let! ids = identifiers()
           return Defined id :: ids        
       | Second _ -> 
         return []
@@ -349,7 +372,7 @@ and literal() =
   }
 
 and expr() = 
-  let shrink pos bracket_type (es:List<BasicExpression<_,_,_,_>>) customKeywordsMap : BasicExpression<_,_,_,_> =
+  let shrink bracket_type pos (es:List<BasicExpression<_,_,_,_>>) customKeywordsMap : BasicExpression<_,_,_,_> =
     let ariety (b:BasicExpression<_,_,_,_>) = 
       match b with
       | Keyword(Custom(k)) ->
@@ -388,7 +411,7 @@ and expr() =
       match e with
       | e::es ->
         let! customKeywordsMap = getCustomKeywordsMap()
-        return shrink pos bracket_type (e :: es) customKeywordsMap
+        return shrink bracket_type pos (e :: es) customKeywordsMap
       | _ -> 
         return Application(bracket_type, [], pos)
     }
@@ -399,12 +422,12 @@ and expr() =
       match end_line with
       | First _ -> return! fail()
       | Second _ ->
-        let open_bracket = (character '(' + character '[') + (character '{' + word "<<")
-        let closed_bracket = (character ')' + character ']') + (character '}' + word ">>")
+        let open_bracket = (character '(' + character '[') + (character '{' + (word "<<" + character '<'))
+        let closed_bracket = (character ')' + character ']') + (character '}' + (word ">>" + character '>'))
         let! e = (open_bracket + !!closed_bracket) + (customKeyword() + (identifier() + literal()))
         match e with
         | First(First(actual_open_bracket)) -> 
-          let extracted_open_bracket = actual_open_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun _ -> '≪'))
+          let extracted_open_bracket = actual_open_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun x -> x.Fold (fun _ -> '≪') id))
           let! bs = blank_space()
           let! contextToRestore = 
             if extracted_open_bracket = '≪' then
@@ -421,7 +444,7 @@ and expr() =
           let! i_e = base_expr (Bracket.FromChar extracted_open_bracket)
           let! bs = blank_space()
           let! actual_closed_bracket = closed_bracket
-          let extracted_closed_bracket = actual_closed_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun _ -> '≫'))
+          let extracted_closed_bracket = actual_closed_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun x -> x.Fold (fun _ -> '≫') id))
           if matching_brackets extracted_open_bracket extracted_closed_bracket then 
             do! setContext contextToRestore
             let! bs = blank_space()

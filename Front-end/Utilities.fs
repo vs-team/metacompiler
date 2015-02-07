@@ -18,4 +18,5 @@ let matching_brackets open_bracket closed_bracket =
   | '[', ']' -> true
   | '{', '}' -> true
   | '≪', '≫' -> true
+  | '<', '>' -> true
   | _ -> false
