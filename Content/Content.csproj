@@ -46,6 +46,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Front-end\bin\Debug\Casanova semantics.cs">
+      <Link>Casanova semantics.cs</Link>
+    </Compile>
     <Compile Include="..\Front-end\bin\Debug\Lambda calculus.cs">
       <Link>Lambda calculus.cs</Link>
     </Compile>

@@ -18,6 +18,7 @@ let runDeduction path =
   let timer = System.Diagnostics.Stopwatch()
   let output = ref ""
   let addOutput s = output := sprintf "%s\n%s" (output.Value) s
+//  do debug_expr <- true
   match (program()).Parse (rules |> Seq.toList) ConcreteExpressionContext.Empty Position.Zero with
   | (x,_,ctxt,pos)::xs,[] -> 
     fun (input:string) ->
@@ -43,7 +44,7 @@ let runDeduction path =
           let run = entryPoint.GetMethod("Run")
           let results = run.Invoke(null, [|false|]) :?> seq<obj> |> Seq.toList
           do timer.Start()
-          for i = 1 to 10000 do
+          for i = 1 to 1000 do
             do run.Invoke(null, [|false|]) :?> seq<obj> |> Seq.toList |> ignore
           do timer.Stop()
           for r in results do sprintf "%A" r  |> addOutput 
@@ -66,6 +67,7 @@ let main argv =
       "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>\n"
       "Lambda calculus", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")" + "\n"
       "Peano numbers", "(s(s(z))) * (s(s(z)))\n"
+      "Casanova semantics", @"runTest1" + "\n"
     ]
 
   for name,input in samples 

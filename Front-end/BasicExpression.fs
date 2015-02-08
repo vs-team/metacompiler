@@ -14,14 +14,20 @@ type Bracket = Implicit | Square | Curly | Angle | SingleAngle | Regular
 
 
 type BasicExpression<'k, 'e, 'i, 'di> =
-  | Keyword of 'k
+  | Keyword of 'k * 'di
   | Application of Bracket * List<BasicExpression<'k, 'e, 'i, 'di>> * 'di
   | Imported of 'i * 'di
-  | Extension of 'e
+  | Extension of 'e * 'di
   with 
+    member this.DebugInformation =
+      match this with
+      | Keyword(k,di) -> di
+      | Application(b,l,di) -> di        
+      | Imported(i,di) -> di
+      | Extension(e,di) -> di
     override this.ToString() =
       match this with
-      | Keyword k -> k.ToString()
+      | Keyword(k,di) -> k.ToString()
       | Application(b,l,di) -> 
         let ls = l |> Seq.fold (fun s x -> s + " " + x.ToString()) ""
         match b with
@@ -32,4 +38,4 @@ type BasicExpression<'k, 'e, 'i, 'di> =
         | Angle -> sprintf "<<%s>> @ %s" ls (di.ToString())
         | SingleAngle -> sprintf "<%s> @ %s" ls (di.ToString())
       | Imported(i,di) -> sprintf "%s @ %s" (i.ToString()) (di.ToString())
-      | Extension e -> e.ToString()
+      | Extension(e,di) -> e.ToString()

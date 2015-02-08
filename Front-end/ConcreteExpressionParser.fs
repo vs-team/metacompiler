@@ -39,6 +39,16 @@ type ConcreteExpressionContext =
       static member CSharp =
         let ks = 
           [
+            { Name = "true"
+              LeftArguments = []
+              RightArguments = []
+              Priority = 0
+              Class = "Expr" }
+            { Name = "false"
+              LeftArguments = []
+              RightArguments = []
+              Priority = 0
+              Class = "Expr" }
             { Name = ","
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
@@ -125,7 +135,7 @@ let rec program() =
     do! setContext newContext
     let! rs = rules 0
     let! p = getPosition()
-    return Application(Implicit, Keyword Sequence :: rs, p)
+    return Application(Implicit, Keyword(Sequence,p) :: rs, p)
   }
 
 and inheritanceRelationships() =
@@ -268,9 +278,9 @@ and rule depth =
     let! depth1 = !!indentation
     if depth1 > depth then
       let! nested_rules = rules depth1
-      return Application(Bracket.Implicit, Keyword Nesting :: Application(Bracket.Implicit, Keyword FractionLine :: m :: cs, pos) :: nested_rules, pos)
+      return Application(Bracket.Implicit, Keyword(Nesting,pos) :: Application(Bracket.Implicit, Keyword(FractionLine,pos) :: m :: cs, pos) :: nested_rules, pos)
     else
-      return Application(Bracket.Implicit, Keyword FractionLine :: m :: cs, pos)
+      return Application(Bracket.Implicit, Keyword(FractionLine,pos) :: m :: cs, pos)
   }
 
 and deindentation depth =
@@ -314,7 +324,7 @@ and clause depth =
     let! i = expr()
     match i with
     | Application(Angle, args, di) ->
-      return Application(Angle, Keyword Inlined :: args, di)
+      return Application(Angle, Keyword(Inlined,pos) :: args, di)
     | _ ->
       let! bs2 = blank_space()
       let! ar = word "=>" + ((word "==" + word "!=") + word ":=")
@@ -325,13 +335,13 @@ and clause depth =
       let! bs4 = blank_space()
       match ar with
       | First _ ->
-        return Application(Bracket.Implicit, Keyword DoubleArrow :: i :: o :: [], pos)
+        return Application(Bracket.Implicit, Keyword(DoubleArrow,pos) :: i :: o :: [], pos)
       | Second(First(First _)) ->
-        return Application(Bracket.Implicit, Keyword Equals :: i :: o :: [], pos)
+        return Application(Bracket.Implicit, Keyword(Equals,pos) :: i :: o :: [], pos)
       | Second(First(Second _)) ->
-        return Application(Bracket.Implicit, Keyword NotEquals :: i :: o :: [], pos)
+        return Application(Bracket.Implicit, Keyword(NotEquals,pos) :: i :: o :: [], pos)
       | Second(Second _) ->
-        return Application(Bracket.Implicit, Keyword DefinedAs :: i :: o :: [], pos)
+        return Application(Bracket.Implicit, Keyword(DefinedAs,pos) :: i :: o :: [], pos)
   }
 
 and customClass() =
@@ -375,19 +385,19 @@ and literal() =
       | Second _ -> return false
     }
   p{
-    let! res = (intLiteral() + floatLiteral()) + (stringLiteral() + boolLiteral())
+    let! res = (intLiteral() + floatLiteral()) + (boolLiteral() + stringLiteral())
     match res with 
     | First(First i) -> return IntLiteral i
     | First(Second f) -> return DoubleLiteral f
-    | Second(First s) -> return StringLiteral(new System.String(s |> Seq.toArray))
-    | Second(Second b) -> return BoolLiteral b
+    | Second(First b) -> return BoolLiteral b
+    | Second(Second s) -> return StringLiteral(new System.String(s |> Seq.toArray))
   }
 
 and expr() = 
   let shrink bracket_type pos (es:List<BasicExpression<_,_,_,_>>) customKeywordsMap : BasicExpression<_,_,_,_> =
     let ariety (b:BasicExpression<_,_,_,_>) = 
       match b with
-      | Keyword(Custom(k)) ->
+      | Keyword(Custom(k),pos) ->
         if customKeywordsMap |> Map.containsKey k then
           let (kw:CustomKeyword) = customKeywordsMap.[k]
           kw.LeftAriety, kw.RightAriety
@@ -396,7 +406,7 @@ and expr() =
       | _ -> 0,0
     let priority (b:BasicExpression<_,_,_,_>,index:int) = 
       match b with
-      | Keyword(Custom(k)) ->
+      | Keyword(Custom(k),pos) ->
         if customKeywordsMap |> Map.containsKey k then
           let kw = customKeywordsMap.[k]
           kw.Priority,-index
@@ -424,20 +434,25 @@ and expr() =
         let! customKeywordsMap = getCustomKeywordsMap()
         match shrink bracket_type pos (e :: es) customKeywordsMap with
         | Application(Implicit, args, di) -> return Application(bracket_type, args, di)
-        | e -> return e
+        | e -> 
+          match bracket_type with
+          | Implicit ->
+            return e
+          | _ ->
+            return Application(bracket_type, [e], e.DebugInformation)
       | _ -> 
         return Application(bracket_type, [], pos)
     }
   and inner_expr =
     p{
       let! pos = getPosition()
-      let! end_line = !!(word "--") + p{ return () }
+      let! end_line = !!(word "--" + word "=>" + word "==" + word "!=" + word ":=") + p{ return () }
       match end_line with
       | First _ -> return! fail()
       | Second _ ->
         let open_bracket = (character '(' + character '[') + (character '{' + (word "<<" + character '<'))
         let closed_bracket = (character ')' + character ']') + (character '}' + (word ">>" + character '>'))
-        let! e = (open_bracket + !!closed_bracket) + (customKeyword() + (identifier() + literal()))
+        let! e = (open_bracket + !!closed_bracket) + (customKeyword() + (literal() + identifier()))
         match e with
         | First(First(actual_open_bracket)) -> 
           let extracted_open_bracket = actual_open_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun x -> x.Fold (fun _ -> '≪') id))
@@ -470,9 +485,9 @@ and expr() =
         | Second(e) ->
           let be = 
             match e with
-            | First(k) -> Keyword(Custom(new System.String(k |> Seq.toArray)))
-            | Second(First(id)) -> Extension { Var.Name = new System.String(id |> Seq.toArray) }
-            | Second(Second(l)) -> Imported(l,pos)
+            | First(k) -> Keyword(Custom(new System.String(k |> Seq.toArray)),pos)
+            | Second(First(l)) -> Imported(l,pos)
+            | Second(Second(id)) -> Extension({ Var.Name = new System.String(id |> Seq.toArray) },pos)
           let! bs = blank_space()
           let! bes = maybe_inner_expr
           return be::bes

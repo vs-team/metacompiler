@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 namespace Maps_test {
+ public static class Extensions { public static V GetKey<T, V>(this System.Collections.Immutable.ImmutableDictionary<T, V> self, T key) { return self[key]; } }
  public interface IRunnable { IEnumerable<IRunnable> Run();
  }
 
@@ -45,7 +46,7 @@ public add(MapIntString P1, int P2, string P3) {this.P1 = P1; this.P2 = P2; this
  #line 6 "Content\Maps test\transform.mc"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Dollar; 
  #line 6 "Content\Maps test\transform.mc"
-if (tmp_1 != null) { var M = tmp_1.P1; var k = tmp_0.P2; var v = tmp_0.P3; var M_Prime = M.Add(k,v); 
+if (tmp_1 != null) { var M = tmp_1.P1; var k = tmp_0.P2; var v = tmp_0.P3; var M_Prime = (M.Add (k,v)); 
  #line 6 "Content\Maps test\transform.mc"
 if(M_Prime is System.Collections.Immutable.ImmutableDictionary<int, string>) { 
  #line 6 "Content\Maps test\transform.mc"

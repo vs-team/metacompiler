@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 namespace Peano_numbers {
+ public static class Extensions { public static V GetKey<T, V>(this System.Collections.Immutable.ImmutableDictionary<T, V> self, T key) { return self[key]; } }
  public interface IRunnable { IEnumerable<IRunnable> Run();
  }
 
