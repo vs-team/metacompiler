@@ -54,15 +54,25 @@ type ConcreteExpressionContext =
               RightArguments = [Defined "Expr"]
               Priority = 1
               Class = "Expr" }
-            { Name = "+"
+            { Name = ">="
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 10
               Class = "Expr" }
-            { Name = "."
+            { Name = "+"
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 100
+              Class = "Expr" }
+            { Name = "-"
+              LeftArguments = [Defined "Expr"]
+              RightArguments = [Defined "Expr"]
+              Priority = 100
+              Class = "Expr" }
+            { Name = "."
+              LeftArguments = [Defined "Expr"]
+              RightArguments = [Defined "Expr"]
+              Priority = 1000
               Class = "Expr" }
           ]
         {
@@ -117,7 +127,7 @@ type Literal = StringLiteral of string | IntLiteral of int | BoolLiteral of bool
       | IntLiteral i -> sprintf "%d" i
       | BoolLiteral b -> sprintf "%b" b
       | SingleLiteral s -> sprintf "%ff" s
-      | DoubleLiteral d -> sprintf "%f" d
+      | DoubleLiteral d -> sprintf "%ff" d
 
 let rec program() = 
   p{
@@ -322,11 +332,12 @@ and clause depth =
     let! pos = getPosition()
     do! require_indentation depth
     let! i = expr()
-    match i with
-    | Application(Angle, args, di) ->
+    let! bs2 = blank_space()
+    let! end_clause = !!(newline()) + p{ return () }
+    match i,end_clause with
+    | Application(Angle, args, di),(First _) ->
       return Application(Angle, Keyword(Inlined,pos) :: args, di)
     | _ ->
-      let! bs2 = blank_space()
       let! ar = word "=>" + ((word "==" + word "!=") + word ":=")
       let! bs3 = blank_space()
       let! o = expr()
@@ -385,10 +396,10 @@ and literal() =
       | Second _ -> return false
     }
   p{
-    let! res = (intLiteral() + floatLiteral()) + (boolLiteral() + stringLiteral())
+    let! res = (floatLiteral() + intLiteral()) + (boolLiteral() + stringLiteral())
     match res with 
-    | First(First i) -> return IntLiteral i
-    | First(Second f) -> return DoubleLiteral f
+    | First(First f) -> return DoubleLiteral f
+    | First(Second i) -> return IntLiteral i
     | Second(First b) -> return BoolLiteral b
     | Second(Second s) -> return StringLiteral(new System.String(s |> Seq.toArray))
   }
@@ -448,13 +459,19 @@ and expr() =
       let! pos = getPosition()
       let! end_line = !!(word "--" + word "=>" + word "==" + word "!=" + word ":=") + p{ return () }
       match end_line with
-      | First _ -> return! fail()
+      | First _ -> 
+        return []
       | Second _ ->
         let open_bracket = (character '(' + character '[') + (character '{' + (word "<<" + character '<'))
         let closed_bracket = (character ')' + character ']') + (character '}' + (word ">>" + character '>'))
-        let! e = (open_bracket + !!closed_bracket) + (customKeyword() + (literal() + identifier()))
+        let! e = customKeyword() + ((open_bracket + !!closed_bracket) + (literal() + identifier()))
         match e with
-        | First(First(actual_open_bracket)) -> 
+        | First(k) -> 
+          let be = Keyword(Custom(new System.String(k |> Seq.toArray)),pos)
+          let! bs = blank_space()
+          let! bes = maybe_inner_expr
+          return be::bes
+        | Second(First(First(actual_open_bracket))) -> 
           let extracted_open_bracket = actual_open_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun x -> x.Fold (fun _ -> '≪') id))
           let! bs = blank_space()
           let! contextToRestore = 
@@ -480,14 +497,13 @@ and expr() =
             return i_e :: r_es
           else
             return! fail()
-        | First(Second(closed_bracket)) -> 
+        | Second(First(Second(closed_bracket))) -> 
           return []
-        | Second(e) ->
+        | Second(Second(e)) ->
           let be = 
             match e with
-            | First(k) -> Keyword(Custom(new System.String(k |> Seq.toArray)),pos)
-            | Second(First(l)) -> Imported(l,pos)
-            | Second(Second(id)) -> Extension({ Var.Name = new System.String(id |> Seq.toArray) },pos)
+            | First(l) -> Imported(l,pos)
+            | Second(id) -> Extension({ Var.Name = new System.String(id |> Seq.toArray) },pos)
           let! bs = blank_space()
           let! bes = maybe_inner_expr
           return be::bes

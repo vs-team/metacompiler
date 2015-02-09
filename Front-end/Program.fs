@@ -10,6 +10,7 @@ open System.IO
 open System.Runtime.Serialization
 open System.Xml.Serialization
 
+do System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.GetCultureInfo("EN-US")
 
 let runDeduction path =
   let originalFilePath = System.IO.Path.Combine(path, "transform.mc")

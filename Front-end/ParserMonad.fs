@@ -124,10 +124,15 @@ let isAlpha c = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
 
 let intLiteral() = 
   p{
+    let! sign = character '-' + p{ return () }
     let! c = character' isDigit
     let! cs = takeWhile (character' isDigit)
     let s = new System.String(c::cs |> Seq.toArray)
-    return s |> System.Int32.Parse
+    match sign with
+    | First _ ->
+      return -(s |> System.Int32.Parse)
+    | _ ->
+      return s |> System.Int32.Parse
   }
 
 let floatLiteral() = 

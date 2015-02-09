@@ -3,6 +3,7 @@ using System.Linq;
 namespace Casanova_semantics {
  public static class Extensions { public static V GetKey<T, V>(this System.Collections.Immutable.ImmutableDictionary<T, V> self, T key) { return self[key]; } }
  public interface IRunnable { IEnumerable<IRunnable> Run();
+IEnumerable<IRunnable> Run2_();
  }
 
 
@@ -20,12 +21,13 @@ public interface Then : IRunnable {}
 
 
 public class _Dollar : Id {
-public System.String P1;
+public string P1;
 
-public _Dollar(System.String P1) {this.P1 = P1;}
+public _Dollar(string P1) {this.P1 = P1;}
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
  var res = "("; 
@@ -43,12 +45,13 @@ public override bool Equals(object other) {
 }
 
 public class _Dollarb : BoolConst {
-public System.Boolean P1;
+public bool P1;
 
-public _Dollarb(System.Boolean P1) {this.P1 = P1;}
+public _Dollarb(bool P1) {this.P1 = P1;}
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
  var res = "("; 
@@ -66,12 +69,13 @@ public override bool Equals(object other) {
 }
 
 public class _Dollari : IntConst {
-public System.Int32 P1;
+public int P1;
 
-public _Dollari(System.Int32 P1) {this.P1 = P1;}
+public _Dollari(int P1) {this.P1 = P1;}
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
  var res = "("; 
@@ -90,16 +94,19 @@ public override bool Equals(object other) {
 
 public class _Dollarm : Locals {
 public System.Collections.Immutable.ImmutableDictionary<string, Expr> P1;
+public float P2;
 
-public _Dollarm(System.Collections.Immutable.ImmutableDictionary<string, Expr> P1) {this.P1 = P1;}
+public _Dollarm(System.Collections.Immutable.ImmutableDictionary<string, Expr> P1, float P2) {this.P1 = P1; this.P2 = P2;}
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
  var res = "("; 
 
  res += "$m"; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -107,7 +114,7 @@ public override string ToString() {
 
 public override bool Equals(object other) {
  var tmp = other as _Dollarm;
- if(tmp != null) return this.P1.Equals(tmp.P1); 
+ if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
 }
 
@@ -119,6 +126,7 @@ public _opAnd(BoolExpr P1, BoolExpr P2) {this.P1 = P1; this.P2 = P2;}
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
  var res = "("; 
@@ -136,6 +144,32 @@ public override bool Equals(object other) {
  else return false; }
 }
 
+public class _opMultiplication : IntExpr {
+public IntExpr P1;
+public IntExpr P2;
+
+public _opMultiplication(IntExpr P1, IntExpr P2) {this.P1 = P1; this.P2 = P2;}
+
+
+public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
+
+public override string ToString() {
+ var res = "("; 
+res += P1.ToString(); 
+
+ res += "*"; res += P2.ToString(); 
+
+ res += ")";
+ return res;
+}
+
+public override bool Equals(object other) {
+ var tmp = other as _opMultiplication;
+ if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
+ else return false; }
+}
+
 public class _opAddition : IntExpr {
 public IntExpr P1;
 public IntExpr P2;
@@ -144,6 +178,7 @@ public _opAddition(IntExpr P1, IntExpr P2) {this.P1 = P1; this.P2 = P2;}
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
  var res = "("; 
@@ -161,6 +196,84 @@ public override bool Equals(object other) {
  else return false; }
 }
 
+public class _opSubtraction : IntExpr {
+public IntExpr P1;
+public IntExpr P2;
+
+public _opSubtraction(IntExpr P1, IntExpr P2) {this.P1 = P1; this.P2 = P2;}
+
+
+public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
+
+public override string ToString() {
+ var res = "("; 
+res += P1.ToString(); 
+
+ res += "-"; res += P2.ToString(); 
+
+ res += ")";
+ return res;
+}
+
+public override bool Equals(object other) {
+ var tmp = other as _opSubtraction;
+ if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
+ else return false; }
+}
+
+public class _opDivision : IntExpr {
+public IntExpr P1;
+public IntExpr P2;
+
+public _opDivision(IntExpr P1, IntExpr P2) {this.P1 = P1; this.P2 = P2;}
+
+
+public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
+
+public override string ToString() {
+ var res = "("; 
+res += P1.ToString(); 
+
+ res += "/"; res += P2.ToString(); 
+
+ res += ")";
+ return res;
+}
+
+public override bool Equals(object other) {
+ var tmp = other as _opDivision;
+ if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
+ else return false; }
+}
+
+public class _Semicolon : Expr {
+public Expr P1;
+public Expr P2;
+
+public _Semicolon(Expr P1, Expr P2) {this.P1 = P1; this.P2 = P2;}
+
+
+public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
+
+public override string ToString() {
+ var res = "("; 
+res += P1.ToString(); 
+
+ res += ";"; res += P2.ToString(); 
+
+ res += ")";
+ return res;
+}
+
+public override bool Equals(object other) {
+ var tmp = other as _Semicolon;
+ if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
+ else return false; }
+}
+
 public class _opEquals : BoolExpr {
 public IntExpr P1;
 public IntExpr P2;
@@ -169,6 +282,7 @@ public _opEquals(IntExpr P1, IntExpr P2) {this.P1 = P1; this.P2 = P2;}
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
  var res = "("; 
@@ -194,6 +308,7 @@ public _opGreaterThan(IntExpr P1, IntExpr P2) {this.P1 = P1; this.P2 = P2;}
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
  var res = "("; 
@@ -220,20 +335,21 @@ public add(Locals P1, string P2, Expr P3) {this.P1 = P1; this.P2 = P2; this.P3 =
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 35 "Content\Casanova semantics\transform.mc"
+ #line 44 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Dollarm; 
- #line 35 "Content\Casanova semantics\transform.mc"
-if (tmp_1 != null) { var M = tmp_1.P1; var k = tmp_0.P2; var v = tmp_0.P3; var M_Prime = (M.Add (k,v)); 
- #line 35 "Content\Casanova semantics\transform.mc"
+ #line 44 "Content\Casanova semantics\transform.mc"
+if (tmp_1 != null) { var M = tmp_1.P1; var dt = tmp_1.P2; var k = tmp_0.P2; var v = tmp_0.P3; var M_Prime = (M.Add (k,v)); 
+ #line 44 "Content\Casanova semantics\transform.mc"
 if(M_Prime is System.Collections.Immutable.ImmutableDictionary<string, Expr>) { 
- #line 35 "Content\Casanova semantics\transform.mc"
-var result = new _Dollarm(M_Prime as System.Collections.Immutable.ImmutableDictionary<string, Expr>);
- #line 35 "Content\Casanova semantics\transform.mc"
+ #line 44 "Content\Casanova semantics\transform.mc"
+var result = new _Dollarm(M_Prime as System.Collections.Immutable.ImmutableDictionary<string, Expr>, dt);
+ #line 44 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
   }
 
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
  var res = "("; 
@@ -258,6 +374,7 @@ public _Else() {}
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
 return "else";
@@ -274,110 +391,143 @@ public Expr P2;
 
 public eval(Locals P1, Expr P2) {this.P1 = P1; this.P2 = P2;}
 
-  public IEnumerable<IRunnable> Run() {   
+  public IEnumerable<IRunnable> Run2_() {   
  { 
- #line 39 "Content\Casanova semantics\transform.mc"
+ #line 54 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var M = tmp_0.P1; var tmp_1 = tmp_0.P2 as _If; 
- #line 39 "Content\Casanova semantics\transform.mc"
+ #line 54 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var c = tmp_1.P1; var tmp_2 = tmp_1.P2 as _Then; 
- #line 39 "Content\Casanova semantics\transform.mc"
+ #line 54 "Content\Casanova semantics\transform.mc"
 if (tmp_2 != null) { var t = tmp_1.P3; var tmp_3 = tmp_1.P4 as _Else; 
- #line 39 "Content\Casanova semantics\transform.mc"
+ #line 54 "Content\Casanova semantics\transform.mc"
 if (tmp_3 != null) { var e = tmp_1.P5; 
- #line 39 "Content\Casanova semantics\transform.mc"
+ #line 54 "Content\Casanova semantics\transform.mc"
 if(!c.Equals(new _Dollarb(true))) { 
- #line 39 "Content\Casanova semantics\transform.mc"
+ #line 54 "Content\Casanova semantics\transform.mc"
 if(!c.Equals(new _Dollarb(false))) { 
- #line 39 "Content\Casanova semantics\transform.mc"
+ #line 54 "Content\Casanova semantics\transform.mc"
 if(M is Locals && c is Expr) { 
- #line 39 "Content\Casanova semantics\transform.mc"
+ #line 54 "Content\Casanova semantics\transform.mc"
 var tmp_5 = new eval(M as Locals, c as Expr);
- #line 39 "Content\Casanova semantics\transform.mc"
-foreach (var tmp_4 in tmp_5.Run()) { var c_Prime = tmp_4; 
- #line 39 "Content\Casanova semantics\transform.mc"
+ #line 54 "Content\Casanova semantics\transform.mc"
+foreach (var tmp_4 in tmp_5.Run2_()) { var c_Prime = tmp_4; 
+ #line 54 "Content\Casanova semantics\transform.mc"
 if(M is Locals && c_Prime is BoolExpr && t is Expr && e is Expr) { 
- #line 39 "Content\Casanova semantics\transform.mc"
+ #line 54 "Content\Casanova semantics\transform.mc"
 var tmp_7 = new eval(M as Locals, new _If(c_Prime as BoolExpr, new _Then(), t as Expr, new _Else(), e as Expr));
- #line 39 "Content\Casanova semantics\transform.mc"
-foreach (var tmp_6 in tmp_7.Run()) { var res = tmp_6; 
- #line 39 "Content\Casanova semantics\transform.mc"
+ #line 54 "Content\Casanova semantics\transform.mc"
+foreach (var tmp_6 in tmp_7.Run2_()) { var res = tmp_6; 
+ #line 54 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 39 "Content\Casanova semantics\transform.mc"
+ #line 54 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } } } } } }
  } 
 
   
  { 
- #line 46 "Content\Casanova semantics\transform.mc"
+ #line 61 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var M = tmp_0.P1; var tmp_1 = tmp_0.P2 as _If; 
- #line 46 "Content\Casanova semantics\transform.mc"
+ #line 61 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _Dollarb; 
- #line 46 "Content\Casanova semantics\transform.mc"
+ #line 61 "Content\Casanova semantics\transform.mc"
 if (tmp_2 != null) { 
- #line 46 "Content\Casanova semantics\transform.mc"
+ #line 61 "Content\Casanova semantics\transform.mc"
 if (tmp_2.P1 == true) { var tmp_3 = tmp_1.P2 as _Then; 
- #line 46 "Content\Casanova semantics\transform.mc"
+ #line 61 "Content\Casanova semantics\transform.mc"
 if (tmp_3 != null) { var t = tmp_1.P3; var tmp_4 = tmp_1.P4 as _Else; 
- #line 46 "Content\Casanova semantics\transform.mc"
+ #line 61 "Content\Casanova semantics\transform.mc"
 if (tmp_4 != null) { var e = tmp_1.P5; 
- #line 46 "Content\Casanova semantics\transform.mc"
+ #line 61 "Content\Casanova semantics\transform.mc"
 if(M is Locals && t is Expr) { 
- #line 46 "Content\Casanova semantics\transform.mc"
+ #line 61 "Content\Casanova semantics\transform.mc"
 var tmp_6 = new eval(M as Locals, t as Expr);
- #line 46 "Content\Casanova semantics\transform.mc"
-foreach (var tmp_5 in tmp_6.Run()) { var res = tmp_5; 
- #line 46 "Content\Casanova semantics\transform.mc"
+ #line 61 "Content\Casanova semantics\transform.mc"
+foreach (var tmp_5 in tmp_6.Run2_()) { var res = tmp_5; 
+ #line 61 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 46 "Content\Casanova semantics\transform.mc"
+ #line 61 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } } } }
  } 
 
   
  { 
- #line 50 "Content\Casanova semantics\transform.mc"
+ #line 65 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var M = tmp_0.P1; var tmp_1 = tmp_0.P2 as _If; 
- #line 50 "Content\Casanova semantics\transform.mc"
+ #line 65 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _Dollarb; 
- #line 50 "Content\Casanova semantics\transform.mc"
+ #line 65 "Content\Casanova semantics\transform.mc"
 if (tmp_2 != null) { 
- #line 50 "Content\Casanova semantics\transform.mc"
+ #line 65 "Content\Casanova semantics\transform.mc"
 if (tmp_2.P1 == false) { var tmp_3 = tmp_1.P2 as _Then; 
- #line 50 "Content\Casanova semantics\transform.mc"
+ #line 65 "Content\Casanova semantics\transform.mc"
 if (tmp_3 != null) { var t = tmp_1.P3; var tmp_4 = tmp_1.P4 as _Else; 
- #line 50 "Content\Casanova semantics\transform.mc"
+ #line 65 "Content\Casanova semantics\transform.mc"
 if (tmp_4 != null) { var e = tmp_1.P5; 
- #line 50 "Content\Casanova semantics\transform.mc"
+ #line 65 "Content\Casanova semantics\transform.mc"
 if(M is Locals && e is Expr) { 
- #line 50 "Content\Casanova semantics\transform.mc"
+ #line 65 "Content\Casanova semantics\transform.mc"
 var tmp_6 = new eval(M as Locals, e as Expr);
- #line 50 "Content\Casanova semantics\transform.mc"
-foreach (var tmp_5 in tmp_6.Run()) { var res = tmp_5; 
- #line 50 "Content\Casanova semantics\transform.mc"
+ #line 65 "Content\Casanova semantics\transform.mc"
+foreach (var tmp_5 in tmp_6.Run2_()) { var res = tmp_5; 
+ #line 65 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 50 "Content\Casanova semantics\transform.mc"
+ #line 65 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } } } }
  } 
 
   
  { 
- #line 54 "Content\Casanova semantics\transform.mc"
+ #line 69 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var M = tmp_0.P1; var tmp_1 = tmp_0.P2 as _Dollar; 
- #line 54 "Content\Casanova semantics\transform.mc"
+ #line 69 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var v = tmp_1.P1; 
- #line 54 "Content\Casanova semantics\transform.mc"
-if(M is Locals && v is string) { 
- #line 54 "Content\Casanova semantics\transform.mc"
-var tmp_3 = new lookup(M as Locals, v as string);
- #line 54 "Content\Casanova semantics\transform.mc"
-foreach (var tmp_2 in tmp_3.Run()) { var res = tmp_2; 
- #line 54 "Content\Casanova semantics\transform.mc"
+ #line 69 "Content\Casanova semantics\transform.mc"
+if(M is Locals) { 
+ #line 69 "Content\Casanova semantics\transform.mc"
+var tmp_3 = new lookup(M as Locals, v);
+ #line 69 "Content\Casanova semantics\transform.mc"
+foreach (var tmp_2 in tmp_3.Run2_()) { var res = tmp_2; 
+ #line 69 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 54 "Content\Casanova semantics\transform.mc"
+ #line 69 "Content\Casanova semantics\transform.mc"
 yield return result;  } } }
  } 
 
-  }
+  
+ { 
+ #line 73 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Dollarm; 
+ #line 73 "Content\Casanova semantics\transform.mc"
+if (tmp_1 != null) { var M = tmp_1.P1; var dt = tmp_1.P2; var tmp_2 = tmp_0.P2 as wait; 
+ #line 73 "Content\Casanova semantics\transform.mc"
+if (tmp_2 != null) { var t = tmp_2.P1; 
+ #line 73 "Content\Casanova semantics\transform.mc"
+if((dt>=t).Equals(true)) { 
+ #line 73 "Content\Casanova semantics\transform.mc"
+var result = new unit();
+ #line 73 "Content\Casanova semantics\transform.mc"
+yield return result;  } } }
+ } 
 
+  
+ { 
+ #line 77 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Dollarm; 
+ #line 77 "Content\Casanova semantics\transform.mc"
+if (tmp_1 != null) { var M = tmp_1.P1; var dt = tmp_1.P2; var tmp_2 = tmp_0.P2 as wait; 
+ #line 77 "Content\Casanova semantics\transform.mc"
+if (tmp_2 != null) { var t = tmp_2.P1; 
+ #line 77 "Content\Casanova semantics\transform.mc"
+if((dt>=t).Equals(false)) { var t_Prime = (t-dt); 
+ #line 77 "Content\Casanova semantics\transform.mc"
+var result = new wait(t_Prime);
+ #line 77 "Content\Casanova semantics\transform.mc"
+yield return result;  } } }
+ } 
+
+ foreach(var p in Run()) yield return p; }
+
+public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
 
 public override string ToString() {
  var res = "("; 
@@ -406,6 +556,7 @@ public _If(BoolExpr P1, Then P2, Expr P3, Else P4, Expr P5) {this.P1 = P1; this.
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
  var res = "("; 
@@ -434,18 +585,19 @@ public lookup(Locals P1, string P2) {this.P1 = P1; this.P2 = P2;}
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 31 "Content\Casanova semantics\transform.mc"
+ #line 40 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Dollarm; 
- #line 31 "Content\Casanova semantics\transform.mc"
-if (tmp_1 != null) { var M = tmp_1.P1; var k = tmp_0.P2; var v = (M.GetKey (k)); 
- #line 31 "Content\Casanova semantics\transform.mc"
+ #line 40 "Content\Casanova semantics\transform.mc"
+if (tmp_1 != null) { var M = tmp_1.P1; var dt = tmp_1.P2; var k = tmp_0.P2; var v = (M.GetKey (k)); 
+ #line 40 "Content\Casanova semantics\transform.mc"
 var result = v;
- #line 31 "Content\Casanova semantics\transform.mc"
+ #line 40 "Content\Casanova semantics\transform.mc"
 yield return result;  }
  } 
 
   }
 
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
  var res = "("; 
@@ -469,34 +621,23 @@ public runTest1() {}
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 58 "Content\Casanova semantics\transform.mc"
-var tmp_0 = this as runTest1; var M0 = new _Dollarm(System.Collections.Immutable.ImmutableDictionary <string,Expr>.Empty); 
- #line 58 "Content\Casanova semantics\transform.mc"
-if(M0 is Locals) { 
- #line 58 "Content\Casanova semantics\transform.mc"
-var tmp_2 = new add(M0 as Locals, "x", new _Dollari(100));
- #line 58 "Content\Casanova semantics\transform.mc"
-foreach (var tmp_1 in tmp_2.Run()) { var M1 = tmp_1; 
- #line 58 "Content\Casanova semantics\transform.mc"
-if(M1 is Locals) { 
- #line 58 "Content\Casanova semantics\transform.mc"
-var tmp_4 = new add(M1 as Locals, "y", new _Dollari(1000));
- #line 58 "Content\Casanova semantics\transform.mc"
-foreach (var tmp_3 in tmp_4.Run()) { var M2 = tmp_3; 
- #line 58 "Content\Casanova semantics\transform.mc"
-if(M2 is Locals) { 
- #line 58 "Content\Casanova semantics\transform.mc"
-var tmp_6 = new eval(M2 as Locals, new _If(new _Dollarb(true), new _Then(), new _Dollar("x"), new _Else(), new _Dollar("y")));
- #line 58 "Content\Casanova semantics\transform.mc"
-foreach (var tmp_5 in tmp_6.Run()) { var res = tmp_5; 
- #line 58 "Content\Casanova semantics\transform.mc"
+ #line 48 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this as runTest1; var dt = 0.010000f; var M = new _Dollarm(System.Collections.Immutable.ImmutableDictionary <string,Expr>.Empty, dt); 
+ #line 48 "Content\Casanova semantics\transform.mc"
+if(M is Locals) { 
+ #line 48 "Content\Casanova semantics\transform.mc"
+var tmp_2 = new eval(M as Locals, new wait(0.010000f));
+ #line 48 "Content\Casanova semantics\transform.mc"
+foreach (var tmp_1 in tmp_2.Run2_()) { var res = tmp_1; 
+ #line 48 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 58 "Content\Casanova semantics\transform.mc"
-yield return result;  } } } } } }
+ #line 48 "Content\Casanova semantics\transform.mc"
+yield return result;  } }
  } 
 
   }
 
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
 return "runTest1";
@@ -513,6 +654,7 @@ public _Then() {}
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
 return "then";
@@ -523,6 +665,47 @@ public override bool Equals(object other) {
 }
 }
 
+public class unit : Expr {
+
+public unit() {}
+
+
+public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
+
+public override string ToString() {
+return "unit";
+}
+
+public override bool Equals(object other) {
+ return other is unit; 
+}
+}
+
+public class wait : Expr {
+public float P1;
+
+public wait(float P1) {this.P1 = P1;}
+
+
+public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
+
+public override string ToString() {
+ var res = "("; 
+
+ res += "wait"; res += P1.ToString(); 
+
+ res += ")";
+ return res;
+}
+
+public override bool Equals(object other) {
+ var tmp = other as wait;
+ if(tmp != null) return this.P1.Equals(tmp.P1); 
+ else return false; }
+}
+
 public class _opOr : BoolExpr {
 public BoolExpr P1;
 public BoolExpr P2;
@@ -531,6 +714,7 @@ public _opOr(BoolExpr P1, BoolExpr P2) {this.P1 = P1; this.P2 = P2;}
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run2_() { foreach(var p in Run()) yield return p; }
 
 public override string ToString() {
  var res = "("; 

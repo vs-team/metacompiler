@@ -78,17 +78,21 @@ let rec create_element (ctxt:ConcreteExpressionContext) =
       let args,cargs = es |> Seq.mapi (fun i e -> create_element' actualKeyword.Arguments.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
       sprintf "new %s(%s)" !k args, cargs
     | Extension(v:Var, _) ->
-      let expectedType =
-        let rec print =
-          function
-          | Native t -> t
-          | Defined d -> !d
-          | Generic(t,a::args) -> 
-            let pars = a::args |> Seq.map print |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
-            sprintf "%s<%s>" t pars
-          | _ -> failwith "Generic types must have at least one argument."
-        print expectedType
-      sprintf "%s as %s" !v.Name expectedType, [sprintf "%s is %s" !v.Name expectedType]
+      match expectedType with
+      | Native t ->
+        sprintf "%s" !v.Name, []
+      | _ ->
+        let expectedTypeString =
+          let rec print =
+            function
+            | Native t -> t
+            | Defined d -> !d
+            | Generic(t,a::args) -> 
+              let pars = a::args |> Seq.map print |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
+              sprintf "%s<%s>" t pars
+            | _ -> failwith "Generic types must have at least one argument."
+          print expectedType
+        sprintf "%s as %s" !v.Name expectedTypeString, [sprintf "%s is %s" !v.Name expectedTypeString]
     | Application(Angle,e::[],pos) ->
       let res = generate_inline e
       sprintf "%s" res, []

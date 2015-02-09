@@ -25,11 +25,9 @@ public _Dollar(System.String P1) {this.P1 = P1;}
  #line 11 "Content\Lambda calculus\transform.mc"
 var tmp_0 = this; var x = tmp_0.P1; 
  #line 11 "Content\Lambda calculus\transform.mc"
-if(x is System.String) { 
+var result = new _Dollar(x);
  #line 11 "Content\Lambda calculus\transform.mc"
-var result = new _Dollar(x as System.String);
- #line 11 "Content\Lambda calculus\transform.mc"
-yield return result;  }
+yield return result; 
  } 
 
   }
@@ -110,9 +108,9 @@ if (tmp_1 != null) { var x = tmp_1.P1; var tmp_2 = tmp_0.P2 as _opDot;
  #line 14 "Content\Lambda calculus\transform.mc"
 if (tmp_2 != null) { var t = tmp_0.P3; 
  #line 14 "Content\Lambda calculus\transform.mc"
-if(x is System.String && t is Term) { 
+if(t is Term) { 
  #line 14 "Content\Lambda calculus\transform.mc"
-var result = new _opSlash(new _Dollar(x as System.String), new _opDot(), t as Term);
+var result = new _opSlash(new _Dollar(x), new _opDot(), t as Term);
  #line 14 "Content\Lambda calculus\transform.mc"
 yield return result;  } } }
  } 
@@ -175,11 +173,9 @@ if (tmp_3 != null) { var x = tmp_3.P1; var u = tmp_2.P2;
  #line 34 "Content\Lambda calculus\transform.mc"
 if(!x.Equals(y)) { 
  #line 34 "Content\Lambda calculus\transform.mc"
-if(y is System.String) { 
+var result = new _Dollar(y);
  #line 34 "Content\Lambda calculus\transform.mc"
-var result = new _Dollar(y as System.String);
- #line 34 "Content\Lambda calculus\transform.mc"
-yield return result;  } } } } }
+yield return result;  } } } }
  } 
 
   
@@ -199,9 +195,9 @@ if (tmp_5 != null) { var y = tmp_5.P1; var u = tmp_4.P2;
  #line 38 "Content\Lambda calculus\transform.mc"
 if(x.Equals(y)) { 
  #line 38 "Content\Lambda calculus\transform.mc"
-if(x is System.String && t is Term) { 
+if(t is Term) { 
  #line 38 "Content\Lambda calculus\transform.mc"
-var result = new _opSlash(new _Dollar(x as System.String), new _opDot(), t as Term);
+var result = new _opSlash(new _Dollar(x), new _opDot(), t as Term);
  #line 38 "Content\Lambda calculus\transform.mc"
 yield return result;  } } } } } } }
  } 
@@ -223,15 +219,15 @@ if (tmp_5 != null) { var y = tmp_5.P1; var u = tmp_4.P2;
  #line 42 "Content\Lambda calculus\transform.mc"
 if(!x.Equals(y)) { 
  #line 42 "Content\Lambda calculus\transform.mc"
-if(t is Term && y is System.String && u is Term) { 
+if(t is Term && u is Term) { 
  #line 42 "Content\Lambda calculus\transform.mc"
-var tmp_7 = new _With(t as Term, new _Arrow(new _Dollar(y as System.String), u as Term));
+var tmp_7 = new _With(t as Term, new _Arrow(new _Dollar(y), u as Term));
  #line 42 "Content\Lambda calculus\transform.mc"
 foreach (var tmp_6 in tmp_7.Run4_()) { var t_Prime = tmp_6; 
  #line 42 "Content\Lambda calculus\transform.mc"
-if(x is System.String && t_Prime is Term) { 
+if(t_Prime is Term) { 
  #line 42 "Content\Lambda calculus\transform.mc"
-var result = new _opSlash(new _Dollar(x as System.String), new _opDot(), t_Prime as Term);
+var result = new _opSlash(new _Dollar(x), new _opDot(), t_Prime as Term);
  #line 42 "Content\Lambda calculus\transform.mc"
 yield return result;  } } } } } } } } }
  } 
@@ -247,15 +243,15 @@ if (tmp_2 != null) { var tmp_3 = tmp_2.P1 as _Dollar;
  #line 47 "Content\Lambda calculus\transform.mc"
 if (tmp_3 != null) { var x = tmp_3.P1; var v = tmp_2.P2; 
  #line 47 "Content\Lambda calculus\transform.mc"
-if(t is Term && x is System.String && v is Term) { 
+if(t is Term && v is Term) { 
  #line 47 "Content\Lambda calculus\transform.mc"
-var tmp_5 = new _With(t as Term, new _Arrow(new _Dollar(x as System.String), v as Term));
+var tmp_5 = new _With(t as Term, new _Arrow(new _Dollar(x), v as Term));
  #line 47 "Content\Lambda calculus\transform.mc"
 foreach (var tmp_4 in tmp_5.Run4_()) { var t_Prime = tmp_4; 
  #line 47 "Content\Lambda calculus\transform.mc"
-if(u is Term && x is System.String && v is Term) { 
+if(u is Term && v is Term) { 
  #line 47 "Content\Lambda calculus\transform.mc"
-var tmp_7 = new _With(u as Term, new _Arrow(new _Dollar(x as System.String), v as Term));
+var tmp_7 = new _With(u as Term, new _Arrow(new _Dollar(x), v as Term));
  #line 47 "Content\Lambda calculus\transform.mc"
 foreach (var tmp_6 in tmp_7.Run4_()) { var u_Prime = tmp_6; 
  #line 47 "Content\Lambda calculus\transform.mc"
@@ -299,9 +295,9 @@ var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Dollar;
  #line 17 "Content\Lambda calculus\transform.mc"
 if (tmp_1 != null) { var x = tmp_1.P1; var u = tmp_0.P2; 
  #line 17 "Content\Lambda calculus\transform.mc"
-if(x is System.String && u is Term) { 
+if(u is Term) { 
  #line 17 "Content\Lambda calculus\transform.mc"
-var result = new _opVBar(new _Dollar(x as System.String), u as Term);
+var result = new _opVBar(new _Dollar(x), u as Term);
  #line 17 "Content\Lambda calculus\transform.mc"
 yield return result;  } }
  } 
@@ -341,7 +337,7 @@ if (tmp_2 != null) { var x = tmp_2.P1; var tmp_3 = tmp_1.P2 as _opDot;
  #line 25 "Content\Lambda calculus\transform.mc"
 if (tmp_3 != null) { var t = tmp_1.P3; var u = tmp_0.P2; 
  #line 25 "Content\Lambda calculus\transform.mc"
-if (t is Term && x is System.String && u is Term) { var term = new _With(t as Term, new _Arrow(new _Dollar(x as System.String), u as Term)); 
+if (t is Term && u is Term) { var term = new _With(t as Term, new _Arrow(new _Dollar(x), u as Term)); 
  #line 25 "Content\Lambda calculus\transform.mc"
 var tmp_5 = term;
  #line 25 "Content\Lambda calculus\transform.mc"
