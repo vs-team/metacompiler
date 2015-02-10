@@ -65,9 +65,9 @@ let runDeduction path =
 let main argv = 
   let samples = 
     [
-      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>\n"
-      "Lambda calculus", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")" + "\n"
-      "Peano numbers", "(s(s(z))) * (s(s(z)))\n"
+//      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>\n"
+//      "Lambda calculus", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")" + "\n"
+//      "Peano numbers", "(s(s(z))) * (s(s(z)))\n"
       "Casanova semantics", @"runTest1" + "\n"
     ]
 

@@ -1,4 +1,4 @@
-﻿Keyword = "$m" LeftArguments = [] RightArguments = [<<System.Collections.Immutable.ImmutableDictionary<string, Expr>>> <<float>>] Priority = 10000 Class = "Locals"
+﻿Keyword = "$m" LeftArguments = [] RightArguments = [<<System.Collections.Immutable.ImmutableDictionary<string, Expr>>>] Priority = 10000 Class = "Locals"
 Keyword = "add" LeftArguments = [Locals] RightArguments = [<<string>> <<Expr>>] Priority = 1000 Class = "Locals"
 Keyword = "lookup" LeftArguments = [Locals] RightArguments = [<<string>>] Priority = 1000 Class = "Expr"
 
@@ -25,8 +25,10 @@ Keyword = "wait" LeftArguments = [] RightArguments = [<<float>>] Priority = 0 Cl
 Keyword = "unit" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Expr"
 
 Keyword = ";" LeftArguments = [Expr] RightArguments = [Expr] Priority = -10 Class = "Expr"
+Keyword = "withDt" LeftArguments = [] RightArguments = [<<float>> Expr] Priority = -10 Class = "Expr"
 
-Keyword = "eval" LeftArguments = [] RightArguments = [Locals Expr] Priority = -1000 Class = "Expr"
+Keyword = "eval" LeftArguments = [] RightArguments = [<<float>> Locals Expr] Priority = -1000 Class = "Expr"
+Keyword = "stepOrSuspend " LeftArguments = [] RightArguments = [<<float>> Locals Expr Expr] Priority = -1000 Class = "Expr"
 
 Keyword = "runTest1" LeftArguments = [] RightArguments = [] Priority = -10000 Class = "Test"
 
@@ -39,42 +41,55 @@ IntExpr inherits Expr
 
 v := <<M.GetKey(k)>>
 ---------------------
-($m M dt) lookup k => v
+($m M) lookup k => v
 
 M' := <<M.Add(k,v)>>
-------------------------------
-($m M dt) add k v => $m M' dt
+------------------------
+($m M) add k v => $m M'
 
-dt := 0.01
-M := $m <<System.Collections.Immutable.ImmutableDictionary<string, Expr>.Empty>> dt
-eval M (wait 0.01) => res
-------------------------------------------------------------
+dt := 0.02
+M := $m <<System.Collections.Immutable.ImmutableDictionary<string, Expr>.Empty>>
+eval dt M (wait 0.01; wait 0.02; wait 0.02) => res
+---------------------------------------------------------------------------------
 runTest1 => res
 
   c != $b true
   c != $b false
-  eval M c => c'
-  eval M (if c' then t else e) => res
-  ------------------------------------
-  eval M (if c then t else e) => res
+  eval dt M c => c'
+  eval dt M (if c' then t else e) => res
+  ---------------------------------------
+  eval dt M (if c then t else e) => res
 
-  eval M t => res
-  -------------------------------------------
-  eval M (if ($b true) then t else e) => res
+  eval dt M t => res
+  ----------------------------------------------
+  eval dt M (if ($b true) then t else e) => res
 
-  eval M e => res
-  --------------------------------------------
-  eval M (if ($b false) then t else e) => res
+  eval dt M e => res
+  -----------------------------------------------
+  eval dt M (if ($b false) then t else e) => res
 
   M lookup v => res
-  -------------------
-  eval M ($v) => res
+  ----------------------
+  eval dt M ($v) => res
 
   <<dt >= t>> == true
-  --------------------------------
-  eval ($m M dt) (wait t) => unit
+  dt' := <<dt - t>>
+  --------------------------------------
+  eval dt M (wait t) => withDt dt' unit
 
   <<dt >= t>> == false
   t' := <<t - dt>>
+  ------------------------------
+  eval dt M (wait t) => wait t'
+
+  eval dt M a => a'
+  stepOrSuspend dt M a' b => res
   -----------------------------------
-  eval ($m M dt) (wait t) => wait t'
+  eval dt M (a; b) => res
+
+    eval dt' M b => res
+    ----------------------------------------------
+    stepOrSuspend dt M (withDt dt' unit) b => res
+
+    -------------------------------------------
+    stepOrSuspend dt M (wait t) b => wait t; b
