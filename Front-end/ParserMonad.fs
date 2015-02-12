@@ -16,7 +16,7 @@ type Error = Error of Position
 (*
     A Parser consists of one function 'Parse', this function will return a tuple of a two lists.
     The first list contains a tuple of
-    - A value of Type 'a. This value yields the result of applinyg 'Parse' to the buffer. This value will be referenced as the 'yielded value', if the parser 'yields a value' that value would be assigned to this value.
+    - A value of Type 'a. This value yields the result of applinyg 'Parse' to the buffer. This value will be referenced as the 'yielded value', if the parser 'yields a value' the yielded value would be assigned to this value.
     - A list of characters. This list contains the remaining characters. The list can be seen as a buffer for uncomsumed input.
     - A context. The context is responsible for holding additional values needed during the parsing process. An example of this would be keywords with their appropriate names and values.
     - A Position. The position holds the current line index in the input buffer. The positions' line index is 'incremented' for every valid line break found during parsing.
