@@ -24,7 +24,7 @@ type Error = Error of Position
 
     A Parser is constructed by calling Parser.Make (f), here f must be a function of type List<char> -> 'ctxt -> Position -> List<'a * List<char> * 'ctxt * Position> * List<Error>.
 
-    The Parser works by monadicly binding multiply Parsers to eachother. A simple example of a Parser trying to match a simple sequence of two characters 'i' and 'f' will look like this:
+    The Parser works by monadically binding multiple Parsers to eachother. A simple example of a Parser trying to match a simple sequence of two characters 'i' and 'f' will look like this:
 
     p {
         let! c = character 'i'
@@ -37,7 +37,7 @@ type Error = Error of Position
     In this case, the function character will return the location of the error and return a Parser type containing this error.
     If character 'f' was satisfied then we will ParserBuilder.Return () this function will return a Parser with an empty yield and the remaining input buffer.
 
-    It is possible to create a complex parser in this manner. 
+    It is possible to create a complex parser with the Parser Monad while still maintaining readable code. 
 *)
 
 
