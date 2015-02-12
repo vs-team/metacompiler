@@ -22,21 +22,19 @@ Keyword = "else" LeftArguments = [] RightArguments = [] Priority = 0 Class = "El
 
 Keyword = "wait" LeftArguments = [] RightArguments = [<<float>>] Priority = 0 Class = "Expr"
 
-Keyword = "unit" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Expr"
-
 Keyword = ";" LeftArguments = [Expr] RightArguments = [Expr] Priority = -10 Class = "Expr"
-Keyword = "withDt" LeftArguments = [] RightArguments = [<<float>> Expr] Priority = -10 Class = "Expr"
+Keyword = "setDt" LeftArguments = [] RightArguments = [<<float>>] Priority = -10 Class = "Expr"
 
 Keyword = "eval" LeftArguments = [] RightArguments = [<<float>> Locals Expr] Priority = -1000 Class = "Expr"
 Keyword = "stepOrSuspend " LeftArguments = [] RightArguments = [<<float>> Locals Expr Expr] Priority = -1000 Class = "Expr"
 
 Keyword = "runTest1" LeftArguments = [] RightArguments = [] Priority = -10000 Class = "Test"
 
-Id inherits Expr
-BoolConst inherits BoolExpr
-BoolExpr inherits Expr
-IntConst inherits IntExpr
-IntExpr inherits Expr
+Id is Expr
+BoolConst is BoolExpr
+BoolExpr is Expr
+IntConst is IntExpr
+IntExpr is Expr
 
 
 v := <<M.GetKey(k)>>
@@ -75,7 +73,7 @@ runTest1 => res
   <<dt >= t>> == true
   dt' := <<dt - t>>
   --------------------------------------
-  eval dt M (wait t) => withDt dt' unit
+  eval dt M (wait t) => setDt dt'
 
   <<dt >= t>> == false
   t' := <<t - dt>>
@@ -89,7 +87,7 @@ runTest1 => res
 
     eval dt' M b => res
     ----------------------------------------------
-    stepOrSuspend dt M (withDt dt' unit) b => res
+    stepOrSuspend dt M (setDt dt') b => res
 
     -------------------------------------------
     stepOrSuspend dt M (wait t) b => wait t; b

@@ -1,32 +1,44 @@
-﻿Keyword = "+" LeftArguments = [Expr] RightArguments = [Expr] Priority = 0 Class = "Expr"
+﻿Keyword = "z" LeftArguments = [] RightArguments = [] Priority = 2 Class = "Num"
+Keyword = "s" LeftArguments = [] RightArguments = [Num] Priority = 3 Class = "Num"
+
+Keyword = "+" LeftArguments = [Expr] RightArguments = [Expr] Priority = 0 Class = "Expr"
 Keyword = "*" LeftArguments = [Expr] RightArguments = [Expr] Priority = 1 Class = "Expr"
-Keyword = "z" LeftArguments = [] RightArguments = [] Priority = 2 Class = "Expr"
-Keyword = "s" LeftArguments = [] RightArguments = [Expr] Priority = 3 Class = "Expr"
 
--------
-z => z
+Keyword = "!" LeftArguments = [] RightArguments = [Expr] Priority = 1 Class = "Expr"
 
-a => a'
-------------
-s a => s a'
+Num is Expr
 
-a => a'
-------------
-z + a => a'
 
-a => a'
-b => b'
-a' + b' => c
-------------------
+-----------
+z + a => a
+
+a + b => c
+-----------------
 s(a) + b => s(c)
 
 -----------
 z * a => z
 
-a => a'
-b => b'
-a' * b' => c
-c => c'
-c' + b' => d
-----------------
+a * b => c
+c + b => d
+--------------
 s(a) * b => d
+
+
+--------
+!z => z
+
+---------------
+!(s a) => s a
+
+!a => a'
+!b => b'
+a' + b' => c
+--------------
+!(a + b) => c
+
+!a => a'
+!b => b'
+a' * b' => c
+--------------
+!(a * b) => c

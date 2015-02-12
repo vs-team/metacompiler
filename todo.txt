@@ -1,5 +1,7 @@
 - multiple files
+- boolean logic
 - theorem prover
+- positional encoding
 - GUI should save delayed compiler to not recompile rules unnecessarily
 - special bracket application and concrete semantics
 - generic keywords

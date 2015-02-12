@@ -14,7 +14,9 @@ let (!) (s:string) =
    .Replace("\\", "_opSlash")
    .Replace("&&", "_opAnd")
    .Replace("||", "_opOr")
-   .Replace("$", "_Dollar")
+   .Replace("$", "_opDollar")
+   .Replace("!", "_opBang")
+   .Replace("?", "_opQuestion")
    .Replace(".", "_opDot")
    .Replace("*", "_opMultiplication")
    .Replace("+", "_opAddition")
@@ -488,5 +490,5 @@ let generateCode (originalFilePath:string) (program_name:string) (rules:BasicExp
       yield "\n\n\n"
       yield main
       yield "\n}\n"
-    ] |> Seq.fold (+) "" |> (fun txt -> System.IO.File.WriteAllText(program_name + ".cs", txt); txt)
+    ] |> Seq.fold (+) "" |> (fun txt -> System.IO.File.WriteAllText(program_name + ".cs", txt); program_name + ".cs")
   | _ -> failwith "Cannot extract rules from input program."

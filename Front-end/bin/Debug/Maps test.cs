@@ -11,10 +11,10 @@ public interface MapIntString : IRunnable {}
 
 
 
-public class _Dollar : MapIntString {
+public class _opDollar : MapIntString {
 public System.Collections.Immutable.ImmutableDictionary<int, string> P1;
 
-public _Dollar(System.Collections.Immutable.ImmutableDictionary<int, string> P1) {this.P1 = P1;}
+public _opDollar(System.Collections.Immutable.ImmutableDictionary<int, string> P1) {this.P1 = P1;}
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -29,7 +29,7 @@ public override string ToString() {
 }
 
 public override bool Equals(object other) {
- var tmp = other as _Dollar;
+ var tmp = other as _opDollar;
  if(tmp != null) return this.P1.Equals(tmp.P1); 
  else return false; }
 }
@@ -44,13 +44,13 @@ public add(MapIntString P1, int P2, string P3) {this.P1 = P1; this.P2 = P2; this
   public IEnumerable<IRunnable> Run() {   
  { 
  #line 6 "Content\Maps test\transform.mc"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Dollar; 
+var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollar; 
  #line 6 "Content\Maps test\transform.mc"
 if (tmp_1 != null) { var M = tmp_1.P1; var k = tmp_0.P2; var v = tmp_0.P3; var M_Prime = (M.Add (k,v)); 
  #line 6 "Content\Maps test\transform.mc"
 if(M_Prime is System.Collections.Immutable.ImmutableDictionary<int, string>) { 
  #line 6 "Content\Maps test\transform.mc"
-var result = new _Dollar(M_Prime as System.Collections.Immutable.ImmutableDictionary<int, string>);
+var result = new _opDollar(M_Prime as System.Collections.Immutable.ImmutableDictionary<int, string>);
  #line 6 "Content\Maps test\transform.mc"
 yield return result;  } }
  } 
@@ -132,7 +132,7 @@ public override bool Equals(object other) {
 public class EntryPoint {
  static public IEnumerable<IRunnable> Run(bool printInput)
 {
-var p = new run(new _Dollar(System.Collections.Immutable.ImmutableDictionary <int,string>.Empty));
+var p = new run(new _opDollar(System.Collections.Immutable.ImmutableDictionary <int,string>.Empty));
 if(printInput) System.Console.WriteLine(p.ToString());
 foreach(var x in p.Run())
 yield return x;

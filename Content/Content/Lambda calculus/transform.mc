@@ -6,7 +6,7 @@ Keyword = "." LeftArguments = [] RightArguments = [] Priority = 0 Class = "Dot"
 Keyword = "->" LeftArguments = [Term] RightArguments = [Term] Priority = 6 Class = "Where"
 Keyword = "with" LeftArguments = [Term] RightArguments = [Where] Priority = 5 Class = "With"
 
-Id inherits Term
+Id is Term
 
 ---------
 $x => $x

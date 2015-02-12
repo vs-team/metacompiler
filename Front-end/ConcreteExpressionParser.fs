@@ -153,7 +153,7 @@ and inheritanceRelationships() =
     p{
       let! concreter = customClass()
       let! bs = blank_space()
-      let! inherits = word "inherits"
+      let! inherits = word "is"
       let! bs = blank_space()
       let! abstracter = customClass()
       let! bs = blank_space()
