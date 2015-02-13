@@ -70,7 +70,8 @@ let main argv =
 //      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
 //      "Lambda calculus", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")"
 //      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
-      "Casanova semantics", @"runTest1"
+//      "Casanova semantics", @"runTest1"
+      "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
     ]
 
   for name,input in samples 
