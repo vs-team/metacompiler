@@ -67,6 +67,9 @@
     <None Include="Content\Binary trees\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Content\Generic lists\transform.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Content\Lists\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
