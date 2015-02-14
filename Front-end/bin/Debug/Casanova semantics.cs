@@ -25,6 +25,7 @@ public class _opDollar : Id {
 public string P1;
 
 public _opDollar(string P1) {this.P1 = P1;}
+public static _opDollar Create(string P1) { return new _opDollar(P1); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -50,6 +51,7 @@ public class _opDollarb : BoolConst {
 public bool P1;
 
 public _opDollarb(bool P1) {this.P1 = P1;}
+public static _opDollarb Create(bool P1) { return new _opDollarb(P1); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -75,6 +77,7 @@ public class _opDollari : IntConst {
 public int P1;
 
 public _opDollari(int P1) {this.P1 = P1;}
+public static _opDollari Create(int P1) { return new _opDollari(P1); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -100,6 +103,7 @@ public class _opDollarm : Locals {
 public System.Collections.Immutable.ImmutableDictionary<string, Expr> P1;
 
 public _opDollarm(System.Collections.Immutable.ImmutableDictionary<string, Expr> P1) {this.P1 = P1;}
+public static _opDollarm Create(System.Collections.Immutable.ImmutableDictionary<string, Expr> P1) { return new _opDollarm(P1); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -126,6 +130,7 @@ public BoolExpr P1;
 public BoolExpr P2;
 
 public _opAnd(BoolExpr P1, BoolExpr P2) {this.P1 = P1; this.P2 = P2;}
+public static _opAnd Create(BoolExpr P1, BoolExpr P2) { return new _opAnd(P1, P2); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -153,6 +158,7 @@ public IntExpr P1;
 public IntExpr P2;
 
 public _opMultiplication(IntExpr P1, IntExpr P2) {this.P1 = P1; this.P2 = P2;}
+public static _opMultiplication Create(IntExpr P1, IntExpr P2) { return new _opMultiplication(P1, P2); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -180,6 +186,7 @@ public IntExpr P1;
 public IntExpr P2;
 
 public _opAddition(IntExpr P1, IntExpr P2) {this.P1 = P1; this.P2 = P2;}
+public static _opAddition Create(IntExpr P1, IntExpr P2) { return new _opAddition(P1, P2); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -207,6 +214,7 @@ public IntExpr P1;
 public IntExpr P2;
 
 public _opSubtraction(IntExpr P1, IntExpr P2) {this.P1 = P1; this.P2 = P2;}
+public static _opSubtraction Create(IntExpr P1, IntExpr P2) { return new _opSubtraction(P1, P2); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -234,6 +242,7 @@ public IntExpr P1;
 public IntExpr P2;
 
 public _opDivision(IntExpr P1, IntExpr P2) {this.P1 = P1; this.P2 = P2;}
+public static _opDivision Create(IntExpr P1, IntExpr P2) { return new _opDivision(P1, P2); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -261,6 +270,7 @@ public Expr P1;
 public Expr P2;
 
 public _Semicolon(Expr P1, Expr P2) {this.P1 = P1; this.P2 = P2;}
+public static _Semicolon Create(Expr P1, Expr P2) { return new _Semicolon(P1, P2); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -288,6 +298,7 @@ public IntExpr P1;
 public IntExpr P2;
 
 public _opEquals(IntExpr P1, IntExpr P2) {this.P1 = P1; this.P2 = P2;}
+public static _opEquals Create(IntExpr P1, IntExpr P2) { return new _opEquals(P1, P2); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -315,6 +326,7 @@ public IntExpr P1;
 public IntExpr P2;
 
 public _opGreaterThan(IntExpr P1, IntExpr P2) {this.P1 = P1; this.P2 = P2;}
+public static _opGreaterThan Create(IntExpr P1, IntExpr P2) { return new _opGreaterThan(P1, P2); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -343,6 +355,7 @@ public string P2;
 public Expr P3;
 
 public add(Locals P1, string P2, Expr P3) {this.P1 = P1; this.P2 = P2; this.P3 = P3;}
+public static add Create(Locals P1, string P2, Expr P3) { return new add(P1, P2, P3); }
 
   public IEnumerable<IRunnable> Run() {   
  { 
@@ -353,7 +366,7 @@ if (tmp_1 != null) { var M = tmp_1.P1; var k = tmp_0.P2; var v = tmp_0.P3; var M
  #line 44 "Content\Casanova semantics\transform.mc"
 if(M_Prime is System.Collections.Immutable.ImmutableDictionary<string, Expr>) { 
  #line 44 "Content\Casanova semantics\transform.mc"
-var result = new _opDollarm(M_Prime as System.Collections.Immutable.ImmutableDictionary<string, Expr>);
+var result = _opDollarm.Create(M_Prime as System.Collections.Immutable.ImmutableDictionary<string, Expr>);
  #line 44 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
@@ -383,6 +396,7 @@ public override bool Equals(object other) {
 public class _Else : Else {
 
 public _Else() {}
+public static _Else Create() { return new _Else(); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -404,6 +418,7 @@ public Locals P2;
 public Expr P3;
 
 public eval(float P1, Locals P2, Expr P3) {this.P1 = P1; this.P2 = P2; this.P3 = P3;}
+public static eval Create(float P1, Locals P2, Expr P3) { return new eval(P1, P2, P3); }
 
   public IEnumerable<IRunnable> Run2_() {   
  { 
@@ -416,19 +431,19 @@ if (tmp_2 != null) { var t = tmp_1.P3; var tmp_3 = tmp_1.P4 as _Else;
  #line 54 "Content\Casanova semantics\transform.mc"
 if (tmp_3 != null) { var e = tmp_1.P5; 
  #line 54 "Content\Casanova semantics\transform.mc"
-if(!c.Equals(new _opDollarb(true))) { 
+if(!c.Equals(_opDollarb.Create(true))) { 
  #line 54 "Content\Casanova semantics\transform.mc"
-if(!c.Equals(new _opDollarb(false))) { 
+if(!c.Equals(_opDollarb.Create(false))) { 
  #line 54 "Content\Casanova semantics\transform.mc"
 if(M is Locals && c is Expr) { 
  #line 54 "Content\Casanova semantics\transform.mc"
-var tmp_5 = new eval(dt, M as Locals, c as Expr);
+var tmp_5 = eval.Create(dt, M as Locals, c as Expr);
  #line 54 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_4 in tmp_5.Run2_()) { var c_Prime = tmp_4; 
  #line 54 "Content\Casanova semantics\transform.mc"
 if(M is Locals && c_Prime is BoolExpr && t is Expr && e is Expr) { 
  #line 54 "Content\Casanova semantics\transform.mc"
-var tmp_7 = new eval(dt, M as Locals, new _If(c_Prime as BoolExpr, new _Then(), t as Expr, new _Else(), e as Expr));
+var tmp_7 = eval.Create(dt, M as Locals, _If.Create(c_Prime as BoolExpr, _Then.Create(), t as Expr, _Else.Create(), e as Expr));
  #line 54 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_6 in tmp_7.Run2_()) { var res = tmp_6; 
  #line 54 "Content\Casanova semantics\transform.mc"
@@ -454,7 +469,7 @@ if (tmp_4 != null) { var e = tmp_1.P5;
  #line 61 "Content\Casanova semantics\transform.mc"
 if(M is Locals && t is Expr) { 
  #line 61 "Content\Casanova semantics\transform.mc"
-var tmp_6 = new eval(dt, M as Locals, t as Expr);
+var tmp_6 = eval.Create(dt, M as Locals, t as Expr);
  #line 61 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_5 in tmp_6.Run2_()) { var res = tmp_5; 
  #line 61 "Content\Casanova semantics\transform.mc"
@@ -480,7 +495,7 @@ if (tmp_4 != null) { var e = tmp_1.P5;
  #line 65 "Content\Casanova semantics\transform.mc"
 if(M is Locals && e is Expr) { 
  #line 65 "Content\Casanova semantics\transform.mc"
-var tmp_6 = new eval(dt, M as Locals, e as Expr);
+var tmp_6 = eval.Create(dt, M as Locals, e as Expr);
  #line 65 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_5 in tmp_6.Run2_()) { var res = tmp_5; 
  #line 65 "Content\Casanova semantics\transform.mc"
@@ -498,7 +513,7 @@ if (tmp_1 != null) { var v = tmp_1.P1;
  #line 69 "Content\Casanova semantics\transform.mc"
 if(M is Locals) { 
  #line 69 "Content\Casanova semantics\transform.mc"
-var tmp_3 = new lookup(M as Locals, v);
+var tmp_3 = lookup.Create(M as Locals, v);
  #line 69 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_2 in tmp_3.Run2_()) { var res = tmp_2; 
  #line 69 "Content\Casanova semantics\transform.mc"
@@ -516,7 +531,7 @@ if (tmp_1 != null) { var t = tmp_1.P1;
  #line 73 "Content\Casanova semantics\transform.mc"
 if((dt>=t).Equals(true)) { var dt_Prime = (dt-t); 
  #line 73 "Content\Casanova semantics\transform.mc"
-var result = new setDt(dt_Prime);
+var result = setDt.Create(dt_Prime);
  #line 73 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
@@ -530,7 +545,7 @@ if (tmp_1 != null) { var t = tmp_1.P1;
  #line 78 "Content\Casanova semantics\transform.mc"
 if((dt<t).Equals(true)) { var t_Prime = (t-dt); 
  #line 78 "Content\Casanova semantics\transform.mc"
-var result = new wait(t_Prime);
+var result = wait.Create(t_Prime);
  #line 78 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
@@ -544,13 +559,13 @@ if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_1.P2;
  #line 83 "Content\Casanova semantics\transform.mc"
 if(M is Locals && a is Expr) { 
  #line 83 "Content\Casanova semantics\transform.mc"
-var tmp_3 = new eval(dt, M as Locals, a as Expr);
+var tmp_3 = eval.Create(dt, M as Locals, a as Expr);
  #line 83 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_2 in tmp_3.Run2_6_()) { var a_Prime = tmp_2; 
  #line 83 "Content\Casanova semantics\transform.mc"
 if(M is Locals && a_Prime is Expr && b is Expr) { 
  #line 83 "Content\Casanova semantics\transform.mc"
-var tmp_5 = new stepOrSuspend (dt, M as Locals, a_Prime as Expr, b as Expr);
+var tmp_5 = stepOrSuspend .Create(dt, M as Locals, a_Prime as Expr, b as Expr);
  #line 83 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_4 in tmp_5.Run2_6_()) { var res = tmp_4; 
  #line 83 "Content\Casanova semantics\transform.mc"
@@ -589,6 +604,7 @@ public Else P4;
 public Expr P5;
 
 public _If(BoolExpr P1, Then P2, Expr P3, Else P4, Expr P5) {this.P1 = P1; this.P2 = P2; this.P3 = P3; this.P4 = P4; this.P5 = P5;}
+public static _If Create(BoolExpr P1, Then P2, Expr P3, Else P4, Expr P5) { return new _If(P1, P2, P3, P4, P5); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -619,6 +635,7 @@ public Locals P1;
 public string P2;
 
 public lookup(Locals P1, string P2) {this.P1 = P1; this.P2 = P2;}
+public static lookup Create(Locals P1, string P2) { return new lookup(P1, P2); }
 
   public IEnumerable<IRunnable> Run() {   
  { 
@@ -656,15 +673,16 @@ public override bool Equals(object other) {
 public class runTest1 : Test {
 
 public runTest1() {}
+public static runTest1 Create() { return new runTest1(); }
 
   public IEnumerable<IRunnable> Run() {   
  { 
  #line 48 "Content\Casanova semantics\transform.mc"
-var tmp_0 = this as runTest1; var dt = 0.020000f; var M = new _opDollarm(System.Collections.Immutable.ImmutableDictionary<string,Expr >.Empty); 
+var tmp_0 = this as runTest1; var dt = 0.020000f; var M = _opDollarm.Create(System.Collections.Immutable.ImmutableDictionary<string,Expr >.Empty); 
  #line 48 "Content\Casanova semantics\transform.mc"
 if(M is Locals) { 
  #line 48 "Content\Casanova semantics\transform.mc"
-var tmp_2 = new eval(dt, M as Locals, new _Semicolon(new _Semicolon(new wait(0.010000f), new wait(0.020000f)), new wait(0.020000f)));
+var tmp_2 = eval.Create(dt, M as Locals, _Semicolon.Create(_Semicolon.Create(wait.Create(0.010000f), wait.Create(0.020000f)), wait.Create(0.020000f)));
  #line 48 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_1 in tmp_2.Run2_()) { var res = tmp_1; 
  #line 48 "Content\Casanova semantics\transform.mc"
@@ -691,6 +709,7 @@ public class setDt : Expr {
 public float P1;
 
 public setDt(float P1) {this.P1 = P1;}
+public static setDt Create(float P1) { return new setDt(P1); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -719,6 +738,7 @@ public Expr P3;
 public Expr P4;
 
 public stepOrSuspend (float P1, Locals P2, Expr P3, Expr P4) {this.P1 = P1; this.P2 = P2; this.P3 = P3; this.P4 = P4;}
+public static stepOrSuspend  Create(float P1, Locals P2, Expr P3, Expr P4) { return new stepOrSuspend (P1, P2, P3, P4); }
 
   public IEnumerable<IRunnable> Run2_6_() {   
  { 
@@ -729,7 +749,7 @@ if (tmp_1 != null) { var dt_Prime = tmp_1.P1; var b = tmp_0.P4;
  #line 88 "Content\Casanova semantics\transform.mc"
 if(M is Locals && b is Expr) { 
  #line 88 "Content\Casanova semantics\transform.mc"
-var tmp_3 = new eval(dt_Prime, M as Locals, b as Expr);
+var tmp_3 = eval.Create(dt_Prime, M as Locals, b as Expr);
  #line 88 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_2 in tmp_3.Run2_6_()) { var res = tmp_2; 
  #line 88 "Content\Casanova semantics\transform.mc"
@@ -747,7 +767,7 @@ if (tmp_1 != null) { var t = tmp_1.P1; var b = tmp_0.P4;
  #line 92 "Content\Casanova semantics\transform.mc"
 if(b is Expr) { 
  #line 92 "Content\Casanova semantics\transform.mc"
-var result = new _Semicolon(new wait(t), b as Expr);
+var result = _Semicolon.Create(wait.Create(t), b as Expr);
  #line 92 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
@@ -778,6 +798,7 @@ public override bool Equals(object other) {
 public class _Then : Then {
 
 public _Then() {}
+public static _Then Create() { return new _Then(); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -797,6 +818,7 @@ public class wait : Expr {
 public float P1;
 
 public wait(float P1) {this.P1 = P1;}
+public static wait Create(float P1) { return new wait(P1); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -823,6 +845,7 @@ public BoolExpr P1;
 public BoolExpr P2;
 
 public _opOr(BoolExpr P1, BoolExpr P2) {this.P1 = P1; this.P2 = P2;}
+public static _opOr Create(BoolExpr P1, BoolExpr P2) { return new _opOr(P1, P2); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -852,7 +875,7 @@ public class EntryPoint {
  static public IEnumerable<IRunnable> Run(bool printInput)
 {
  #line 1 "input"
- var p = new runTest1();
+ var p = runTest1.Create();
 if(printInput) System.Console.WriteLine(p.ToString());
 foreach(var x in p.Run())
 yield return x;

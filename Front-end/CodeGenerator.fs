@@ -73,12 +73,12 @@ let rec create_element (ctxt:ConcreteExpressionContext) =
     | Keyword(Custom k, _) 
     | Application(Regular,(Keyword(Custom k, _)) :: [], _)
     | Application(Implicit,(Keyword(Custom k, _)) :: [], _) -> 
-      sprintf "new %s()" !k, []
+      sprintf "%s.Create()" !k, []
     | Application(Regular,(Keyword(Custom k, _)) :: es, pos)
     | Application(Implicit,(Keyword(Custom k, _)) :: es, pos) ->
       let actualKeyword = ctxt.CustomKeywordsMap.[k]
       let args,cargs = es |> Seq.mapi (fun i e -> create_element' actualKeyword.Arguments.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
-      sprintf "new %s(%s)" !k args, cargs
+      sprintf "%s.Create(%s)" !k args, cargs
     | Extension(v:Var, _) ->
       match expectedType with
       | Native t ->
@@ -115,7 +115,7 @@ let rec create_element (ctxt:ConcreteExpressionContext) =
   | Keyword(Custom k, _) 
   | Application(Regular,(Keyword(Custom k, _)) :: [],_)
   | Application(Implicit,(Keyword(Custom k, _)) :: [],_) -> 
-    sprintf "new %s()" !k, []
+    sprintf "%s.Create()" !k, []
   | Application(Regular,(Keyword(Custom k, _)) :: es,pos)
   | Application(Implicit,(Keyword(Custom k, _)) :: es,pos) ->
     let actualKeyword = ctxt.CustomKeywordsMap.[k]
@@ -125,7 +125,7 @@ let rec create_element (ctxt:ConcreteExpressionContext) =
         args.Substring(1, args.Length - 2)
       else
         args
-    let res = sprintf "new %s(%s)" !k trimmedArgs, cargs
+    let res = sprintf "%s.Create(%s)" !k trimmedArgs, cargs
     res
   | Application(Angle,e::es,pos) ->
     let res = generate_inline (Application(Regular,e::es,pos))
@@ -354,6 +354,14 @@ type GeneratedClass =
             sprintf "public %s(%s) {%s}\n" !c.Name pars args
           else
             sprintf "public %s() {}\n" !c.Name
+        let staticCons =
+          if c.Parameters.Count <> 0 then
+            let pars = c.Parameters |> Seq.map (fun x -> sprintf "%s %s" x.Type.Argument x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
+            let args = c.Parameters |> Seq.map (fun x -> sprintf "%s" x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
+            sprintf "public static %s Create(%s) { return new %s(%s); }\n" !c.Name pars !c.Name args
+          else
+            sprintf "public static %s Create() { return new %s(); }\n" !c.Name !c.Name
+        let cons = cons + staticCons
         let parameters =
           c.Parameters |> Seq.map (fun p -> sprintf "public %s %s;\n" p.Type.Argument p.Name) |> Seq.fold (+) ""
         let missing_methods =

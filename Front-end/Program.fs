@@ -30,7 +30,6 @@ let runDeduction path =
         let args = new System.Collections.Generic.Dictionary<string, string>()
         do args.Add("CompilerVersion", "v4.5")
         let csc = new CSharpCodeProvider()
-
         let parameters = new CompilerParameters([| "mscorlib.dll"; "System.dll"; "System.Runtime.dll"; "System.Core.dll"; "System.Collections.Immutable.dll" |], sprintf "%s.dll" title, true)
         do parameters.GenerateInMemory <- true
         do parameters.CompilerOptions <- @"/optimize+"
@@ -39,7 +38,7 @@ let runDeduction path =
           for error in results.Errors do
             if error.IsWarning |> not then
               do sprintf "%s at %d: %s" error.FileName error.Line error.ErrorText |> addOutput 
-          do System.IO.File.WriteAllText(generatedPath, "")
+          //do System.IO.File.WriteAllText(generatedPath, "")
         else
           let types = results.CompiledAssembly.GetTypes()
           let entryPoint = types |> Seq.find (fun t -> t.Name = "EntryPoint")
@@ -67,12 +66,12 @@ let runDeduction path =
 let main argv = 
   let samples = 
     [
-//      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
-//      "Lambda calculus", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")"
-//      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
-//      "Casanova semantics", @"runTest1"
-//      "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
-//      "Lists", "0;(1;(2;(3;nil))) contains -1"
+      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
+      "Lambda calculus", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")"
+      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
+      "Casanova semantics", @"runTest1"
+      "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
+      "Lists", "0;(1;(2;(3;nil))) contains -1"
       "Binary trees", "run"
     ]
 

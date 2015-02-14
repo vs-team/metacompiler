@@ -46,11 +46,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Front-end\bin\Debug\Binary numbers.cs">
+      <Link>Binary numbers.cs</Link>
+    </Compile>
+    <Compile Include="..\Front-end\bin\Debug\Binary trees.cs">
+      <Link>Binary trees.cs</Link>
+    </Compile>
     <Compile Include="..\Front-end\bin\Debug\Casanova semantics.cs">
       <Link>Casanova semantics.cs</Link>
     </Compile>
     <Compile Include="..\Front-end\bin\Debug\Lambda calculus.cs">
       <Link>Lambda calculus.cs</Link>
+    </Compile>
+    <Compile Include="..\Front-end\bin\Debug\Lists.cs">
+      <Link>Lists.cs</Link>
     </Compile>
     <Compile Include="..\Front-end\bin\Debug\Maps test.cs">
       <Link>Maps test.cs</Link>
