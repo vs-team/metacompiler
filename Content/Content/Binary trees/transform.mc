@@ -14,7 +14,8 @@ BoolExpr is Expr
 
 nil add 10 => t1
 t1 add 5 => t2
-t2 add 15 => t3
+t2 add 7 => t2b
+t2b add 15 => t3
 t3 add 1 => t4
 t4 add 16 => t
 t contains 7 => res
