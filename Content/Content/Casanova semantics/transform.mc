@@ -75,7 +75,7 @@ runTest1 => res
   --------------------------------------
   eval dt M (wait t) => setDt dt'
 
-  <<dt >= t>> == false
+  <<dt < t>> == true
   t' := <<t - dt>>
   ------------------------------
   eval dt M (wait t) => wait t'

@@ -3,7 +3,8 @@
 - special bracket application and concrete semantics
 - generic keywords
 - open directive
-- application of terms
+- application of abstract terms
+- association of keywords (left or right)
 
 
 Lectures:

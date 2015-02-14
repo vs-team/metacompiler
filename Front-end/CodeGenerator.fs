@@ -148,7 +148,7 @@ and generate_inline =
     ""
   | Application(Regular,(Keyword(Custom k, _)) :: [],_) -> 
     sprintf "(%s)" k
-  | Application(SingleAngle,(Keyword(Custom k, _)) :: l :: r :: [],pos) when ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k].LeftAriety = 1 ->
+  | Application(Square,(Keyword(Custom k, _)) :: l :: r :: [],pos) when ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k].LeftAriety = 1 ->
     sprintf "<%s%s%s>" (l |> generate_inline) k (r |> generate_inline)
   | Application(Regular,(Keyword(Custom k, _)) :: l :: r :: [],pos) when ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k].LeftAriety = 1 ->
     sprintf "(%s%s%s)" (l |> generate_inline) k (r |> generate_inline)
@@ -478,7 +478,7 @@ let generateCode (originalFilePath:string) (program_name:string) (rules:BasicExp
     let run_methods =
       all_method_paths |> Seq.map (fun p -> sprintf "IEnumerable<IRunnable> Run%s();\n" (p.ToString())) |> Seq.reduce (+)
     let prelude = sprintf "using System.Collections.Generic;\nusing System.Linq;\nnamespace %s {\n %s\n public interface IRunnable { %s }" (program_name.Replace(" ", "_")) extensions run_methods
-    let main = sprintf "public class EntryPoint {\n static public IEnumerable<IRunnable> Run(bool printInput)\n{\nvar p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" (create_element ctxt program |> fst)
+    let main = sprintf "public class EntryPoint {\n static public IEnumerable<IRunnable> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" (create_element ctxt program |> fst)
     [
       yield prelude
       yield "\n\n\n"

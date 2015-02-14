@@ -528,7 +528,7 @@ var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as w
  #line 78 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var t = tmp_1.P1; 
  #line 78 "Content\Casanova semantics\transform.mc"
-if((dt>=t).Equals(false)) { var t_Prime = (t-dt); 
+if((dt<t).Equals(true)) { var t_Prime = (t-dt); 
  #line 78 "Content\Casanova semantics\transform.mc"
 var result = new wait(t_Prime);
  #line 78 "Content\Casanova semantics\transform.mc"
@@ -660,7 +660,7 @@ public runTest1() {}
   public IEnumerable<IRunnable> Run() {   
  { 
  #line 48 "Content\Casanova semantics\transform.mc"
-var tmp_0 = this as runTest1; var dt = 0.020000f; var M = new _opDollarm(System.Collections.Immutable.ImmutableDictionary <string,Expr>.Empty); 
+var tmp_0 = this as runTest1; var dt = 0.020000f; var M = new _opDollarm(System.Collections.Immutable.ImmutableDictionary<string,Expr >.Empty); 
  #line 48 "Content\Casanova semantics\transform.mc"
 if(M is Locals) { 
  #line 48 "Content\Casanova semantics\transform.mc"
@@ -851,7 +851,8 @@ public override bool Equals(object other) {
 public class EntryPoint {
  static public IEnumerable<IRunnable> Run(bool printInput)
 {
-var p = new runTest1();
+ #line 1 "input"
+ var p = new runTest1();
 if(printInput) System.Console.WriteLine(p.ToString());
 foreach(var x in p.Run())
 yield return x;

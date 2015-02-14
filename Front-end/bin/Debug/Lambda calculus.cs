@@ -374,7 +374,8 @@ public override bool Equals(object other) {
 public class EntryPoint {
  static public IEnumerable<IRunnable> Run(bool printInput)
 {
-var p = new _opVBar(new _opVBar(new _opSlash(new _opDollar("y"), new _opDot(), new _opDollar("y")), new _opSlash(new _opDollar("y"), new _opDot(), new _opDollar("y"))), new _opVBar(new _opDollar("x"), new _opDollar("z")));
+ #line 1 "input"
+ var p = new _opVBar(new _opVBar(new _opSlash(new _opDollar("y"), new _opDot(), new _opDollar("y")), new _opSlash(new _opDollar("y"), new _opDot(), new _opDollar("y"))), new _opVBar(new _opDollar("x"), new _opDollar("z")));
 if(printInput) System.Console.WriteLine(p.ToString());
 foreach(var x in p.Run())
 yield return x;

@@ -1,6 +1,6 @@
 ﻿module BasicExpression
 
-type Bracket = Implicit | Square | Curly | Angle | SingleAngle | Regular
+type Bracket = Implicit | Square | Curly | Angle | Regular
   with 
     static member FromChar = 
       function
@@ -9,7 +9,6 @@ type Bracket = Implicit | Square | Curly | Angle | SingleAngle | Regular
       | '[' -> Square
       | '{' -> Curly
       | '≪' -> Angle
-      | '<' -> SingleAngle
       | c -> failwithf "Unsupported bracket type %A" c
 
 
@@ -36,6 +35,5 @@ type BasicExpression<'k, 'e, 'i, 'di> =
         | Square -> sprintf "[%s] @ %s" ls (di.ToString())
         | Curly -> sprintf "{%s} @ %s" ls (di.ToString())
         | Angle -> sprintf "<<%s>> @ %s" ls (di.ToString())
-        | SingleAngle -> sprintf "<%s> @ %s" ls (di.ToString())
       | Imported(i,di) -> sprintf "%s @ %s" (i.ToString()) (di.ToString())
       | Extension(e,di) -> e.ToString()

@@ -132,7 +132,8 @@ public override bool Equals(object other) {
 public class EntryPoint {
  static public IEnumerable<IRunnable> Run(bool printInput)
 {
-var p = new run(new _opDollar(System.Collections.Immutable.ImmutableDictionary <int,string>.Empty));
+ #line 1 "input"
+ var p = new run(new _opDollar(System.Collections.Immutable.ImmutableDictionary<int,string >.Empty));
 if(printInput) System.Console.WriteLine(p.ToString());
 foreach(var x in p.Run())
 yield return x;

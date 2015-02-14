@@ -54,7 +54,22 @@ type ConcreteExpressionContext =
               RightArguments = [Defined "Expr"]
               Priority = 1
               Class = "Expr" }
+            { Name = ">"
+              LeftArguments = [Defined "Expr"]
+              RightArguments = [Defined "Expr"]
+              Priority = 10
+              Class = "Expr" }
+            { Name = "<"
+              LeftArguments = [Defined "Expr"]
+              RightArguments = [Defined "Expr"]
+              Priority = 10
+              Class = "Expr" }
             { Name = ">="
+              LeftArguments = [Defined "Expr"]
+              RightArguments = [Defined "Expr"]
+              Priority = 10
+              Class = "Expr" }
+            { Name = "<="
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 10
@@ -462,17 +477,12 @@ and expr() =
       | First _ -> 
         return []
       | Second _ ->
-        let open_bracket = (character '(' + character '[') + (character '{' + (word "<<" + character '<'))
-        let closed_bracket = (character ')' + character ']') + (character '}' + (word ">>" + character '>'))
-        let! e = customKeyword() + ((open_bracket + !!closed_bracket) + (literal() + identifier()))
+        let open_bracket = (character '(' + character '[') + (character '{' + word "<<")
+        let closed_bracket = (character ')' + character ']') + (character '}' + word ">>")
+        let! e = (open_bracket + !!closed_bracket) + (customKeyword() + (literal() + identifier()))
         match e with
-        | First(k) -> 
-          let be = Keyword(Custom(new System.String(k |> Seq.toArray)),pos)
-          let! bs = blank_space()
-          let! bes = maybe_inner_expr
-          return be::bes
-        | Second(First(First(actual_open_bracket))) -> 
-          let extracted_open_bracket = actual_open_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun x -> x.Fold (fun _ -> '≪') id))
+        | First(First(actual_open_bracket)) -> 
+          let extracted_open_bracket = actual_open_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun _ -> '≪'))
           let! bs = blank_space()
           let! contextToRestore = 
             if extracted_open_bracket = '≪' then
@@ -489,7 +499,7 @@ and expr() =
           let! i_e = base_expr (Bracket.FromChar extracted_open_bracket)
           let! bs = blank_space()
           let! actual_closed_bracket = closed_bracket
-          let extracted_closed_bracket = actual_closed_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun x -> x.Fold (fun _ -> '≫') id))
+          let extracted_closed_bracket = actual_closed_bracket.Fold (fun x -> x.Fold id id) (fun x -> x.Fold id (fun _ -> '≫'))
           if matching_brackets extracted_open_bracket extracted_closed_bracket then 
             do! setContext contextToRestore
             let! bs = blank_space()
@@ -497,8 +507,13 @@ and expr() =
             return i_e :: r_es
           else
             return! fail()
-        | Second(First(Second(closed_bracket))) -> 
+        | First(Second(closed_bracket)) -> 
           return []
+        | Second(First(k)) -> 
+          let be = Keyword(Custom(new System.String(k |> Seq.toArray)),pos)
+          let! bs = blank_space()
+          let! bes = maybe_inner_expr
+          return be::bes
         | Second(Second(e)) ->
           let be = 
             match e with
