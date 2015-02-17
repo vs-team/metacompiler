@@ -79,7 +79,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | GreaterOr
       | Nesting -> ""
       | Custom name -> name
 
-and CustomKeyword = { Name : string; LeftArguments : List<KeywordArgument>; RightArguments : List<KeywordArgument>; Priority : int; Class : string }
+and CustomKeyword = { Name : string; GenericArguments : List<KeywordArgument>; LeftArguments : List<KeywordArgument>; RightArguments : List<KeywordArgument>; Priority : int; Class : string }
   with member this.LeftAriety = this.LeftArguments.Length
        member this.RightAriety = this.RightArguments.Length
        member this.Arguments = this.LeftArguments @ this.RightArguments
@@ -104,51 +104,61 @@ and ConcreteExpressionContext =
         let ks = 
           [
             { Name = "true"
+              GenericArguments = []
               LeftArguments = []
               RightArguments = []
               Priority = 0
               Class = "Expr" }
             { Name = "false"
+              GenericArguments = []
               LeftArguments = []
               RightArguments = []
               Priority = 0
               Class = "Expr" }
             { Name = ","
+              GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 1
               Class = "Expr" }
             { Name = ">"
+              GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 10
               Class = "Expr" }
             { Name = "<"
+              GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 10
               Class = "Expr" }
             { Name = ">="
+              GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 10
               Class = "Expr" }
             { Name = "<="
+              GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 10
               Class = "Expr" }
             { Name = "+"
+              GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 100
               Class = "Expr" }
             { Name = "-"
+              GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 100
               Class = "Expr" }
             { Name = "."
+              GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 1000
@@ -304,13 +314,31 @@ and keyword : Parser<CustomKeyword,ConcreteExpressionContext> =
               let! ids = identifiers separator
               return Native id :: ids
           | _ ->
-            let! bs = separator()
-            let! ids = identifiers separator
-            return Defined id :: ids        
+            let! openBracket = word "[" + p{return () }
+            match openBracket with
+            | First _ ->
+              let! innerIdentifiers = identifiers commaSeparator
+              let! closedBracket = word "]"
+              let! bs = separator()
+              let! ids = identifiers separator
+              return Generic(id,innerIdentifiers) :: ids
+            | _ -> 
+              let! bs = separator()
+              let! ids = identifiers separator
+              return Defined id :: ids
         | Second _ -> 
           return []
       }
     identifiers blankSpaceSeparator
+  let genericArguments() = 
+    p{
+      do! label "GenericArguments"
+      do! equals
+      do! label "["
+      let! arguments = identifiers()
+      do! label "]"
+      return arguments
+    } ++ p { return [] }
   p{
     do! label "Keyword"
     do! equals
@@ -318,6 +346,7 @@ and keyword : Parser<CustomKeyword,ConcreteExpressionContext> =
     let! bs = blank_space()
     let! name = takeWhile' ((<>) '\"')
     do! label "\""
+    let! genericArguments = genericArguments()
     do! label "LeftArguments"
     do! equals
     do! label "["
@@ -336,7 +365,7 @@ and keyword : Parser<CustomKeyword,ConcreteExpressionContext> =
     do! label "\""
     let! className = takeWhile' ((<>) '\"')
     do! label "\""
-    return { Name = new System.String(name |> Seq.toArray); LeftArguments = leftArguments; RightArguments = rightArguments; Priority = priority; Class = new System.String(className |> Seq.toArray) }
+    return { Name = new System.String(name |> Seq.toArray); GenericArguments = genericArguments; LeftArguments = leftArguments; RightArguments = rightArguments; Priority = priority; Class = new System.String(className |> Seq.toArray) }
   }
 
 and rules depth = 

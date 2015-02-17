@@ -47,47 +47,30 @@ public static contains Create(ListInt P1, int P2) { return new contains(P1, P2);
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 10 "Content\Lists\transform.mc"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as nil; 
- #line 10 "Content\Lists\transform.mc"
+ var tmp_0 = this; var tmp_1 = tmp_0.P1 as nil; 
 if (tmp_1 != null) { var k = tmp_0.P2; 
- #line 10 "Content\Lists\transform.mc"
 var result = no.Create();
- #line 10 "Content\Lists\transform.mc"
 yield return result;  }
  } 
 
   
  { 
- #line 13 "Content\Lists\transform.mc"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Semicolon; 
- #line 13 "Content\Lists\transform.mc"
+ var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Semicolon; 
 if (tmp_1 != null) { var x = tmp_1.P1; var xs = tmp_1.P2; var k = tmp_0.P2; 
- #line 13 "Content\Lists\transform.mc"
 if(x.Equals(k)) { 
- #line 13 "Content\Lists\transform.mc"
 var result = yes.Create();
- #line 13 "Content\Lists\transform.mc"
 yield return result;  } }
  } 
 
   
  { 
- #line 17 "Content\Lists\transform.mc"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Semicolon; 
- #line 17 "Content\Lists\transform.mc"
+ var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Semicolon; 
 if (tmp_1 != null) { var x = tmp_1.P1; var xs = tmp_1.P2; var k = tmp_0.P2; 
- #line 17 "Content\Lists\transform.mc"
 if(!x.Equals(k)) { 
- #line 17 "Content\Lists\transform.mc"
 if(xs is ListInt) { 
- #line 17 "Content\Lists\transform.mc"
 var tmp_3 = contains.Create(xs as ListInt, k);
- #line 17 "Content\Lists\transform.mc"
 foreach (var tmp_2 in tmp_3.Run()) { var res = tmp_2; 
- #line 17 "Content\Lists\transform.mc"
 var result = res;
- #line 17 "Content\Lists\transform.mc"
 yield return result;  } } } }
  } 
 

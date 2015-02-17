@@ -6,6 +6,8 @@ open ParserMonad
 open BasicExpression
 open ConcreteExpressionParser
 
+let private generateLineDirectives = false
+
 let (!) (s:string) =
   s
    .Replace(":=", "_DefinedAs")
@@ -35,6 +37,8 @@ let (!) (s:string) =
    .Replace("true", "_True")
    .Replace("false", "_False")
    .Replace("with", "_With")
+   .Replace("[", "<") // keep last or > becomes opGreaterThan
+   .Replace("]", ">") // see previous comment
 
 let inline (++) (s:#seq<string>) (d:int) = 
   let bs = [ for i in [1..d] -> " " ] |> Seq.fold (+) ""
@@ -66,6 +70,7 @@ type Instruction =
   | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal, Position> * expr2:BasicExpression<Keyword, Var, Literal, Position>
   | Inline of e:BasicExpression<Keyword, Var, Literal, Position>
   | Yield of expr:BasicExpression<Keyword, Var, Literal, Position>
+  | GenericApplicationInstruction of string
 
 let rec create_element (ctxt:ConcreteExpressionContext) = 
   let rec create_element' (expectedType:KeywordArgument) = 
@@ -169,6 +174,8 @@ and generate_inline =
     sprintf "%s" k
   | Application(Implicit,(Keyword(Custom k, _)) :: l :: r :: [],pos) when ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k].LeftAriety = 1 ->
     sprintf "%s%s%s" (l |> generate_inline) k (r |> generate_inline)
+  | Application(Implicit, arg :: [], _) ->
+    arg |> generate_inline
   | Application(Implicit, arg :: args, _) ->
     let pars = [ for x in args -> x |> generate_inline ] |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
     let res = sprintf "%s %s" (arg |> generate_inline) pars
@@ -183,7 +190,9 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
   function 
   | [] -> ""
   | x :: xs ->
-    let newLine = sprintf "\n #line %d \"%s\"\n" debugPosition.Line originalFilePath
+    let newLine = 
+      if generateLineDirectives then sprintf "\n #line %d \"%s\"\n" debugPosition.Line originalFilePath
+      else "\n"
     match x with
     | Var(name, expr) -> 
       sprintf "var %s = %s; %s" !name expr (generate_instructions debugPosition originalFilePath ctxt xs)
@@ -227,6 +236,7 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
         sprintf "%sif(%s) { %svar result = %s;%syield return result; %s }" newLine creationConstraints newLine newElement newLine (generate_instructions debugPosition originalFilePath ctxt xs)
       else
         sprintf "%svar result = %s;%syield return result; %s" newLine newElement newLine (generate_instructions debugPosition originalFilePath ctxt xs)
+    | GenericApplicationInstruction(args) -> sprintf "<%s>" args
 
 let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position>) (self:string) (prefix:List<Instruction>) =
   match e with
@@ -279,8 +289,11 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
     output, tmp_id
   | Application(Regular,e::[],pos) ->
     matchCast tmp_id e self prefix
+  | Application(Square,e::es,pos) ->
+    let res = prefix @ [GenericApplicationInstruction(generate_inline(Application(Implicit,e::es,pos)))]
+    res, tmp_id
   | Application(b,e::es,pos) ->
-    failwithf "Application not starting with %A cannot be matched" e
+    failwith "Application %A cannot be matched" e
   | Application(b,[],pos) ->
     failwith "Application with empty argument list cannot be matched"
   | Imported(l,pos) ->
@@ -330,8 +343,10 @@ type Rule = {
             o <- o @ [Inline(c_i)]
         | _ -> failwithf "Unsupported clause keyword %A for code generation" k
       o <- i @ o @ [Yield r.Output]
-      sprintf "\n { \n #line %d \"%s\"\n%s\n } \n" r.Position.Line originalFilePath (generate_instructions r.Position originalFilePath ctxt o)
-      //sprintf "\n { \n %s\n } \n" (generate_instructions r.Position originalFilePath ctxt o)
+      if generateLineDirectives then
+        sprintf "\n { \n #line %d \"%s\"\n%s\n } \n" r.Position.Line originalFilePath (generate_instructions r.Position originalFilePath ctxt o)
+      else
+        sprintf "\n { \n %s\n } \n" (generate_instructions r.Position originalFilePath ctxt o)
 
 type Method = {
   Rules      : ResizeArray<Rule>
@@ -349,27 +364,34 @@ type Parameter =
 
 type GeneratedClass = 
   {
-    Name                : string
+    BasicName           : string
     Interface           : string
+    GenericArguments    : List<KeywordArgument>
     Parameters          : ResizeArray<Parameter>
     mutable Methods     : Map<Path, Method>
   } with
+      member c.Name = 
+        if c.GenericArguments.IsEmpty |> not then  
+          let args = c.GenericArguments |> Seq.map (fun x -> x.Argument) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
+          sprintf "%s<%s>" !c.BasicName args
+        else
+          !c.BasicName
       member this.MethodPaths = seq{ for x in this.Methods -> x.Key } |> Set.ofSeq
       member c.ToString(all_method_paths:Set<Path>, ctxt:ConcreteExpressionContext, originalFilePath) =
         let cons =
           if c.Parameters.Count <> 0 then
             let pars = c.Parameters |> Seq.map (fun x -> sprintf "%s %s" x.Type.Argument x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
             let args = c.Parameters |> Seq.map (fun x -> sprintf "this.%s = %s;" x.Name x.Name) |> Seq.reduce (fun s x -> sprintf "%s %s" s x)
-            sprintf "public %s(%s) {%s}\n" !c.Name pars args
+            sprintf "public %s(%s) {%s}\n" !c.BasicName pars args
           else
-            sprintf "public %s() {}\n" !c.Name
+            sprintf "public %s() {}\n" !c.BasicName
         let staticCons =
           if c.Parameters.Count <> 0 then
             let pars = c.Parameters |> Seq.map (fun x -> sprintf "%s %s" x.Type.Argument x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
             let args = c.Parameters |> Seq.map (fun x -> sprintf "%s" x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
-            sprintf "public static %s Create(%s) { return new %s(%s); }\n" !c.Name pars !c.Name args
+            sprintf "public static %s Create(%s) { return new %s(%s); }\n" c.Name pars c.Name args
           else
-            sprintf "public static %s Create() { return new %s(); }\n" !c.Name !c.Name
+            sprintf "public static %s Create() { return new %s(); }\n" c.Name c.Name
         let cons = cons + staticCons
         let parameters =
           c.Parameters |> Seq.map (fun p -> sprintf "public %s %s;\n" p.Type.Argument p.Name) |> Seq.fold (+) ""
@@ -395,16 +417,16 @@ type GeneratedClass =
                 sprintf "res += %s.ToString(); \n" p.Name
             let leftParameters = c.Parameters |> Seq.filter (fun x -> x.IsLeft) |> Seq.map (fun x -> printParameter x) |> Seq.fold (+) ""
             let rightParameters = c.Parameters |> Seq.filter (fun x -> x.IsLeft |> not) |> Seq.map (fun x -> printParameter x) |> Seq.fold (+) ""
-            sprintf "public override string ToString() {\n var res = \"(\"; \n%s\n res += \"%s\"; %s\n res += \")\";\n return res;\n}\n" leftParameters (escape c.Name) rightParameters
+            sprintf "public override string ToString() {\n var res = \"(\"; \n%s\n res += \"%s\"; %s\n res += \")\";\n return res;\n}\n" leftParameters (escape c.BasicName) rightParameters
           else
-            sprintf "public override string ToString() {\nreturn \"%s\";\n}\n" (escape c.Name)
+            sprintf "public override string ToString() {\nreturn \"%s\";\n}\n" (escape c.BasicName)
         let equals =
           if c.Parameters.Count > 0 then
             let parameters = c.Parameters |> Seq.map (fun x -> sprintf "this.%s.Equals(tmp.%s)" x.Name x.Name) |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
-            sprintf "public override bool Equals(object other) {\n var tmp = other as %s;\n if(tmp != null) return %s; \n else return false; }\n" !c.Name parameters
+            sprintf "public override bool Equals(object other) {\n var tmp = other as %s;\n if(tmp != null) return %s; \n else return false; }\n" c.Name parameters
           else
-            sprintf "public override bool Equals(object other) {\n return other is %s; \n}\n" !c.Name
-        sprintf "public class %s : %s {\n%s\n%s\n%s\n%s\n%s\n%s}\n\n" !c.Name !c.Interface parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath))) ++ 2) missing_methods to_string equals
+            sprintf "public override bool Equals(object other) {\n return other is %s; \n}\n" c.Name
+        sprintf "public class %s : %s {\n%s\n%s\n%s\n%s\n%s\n%s}\n\n" c.Name !c.Interface parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath))) ++ 2) missing_methods to_string equals
 
 let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position>) (rule_path:Path) (hasScope:bool) =
   let method_path = rule_path.Tail
@@ -469,7 +491,11 @@ let generateCode (originalFilePath:string) (program_name:string) (rules:BasicExp
       | Some i -> i.BaseInterfaces.Add a
       | None -> inheritanceRelationships <- inheritanceRelationships |> Map.add c { Name = c; BaseInterfaces = ResizeArray([a]) }
     for keyword in ctxt.CustomKeywords do
-      let newClass = { Name = keyword.Name; Interface = keyword.Class; Parameters = ResizeArray(); Methods = Map.empty }
+      let newClass = { GeneratedClass.BasicName = keyword.Name
+                       GeneratedClass.GenericArguments = keyword.GenericArguments
+                       GeneratedClass.Interface = keyword.Class
+                       GeneratedClass.Parameters = ResizeArray()
+                       GeneratedClass.Methods = Map.empty }
       for t,i in keyword.LeftArguments |> Seq.mapi (fun i p -> p,i+1) do
         newClass.Parameters.Add({ Name = sprintf "P%d" i; IsLeft = true; Type = t })
       for t,i in keyword.RightArguments |> Seq.mapi (fun i p -> p,i+1) do
@@ -488,9 +514,9 @@ let generateCode (originalFilePath:string) (program_name:string) (rules:BasicExp
           match inheritanceRelationships |> Map.tryFind i with
           | Some ir ->
             let explicitInterfaces = ir.BaseInterfaces
-            yield sprintf "public interface %s : %s {}\n" i (explicitInterfaces |> Seq.reduce (fun s x -> s + ", " + x))
+            yield sprintf "public interface %s : %s {}\n" !i (explicitInterfaces |> Seq.reduce (fun s x -> s + ", " + x))
           | _ ->
-            yield sprintf "public interface %s : IRunnable {}\n" i
+            yield sprintf "public interface %s : IRunnable {}\n" !i
       ] |> Seq.fold (+) ""
     let all_method_paths =
       seq{

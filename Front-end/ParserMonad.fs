@@ -44,6 +44,16 @@ type Error = Error of Position
 type Parser<'a, 'ctxt> = { Parse : List<char> -> 'ctxt -> Position -> List<'a * List<char> * 'ctxt * Position> * List<Error>}
   with
     static member Make(p:List<char> -> 'ctxt -> Position -> List<'a * List<char> * 'ctxt * Position> * List<Error>) : Parser<'a,'ctxt> = { Parse = p }
+    static member (++) (p1:Parser<'a,'ctxt>, p2:Parser<'a,'ctxt>) : Parser<'a,'ctxt> = 
+     (fun buf ctxt p ->
+        match p1.Parse buf ctxt p with
+        | [],err1 ->
+          match p2.Parse buf ctxt p with
+          | [],err2 -> [],err1 @ err2
+          | p2res,err2 ->
+            [ for res,restBuf,ctxt',pos in p2res -> res, restBuf, ctxt', pos ], []
+        | p1res,err1 ->
+          [ for res,restBuf,ctxt',pos in p1res -> res, restBuf, ctxt', pos ], []) |> Parser.Make
     static member (+) (p1:Parser<'a,'ctxt>, p2:Parser<'b,'ctxt>) : Parser<Either<'a,'b>,'ctxt> = 
      (fun buf ctxt p ->
         match p1.Parse buf ctxt p with
@@ -265,7 +275,7 @@ let floatLiteral() =
 
 let identifier() =
   p{
-    let! c = character' (fun c -> isAlpha c || c = '_')
+    let! c = character' (fun c -> isAlpha c || c = '_' || c = '\'')
     let! cs = takeWhile (character' (fun c -> isAlpha c || isDigit c || c = '-' || c = '_' || c = '\'' ))
     return new System.String(c::cs |> Seq.toArray)
   }

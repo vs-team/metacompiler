@@ -45,15 +45,10 @@ public static add Create(MapIntString P1, int P2, string P3) { return new add(P1
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 6 "Content\Maps test\transform.mc"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollar; 
- #line 6 "Content\Maps test\transform.mc"
+ var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollar; 
 if (tmp_1 != null) { var M = tmp_1.P1; var k = tmp_0.P2; var v = tmp_0.P3; var M_Prime = (M.Add (k,v)); 
- #line 6 "Content\Maps test\transform.mc"
 if(M_Prime is System.Collections.Immutable.ImmutableDictionary<int, string>) { 
- #line 6 "Content\Maps test\transform.mc"
 var result = _opDollar.Create(M_Prime as System.Collections.Immutable.ImmutableDictionary<int, string>);
- #line 6 "Content\Maps test\transform.mc"
 yield return result;  } }
  } 
 
@@ -85,29 +80,17 @@ public static run Create(MapIntString P1) { return new run(P1); }
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 10 "Content\Maps test\transform.mc"
-var tmp_0 = this; var M = tmp_0.P1; 
- #line 10 "Content\Maps test\transform.mc"
+ var tmp_0 = this; var M = tmp_0.P1; 
 if(M is MapIntString) { 
- #line 10 "Content\Maps test\transform.mc"
 var tmp_2 = add.Create(M as MapIntString, 1, "one");
- #line 10 "Content\Maps test\transform.mc"
 foreach (var tmp_1 in tmp_2.Run()) { var M1 = tmp_1; 
- #line 10 "Content\Maps test\transform.mc"
 if(M1 is MapIntString) { 
- #line 10 "Content\Maps test\transform.mc"
 var tmp_4 = add.Create(M1 as MapIntString, 2, "two");
- #line 10 "Content\Maps test\transform.mc"
 foreach (var tmp_3 in tmp_4.Run()) { var M2 = tmp_3; 
- #line 10 "Content\Maps test\transform.mc"
 if(M2 is MapIntString) { 
- #line 10 "Content\Maps test\transform.mc"
 var tmp_6 = add.Create(M2 as MapIntString, 3, "three");
- #line 10 "Content\Maps test\transform.mc"
 foreach (var tmp_5 in tmp_6.Run()) { var M3 = tmp_5; 
- #line 10 "Content\Maps test\transform.mc"
 var result = M3;
- #line 10 "Content\Maps test\transform.mc"
 yield return result;  } } } } } }
  } 
 

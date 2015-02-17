@@ -1,4 +1,8 @@
 - generic keywords
+  - generic type annotation
+  - generic type inference/argument unification
+  - nesting of imported and local types
+  - resolution of < and >
 - application of abstract terms
 - open directive
 - association of keywords (left or right)
@@ -18,4 +22,4 @@ Lectures:
 - while-do
 - stack of environments and function declaraction
 - proof of induction of equivalence between while and its recursive translation
-- semantics of list-comprehensions (requires lambda's)
+- list-comprehensions (requires lambda's)

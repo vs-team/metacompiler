@@ -38,7 +38,7 @@ let runDeduction path =
           for error in results.Errors do
             if error.IsWarning |> not then
               do sprintf "%s at %d: %s" error.FileName error.Line error.ErrorText |> addOutput 
-          do System.IO.File.WriteAllText(generatedPath, "")
+          //do System.IO.File.WriteAllText(generatedPath, "")
         else
           let types = results.CompiledAssembly.GetTypes()
           let entryPoint = types |> Seq.find (fun t -> t.Name = "EntryPoint")
@@ -73,6 +73,7 @@ let main argv =
       "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
       "Lists", "0;(1;(2;(3;nil))) contains -1"
       "Binary trees", "run"
+//      "Generic lists", @"runTest1"
     ]
 
   for name,input in samples 

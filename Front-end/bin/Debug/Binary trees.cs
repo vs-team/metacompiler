@@ -129,79 +129,48 @@ public static add Create(BinTreeInt P1, int P2) { return new add(P1, P2); }
 
   public IEnumerable<IRunnable> Run0_() {   
  { 
- #line 25 "Content\Binary trees\transform.mc"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as nil; 
- #line 25 "Content\Binary trees\transform.mc"
+ var tmp_0 = this; var tmp_1 = tmp_0.P1 as nil; 
 if (tmp_1 != null) { var k = tmp_0.P2; 
- #line 25 "Content\Binary trees\transform.mc"
 var result = _opSubtraction_opAddition.Create(_opAddition_opSubtraction.Create(nil.Create(), k), nil.Create());
- #line 25 "Content\Binary trees\transform.mc"
 yield return result;  }
  } 
 
   
  { 
- #line 28 "Content\Binary trees\transform.mc"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSubtraction_opAddition; 
- #line 28 "Content\Binary trees\transform.mc"
+ var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSubtraction_opAddition; 
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opAddition_opSubtraction; 
- #line 28 "Content\Binary trees\transform.mc"
 if (tmp_2 != null) { var l = tmp_2.P1; var k = tmp_2.P2; var r = tmp_1.P2; var x = tmp_0.P2; 
- #line 28 "Content\Binary trees\transform.mc"
 if(x.Equals(k)) { 
- #line 28 "Content\Binary trees\transform.mc"
 if(l is BinTreeInt && r is BinTreeInt) { 
- #line 28 "Content\Binary trees\transform.mc"
 var result = _opSubtraction_opAddition.Create(_opAddition_opSubtraction.Create(l as BinTreeInt, k), r as BinTreeInt);
- #line 28 "Content\Binary trees\transform.mc"
 yield return result;  } } } }
  } 
 
   
  { 
- #line 32 "Content\Binary trees\transform.mc"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSubtraction_opAddition; 
- #line 32 "Content\Binary trees\transform.mc"
+ var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSubtraction_opAddition; 
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opAddition_opSubtraction; 
- #line 32 "Content\Binary trees\transform.mc"
 if (tmp_2 != null) { var l = tmp_2.P1; var k = tmp_2.P2; var r = tmp_1.P2; var x = tmp_0.P2; 
- #line 32 "Content\Binary trees\transform.mc"
 if(x<k) { 
- #line 32 "Content\Binary trees\transform.mc"
 if(l is BinTreeInt) { 
- #line 32 "Content\Binary trees\transform.mc"
 var tmp_4 = add.Create(l as BinTreeInt, x);
- #line 32 "Content\Binary trees\transform.mc"
 foreach (var tmp_3 in tmp_4.Run0_()) { var l_Prime = tmp_3; 
- #line 32 "Content\Binary trees\transform.mc"
 if(l_Prime is BinTreeInt && r is BinTreeInt) { 
- #line 32 "Content\Binary trees\transform.mc"
 var result = _opSubtraction_opAddition.Create(_opAddition_opSubtraction.Create(l_Prime as BinTreeInt, k), r as BinTreeInt);
- #line 32 "Content\Binary trees\transform.mc"
 yield return result;  } } } } } }
  } 
 
   
  { 
- #line 37 "Content\Binary trees\transform.mc"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSubtraction_opAddition; 
- #line 37 "Content\Binary trees\transform.mc"
+ var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSubtraction_opAddition; 
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opAddition_opSubtraction; 
- #line 37 "Content\Binary trees\transform.mc"
 if (tmp_2 != null) { var l = tmp_2.P1; var k = tmp_2.P2; var r = tmp_1.P2; var x = tmp_0.P2; 
- #line 37 "Content\Binary trees\transform.mc"
 if(x>k) { 
- #line 37 "Content\Binary trees\transform.mc"
 if(r is BinTreeInt) { 
- #line 37 "Content\Binary trees\transform.mc"
 var tmp_4 = add.Create(r as BinTreeInt, x);
- #line 37 "Content\Binary trees\transform.mc"
 foreach (var tmp_3 in tmp_4.Run0_()) { var r_Prime = tmp_3; 
- #line 37 "Content\Binary trees\transform.mc"
 if(l is BinTreeInt && r_Prime is BinTreeInt) { 
- #line 37 "Content\Binary trees\transform.mc"
 var result = _opSubtraction_opAddition.Create(_opAddition_opSubtraction.Create(l as BinTreeInt, k), r_Prime as BinTreeInt);
- #line 37 "Content\Binary trees\transform.mc"
 yield return result;  } } } } } }
  } 
 
@@ -234,73 +203,45 @@ public static contains Create(BinTreeInt P1, int P2) { return new contains(P1, P
 
   public IEnumerable<IRunnable> Run0_() {   
  { 
- #line 43 "Content\Binary trees\transform.mc"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as nil; 
- #line 43 "Content\Binary trees\transform.mc"
+ var tmp_0 = this; var tmp_1 = tmp_0.P1 as nil; 
 if (tmp_1 != null) { var k = tmp_0.P2; 
- #line 43 "Content\Binary trees\transform.mc"
 var result = _opDollar.Create(false);
- #line 43 "Content\Binary trees\transform.mc"
 yield return result;  }
  } 
 
   
  { 
- #line 46 "Content\Binary trees\transform.mc"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSubtraction_opAddition; 
- #line 46 "Content\Binary trees\transform.mc"
+ var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSubtraction_opAddition; 
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opAddition_opSubtraction; 
- #line 46 "Content\Binary trees\transform.mc"
 if (tmp_2 != null) { var l = tmp_2.P1; var k = tmp_2.P2; var r = tmp_1.P2; var x = tmp_0.P2; 
- #line 46 "Content\Binary trees\transform.mc"
 if(x.Equals(k)) { 
- #line 46 "Content\Binary trees\transform.mc"
 var result = _opDollar.Create(true);
- #line 46 "Content\Binary trees\transform.mc"
 yield return result;  } } }
  } 
 
   
  { 
- #line 50 "Content\Binary trees\transform.mc"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSubtraction_opAddition; 
- #line 50 "Content\Binary trees\transform.mc"
+ var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSubtraction_opAddition; 
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opAddition_opSubtraction; 
- #line 50 "Content\Binary trees\transform.mc"
 if (tmp_2 != null) { var l = tmp_2.P1; var k = tmp_2.P2; var r = tmp_1.P2; var x = tmp_0.P2; 
- #line 50 "Content\Binary trees\transform.mc"
 if(x<k) { 
- #line 50 "Content\Binary trees\transform.mc"
 if(l is BinTreeInt) { 
- #line 50 "Content\Binary trees\transform.mc"
 var tmp_4 = contains.Create(l as BinTreeInt, x);
- #line 50 "Content\Binary trees\transform.mc"
 foreach (var tmp_3 in tmp_4.Run0_()) { var res = tmp_3; 
- #line 50 "Content\Binary trees\transform.mc"
 var result = res;
- #line 50 "Content\Binary trees\transform.mc"
 yield return result;  } } } } }
  } 
 
   
  { 
- #line 55 "Content\Binary trees\transform.mc"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSubtraction_opAddition; 
- #line 55 "Content\Binary trees\transform.mc"
+ var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSubtraction_opAddition; 
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opAddition_opSubtraction; 
- #line 55 "Content\Binary trees\transform.mc"
 if (tmp_2 != null) { var l = tmp_2.P1; var k = tmp_2.P2; var r = tmp_1.P2; var x = tmp_0.P2; 
- #line 55 "Content\Binary trees\transform.mc"
 if(x>k) { 
- #line 55 "Content\Binary trees\transform.mc"
 if(r is BinTreeInt) { 
- #line 55 "Content\Binary trees\transform.mc"
 var tmp_4 = contains.Create(r as BinTreeInt, x);
- #line 55 "Content\Binary trees\transform.mc"
 foreach (var tmp_3 in tmp_4.Run0_()) { var res = tmp_3; 
- #line 55 "Content\Binary trees\transform.mc"
 var result = res;
- #line 55 "Content\Binary trees\transform.mc"
 yield return result;  } } } } }
  } 
 
@@ -349,53 +290,29 @@ public static run Create() { return new run(); }
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 15 "Content\Binary trees\transform.mc"
-var tmp_0 = this as run; 
- #line 15 "Content\Binary trees\transform.mc"
+ var tmp_0 = this as run; 
 var tmp_2 = add.Create(nil.Create(), 10);
- #line 15 "Content\Binary trees\transform.mc"
 foreach (var tmp_1 in tmp_2.Run0_()) { var t1 = tmp_1; 
- #line 15 "Content\Binary trees\transform.mc"
 if(t1 is BinTreeInt) { 
- #line 15 "Content\Binary trees\transform.mc"
 var tmp_4 = add.Create(t1 as BinTreeInt, 5);
- #line 15 "Content\Binary trees\transform.mc"
 foreach (var tmp_3 in tmp_4.Run0_()) { var t2 = tmp_3; 
- #line 15 "Content\Binary trees\transform.mc"
 if(t2 is BinTreeInt) { 
- #line 15 "Content\Binary trees\transform.mc"
 var tmp_6 = add.Create(t2 as BinTreeInt, 7);
- #line 15 "Content\Binary trees\transform.mc"
 foreach (var tmp_5 in tmp_6.Run0_()) { var t2b = tmp_5; 
- #line 15 "Content\Binary trees\transform.mc"
 if(t2b is BinTreeInt) { 
- #line 15 "Content\Binary trees\transform.mc"
 var tmp_8 = add.Create(t2b as BinTreeInt, 15);
- #line 15 "Content\Binary trees\transform.mc"
 foreach (var tmp_7 in tmp_8.Run0_()) { var t3 = tmp_7; 
- #line 15 "Content\Binary trees\transform.mc"
 if(t3 is BinTreeInt) { 
- #line 15 "Content\Binary trees\transform.mc"
 var tmp_10 = add.Create(t3 as BinTreeInt, 1);
- #line 15 "Content\Binary trees\transform.mc"
 foreach (var tmp_9 in tmp_10.Run0_()) { var t4 = tmp_9; 
- #line 15 "Content\Binary trees\transform.mc"
 if(t4 is BinTreeInt) { 
- #line 15 "Content\Binary trees\transform.mc"
 var tmp_12 = add.Create(t4 as BinTreeInt, 16);
- #line 15 "Content\Binary trees\transform.mc"
 foreach (var tmp_11 in tmp_12.Run0_()) { var t = tmp_11; 
- #line 15 "Content\Binary trees\transform.mc"
 if(t is BinTreeInt) { 
- #line 15 "Content\Binary trees\transform.mc"
 var tmp_14 = contains.Create(t as BinTreeInt, 7);
- #line 15 "Content\Binary trees\transform.mc"
 foreach (var tmp_13 in tmp_14.Run0_()) { var res = tmp_13; 
- #line 15 "Content\Binary trees\transform.mc"
 if(t is BinTreeInt && res is Expr) { 
- #line 15 "Content\Binary trees\transform.mc"
 var result = _Comma.Create(contains.Create(t as BinTreeInt, 7), res as Expr);
- #line 15 "Content\Binary trees\transform.mc"
 yield return result;  } } } } } } } } } } } } } }
  } 
 
