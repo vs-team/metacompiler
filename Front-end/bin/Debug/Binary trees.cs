@@ -166,7 +166,7 @@ if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opAddition_opSubtraction;
  #line 32 "Content\Binary trees\transform.mc"
 if (tmp_2 != null) { var l = tmp_2.P1; var k = tmp_2.P2; var r = tmp_1.P2; var x = tmp_0.P2; 
  #line 32 "Content\Binary trees\transform.mc"
-if((x<k).Equals(true)) { 
+if(x<k) { 
  #line 32 "Content\Binary trees\transform.mc"
 if(l is BinTreeInt) { 
  #line 32 "Content\Binary trees\transform.mc"
@@ -190,7 +190,7 @@ if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opAddition_opSubtraction;
  #line 37 "Content\Binary trees\transform.mc"
 if (tmp_2 != null) { var l = tmp_2.P1; var k = tmp_2.P2; var r = tmp_1.P2; var x = tmp_0.P2; 
  #line 37 "Content\Binary trees\transform.mc"
-if((x>k).Equals(true)) { 
+if(x>k) { 
  #line 37 "Content\Binary trees\transform.mc"
 if(r is BinTreeInt) { 
  #line 37 "Content\Binary trees\transform.mc"
@@ -269,7 +269,7 @@ if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opAddition_opSubtraction;
  #line 50 "Content\Binary trees\transform.mc"
 if (tmp_2 != null) { var l = tmp_2.P1; var k = tmp_2.P2; var r = tmp_1.P2; var x = tmp_0.P2; 
  #line 50 "Content\Binary trees\transform.mc"
-if((x<k).Equals(true)) { 
+if(x<k) { 
  #line 50 "Content\Binary trees\transform.mc"
 if(l is BinTreeInt) { 
  #line 50 "Content\Binary trees\transform.mc"
@@ -291,7 +291,7 @@ if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opAddition_opSubtraction;
  #line 55 "Content\Binary trees\transform.mc"
 if (tmp_2 != null) { var l = tmp_2.P1; var k = tmp_2.P2; var r = tmp_1.P2; var x = tmp_0.P2; 
  #line 55 "Content\Binary trees\transform.mc"
-if((x>k).Equals(true)) { 
+if(x>k) { 
  #line 55 "Content\Binary trees\transform.mc"
 if(r is BinTreeInt) { 
  #line 55 "Content\Binary trees\transform.mc"

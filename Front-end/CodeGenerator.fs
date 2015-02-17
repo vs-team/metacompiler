@@ -195,12 +195,20 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
       let newElement1, creationConstraints1 = create_element ctxt expr1
       let newElement2, creationConstraints2 = create_element ctxt expr2
       let creationConstraints = creationConstraints1 @ creationConstraints2
-      let comparison = match comparison with | Equals -> "" | NotEquals -> "!" | _ -> failwith "Unsupported"
+      let preComparison, inlineComparison, postComparison = 
+        match comparison with 
+        | Equals -> "", ".Equals(", ")" 
+        | NotEquals -> "!", ".Equals(", ")" 
+        | GreaterThan -> "", ">", "" 
+        | GreaterOrEqual -> "", ">=", "" 
+        | SmallerThan -> "", "<", "" 
+        | SmallerOrEqual -> "", "<=", "" 
+        | _ -> failwith "Unsupported"
       if creationConstraints.IsEmpty |> not then
         let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
-        sprintf "%sif(%s) { %sif(%s%s.Equals(%s)) { %s } }" newLine creationConstraints newLine comparison newElement1 newElement2 (generate_instructions debugPosition originalFilePath  ctxt xs)
+        sprintf "%sif(%s) { %sif(%s%s%s%s%s) { %s } }" newLine creationConstraints newLine preComparison newElement1 inlineComparison newElement2 postComparison (generate_instructions debugPosition originalFilePath  ctxt xs)
       else 
-        sprintf "%sif(%s%s.Equals(%s)) { %s }" newLine comparison newElement1 newElement2 (generate_instructions debugPosition originalFilePath  ctxt xs)
+        sprintf "%sif(%s%s%s%s%s) { %s }" newLine preComparison newElement1 inlineComparison newElement2 postComparison (generate_instructions debugPosition originalFilePath  ctxt xs)
     | Iterate(var_name, tmp_var_name, expr, path) ->
       let newElement, creationConstraints = create_element ctxt expr
       if creationConstraints.IsEmpty |> not then
@@ -308,7 +316,8 @@ type Rule = {
           let o',tmp_id' = matchCast (tmp_id+2) c_o (sprintf "tmp_%d" tmp_id) []
           o <- o @ o'
           tmp_id <- tmp_id'
-        | Equals | NotEquals -> o <- o @ [Compare(k, c_i, c_o)]
+        | Equals | NotEquals | GreaterThan | GreaterOrEqual | SmallerThan | SmallerOrEqual -> 
+          o <- o @ [Compare(k, c_i, c_o)]
         | DefinedAs -> 
           match c_i with
           | Extension(iVar, _) ->
@@ -414,6 +423,10 @@ let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position>) (rule_path
               | Application(_, Keyword(Equals, _) :: c_i :: c_o :: [], clausePos) -> yield Equals, c_i, c_o
               | Application(_, Keyword(NotEquals, _) :: c_i :: c_o :: [], clausePos) -> yield NotEquals, c_i, c_o
               | Application(_, Keyword(DefinedAs, _) :: c_i :: c_o :: [], clausePos) -> yield DefinedAs, c_i, c_o
+              | Application(_, Keyword(GreaterThan, _) :: c_i :: c_o :: [], clausePos) -> yield GreaterThan, c_i, c_o
+              | Application(_, Keyword(GreaterOrEqual, _) :: c_i :: c_o :: [], clausePos) -> yield GreaterOrEqual, c_i, c_o
+              | Application(_, Keyword(SmallerThan, _) :: c_i :: c_o :: [], clausePos) -> yield SmallerThan, c_i, c_o
+              | Application(_, Keyword(SmallerOrEqual, _) :: c_i :: c_o :: [], clausePos) -> yield SmallerOrEqual, c_i, c_o
               | _ -> failwithf "Cannot process clause %A" c
           ] 
         Output   = output

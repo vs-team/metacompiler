@@ -17,13 +17,76 @@ type KeywordArgument = Native of string | Defined of string | Generic of string 
          | Generic(a,args) -> 
            sprintf "%s<%s>" a (args |> Seq.map (fun a -> a.Argument) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
 
-type CustomKeyword = { Name : string; LeftArguments : List<KeywordArgument>; RightArguments : List<KeywordArgument>; Priority : int; Class : string }
+type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | GreaterOrEqual | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of name : string
+  with 
+    static member ParseWithoutComparison = 
+      p{
+        let! br = !!(word "<<" + word ">>") + p{ return () }
+        match br with
+        | First _ -> 
+          return! fail()
+        | _ ->
+          let! ar = word "=>" + ((word "==" + word "!=") + word ":=")
+          match ar with
+          | First _ -> 
+            return DoubleArrow
+          | Second ar' ->
+            match ar' with
+            | First ar'' -> 
+              match ar'' with
+              | First( _) -> return Equals
+              | Second( _) -> return NotEquals
+            | Second _ -> 
+              return DefinedAs
+      }
+    static member Parse = 
+      p{
+        let! br = !!(word "<<" + word ">>") + p{ return () }
+        match br with
+        | First _ -> 
+          return! fail()
+        | _ ->
+          let! ar = word "=>" + (((word "==" + word "!=") + ((word ">=" + word ">") + (word "<=" + word "<"))) + word ":=")
+          match ar with
+          | First _ -> 
+            return DoubleArrow
+          | Second ar' ->
+            match ar' with
+            | First ar'' -> 
+              match ar'' with
+              | First(First _) -> return Equals
+              | First(Second _) -> return NotEquals
+              | Second(First(First _)) -> return GreaterOrEqual
+              | Second(First(Second _)) -> return GreaterThan
+              | Second(Second(First _)) -> return SmallerOrEqual
+              | Second(Second(Second _)) -> return SmallerThan
+            | Second _ -> 
+              return DefinedAs
+      }
+    override this.ToString() =
+      match this with
+      | Inlined -> "<<>>"
+      | Sequence -> ""
+      | SmallerThan -> "<"
+      | SmallerOrEqual -> "<="
+      | GreaterThan -> ">"
+      | GreaterOrEqual -> ">="
+      | Equals -> "=="
+      | NotEquals -> "!="
+      | DoubleArrow -> "=>"
+      | DefinedAs -> ":="
+      | FractionLine -> "\n-------------------\n"
+      | Nesting -> ""
+      | Custom name -> name
+
+and CustomKeyword = { Name : string; LeftArguments : List<KeywordArgument>; RightArguments : List<KeywordArgument>; Priority : int; Class : string }
   with member this.LeftAriety = this.LeftArguments.Length
        member this.RightAriety = this.RightArguments.Length
        member this.Arguments = this.LeftArguments @ this.RightArguments
 
-type ConcreteExpressionContext = 
+and ConcreteExpressionContext = 
   {
+    PredefinedKeywords : Parser<Keyword, ConcreteExpressionContext>
     CustomKeywords : List<CustomKeyword>
     CustomKeywordsByPrefix : List<CustomKeyword>
     CustomKeywordsMap : Map<string,CustomKeyword>    
@@ -31,6 +94,7 @@ type ConcreteExpressionContext =
   } with
       static member Empty =
         {
+          PredefinedKeywords       = Keyword.Parse
           CustomKeywords           = []
           CustomKeywordsByPrefix   = []
           CustomKeywordsMap        = Map.empty
@@ -91,11 +155,18 @@ type ConcreteExpressionContext =
               Class = "Expr" }
           ]
         {
-            CustomKeywords = ks
-            CustomKeywordsByPrefix = ks |> List.sortBy (fun k -> k.Name) |> List.rev
-            CustomKeywordsMap = ks |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
-            InheritanceRelationships = []
+          PredefinedKeywords = Keyword.ParseWithoutComparison
+          CustomKeywords = ks
+          CustomKeywordsByPrefix = ks |> List.sortBy (fun k -> k.Name) |> List.rev
+          CustomKeywordsMap = ks |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
+          InheritanceRelationships = []
         }
+
+let getPredefinedKeywords() =
+  p{
+    let! ctxt = getContext()
+    return ctxt.PredefinedKeywords
+  }
 
 let getCustomKeywords() =
   p{
@@ -120,20 +191,6 @@ type Var = { Name : string }
     override this.ToString() =
       this.Name
 
-type Keyword = Sequence | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of name : string
-  with 
-    override this.ToString() =
-      match this with
-      | Inlined -> "<<>>"
-      | Sequence -> ""
-      | Equals -> "=="
-      | NotEquals -> "!="
-      | DoubleArrow -> "=>"
-      | DefinedAs -> ":="
-      | FractionLine -> "\n-------------------\n"
-      | Nesting -> ""
-      | Custom name -> name
-
 type Literal = StringLiteral of string | IntLiteral of int | BoolLiteral of bool | SingleLiteral of float32 | DoubleLiteral of float
   with 
     override this.ToString() =
@@ -149,10 +206,11 @@ let rec program() =
     let! ks = keywords
     let newContext = 
           {
-            CustomKeywords = ks
-            CustomKeywordsByPrefix = ks |> List.sortBy (fun k -> k.Name) |> List.rev
-            CustomKeywordsMap = ks |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
-            InheritanceRelationships = []
+            PredefinedKeywords        = Keyword.Parse
+            CustomKeywords            = ks
+            CustomKeywordsByPrefix    = ks |> List.sortBy (fun k -> k.Name) |> List.rev
+            CustomKeywordsMap         = ks |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
+            InheritanceRelationships  = []
           }
     do! setContext newContext
     let! inheritance = inheritanceRelationships()
@@ -353,21 +411,14 @@ and clause depth =
     | Application(Angle, args, di),(First _) ->
       return Application(Angle, Keyword(Inlined,pos) :: args, di)
     | _ ->
-      let! ar = word "=>" + ((word "==" + word "!=") + word ":=")
+      let! parseKeyword = getPredefinedKeywords()
+      let! ar = parseKeyword
       let! bs3 = blank_space()
       let! o = expr()
       if debug_rules then
         do printfn "%A => %A" i o
       let! bs4 = blank_space()
-      match ar with
-      | First _ ->
-        return Application(Bracket.Implicit, Keyword(DoubleArrow,pos) :: i :: o :: [], pos)
-      | Second(First(First _)) ->
-        return Application(Bracket.Implicit, Keyword(Equals,pos) :: i :: o :: [], pos)
-      | Second(First(Second _)) ->
-        return Application(Bracket.Implicit, Keyword(NotEquals,pos) :: i :: o :: [], pos)
-      | Second(Second _) ->
-        return Application(Bracket.Implicit, Keyword(DefinedAs,pos) :: i :: o :: [], pos)
+      return Application(Bracket.Implicit, Keyword(ar,pos) :: i :: o :: [], pos)
   }
 
 and customClass() =
@@ -472,7 +523,8 @@ and expr() =
   and inner_expr =
     p{
       let! pos = getPosition()
-      let! end_line = !!(word "--" + word "=>" + word "==" + word "!=" + word ":=") + p{ return () }
+      let! parseKeyword = getPredefinedKeywords()
+      let! end_line = !!(word "--" + parseKeyword) + p{ return () }
       match end_line with
       | First _ -> 
         return []
@@ -525,7 +577,8 @@ and expr() =
     }
   and maybe_inner_expr = 
     p{
-      let! es = inner_expr + (!!newline() + !!(word "=>" + word "==" + word "!=" + word ":="))
+      let! parseKeyword = getPredefinedKeywords()
+      let! es = inner_expr + (!!newline() + !!parseKeyword)
       match es with
       | First bes -> return bes
       | _ -> return []

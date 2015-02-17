@@ -19,11 +19,11 @@ let runDeduction path =
   let timer = System.Diagnostics.Stopwatch()
   let output = ref ""
   let addOutput s = output := sprintf "%s\n%s" (output.Value) s
-//  do debug_expr <- true
   match (program()).Parse (rules |> Seq.toList) ConcreteExpressionContext.Empty Position.Zero with
   | (x,_,ctxt,pos)::xs,[] -> 
     fun (input:string) ->
       let input = input.Trim([|'\r'; '\n'|]) + "\n"
+//      do debug_expr <- true
       match expr().Parse (input |> Seq.toList) ctxt Position.Zero with
       | (y,_,ctxt',pos')::ys,[] ->
         let generatedPath = generateCode originalFilePath title x y ctxt
@@ -38,7 +38,7 @@ let runDeduction path =
           for error in results.Errors do
             if error.IsWarning |> not then
               do sprintf "%s at %d: %s" error.FileName error.Line error.ErrorText |> addOutput 
-          //do System.IO.File.WriteAllText(generatedPath, "")
+          do System.IO.File.WriteAllText(generatedPath, "")
         else
           let types = results.CompiledAssembly.GetTypes()
           let entryPoint = types |> Seq.find (fun t -> t.Name = "EntryPoint")
@@ -66,12 +66,12 @@ let runDeduction path =
 let main argv = 
   let samples = 
     [
-//      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
-//      "Lambda calculus", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")"
-//      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
-//      "Casanova semantics", @"runTest1"
-//      "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
-//      "Lists", "0;(1;(2;(3;nil))) contains -1"
+      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
+      "Casanova semantics", @"runTest1"
+      "Lambda calculus", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")"
+      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
+      "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
+      "Lists", "0;(1;(2;(3;nil))) contains -1"
       "Binary trees", "run"
     ]
 

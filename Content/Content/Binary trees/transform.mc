@@ -29,12 +29,12 @@ run => (t contains 7),res
   -------------------------------------
   (l +- k -+ r) add x => (l +- k -+ r)
 
-  <<x < k>> == true
+  x < k
   l add x => l'
   --------------------------------------
   (l +- k -+ r) add x => (l' +- k -+ r)
 
-  <<x > k>> == true
+  x > k
   r add x => r'
   --------------------------------------
   (l +- k -+ r) add x => (l +- k -+ r')
@@ -47,12 +47,12 @@ run => (t contains 7),res
   ----------------------------------
   (l +- k -+ r) contains x => $true
 
-  <<x < k>> == true
+  x < k
   l contains x => res
   --------------------------------
   (l +- k -+ r) contains x => res
 
-  <<x > k>> == true
+  x > k
   r contains x => res
   --------------------------------
   (l +- k -+ r) contains x => res
