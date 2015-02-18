@@ -21,7 +21,7 @@ public interface Then : IRunnable {}
 
 
 
-public class _opDollar : Id {
+public class _opDollar : Id  {
 public string P1;
 
 public _opDollar(string P1) {this.P1 = P1;}
@@ -47,7 +47,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opDollarb : BoolConst {
+public class _opDollarb : BoolConst  {
 public bool P1;
 
 public _opDollarb(bool P1) {this.P1 = P1;}
@@ -73,7 +73,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opDollari : IntConst {
+public class _opDollari : IntConst  {
 public int P1;
 
 public _opDollari(int P1) {this.P1 = P1;}
@@ -99,7 +99,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opDollarm : Locals {
+public class _opDollarm : Locals  {
 public System.Collections.Immutable.ImmutableDictionary<string, Expr> P1;
 
 public _opDollarm(System.Collections.Immutable.ImmutableDictionary<string, Expr> P1) {this.P1 = P1;}
@@ -125,7 +125,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opAnd : BoolExpr {
+public class _opAnd : BoolExpr  {
 public BoolExpr P1;
 public BoolExpr P2;
 
@@ -153,7 +153,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opMultiplication : IntExpr {
+public class _opMultiplication : IntExpr  {
 public IntExpr P1;
 public IntExpr P2;
 
@@ -181,7 +181,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opAddition : IntExpr {
+public class _opAddition : IntExpr  {
 public IntExpr P1;
 public IntExpr P2;
 
@@ -209,7 +209,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opSubtraction : IntExpr {
+public class _opSubtraction : IntExpr  {
 public IntExpr P1;
 public IntExpr P2;
 
@@ -237,7 +237,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opDivision : IntExpr {
+public class _opDivision : IntExpr  {
 public IntExpr P1;
 public IntExpr P2;
 
@@ -265,7 +265,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _Semicolon : Expr {
+public class _Semicolon : Expr  {
 public Expr P1;
 public Expr P2;
 
@@ -293,7 +293,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opEquals : BoolExpr {
+public class _opEquals : BoolExpr  {
 public IntExpr P1;
 public IntExpr P2;
 
@@ -321,7 +321,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opGreaterThan : BoolExpr {
+public class _opGreaterThan : BoolExpr  {
 public IntExpr P1;
 public IntExpr P2;
 
@@ -349,7 +349,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class add : Locals {
+public class add : Locals  {
 public Locals P1;
 public string P2;
 public Expr P3;
@@ -388,7 +388,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _Else : Else {
+public class _Else : Else  {
 
 public _Else() {}
 public static _Else Create() { return new _Else(); }
@@ -407,7 +407,7 @@ public override bool Equals(object other) {
 }
 }
 
-public class eval : Expr {
+public class eval : Expr  {
 public float P1;
 public Locals P2;
 public Expr P3;
@@ -528,7 +528,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _If : Expr {
+public class _If : Expr  {
 public BoolExpr P1;
 public Then P2;
 public Expr P3;
@@ -562,7 +562,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class lookup : Expr {
+public class lookup : Expr  {
 public Locals P1;
 public string P2;
 
@@ -598,7 +598,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class runTest1 : Test {
+public class runTest1 : Test  {
 
 public runTest1() {}
 public static runTest1 Create() { return new runTest1(); }
@@ -627,7 +627,7 @@ public override bool Equals(object other) {
 }
 }
 
-public class setDt : Expr {
+public class setDt : Expr  {
 public float P1;
 
 public setDt(float P1) {this.P1 = P1;}
@@ -653,7 +653,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class stepOrSuspend  : Expr {
+public class stepOrSuspend  : Expr  {
 public float P1;
 public Locals P2;
 public Expr P3;
@@ -705,7 +705,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _Then : Then {
+public class _Then : Then  {
 
 public _Then() {}
 public static _Then Create() { return new _Then(); }
@@ -724,7 +724,7 @@ public override bool Equals(object other) {
 }
 }
 
-public class wait : Expr {
+public class wait : Expr  {
 public float P1;
 
 public wait(float P1) {this.P1 = P1;}
@@ -750,7 +750,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opOr : BoolExpr {
+public class _opOr : BoolExpr  {
 public BoolExpr P1;
 public BoolExpr P2;
 

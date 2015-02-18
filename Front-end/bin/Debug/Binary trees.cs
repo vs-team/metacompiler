@@ -14,7 +14,7 @@ public interface Expr : IRunnable {}
 
 
 
-public class _opDollar : BoolExpr {
+public class _opDollar : BoolExpr  {
 public bool P1;
 
 public _opDollar(bool P1) {this.P1 = P1;}
@@ -39,7 +39,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opAddition_opSubtraction : BinTreeIntLeft {
+public class _opAddition_opSubtraction : BinTreeIntLeft  {
 public BinTreeInt P1;
 public int P2;
 
@@ -66,7 +66,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _Comma : Expr {
+public class _Comma : Expr  {
 public Expr P1;
 public Expr P2;
 
@@ -93,7 +93,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opSubtraction_opAddition : BinTreeInt {
+public class _opSubtraction_opAddition : BinTreeInt  {
 public BinTreeIntLeft P1;
 public BinTreeInt P2;
 
@@ -120,7 +120,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class add : Expr {
+public class add : Expr  {
 public BinTreeInt P1;
 public int P2;
 
@@ -194,7 +194,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class contains : Expr {
+public class contains : Expr  {
 public BinTreeInt P1;
 public int P2;
 
@@ -265,7 +265,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class nil : BinTreeInt {
+public class nil : BinTreeInt  {
 
 public nil() {}
 public static nil Create() { return new nil(); }
@@ -283,7 +283,7 @@ public override bool Equals(object other) {
 }
 }
 
-public class run : Expr {
+public class run : Expr  {
 
 public run() {}
 public static run Create() { return new run(); }

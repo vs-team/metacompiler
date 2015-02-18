@@ -12,7 +12,7 @@ public interface ListInt : IRunnable {}
 
 
 
-public class _Semicolon : ListInt {
+public class _Semicolon : ListInt  {
 public int P1;
 public ListInt P2;
 
@@ -38,7 +38,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class contains : Expr {
+public class contains : Expr  {
 public ListInt P1;
 public int P2;
 
@@ -93,7 +93,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class nil : ListInt {
+public class nil : ListInt  {
 
 public nil() {}
 public static nil Create() { return new nil(); }
@@ -110,7 +110,7 @@ public override bool Equals(object other) {
 }
 }
 
-public class no : Bool {
+public class no : Bool  {
 
 public no() {}
 public static no Create() { return new no(); }
@@ -127,7 +127,7 @@ public override bool Equals(object other) {
 }
 }
 
-public class yes : Bool {
+public class yes : Bool  {
 
 public yes() {}
 public static yes Create() { return new yes(); }

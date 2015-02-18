@@ -11,7 +11,7 @@ public interface MapIntString : IRunnable {}
 
 
 
-public class _opDollar : MapIntString {
+public class _opDollar : MapIntString  {
 public System.Collections.Immutable.ImmutableDictionary<int, string> P1;
 
 public _opDollar(System.Collections.Immutable.ImmutableDictionary<int, string> P1) {this.P1 = P1;}
@@ -35,7 +35,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class add : Expr {
+public class add : Expr  {
 public MapIntString P1;
 public int P2;
 public string P3;
@@ -72,7 +72,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class run : Expr {
+public class run : Expr  {
 public MapIntString P1;
 
 public run(MapIntString P1) {this.P1 = P1;}

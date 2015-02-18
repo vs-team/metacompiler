@@ -70,7 +70,6 @@ type Instruction =
   | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal, Position> * expr2:BasicExpression<Keyword, Var, Literal, Position>
   | Inline of e:BasicExpression<Keyword, Var, Literal, Position>
   | Yield of expr:BasicExpression<Keyword, Var, Literal, Position>
-  | GenericApplicationInstruction of string
 
 let rec create_element (ctxt:ConcreteExpressionContext) = 
   let rec create_element' (expectedType:KeywordArgument) = 
@@ -236,7 +235,6 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
         sprintf "%sif(%s) { %svar result = %s;%syield return result; %s }" newLine creationConstraints newLine newElement newLine (generate_instructions debugPosition originalFilePath ctxt xs)
       else
         sprintf "%svar result = %s;%syield return result; %s" newLine newElement newLine (generate_instructions debugPosition originalFilePath ctxt xs)
-    | GenericApplicationInstruction(args) -> sprintf "<%s>" args
 
 let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position>) (self:string) (prefix:List<Instruction>) =
   match e with
@@ -290,8 +288,7 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
   | Application(Regular,e::[],pos) ->
     matchCast tmp_id e self prefix
   | Application(Square,e::es,pos) ->
-    let res = prefix @ [GenericApplicationInstruction(generate_inline(Application(Implicit,e::es,pos)))]
-    res, tmp_id
+    prefix, tmp_id
   | Application(b,e::es,pos) ->
     failwith "Application %A cannot be matched" e
   | Application(b,[],pos) ->
@@ -378,6 +375,12 @@ type GeneratedClass =
           !c.BasicName
       member this.MethodPaths = seq{ for x in this.Methods -> x.Key } |> Set.ofSeq
       member c.ToString(all_method_paths:Set<Path>, ctxt:ConcreteExpressionContext, originalFilePath) =
+        let genericConstraints = 
+          if c.GenericArguments.IsEmpty |> not then  
+            let args = c.GenericArguments |> Seq.map (fun x -> sprintf "where %s : class" x.Argument) |> Seq.reduce (fun s x -> sprintf "%s %s" s x)
+            args
+          else
+            ""
         let cons =
           if c.Parameters.Count <> 0 then
             let pars = c.Parameters |> Seq.map (fun x -> sprintf "%s %s" x.Type.Argument x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
@@ -426,7 +429,7 @@ type GeneratedClass =
             sprintf "public override bool Equals(object other) {\n var tmp = other as %s;\n if(tmp != null) return %s; \n else return false; }\n" c.Name parameters
           else
             sprintf "public override bool Equals(object other) {\n return other is %s; \n}\n" c.Name
-        sprintf "public class %s : %s {\n%s\n%s\n%s\n%s\n%s\n%s}\n\n" c.Name !c.Interface parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath))) ++ 2) missing_methods to_string equals
+        sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n%s}\n\n" c.Name !c.Interface genericConstraints parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath))) ++ 2) missing_methods to_string equals
 
 let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position>) (rule_path:Path) (hasScope:bool) =
   let method_path = rule_path.Tail

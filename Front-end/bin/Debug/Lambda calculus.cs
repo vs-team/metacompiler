@@ -15,7 +15,7 @@ public interface With : IRunnable {}
 
 
 
-public class _opDollar : Id {
+public class _opDollar : Id  {
 public System.String P1;
 
 public _opDollar(System.String P1) {this.P1 = P1;}
@@ -47,7 +47,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _Arrow : Where {
+public class _Arrow : Where  {
 public Term P1;
 public Term P2;
 
@@ -74,7 +74,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opDot : Dot {
+public class _opDot : Dot  {
 
 public _opDot() {}
 public static _opDot Create() { return new _opDot(); }
@@ -92,7 +92,7 @@ public override bool Equals(object other) {
 }
 }
 
-public class _opSlash : Term {
+public class _opSlash : Term  {
 public Id P1;
 public Dot P2;
 public Term P3;
@@ -131,7 +131,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _With : With {
+public class _With : With  {
 public Term P1;
 public Where P2;
 
@@ -228,7 +228,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opVBar : Term {
+public class _opVBar : Term  {
 public Term P1;
 public Term P2;
 

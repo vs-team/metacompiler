@@ -11,7 +11,7 @@ public interface Num : Expr {}
 
 
 
-public class _opBang : Expr {
+public class _opBang : Expr  {
 public Expr P1;
 
 public _opBang(Expr P1) {this.P1 = P1;}
@@ -86,7 +86,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opMultiplication : Expr {
+public class _opMultiplication : Expr  {
 public Expr P1;
 public Expr P2;
 
@@ -134,7 +134,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _opAddition : Expr {
+public class _opAddition : Expr  {
 public Expr P1;
 public Expr P2;
 
@@ -180,7 +180,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class s : Num {
+public class s : Num  {
 public Num P1;
 
 public s(Num P1) {this.P1 = P1;}
@@ -204,7 +204,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class z : Num {
+public class z : Num  {
 
 public z() {}
 public static z Create() { return new z(); }

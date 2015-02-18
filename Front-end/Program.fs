@@ -80,4 +80,5 @@ let main argv =
     do runDeduction (System.IO.Path.Combine([| "Content"; name|])) input |> printfn "%s"
 
 //  do GUI.ShowGUI samples runDeduction
+
   0

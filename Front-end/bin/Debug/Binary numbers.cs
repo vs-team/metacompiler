@@ -14,7 +14,7 @@ public interface Num : Expr {}
 
 
 
-public class _opAddition : Expr {
+public class _opAddition : Expr  {
 public Num P1;
 public Num P2;
 
@@ -52,7 +52,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class _Comma : Num {
+public class _Comma : Num  {
 public Num P1;
 public Digit P2;
 
@@ -80,7 +80,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class addCarry : Expr {
+public class addCarry : Expr  {
 public Num P1;
 public Num P2;
 public Digit P3;
@@ -149,7 +149,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class addDigits : Expr {
+public class addDigits : Expr  {
 public Digit P1;
 public Digit P2;
 public Digit P3;
@@ -259,7 +259,7 @@ public override bool Equals(object other) {
  else return false; }
 }
 
-public class d0 : Digit {
+public class d0 : Digit  {
 
 public d0() {}
 public static d0 Create() { return new d0(); }
@@ -278,7 +278,7 @@ public override bool Equals(object other) {
 }
 }
 
-public class d1 : Digit {
+public class d1 : Digit  {
 
 public d1() {}
 public static d1 Create() { return new d1(); }
@@ -297,7 +297,7 @@ public override bool Equals(object other) {
 }
 }
 
-public class nil : Num {
+public class nil : Num  {
 
 public nil() {}
 public static nil Create() { return new nil(); }
@@ -316,7 +316,7 @@ public override bool Equals(object other) {
 }
 }
 
-public class overflow : Num {
+public class overflow : Num  {
 
 public overflow() {}
 public static overflow Create() { return new overflow(); }
