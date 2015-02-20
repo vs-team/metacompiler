@@ -71,6 +71,12 @@ type Parser<'a, 'ctxt> = { Parse : List<char> -> 'ctxt -> Position -> List<'a * 
           for x,res_buf, ctxt', pos' in all_res do
           yield x, buf, ctxt', pos
         ], []) |> Parser.Make
+
+(*
+  Parser monad. The parser monad is responsible for the (lazy) chaining of the parsing operations.
+  The chaining happens with the methods Bind and Combine. Bind takes as input one parser which performs
+  the first parsing step...
+*)
 and ParserBuilder() =
   member this.Bind(p:Parser<'a,'ctxt>, k:'a->Parser<'b,'ctxt>) : Parser<'b,'ctxt> =
    (fun buf ctxt pos ->
