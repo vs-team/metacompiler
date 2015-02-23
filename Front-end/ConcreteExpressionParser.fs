@@ -15,8 +15,13 @@ type KeywordArgument = Native of string | Defined of string | Generic of string 
          | Native a -> a 
          | Defined a -> a 
          | Generic(a,args) -> 
-           sprintf "%s<%s>" a (args |> Seq.map (fun a -> a.Argument) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
-
+           sprintf "%s[%s]" a (args |> Seq.map (fun a -> a.Argument) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
+       member this.ArgumentCSharpStyle cleanup = 
+         match this with 
+         | Native a -> a 
+         | Defined a -> cleanup a 
+         | Generic(a,args) -> 
+           sprintf "%s<%s>" (cleanup a) (args |> Seq.map (fun a -> a.ArgumentCSharpStyle cleanup) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
 type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | GreaterOrEqual | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of name : string
   with 
     static member ParseWithoutComparison = 
@@ -79,8 +84,9 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | GreaterOr
       | Nesting -> ""
       | Custom name -> name
 
-and CustomKeyword = { Name : string; GenericArguments : List<KeywordArgument>; LeftArguments : List<KeywordArgument>; RightArguments : List<KeywordArgument>; Priority : int; Class : string }
-  with member this.LeftAriety = this.LeftArguments.Length
+and CustomKeyword = { Name : string; GenericArguments : List<KeywordArgument>; LeftArguments : List<KeywordArgument>; RightArguments : List<KeywordArgument>; Priority : int; Class : KeywordArgument }
+  with member this.IsGeneric = this.GenericArguments.IsEmpty |> not
+       member this.LeftAriety = this.LeftArguments.Length
        member this.RightAriety = this.RightArguments.Length
        member this.Arguments = this.LeftArguments @ this.RightArguments
 
@@ -108,61 +114,61 @@ and ConcreteExpressionContext =
               LeftArguments = []
               RightArguments = []
               Priority = 0
-              Class = "Expr" }
+              Class = Defined "Expr" }
             { Name = "false"
               GenericArguments = []
               LeftArguments = []
               RightArguments = []
               Priority = 0
-              Class = "Expr" }
+              Class = Defined "Expr" }
             { Name = ","
               GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 1
-              Class = "Expr" }
+              Class = Defined "Expr" }
             { Name = ">"
               GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 10
-              Class = "Expr" }
+              Class = Defined "Expr" }
             { Name = "<"
               GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 10
-              Class = "Expr" }
+              Class = Defined "Expr" }
             { Name = ">="
               GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 10
-              Class = "Expr" }
+              Class = Defined "Expr" }
             { Name = "<="
               GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 10
-              Class = "Expr" }
+              Class = Defined "Expr" }
             { Name = "+"
               GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 100
-              Class = "Expr" }
+              Class = Defined "Expr" }
             { Name = "-"
               GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 100
-              Class = "Expr" }
+              Class = Defined "Expr" }
             { Name = "."
               GenericArguments = []
               LeftArguments = [Defined "Expr"]
               RightArguments = [Defined "Expr"]
               Priority = 1000
-              Class = "Expr" }
+              Class = Defined "Expr" }
           ]
         {
           PredefinedKeywords = Keyword.ParseWithoutComparison
@@ -363,9 +369,13 @@ and keyword : Parser<CustomKeyword,ConcreteExpressionContext> =
     do! label "Class"
     do! equals
     do! label "\""
-    let! className = takeWhile' ((<>) '\"')
+    let! classNames = identifiers()
     do! label "\""
-    return { Name = new System.String(name |> Seq.toArray); GenericArguments = genericArguments; LeftArguments = leftArguments; RightArguments = rightArguments; Priority = priority; Class = new System.String(className |> Seq.toArray) }
+    match classNames with
+    | [className] ->
+      return { Name = new System.String(name |> Seq.toArray); GenericArguments = genericArguments; LeftArguments = leftArguments; RightArguments = rightArguments; Priority = priority; Class = className }
+    | _ -> 
+      return! fail()
   }
 
 and rules depth = 
@@ -456,14 +466,12 @@ and customClass() =
     | [] -> fail()
     | (k : string) :: ks ->
       p{
-        let! r = word k + customClass ks
-        match r with 
-        | First w -> return w
-        | Second w' -> return w'
+        let! w = word k ++ customClass ks
+        return w
       }
   p{
     let! customKeywordsByPrefix = getCustomKeywordsByPrefix()
-    return! customClass [ for k in customKeywordsByPrefix -> k.Class ]
+    return! customClass [ for k in customKeywordsByPrefix -> k.Class.Argument ]
   }
 
 and customKeyword() =
