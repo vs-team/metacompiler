@@ -65,7 +65,6 @@ type Path = Path of List<int>
 type Instruction = 
     Var of name : string * expr : string
   | VarAs of name : string * expr : string * as_type : string
-  | VarAsWithConstraints of name : string * expr : string * as_type : string * type_constraints : string
   | CheckNull of var_name : string
   | CustomCheck of condition : string
   | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal, Position> * path : Path
@@ -201,8 +200,6 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
       sprintf "var %s = %s; %s" !name expr (generate_instructions debugPosition originalFilePath ctxt xs)
     | VarAs(name, expr, as_type) ->
       sprintf "var %s = %s as %s; %s" !name expr !as_type (generate_instructions debugPosition originalFilePath  ctxt xs)
-    | VarAsWithConstraints(name, expr, as_type, constraints) ->
-      sprintf "var %s = %s as %s<%s>; %s" !name expr !as_type constraints (generate_instructions debugPosition originalFilePath  ctxt xs)
     | CheckNull(var_name) ->
       sprintf "%sif (%s != null) { %s }" newLine !var_name (generate_instructions debugPosition originalFilePath  ctxt xs)
     | Compare(comparison, expr1, expr2) ->
@@ -251,16 +248,6 @@ let unifyConstraints (typeConstraint:KeywordArgument) (keywordClass:KeywordArgum
   | _ -> failwithf "Error: cannot unify generic types of %A and %A." typeConstraint keywordClass
   
 
-let varAs(var,self,k) (ctxt:ConcreteExpressionContext) (maybeTypeConstraint:Option<KeywordArgument>) = 
-  let actualKeyword = ctxt.CustomKeywordsMap.[k]
-  let keywordClass = actualKeyword.Class
-  match actualKeyword.IsGeneric, maybeTypeConstraint with 
-  | true, Some typeConstraint ->
-    VarAsWithConstraints(var, self, k, unifyConstraints typeConstraint keywordClass)
-  | _ ->
-    VarAs(var, self, k)
-
-
 let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position>) (self:string) (prefix:List<Instruction>) 
                   (ctxt:ConcreteExpressionContext) (typeConstraint:Option<KeywordArgument>) =
   match e with
@@ -268,13 +255,13 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
     if self <> "this" then
       prefix @ 
       [
-        varAs(sprintf "tmp_%d" tmp_id, self, k) ctxt typeConstraint
+        VarAs(sprintf "tmp_%d" tmp_id, self, k)
         CheckNull(sprintf "tmp_%d" tmp_id)
       ], tmp_id+1
     else
       prefix @
       [
-        varAs(sprintf "tmp_%d" tmp_id, self, k) ctxt typeConstraint
+        VarAs(sprintf "tmp_%d" tmp_id, self, k)
       ], tmp_id+1
   | Extension(v:Var, _) ->
       prefix @
@@ -295,7 +282,7 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
       if self <> "this" then
           prefix @
           [
-            varAs(sprintf "tmp_%d" tmp_id, self, k) ctxt typeConstraint
+            VarAs(sprintf "tmp_%d" tmp_id, self, k)
             CheckNull(sprintf "tmp_%d" tmp_id)
           ], sprintf "tmp_%d" tmp_id, tmp_id+1
       else
