@@ -8,18 +8,83 @@ open ConcreteExpressionParser
 
 let mutable cnt = 0
 
-type TypeVariable = 
+type [<CustomEquality; CustomComparison>] TypeVariable = 
   | Fresh of string
   | LocalGenericParameter of string
   | GenericParameter of string
   | Composite of TypeAnnotation
+  with
+    member v.Id =
+      match v with
+      | Fresh _ -> 0
+      | LocalGenericParameter _  -> 1
+      | GenericParameter _ -> 2
+      | Composite _ -> 3
 
-and TypeAnnotation = 
+    override x.Equals(yobj) =
+      match yobj with
+      | :? TypeVariable as y -> 
+          match x,y with
+          | Fresh a,Fresh b -> a = b
+          | LocalGenericParameter a, LocalGenericParameter b -> a = b
+          | GenericParameter a, GenericParameter b -> a = b
+          | Composite a, Composite b -> a = b
+          | _ -> false
+      | _ -> false
+ 
+    override x.GetHashCode() = x.Id
+    interface System.IComparable with
+      member x.CompareTo yobj =
+          match yobj with
+          | :? TypeVariable as y -> 
+            match x,y with
+            | Fresh a,Fresh b -> compare a b
+            | LocalGenericParameter a, LocalGenericParameter b -> compare a b
+            | GenericParameter a, GenericParameter b -> compare a b
+            | Composite a, Composite b -> compare a b
+            | _ -> compare x.Id y.Id
+          | _ -> failwithf "Cannot compare objects of different types"
+
+and [<CustomEquality; CustomComparison>] TypeAnnotation = 
   | Builtin // ground, primitive, predefined keywords
   | Variable of TypeVariable // maybe ground
   | Native of string | Defined of string // ground types
   | Generic of TypeAnnotation * List<TypeAnnotation> // could be both ground and not ground type
   with 
+    member v.Id =
+      match v with
+      | Builtin -> 0
+      | Variable _  -> 1
+      | Generic _ -> 2
+      | Native _ -> 3
+      | Defined _ -> 4
+
+    override x.Equals(yobj) =
+      match yobj with
+      | :? TypeAnnotation as y -> 
+          match x,y with
+          | Builtin,Builtin -> true
+          | Variable a, Variable b -> a = b
+          | Native a, Native b -> a = b
+          | Defined a, Defined b -> a = b
+          | Generic(a1,a2), Generic(b1,b2) -> (a1,a2) = (b1,b2)
+          | _ -> false
+      | _ -> false
+ 
+    override x.GetHashCode() = x.Id
+    interface System.IComparable with
+      member x.CompareTo yobj =
+          match yobj with
+          | :? TypeAnnotation as y -> 
+            match x,y with
+            | Builtin,Builtin -> 0
+            | Variable a, Variable b -> compare a b
+            | Native a, Native b -> compare a b
+            | Defined a, Defined b -> compare a b
+            | Generic(a1,a2), Generic(b1,b2) -> compare (a1,a2) (b1,b2)
+            | _ -> compare x.Id y.Id
+          | _ -> failwithf "Cannot compare objects of different types"
+
     override t.ToString() =
       match t with
       | Builtin -> ""
@@ -238,10 +303,10 @@ let rec rebuildTypedConstrained (ctxt:ConcreteExpressionContext) (e:BasicExpress
 and rebuildTypedLocal (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, Literal, Position, Unit>) (typingContext:InferenceContext) =
   match e with
   | Imported(i,pos,()) ->
-    let iType = typeCheck ctxt e typingContext
+    let iType = typeCheck ctxt e typingContext |> findMostSpecificMatch  ctxt typingContext
     Imported(i,pos,iType)
   | Extension({ Name = var }, pos, ()) -> 
-    let t = typeCheck ctxt e typingContext
+    let t = typeCheck ctxt e typingContext |> findMostSpecificMatch  ctxt typingContext
     Extension({ Name = var }, pos, t)
   | Application(Angle, args, pos, ()) ->
     let typedArgs = 
@@ -249,10 +314,10 @@ and rebuildTypedLocal (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keywor
           yield rebuildTypedLocal ConcreteExpressionContext.CSharp a typingContext ]
     Application(Angle, typedArgs, pos, TypeAnnotation.FreshVariable)
   | Application(b,Extension({ Name = var }, extPos, ()) :: [], appPos, ()) ->
-    let t = typeCheck ctxt e typingContext
+    let t = typeCheck ctxt e typingContext |> findMostSpecificMatch  ctxt typingContext
     Application(b,Extension({ Name = var }, extPos, t) :: [], appPos, t)
   | Keyword(Custom k, kPos, ()) ->
-    let kType = typeCheck ctxt e typingContext
+    let kType = typeCheck ctxt e typingContext |> findMostSpecificMatch  ctxt typingContext
     Keyword(Custom k, kPos, kType)
   | Application(b, (Keyword(Custom k, kPos, ())) :: args, pos, ()) ->
     let kClass = ctxt.CustomKeywordsMap.[k]
@@ -277,7 +342,7 @@ and rebuildTypedLocal (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keywor
         TypeAnnotation.Generic(TypeAnnotation.Native actualClass, actualArguments)
       | _ ->
         TypeAnnotation.FromKeywordArgument ctxt typingContext kClass.Class
-    Application(b, kTyped :: typedArgs, pos, eType)
+    Application(b, kTyped :: typedArgs, pos, eType |> findMostSpecificMatch  ctxt typingContext)
   | _ -> failwithf "Cannot extract input keyword from %A" e
 
 and findInParameters (genericArgument:KeywordArgument) (args:List<KeywordArgument>) (argTypes:List<TypeAnnotation>) =
@@ -290,10 +355,34 @@ and findInParameters (genericArgument:KeywordArgument) (args:List<KeywordArgumen
     failwithf "Cannot extract generic argument instance %A in %A" genericArgument argTypes
   | _ -> failwithf "Cannot extract generic argument instance %A in %A" genericArgument argTypes
 
+and findMostSpecificMatch (ctxt:ConcreteExpressionContext) (typingContext:InferenceContext) (t:TypeAnnotation) = t
+//  match t with
+//  | Builtin -> t
+//  | Defined _ -> t
+//  | Native _ -> t
+//  | Variable v ->
+//    match typingContext.TypeEquivalence |> Map.tryFind v with
+//    | Some vEq ->
+//      let bestRepresentative = vEq.Members |> Seq.max
+//      findMostSpecificVariable ctxt typingContext bestRepresentative
+//    | None -> 
+//      t
+//  | Generic(t, args) ->
+//    let res = Generic(t |> findMostSpecificMatch ctxt typingContext, [ for a in args -> a  |> findMostSpecificMatch ctxt typingContext ])
+//    res
+//
+//and findMostSpecificVariable (ctxt:ConcreteExpressionContext) (typingContext:InferenceContext) (v:TypeVariable) =
+//  match v with
+//  | Fresh _ -> Variable v
+//  | LocalGenericParameter _ -> Variable v
+//  | GenericParameter _ -> Variable v
+//  | Composite t -> 
+//    findMostSpecificMatch ctxt typingContext t
+
 let rec rebuildTyped (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, Literal, Position, Unit>) (typingContext:InferenceContext) =
   match e with
   | Imported(i,pos,()) ->
-    let iType = typeCheck ctxt e typingContext
+    let iType = typeCheck ctxt e typingContext |> findMostSpecificMatch  ctxt typingContext
     Imported(i,pos,iType)
   | Application(Angle, args, pos, ()) ->
     let typedArgs = 
@@ -301,13 +390,13 @@ let rec rebuildTyped (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword
           yield rebuildTyped ConcreteExpressionContext.CSharp a typingContext ]
     Application(Angle, typedArgs, pos, TypeAnnotation.FreshVariable)
   | Application(b,Extension({ Name = var }, extPos, ()) :: [], appPos, ()) ->
-    let t = typeCheck ctxt e typingContext
+    let t = typeCheck ctxt e typingContext |> findMostSpecificMatch  ctxt typingContext
     Application(b,Extension({ Name = var }, extPos, t) :: [], appPos, t)
   | Extension({ Name = var }, pos, ()) -> 
-    let t = typeCheck ctxt e typingContext
+    let t = typeCheck ctxt e typingContext |> findMostSpecificMatch  ctxt typingContext
     Extension({ Name = var }, pos, t)
   | Keyword(Custom k, kPos, ()) ->
-    let kType = typeCheck ctxt e typingContext
+    let kType = typeCheck ctxt e typingContext |> findMostSpecificMatch  ctxt typingContext
     Keyword(Custom k, kPos, kType)
   | Application(b, (Keyword(Custom k, kPos, ())) :: args, pos, ()) ->
     let kClass = ctxt.CustomKeywordsMap.[k]
@@ -326,13 +415,14 @@ let rec rebuildTyped (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword
         TypeAnnotation.Generic(TypeAnnotation.Native actualClass, actualArguments)
       | _ ->
         TypeAnnotation.FromKeywordArgument ctxt typingContext kClass.Class
-    Application(b, kTyped :: typedArgs, pos, eType)
+    Application(b, kTyped :: typedArgs, pos, eType |> findMostSpecificMatch  ctxt typingContext)
   | _ -> failwithf "Cannot extract input keyword from %A" e
+
 
 let inferTypeAnnotations (input:BasicExpression<Keyword, Var, Literal, Position, Unit>)
                          (output:BasicExpression<Keyword, Var, Literal, Position, Unit>)
                          (clauses:List<BasicExpression<Keyword, Var, Literal, Position, Unit>>)
-                         (ctxt:ConcreteExpressionContext) = 
+                         (ctxt:ConcreteExpressionContext) =
  (*
    create initial context from input expression
    for each clause, expand the context with the clause input and then the clause output
@@ -382,7 +472,7 @@ let inferTypeAnnotations (input:BasicExpression<Keyword, Var, Literal, Position,
         | _ -> ()
     ]
   let outputTyped = rebuildTyped ctxt output typingContext
-//  let _ = debug_log (inputTyped.ToString(), outputTyped.ToString(), [ for c in clausesTyped -> c.ToString() ], typingContext)
+//  let _ = debug_log (inputTyped.ToString(), outputTyped.ToString(), [ for c in clausesTyped -> c.ToString() ]) //, typingContext)
 //  let _ = Console.ReadLine()
 //  do printfn "\n\n\n\n\n\n\n\n\n"
   input, output, clauses
