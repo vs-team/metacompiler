@@ -60,6 +60,7 @@
     <Compile Include="BottomUpPriorityParser.fs" />
     <Compile Include="BasicExpression.fs" />
     <Compile Include="ConcreteExpressionParser.fs" />
+    <Compile Include="TypeInference.fs" />
     <Compile Include="CodeGenerator.fs" />
     <Compile Include="GUI.fs" />
     <Compile Include="Program.fs" />

@@ -15,22 +15,21 @@ Bool is Expr
 Id is Expr
 List[t] is Expr
 
-x != k
-xs contains k => res
+l := ($3;nil)
+p := l contains $3
+p => res
 -----------------------
-x;xs contains k => res
-
-
----------------------------
-nil contains k => no
+runTest1 => p, res
 
 x == k
 -----------------------
 x;xs contains k => yes
 
-l := ($1;($2;($3;nil)))
-p := l contains $3
-p => res
+---------------------------
+nil contains k => no
+
+x != k
+xs contains k => res
 -----------------------
-runTest1 => p, res
+x;xs contains k => res
 

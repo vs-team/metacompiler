@@ -9,7 +9,7 @@ IEnumerable<IRunnable> Run2_8_();
  }
 
 
-public interface BoolConst : BoolExpr {}
+public interface BoolConst : BoolExpr, Expr, ExprResult {}
 public interface BoolExpr : Expr {}
 public interface Else : IRunnable {}
 public interface Expr : IRunnable {}
@@ -17,7 +17,7 @@ public interface ExprList : IRunnable {}
 public interface ExprResult : IRunnable {}
 public interface ExprResultList : IRunnable {}
 public interface Id : Expr {}
-public interface IntConst : IntExpr, ExprResult {}
+public interface IntConst : Expr, ExprResult, IntExpr {}
 public interface IntExpr : Expr {}
 public interface Locals : IRunnable {}
 public interface Test : IRunnable {}

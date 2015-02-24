@@ -1,14 +1,13 @@
 - generic keywords
-  - generic type annotation
-  - generic type inference/argument unification
-  - nesting of imported and local types
-  - resolution of < and >
-- application of abstract terms
+- excessively broad interfaces
+- higher order terms
 - open directive
 - association of keywords (left or right)
 - multiple files
 - GUI should save delayed compiler to not recompile rules unnecessarily
 - special bracket application and concrete semantics
+- resolution of < and > for generic types
+- stronger type checking of polymorphic constraints
 
 
 Lectures:

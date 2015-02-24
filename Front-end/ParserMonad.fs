@@ -370,8 +370,8 @@ let floatLiteral() =
     let! c = character' isDigit
     let! cs = takeWhile (character' isDigit)
     let s = new System.String('0' :: '.' :: c::cs |> Seq.toArray)
-    let f = s |> System.Double.Parse
-    return float i + f
+    let f = s |> System.Single.Parse
+    return float32 i + f
   }  
 (*
     Creates a Parser satisfying the input ( in EBNF ):

@@ -66,13 +66,14 @@ let runDeduction path =
 let main argv = 
   let samples = 
     [
-      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
-      "Casanova semantics", @"runTest1"
+      "Lists", "0;(1;(2;(3;nil))) contains -1"
       "Lambda calculus", @"(\$""y"".$""y"" | \$""y"".$""y"") | ($""x"" | $""z"")"
       "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
       "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
-      "Lists", "0;(1;(2;(3;nil))) contains -1"
       "Binary trees", "run"
+      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
+      "Casanova semantics", @"runTest1"
+
 //      "Generic lists", @"runTest1"
     ]
 

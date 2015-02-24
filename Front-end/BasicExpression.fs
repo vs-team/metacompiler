@@ -30,30 +30,34 @@ type Bracket = Implicit | Square | Curly | Angle | Regular
 
     An Extension functoins as an identifier.
 
-    An Imported Expressions functionas as a Literal
-*)
 type BasicExpression<'k, 'e, 'i, 'di> =
   | Keyword of 'k * 'di
   | Application of Bracket * List<BasicExpression<'k, 'e, 'i, 'di>> * 'di
   | Imported of 'i * 'di
   | Extension of 'e * 'di
   with 
+    member this.TypeInformation =
+      match this with
+      | Keyword(k,di,ti) -> ti
+      | Application(b,l,di,ti) -> ti
+      | Imported(i,di,ti) -> ti
+      | Extension(e,di,ti) -> ti
     member this.DebugInformation =
       match this with
-      | Keyword(k,di) -> di
-      | Application(b,l,di) -> di        
-      | Imported(i,di) -> di
-      | Extension(e,di) -> di
+      | Keyword(k,di,ti) -> di
+      | Application(b,l,di,ti) -> di        
+      | Imported(i,di,ti) -> di
+      | Extension(e,di,ti) -> di
     override this.ToString() =
       match this with
-      | Keyword(k,di) -> k.ToString()
-      | Application(b,l,di) -> 
+      | Keyword(k,di,ti) -> sprintf "%s :: %s" (k.ToString()) (ti.ToString())
+      | Application(b,l,di,ti) -> 
         let ls = l |> Seq.fold (fun s x -> s + " " + x.ToString()) ""
         match b with
-        | Implicit -> sprintf "%s @ %s" ls (di.ToString())
-        | Regular -> sprintf "(%s) @ %s" ls (di.ToString())
-        | Square -> sprintf "[%s] @ %s" ls (di.ToString())
-        | Curly -> sprintf "{%s} @ %s" ls (di.ToString())
-        | Angle -> sprintf "<<%s>> @ %s" ls (di.ToString())
-      | Imported(i,di) -> sprintf "%s @ %s" (i.ToString()) (di.ToString())
-      | Extension(e,di) -> e.ToString()
+        | Implicit -> sprintf "%s @ %s :: %s" ls (di.ToString()) (ti.ToString())
+        | Regular -> sprintf "(%s) @ %s :: %s" ls (di.ToString()) (ti.ToString())
+        | Square -> sprintf "[%s] @ %s :: %s" ls (di.ToString()) (ti.ToString())
+        | Curly -> sprintf "{%s} @ %s :: %s" ls (di.ToString()) (ti.ToString())
+        | Angle -> sprintf "<<%s>> @ %s :: %s" ls (di.ToString()) (ti.ToString())
+      | Imported(i,di,ti) -> sprintf "%s @ %s :: %s" (i.ToString()) (di.ToString()) (ti.ToString())
+      | Extension(e,di,ti) -> e.ToString() 

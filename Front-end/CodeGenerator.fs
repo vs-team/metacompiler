@@ -67,25 +67,25 @@ type Instruction =
   | VarAs of name : string * expr : string * as_type : string
   | CheckNull of var_name : string
   | CustomCheck of condition : string
-  | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal, Position> * path : Path
-  | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal, Position> * expr2:BasicExpression<Keyword, Var, Literal, Position>
-  | Inline of e:BasicExpression<Keyword, Var, Literal, Position>
-  | Yield of expr:BasicExpression<Keyword, Var, Literal, Position>
+  | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal, Position, Unit> * path : Path
+  | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal, Position, Unit> * expr2:BasicExpression<Keyword, Var, Literal, Position, Unit>
+  | Inline of e:BasicExpression<Keyword, Var, Literal, Position, Unit>
+  | Yield of expr:BasicExpression<Keyword, Var, Literal, Position, Unit>
 
 let rec create_element (ctxt:ConcreteExpressionContext) = 
   let rec create_element' (expectedType:KeywordArgument) = 
     function
-    | Keyword(Custom k, _) 
-    | Application(Regular,(Keyword(Custom k, _)) :: [], _)
-    | Application(Implicit,(Keyword(Custom k, _)) :: [], _) -> 
+    | Keyword(Custom k, _, _) 
+    | Application(Regular,(Keyword(Custom k, _, _)) :: [], _, _)
+    | Application(Implicit,(Keyword(Custom k, _, _)) :: [], _, _) -> 
       sprintf "%s.Create()" !k, []
-    | Application(Regular,(Keyword(Custom k, _)) :: es, pos)
-    | Application(Implicit,(Keyword(Custom k, _)) :: es, pos) ->
+    | Application(Regular,(Keyword(Custom k, _, _)) :: es, pos, _)
+    | Application(Implicit,(Keyword(Custom k, _, _)) :: es, pos, _) ->
       let actualKeyword = ctxt.CustomKeywordsMap.[k]
       let args,cargs = es |> Seq.mapi (fun i e -> create_element' actualKeyword.Arguments.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
       //do printfn "Inner creation of %A with expectedType %A" (k, args) expectedType
       sprintf "%s.Create(%s)" !k args, cargs
-    | Extension(v:Var, _) ->
+    | Extension(v:Var, _, _) ->
       match expectedType with
       | Native t ->
         sprintf "%s" !v.Name, []
@@ -101,29 +101,29 @@ let rec create_element (ctxt:ConcreteExpressionContext) =
             | _ -> failwith "Generic types must have at least one argument."
           print expectedType
         sprintf "%s as %s" !v.Name expectedTypeString, [sprintf "%s is %s" !v.Name expectedTypeString]
-    | Application(Angle,e::[],pos) ->
+    | Application(Angle,e::[],pos, _) ->
       let res = generate_inline e
       sprintf "%s" res, []
-    | Application(Angle,e::es,pos) ->
-      let res = generate_inline (Application(Implicit,e::es,pos))
+    | Application(Angle,e::es,pos,typeInfo) ->
+      let res = generate_inline (Application(Implicit,e::es,pos,typeInfo))
       sprintf "%s" res, []
-    | Application(Regular,e::[],pos) ->
+    | Application(Regular,e::[],pos,typeInfo) ->
       let res, conds = create_element' expectedType e
       sprintf "(%s)" res, conds
-    | Application(b,e::es,pos) ->
-      failwithf "Application %A cannot be created" (Application(b,e::es,pos))
-    | Application(b,[],pos) ->
+    | Application(b,e::es,pos,typeInfo) ->
+      failwithf "Application %A cannot be created" (Application(b,e::es,pos,typeInfo))
+    | Application(b,[],pos,typeInfo) ->
       failwith "Application with empty argument list cannot be created"
-    | Imported(l,pos) -> l.ToString(), []
-    | Keyword(k, _) -> 
+    | Imported(l,pos,typeInfo) -> l.ToString(), []
+    | Keyword(k, _, typeInfo) -> 
       failwithf "Non-custom keyword %A cannot be matched" k
   function
-  | Keyword(Custom k, _) 
-  | Application(Regular,(Keyword(Custom k, _)) :: [],_)
-  | Application(Implicit,(Keyword(Custom k, _)) :: [],_) -> 
+  | Keyword(Custom k, _,_) 
+  | Application(Regular,(Keyword(Custom k, _,_)) :: [],_,_)
+  | Application(Implicit,(Keyword(Custom k, _,_)) :: [],_,_) -> 
     sprintf "%s.Create()" !k, []
-  | Application(Regular,(Keyword(Custom k, _)) :: es,pos)
-  | Application(Implicit,(Keyword(Custom k, _)) :: es,pos) ->
+  | Application(Regular,(Keyword(Custom k, _,_)) :: es,pos,_)
+  | Application(Implicit,(Keyword(Custom k, _,_)) :: es,pos,_) ->
     let actualKeyword = ctxt.CustomKeywordsMap.[k]
     let args,cargs = es |> Seq.mapi (fun i e -> create_element' actualKeyword.Arguments.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
     let trimmedArgs = 
@@ -134,55 +134,55 @@ let rec create_element (ctxt:ConcreteExpressionContext) =
     //do printfn "Outer creation of %A" (k, args)
     let res = sprintf "%s.Create(%s)" !k trimmedArgs, cargs
     res
-  | Application(Angle,e::es,pos) ->
-    let res = generate_inline (Application(Regular,e::es,pos))
+  | Application(Angle,e::es,pos,ti) ->
+    let res = generate_inline (Application(Regular,e::es,pos,ti))
     sprintf "%s" res, []
-  | Extension(v:Var, _) ->
+  | Extension(v:Var,_,_) ->
     sprintf "%s" !v.Name, []
-  | Application(b,e::es,pos) ->
-    failwithf "Application %A cannot be created" (Application(b,e::es,pos))
-  | Application(b,[],pos) ->
+  | Application(b,e::es,pos,ti) ->
+    failwithf "Application %A cannot be created" (Application(b,e::es,pos,ti))
+  | Application(b,[],pos,_) ->
     failwith "Application with empty argument list cannot be created"
-  | Imported(l,pos) -> l.ToString(), []
-  | Keyword(k, _) -> 
+  | Imported(l,pos,_) -> l.ToString(), []
+  | Keyword(k,_,_) -> 
     failwithf "Non-custom keyword %A cannot be matched" k
 
 and generate_inline =
   function
-  | Keyword(Custom k, _) ->
+  | Keyword(Custom k,_,_) ->
     sprintf "%s" k
-  | Application(_, [], _) ->
+  | Application(_,[],_,_) ->
     ""
-  | Application(Regular,(Keyword(Custom k, _)) :: [],_) -> 
+  | Application(Regular,(Keyword(Custom k,_,_)) :: [],_,_) -> 
     sprintf "(%s)" k
-  | Application(Square,(Keyword(Custom k, _)) :: l :: r :: [],pos) when ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k].LeftAriety = 1 ->
+  | Application(Square,(Keyword(Custom k, _,_)) :: l :: r :: [],pos,_) when ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k].LeftAriety = 1 ->
     sprintf "<%s%s%s>" (l |> generate_inline) k (r |> generate_inline)
-  | Application(Regular,(Keyword(Custom k, _)) :: l :: r :: [],pos) when ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k].LeftAriety = 1 ->
+  | Application(Regular,(Keyword(Custom k,_,_)) :: l :: r :: [],pos,_) when ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k].LeftAriety = 1 ->
     sprintf "(%s%s%s)" (l |> generate_inline) k (r |> generate_inline)
-  | Extension(v:Var, _) ->
+  | Extension(v:Var,_,_) ->
     sprintf "%s" v.Name
-  | Application(Angle, (Keyword(Inlined, _)) :: args, di) ->
-    let res = Application(Regular, args, di) |> generate_inline
+  | Application(Angle, (Keyword(Inlined, _, _)) :: args, di, ti) ->
+    let res = Application(Regular, args, di, ti) |> generate_inline
     res
-  | Application(Regular, a :: [], _) ->
+  | Application(Regular, a :: [], _, _) ->
     sprintf "(%s)" (a |> generate_inline)
-  | Application(Regular, arg :: args, _) ->
+  | Application(Regular, arg :: args, _, _) ->
     let pars = [ for x in args -> x |> generate_inline ] |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
     sprintf "%s(%s)" (arg |> generate_inline) pars
-  | Application(Angle, arg :: args, pos) ->
-    let res = Application(Implicit, arg :: args, pos) |> generate_inline
+  | Application(Angle, arg :: args, pos, ti) ->
+    let res = Application(Implicit, arg :: args, pos, ti) |> generate_inline
     res
-  | Application(Implicit,(Keyword(Custom k, _)) :: [],_) -> 
+  | Application(Implicit,(Keyword(Custom k, _, _)) :: [],_,_) -> 
     sprintf "%s" k
-  | Application(Implicit,(Keyword(Custom k, _)) :: l :: r :: [],pos) when ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k].LeftAriety = 1 ->
+  | Application(Implicit,(Keyword(Custom k, _, _)) :: l :: r :: [], pos, _) when ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k].LeftAriety = 1 ->
     sprintf "%s%s%s" (l |> generate_inline) k (r |> generate_inline)
-  | Application(Implicit, arg :: [], _) ->
+  | Application(Implicit, arg :: [], _, _) ->
     arg |> generate_inline
-  | Application(Implicit, arg :: args, _) ->
+  | Application(Implicit, arg :: args, _, _) ->
     let pars = [ for x in args -> x |> generate_inline ] |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
     let res = sprintf "%s %s" (arg |> generate_inline) pars
     res
-  | Imported(l,di) ->
+  | Imported(l,di,_) ->
     l.ToString()
   | i -> 
     failwithf "Unsupported inline pattern %A" i
@@ -248,10 +248,10 @@ let unifyConstraints (typeConstraint:KeywordArgument) (keywordClass:KeywordArgum
   | _ -> failwithf "Error: cannot unify generic types of %A and %A." typeConstraint keywordClass
   
 
-let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position>) (self:string) (prefix:List<Instruction>) 
+let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position, Unit>) (self:string) (prefix:List<Instruction>) 
                   (ctxt:ConcreteExpressionContext) (typeConstraint:Option<KeywordArgument>) =
   match e with
-  | Keyword(Custom k, _) -> 
+  | Keyword(Custom k, _, _) -> 
     if self <> "this" then
       prefix @ 
       [
@@ -263,21 +263,21 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
       [
         VarAs(sprintf "tmp_%d" tmp_id, self, k)
       ], tmp_id+1
-  | Extension(v:Var, _) ->
+  | Extension(v:Var, _, _) ->
       prefix @
       [
         Var(v.Name, self)
       ], tmp_id
-  | Application(Angle,es,pos) ->
+  | Application(Angle,es,pos, ti) ->
     let output,tmp_id = 
-      let expectedSelf = generate_inline(Application(Angle,es,pos))
+      let expectedSelf = generate_inline(Application(Angle,es,pos,ti))
       prefix @
       [
         CustomCheck(sprintf "%s == %s" self expectedSelf)
       ], tmp_id
     // es_i -> self . P_i
     output, tmp_id
-  | Application(b,(Keyword(Custom k, _)) :: es,pos) ->
+  | Application(b,(Keyword(Custom k, _, _)) :: es,pos,_) ->
     let output,self,tmp_id = 
       if self <> "this" then
           prefix @
@@ -300,15 +300,15 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
       output <- newOutput
       tmp_id <- newTempId
     output, tmp_id
-  | Application(Regular,e::[],pos) ->
+  | Application(Regular,e::[],pos,_) ->
     matchCast tmp_id e self prefix ctxt None
-  | Application(Square,e::es,pos) ->
+  | Application(Square,e::es,pos,_) ->
     prefix, tmp_id
-  | Application(b,e::es,pos) ->
+  | Application(b,e::es,pos,_) ->
     failwith "Application %A cannot be matched" e
-  | Application(b,[],pos) ->
+  | Application(b,[],pos,_) ->
     failwith "Application with empty argument list cannot be matched"
-  | Imported(l,pos) ->
+  | Imported(l,pos,_) ->
     let cond = sprintf "%s == %s" self (l.ToString())
     prefix @
     [
@@ -319,9 +319,9 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
 
 type Rule = {
   Position   : Position
-  Input      : BasicExpression<Keyword, Var, Literal, Position>
-  Output     : BasicExpression<Keyword, Var, Literal, Position>
-  Clauses    : List<Keyword * BasicExpression<Keyword, Var, Literal, Position> * BasicExpression<Keyword, Var, Literal, Position>>
+  Input      : BasicExpression<Keyword, Var, Literal, Position, Unit>
+  Output     : BasicExpression<Keyword, Var, Literal, Position, Unit>
+  Clauses    : List<Keyword * BasicExpression<Keyword, Var, Literal, Position, Unit> * BasicExpression<Keyword, Var, Literal, Position, Unit>>
   Path       : Path
   HasScope   : bool
 } with
@@ -345,7 +345,7 @@ type Rule = {
           o <- o @ [Compare(k, c_i, c_o)]
         | DefinedAs -> 
           match c_i with
-          | Extension(iVar, _) ->
+          | Extension(iVar, _, _) ->
             let oExpr,constraints = create_element ctxt c_o
             if constraints.IsEmpty |> not then
               o <- o @ [CustomCheck(constraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x))]
@@ -447,27 +447,28 @@ type GeneratedClass =
             sprintf "public override bool Equals(object other) {\n return other is %s; \n}\n" c.Name
         sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n%s}\n\n" c.Name c.Interface genericConstraints parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath))) ++ 2) missing_methods to_string equals
 
-let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position>) (rule_path:Path) (hasScope:bool) =
+let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position, Unit>) (rule_path:Path) (hasScope:bool) ctxt =
   let method_path = rule_path.Tail
   if inputClass.Methods |> Map.containsKey method_path |> not then
     inputClass.Methods <- inputClass.Methods |> Map.add method_path { Rules = ResizeArray(); Path = method_path }
   match rule with
-  | Application(Implicit, Keyword(FractionLine, _) :: (Application(Implicit, Keyword(DoubleArrow, _) :: input :: output :: [], innerPos)) :: clauses, pos) ->
+  | Application(Implicit, Keyword(FractionLine, _, _) :: (Application(Implicit, Keyword(DoubleArrow, _, _) :: input :: output :: [], innerPos, _)) :: clauses, pos, _) ->
+    let inputTyped, outputTyped, clausesTyped = TypeInference.inferTypeAnnotations input output clauses ctxt
     inputClass.Methods.[method_path].Rules.Add(
       { Position = pos
         Input = input
         Clauses = 
           [ for c in clauses do
               match c with
-              | Application(_, Keyword(Inlined, _) :: _, clausePos) -> yield Inlined, c, c
-              | Application(_, Keyword(DoubleArrow, _) :: c_i :: c_o :: [], clausePos) -> yield DoubleArrow, c_i, c_o
-              | Application(_, Keyword(Equals, _) :: c_i :: c_o :: [], clausePos) -> yield Equals, c_i, c_o
-              | Application(_, Keyword(NotEquals, _) :: c_i :: c_o :: [], clausePos) -> yield NotEquals, c_i, c_o
-              | Application(_, Keyword(DefinedAs, _) :: c_i :: c_o :: [], clausePos) -> yield DefinedAs, c_i, c_o
-              | Application(_, Keyword(GreaterThan, _) :: c_i :: c_o :: [], clausePos) -> yield GreaterThan, c_i, c_o
-              | Application(_, Keyword(GreaterOrEqual, _) :: c_i :: c_o :: [], clausePos) -> yield GreaterOrEqual, c_i, c_o
-              | Application(_, Keyword(SmallerThan, _) :: c_i :: c_o :: [], clausePos) -> yield SmallerThan, c_i, c_o
-              | Application(_, Keyword(SmallerOrEqual, _) :: c_i :: c_o :: [], clausePos) -> yield SmallerOrEqual, c_i, c_o
+              | Application(_, Keyword(Inlined, _, _) :: _, clausePos, _) -> yield Inlined, c, c
+              | Application(_, Keyword(DoubleArrow, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield DoubleArrow, c_i, c_o
+              | Application(_, Keyword(Equals, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield Equals, c_i, c_o
+              | Application(_, Keyword(NotEquals, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield NotEquals, c_i, c_o
+              | Application(_, Keyword(DefinedAs, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield DefinedAs, c_i, c_o
+              | Application(_, Keyword(GreaterThan, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield GreaterThan, c_i, c_o
+              | Application(_, Keyword(GreaterOrEqual, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield GreaterOrEqual, c_i, c_o
+              | Application(_, Keyword(SmallerThan, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield SmallerThan, c_i, c_o
+              | Application(_, Keyword(SmallerOrEqual, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield SmallerOrEqual, c_i, c_o
               | _ -> failwithf "Cannot process clause %A" c
           ] 
         Output   = output
@@ -476,36 +477,39 @@ let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position>) (rule_path
   | _ ->
     failwithf "Cannot extract rule shape from %A" rule
 
-let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rules:List<BasicExpression<_,_,Literal,Position>>) = 
+let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rules:List<BasicExpression<_,_,Literal,Position, Unit>>) ctxt = 
   for rule,i in rules |> Seq.mapi (fun i r -> r,i) do
     let path' = i :: path
     let self,hasScope = 
       match rule with
-      | Application(_, Keyword(Nesting, _) :: self :: children, pos) -> 
-        do process_rules classes path' children
+      | Application(_, Keyword(Nesting, _, _) :: self :: children, pos, _) -> 
+        do process_rules classes path' children ctxt
         self,true
       | self -> self,false
     match self with
-    | Application(Implicit, Keyword(FractionLine, _) :: (Application(Implicit, Keyword(DoubleArrow, _) :: input :: output, clausesPos)) :: clauses, pos) ->
+    | Application(Implicit, Keyword(FractionLine, _, _) :: (Application(Implicit, Keyword(DoubleArrow, _, _) :: input :: output, clausesPos, _)) :: clauses, pos, _) ->
       let inputKeyword = 
         match input with
-        | Keyword(Custom k, _) -> k
-        | Application(Implicit, (Keyword(Custom k, _)) :: _, pos) -> k
+        | Keyword(Custom k, _, _) -> k
+        | Application(Implicit, (Keyword(Custom k, _, _)) :: _, pos, _) -> k
         | _ -> failwithf "Cannot extract input keyword from %A" input
       let inputClass = classes.[inputKeyword]
-      do add_rule inputClass self (Path path') hasScope
+      do add_rule inputClass self (Path path') hasScope ctxt
     | _ -> failwithf "Malformed rule %A" self
     ()
 
 
 type Interface = { Name : string; BaseInterfaces : ResizeArray<string> }
 
-let generateCode (originalFilePath:string) (program_name:string) (rules:BasicExpression<Keyword, Var, Literal, Position>) (program:BasicExpression<Keyword, Var, Literal, Position>) (ctxt:ConcreteExpressionContext) = 
+let generateCode (originalFilePath:string) (program_name:string) 
+                 (rules:BasicExpression<Keyword, Var, Literal, Position, Unit>) 
+                 (program:BasicExpression<Keyword, Var, Literal, Position, Unit>) 
+                 (ctxt:ConcreteExpressionContext) = 
   match rules with
-  | Application(Implicit, Keyword(Sequence, _) :: rules, pos) ->
+  | Application(Implicit, Keyword(Sequence, _, _) :: rules, pos, _) ->
     let mutable classes = Map.empty
     let mutable inheritanceRelationships = Map.empty
-    for c,a in ctxt.InheritanceRelationships do
+    for c,a in ctxt.AllInheritanceRelationships do
       match inheritanceRelationships |> Map.tryFind c with
       | Some i -> i.BaseInterfaces.Add a
       | None -> inheritanceRelationships <- inheritanceRelationships |> Map.add c { Name = c; BaseInterfaces = ResizeArray([a]) }
@@ -521,7 +525,7 @@ let generateCode (originalFilePath:string) (program_name:string) (rules:BasicExp
         newClass.Parameters.Add({ Name = sprintf "P%d" (i + keyword.LeftAriety); IsLeft = false; Type = t })
       classes <- classes.Add(keyword.Name,newClass)
 
-    do process_rules classes [] rules
+    do process_rules classes [] rules ctxt
 
     let classes = classes
     let extensions = @"public static class Extensions { public static V GetKey<T, V>(this System.Collections.Immutable.ImmutableDictionary<T, V> self, T key) { return self[key]; } }"

@@ -30,3 +30,28 @@ let matching_brackets open_bracket closed_bracket =
   | '≪', '≫' -> true
   | '<', '>' -> true
   | _ -> false
+
+
+let transitiveClosure (l:List<'a * 'a>) =
+  let mutable m = Map.empty 
+  for i, o in l do 
+    match m |> Map.tryFind i with
+    | Some os -> m <- m.Add(i, os |> Set.add o)
+    | None -> m <- m.Add(i, Set.singleton o)
+  let mutable changed = true
+  while changed do
+    changed <- false
+    for x in m do
+      let i, os = x.Key, x.Value
+      for o in os do
+        match m |> Map.tryFind o with
+        | Some os' ->
+          let m_i = m.[i]
+          let m_i' = m_i + os'
+          if m_i.Count <> m_i'.Count then
+            m <- m.Add(i,m_i')
+            changed <- true
+        | None -> 
+          ()
+      ()      
+  m

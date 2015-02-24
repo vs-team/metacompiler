@@ -47,10 +47,11 @@ Keyword = "runTest1" LeftArguments = [] RightArguments = [] Priority = -10000 Cl
 
 Id is Expr
 BoolConst is BoolExpr
+BoolConst is ExprResult
 BoolExpr is Expr
 IntConst is IntExpr
-IntExpr is Expr
 IntConst is ExprResult
+IntExpr is Expr
 
 
 v := <<M.GetKey(k)>>
