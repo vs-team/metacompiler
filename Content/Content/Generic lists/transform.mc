@@ -15,7 +15,7 @@ Bool is Expr
 Id is Expr
 List[t] is Expr
 
-l := ($3;nil)
+l := ($1;($2;($3;nil)))
 p := l contains $3
 p => res
 -----------------------

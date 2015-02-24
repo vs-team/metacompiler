@@ -18,6 +18,11 @@ type KeywordArgument = Native of string | Defined of string | Generic of string 
            | Defined a -> false
            | Generic(a,args) -> 
              args |> Seq.exists (fun a -> a.Contains tgt)
+       member this.BaseName =
+         match this with 
+         | Native a -> a 
+         | Defined a -> a 
+         | Generic(a,args) -> a
        member this.Argument = 
          match this with 
          | Native a -> a 
@@ -120,7 +125,7 @@ and ConcreteExpressionContext =
       member ctxt.CustomClasses =
         seq{
           for k in ctxt.CustomKeywords do
-          yield k.Class.Argument
+          yield k.Class.BaseName
         } |> Set.ofSeq
       static member Empty =
         {

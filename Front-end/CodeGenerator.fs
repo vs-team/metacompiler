@@ -67,40 +67,33 @@ type Instruction =
   | VarAs of name : string * expr : string * as_type : string
   | CheckNull of var_name : string
   | CustomCheck of condition : string
-  | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal, Position, Unit> * path : Path
-  | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal, Position, Unit> * expr2:BasicExpression<Keyword, Var, Literal, Position, Unit>
-  | Inline of e:BasicExpression<Keyword, Var, Literal, Position, Unit>
-  | Yield of expr:BasicExpression<Keyword, Var, Literal, Position, Unit>
+  | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation> * path : Path
+  | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation> * expr2:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>
+  | Inline of e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>
+  | Yield of expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>
 
-let rec create_element (ctxt:ConcreteExpressionContext) = 
-  let rec create_element' (expectedType:KeywordArgument) = 
-    function
-    | Keyword(Custom k, _, _) 
-    | Application(Regular,(Keyword(Custom k, _, _)) :: [], _, _)
-    | Application(Implicit,(Keyword(Custom k, _, _)) :: [], _, _) -> 
-      sprintf "%s.Create()" !k, []
-    | Application(Regular,(Keyword(Custom k, _, _)) :: es, pos, _)
-    | Application(Implicit,(Keyword(Custom k, _, _)) :: es, pos, _) ->
+let rec create_element (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) = 
+  let rec create_element' (expectedType:KeywordArgument) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) = 
+    match e with
+    | Keyword(Custom k, _, ti) 
+    | Application(Regular,(Keyword(Custom k, _, ti)) :: [], _, _)
+    | Application(Implicit,(Keyword(Custom k, _, ti)) :: [], _, _) -> 
+      let tiAnnot = ti.CSharpString cleanupWithoutDot
+      sprintf "%s.Create()" tiAnnot, []
+    | Application(Regular,(Keyword(Custom k, _, ti)) :: es, pos, _)
+    | Application(Implicit,(Keyword(Custom k, _, ti)) :: es, pos, _) ->
+      let tiAnnot = ti.CSharpString cleanupWithoutDot
       let actualKeyword = ctxt.CustomKeywordsMap.[k]
       let args,cargs = es |> Seq.mapi (fun i e -> create_element' actualKeyword.Arguments.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
       //do printfn "Inner creation of %A with expectedType %A" (k, args) expectedType
-      sprintf "%s.Create(%s)" !k args, cargs
-    | Extension(v:Var, _, _) ->
+      sprintf "%s.Create(%s)" tiAnnot args, cargs
+    | Extension(v:Var, _, ti) ->
       match expectedType with
       | Native t ->
         sprintf "%s" !v.Name, []
       | _ ->
-        let expectedTypeString =
-          let rec print =
-            function
-            | Native t -> t
-            | Defined d -> !d
-            | Generic(t,a::args) -> 
-              let pars = a::args |> Seq.map print |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
-              sprintf "%s<%s>" t pars
-            | _ -> failwith "Generic types must have at least one argument."
-          print expectedType
-        sprintf "%s as %s" !v.Name expectedTypeString, [sprintf "%s is %s" !v.Name expectedTypeString]
+        let tiAnnot = ti.CSharpString cleanupWithoutDot
+        sprintf "%s as %s" !v.Name tiAnnot, [sprintf "%s is %s" !v.Name tiAnnot]
     | Application(Angle,e::[],pos, _) ->
       let res = generate_inline e
       sprintf "%s" res, []
@@ -117,13 +110,15 @@ let rec create_element (ctxt:ConcreteExpressionContext) =
     | Imported(l,pos,typeInfo) -> l.ToString(), []
     | Keyword(k, _, typeInfo) -> 
       failwithf "Non-custom keyword %A cannot be matched" k
-  function
-  | Keyword(Custom k, _,_) 
-  | Application(Regular,(Keyword(Custom k, _,_)) :: [],_,_)
-  | Application(Implicit,(Keyword(Custom k, _,_)) :: [],_,_) -> 
-    sprintf "%s.Create()" !k, []
-  | Application(Regular,(Keyword(Custom k, _,_)) :: es,pos,_)
-  | Application(Implicit,(Keyword(Custom k, _,_)) :: es,pos,_) ->
+  match e with
+  | Keyword(Custom k, _,ti) 
+  | Application(Regular,(Keyword(Custom k, _,ti)) :: [],_,_)
+  | Application(Implicit,(Keyword(Custom k, _,ti)) :: [],_,_) -> 
+    let tiAnnot = ti.CSharpString cleanupWithoutDot
+    sprintf "%s.Create()" tiAnnot, []
+  | Application(Regular,(Keyword(Custom k, _,ti)) :: es,pos,_)
+  | Application(Implicit,(Keyword(Custom k, _,ti)) :: es,pos,_) ->
+    let tiAnnot = ti.CSharpString cleanupWithoutDot
     let actualKeyword = ctxt.CustomKeywordsMap.[k]
     let args,cargs = es |> Seq.mapi (fun i e -> create_element' actualKeyword.Arguments.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
     let trimmedArgs = 
@@ -132,7 +127,7 @@ let rec create_element (ctxt:ConcreteExpressionContext) =
       else
         args
     //do printfn "Outer creation of %A" (k, args)
-    let res = sprintf "%s.Create(%s)" !k trimmedArgs, cargs
+    let res = sprintf "%s.Create(%s)" tiAnnot trimmedArgs, cargs
     res
   | Application(Angle,e::es,pos,ti) ->
     let res = generate_inline (Application(Regular,e::es,pos,ti))
@@ -199,7 +194,7 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
     | Var(name, expr) -> 
       sprintf "var %s = %s; %s" !name expr (generate_instructions debugPosition originalFilePath ctxt xs)
     | VarAs(name, expr, as_type) ->
-      sprintf "var %s = %s as %s; %s" !name expr !as_type (generate_instructions debugPosition originalFilePath  ctxt xs)
+      sprintf "var %s = %s as %s; %s" !name expr as_type (generate_instructions debugPosition originalFilePath  ctxt xs)
     | CheckNull(var_name) ->
       sprintf "%sif (%s != null) { %s }" newLine !var_name (generate_instructions debugPosition originalFilePath  ctxt xs)
     | Compare(comparison, expr1, expr2) ->
@@ -248,20 +243,20 @@ let unifyConstraints (typeConstraint:KeywordArgument) (keywordClass:KeywordArgum
   | _ -> failwithf "Error: cannot unify generic types of %A and %A." typeConstraint keywordClass
   
 
-let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position, Unit>) (self:string) (prefix:List<Instruction>) 
+let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) (self:string) (prefix:List<Instruction>) 
                   (ctxt:ConcreteExpressionContext) (typeConstraint:Option<KeywordArgument>) =
   match e with
-  | Keyword(Custom k, _, _) -> 
+  | Keyword(Custom k, _, ti) -> 
     if self <> "this" then
       prefix @ 
       [
-        VarAs(sprintf "tmp_%d" tmp_id, self, k)
+        VarAs(sprintf "tmp_%d" tmp_id, self, ti.CSharpString cleanupWithoutDot)
         CheckNull(sprintf "tmp_%d" tmp_id)
       ], tmp_id+1
     else
       prefix @
       [
-        VarAs(sprintf "tmp_%d" tmp_id, self, k)
+        VarAs(sprintf "tmp_%d" tmp_id, self, ti.CSharpString cleanupWithoutDot)
       ], tmp_id+1
   | Extension(v:Var, _, _) ->
       prefix @
@@ -277,12 +272,12 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
       ], tmp_id
     // es_i -> self . P_i
     output, tmp_id
-  | Application(b,(Keyword(Custom k, _, _)) :: es,pos,_) ->
+  | Application(b,(Keyword(Custom k, _, k_ti)) :: es,pos,e_ti) ->
     let output,self,tmp_id = 
       if self <> "this" then
           prefix @
           [
-            VarAs(sprintf "tmp_%d" tmp_id, self, k)
+            VarAs(sprintf "tmp_%d" tmp_id, self, k_ti.CSharpString cleanupWithoutDot)
             CheckNull(sprintf "tmp_%d" tmp_id)
           ], sprintf "tmp_%d" tmp_id, tmp_id+1
       else
@@ -319,9 +314,9 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
 
 type Rule = {
   Position   : Position
-  Input      : BasicExpression<Keyword, Var, Literal, Position, Unit>
-  Output     : BasicExpression<Keyword, Var, Literal, Position, Unit>
-  Clauses    : List<Keyword * BasicExpression<Keyword, Var, Literal, Position, Unit> * BasicExpression<Keyword, Var, Literal, Position, Unit>>
+  Input      : BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>
+  Output     : BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>
+  Clauses    : List<Keyword * BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation> * BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>>
   Path       : Path
   HasScope   : bool
 } with
@@ -453,7 +448,7 @@ let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position, Unit>) (rul
     inputClass.Methods <- inputClass.Methods |> Map.add method_path { Rules = ResizeArray(); Path = method_path }
   match rule with
   | Application(Implicit, Keyword(FractionLine, _, _) :: (Application(Implicit, Keyword(DoubleArrow, _, _) :: input :: output :: [], innerPos, _)) :: clauses, pos, _) ->
-    let inputTyped, outputTyped, clausesTyped = TypeInference.inferTypeAnnotations input output clauses ctxt
+    let input, output, clauses = TypeInference.inferTypeAnnotations input output clauses ctxt
     inputClass.Methods.[method_path].Rules.Add(
       { Position = pos
         Input = input
@@ -501,10 +496,10 @@ let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rul
 
 type Interface = { Name : string; BaseInterfaces : ResizeArray<string> }
 
-let generateCode (originalFilePath:string) (program_name:string) 
-                 (rules:BasicExpression<Keyword, Var, Literal, Position, Unit>) 
-                 (program:BasicExpression<Keyword, Var, Literal, Position, Unit>) 
-                 (ctxt:ConcreteExpressionContext) = 
+let generateCode (originalFilePath:string) (program_name:string)
+                 (rules:BasicExpression<Keyword, Var, Literal, Position, Unit>)
+                 (program:BasicExpression<Keyword, Var, Literal, Position, Unit>)
+                 (ctxt:ConcreteExpressionContext) =
   match rules with
   | Application(Implicit, Keyword(Sequence, _, _) :: rules, pos, _) ->
     let mutable classes = Map.empty
@@ -527,6 +522,8 @@ let generateCode (originalFilePath:string) (program_name:string)
 
     do process_rules classes [] rules ctxt
 
+    let programTyped,_,_ = TypeInference.inferTypeAnnotations program (Extension({ Name = "___tmp" }, Position.Zero, ())) [] ctxt
+
     let classes = classes
     let extensions = @"public static class Extensions { public static V GetKey<T, V>(this System.Collections.Immutable.ImmutableDictionary<T, V> self, T key) { return self[key]; } }"
     let interfaces = [ for k in ctxt.CustomKeywords -> k.Class ] |> Set.ofSeq
@@ -548,7 +545,7 @@ let generateCode (originalFilePath:string) (program_name:string)
     let run_methods =
       all_method_paths |> Seq.map (fun p -> sprintf "IEnumerable<IRunnable> Run%s();\n" (p.ToString())) |> Seq.reduce (+)
     let prelude = sprintf "using System.Collections.Generic;\nusing System.Linq;\nnamespace %s {\n %s\n public interface IRunnable { %s }" (program_name.Replace(" ", "_")) extensions run_methods
-    let main = sprintf "public class EntryPoint {\n static public IEnumerable<IRunnable> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" (create_element ctxt program |> fst)
+    let main = sprintf "public class EntryPoint {\n static public IEnumerable<IRunnable> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" (create_element ctxt programTyped |> fst)
     [
       yield prelude
       yield "\n\n\n"

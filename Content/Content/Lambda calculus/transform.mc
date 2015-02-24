@@ -1,4 +1,4 @@
-﻿Keyword = "$" LeftArguments = [] RightArguments = [<<System.String>>] Priority = 10 Class = "Id"
+﻿Keyword = "$" LeftArguments = [] RightArguments = [<<string>>] Priority = 10 Class = "Id"
 Keyword = "\" LeftArguments = [] RightArguments = [Id Dot Term] Priority = 9 Class = "Term"
 Keyword = "|" LeftArguments = [Term] RightArguments = [Term] Priority = 8 Class = "Term"
 Keyword = "." LeftArguments = [] RightArguments = [] Priority = 0 Class = "Dot"

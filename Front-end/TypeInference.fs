@@ -14,6 +14,11 @@ type [<CustomEquality; CustomComparison>] TypeVariable =
   | GenericParameter of string
   | Composite of TypeAnnotation
   with
+    member t.CSharpString cleanup =
+      match t with
+      | Fresh s | LocalGenericParameter s | GenericParameter s -> cleanup s
+      | Composite(t) -> t.CSharpString cleanup
+
     member v.Id =
       match v with
       | Fresh _ -> 0
@@ -51,6 +56,17 @@ and [<CustomEquality; CustomComparison>] TypeAnnotation =
   | Native of string | Defined of string // ground types
   | Generic of TypeAnnotation * List<TypeAnnotation> // could be both ground and not ground type
   with 
+    member t.CSharpString cleanup =
+      match t with
+      | Builtin -> ""
+      | Variable(v) -> v.CSharpString cleanup
+      | Native s | Defined s -> s |> cleanup
+      | Generic(gt,args) -> 
+        let args = args |> Seq.map (fun a -> a.CSharpString cleanup) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
+        let ht = gt.CSharpString cleanup
+        let res = sprintf "%s<%s>" ht args
+        res
+      
     member v.Id =
       match v with
       | Builtin -> 0
@@ -102,7 +118,7 @@ and [<CustomEquality; CustomComparison>] TypeAnnotation =
         match ctxt.CustomKeywordsMap |> Map.tryFind k with
         | Some _ -> Defined k
         | None ->
-          if ctxt.CustomClasses |> Set.contains k then
+          if ctxt.CustomClasses |> Set.contains k || ctxt.CustomKeywordsMap |> Map.containsKey k then
             Defined k
           else
             match typingContext.GenericParameters |> Seq.tryFind (fun lp -> lp = GenericParameter(k)) with
@@ -112,7 +128,12 @@ and [<CustomEquality; CustomComparison>] TypeAnnotation =
               | Some _ -> k |> LocalGenericParameter |> Variable
               | None -> failwithf "Unbound defined parameter %A" k
       | KeywordArgument.Generic(t,args) ->
-        Generic(Native t, args |> List.map (TypeAnnotation.FromKeywordArgument ctxt typingContext))
+        let gt =
+          if ctxt.CustomClasses |> Set.contains t || ctxt.CustomKeywordsMap |> Map.containsKey t then
+            Defined t
+          else
+            Native t
+        Generic(gt, args |> List.map (TypeAnnotation.FromKeywordArgument ctxt typingContext))
 
 
 and TypeEquivalence = { mutable GroundRepresentative : Option<TypeVariable>; mutable LocalGroundRepresentative : Option<TypeVariable>; mutable Members : Set<TypeVariable> }
@@ -154,13 +175,14 @@ and InferenceContext = {
       | _ ->
         ctxt.LocalGenericParameters <- ctxt.LocalGenericParameters.Add(l, 1)
     member ctxt.RemoveLocalGenericParameters (toRemove:List<TypeVariable>) =
-      for p in toRemove do
-        let pNestingDepth = ctxt.LocalGenericParameters.[p]
-        if pNestingDepth = 1 then
-          ctxt.LocalGenericParameters <- ctxt.LocalGenericParameters.Remove p
-        else
-          ctxt.LocalGenericParameters <- ctxt.LocalGenericParameters.Add(p, pNestingDepth-1)
-        ctxt.TypeEquivalence <- ctxt.TypeEquivalence.Remove p
+      () // this is not correct, but in most cases it will work
+//      for p in toRemove do
+//        let pNestingDepth = ctxt.LocalGenericParameters.[p]
+//        if pNestingDepth = 1 then
+//          ctxt.LocalGenericParameters <- ctxt.LocalGenericParameters.Remove p
+//        else
+//          ctxt.LocalGenericParameters <- ctxt.LocalGenericParameters.Add(p, pNestingDepth-1)
+//        ctxt.TypeEquivalence <- ctxt.TypeEquivalence.Remove p
     member ctxt.GetEquivalence (v:TypeVariable) =
       match ctxt.TypeEquivalence |> Map.tryFind v with
       | Some eq -> eq
@@ -195,7 +217,15 @@ let rec unify (ctxt:ConcreteExpressionContext) (typingContext:InferenceContext) 
        ctxt.Inherits s2 s1 then
       ()
     else
-      failwithf "Cannot unify types %A and %A" t1 t2
+      match ctxt.CustomKeywordsMap |> Map.tryFind s1 with
+      | Some k1 when k1.Class.BaseName = s2 -> ()
+      | Some k1 when ctxt.Inherits k1.Class.BaseName s2 -> ()
+      | _ ->
+        match ctxt.CustomKeywordsMap |> Map.tryFind s2 with
+        | Some k2 when k2.Class.BaseName = s1 -> ()
+        | Some k2 when ctxt.Inherits k2.Class.BaseName s1 -> ()
+        | _ ->
+          failwithf "Cannot unify types %A and %A" t1 t2
   | Generic(t1, t1_args), Generic(t2, t2_args) -> 
     unify ctxt typingContext t1 t2
     for a,b in Seq.zip t1_args t2_args do
@@ -228,24 +258,22 @@ and typeCheck (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, 
       t
   | Keyword(Custom k, _, _) ->
     let kClass = ctxt.CustomKeywordsMap.[k]
-    match kClass.Class with
-    | KeywordArgument.Generic(actualClass, genericArguments) ->
+    if kClass.IsGeneric then
       let addedLocalGenericParameters = 
-        [ for gA in genericArguments do
+        [ for gA in kClass.GenericArguments do
             let lGA = LocalGenericParameter(gA.Argument)
             typingContext.AddLocalGenericParameter lGA
             yield lGA ]
-      let res = TypeAnnotation.FromKeywordArgument ctxt typingContext kClass.Class
+      let res = TypeAnnotation.Generic(TypeAnnotation.Defined kClass.Name, addedLocalGenericParameters |> List.map Variable)
       do typingContext.RemoveLocalGenericParameters addedLocalGenericParameters
       res
-    | _ ->
-      TypeAnnotation.FromKeywordArgument ctxt typingContext kClass.Class
+    else
+      TypeAnnotation.FromKeywordArgument ctxt typingContext (KeywordArgument.Defined kClass.Name)
   | Application(_, Keyword(Custom k, _, _) :: args, pos, ()) ->
     let kClass = ctxt.CustomKeywordsMap.[k]
-    match kClass.Class with
-    | KeywordArgument.Generic(actualClass, genericArguments) ->
+    if kClass.IsGeneric then
       let addedLocalGenericParameters = 
-        [ for gA in genericArguments do
+        [ for gA in kClass.GenericArguments do
             let lGA = LocalGenericParameter gA.Argument
             typingContext.AddLocalGenericParameter lGA
             yield lGA ]
@@ -254,9 +282,9 @@ and typeCheck (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, 
         let expectedAType = TypeAnnotation.FromKeywordArgument ctxt typingContext aArgument
         unify ctxt typingContext aType expectedAType
       do typingContext.RemoveLocalGenericParameters addedLocalGenericParameters
-      TypeAnnotation.Generic(TypeAnnotation.Native actualClass, [ for a in addedLocalGenericParameters -> Variable a ])
-    | _ ->
-      TypeAnnotation.FromKeywordArgument ctxt typingContext kClass.Class
+      TypeAnnotation.Generic(TypeAnnotation.Defined kClass.Name, [ for a in addedLocalGenericParameters -> Variable a ])
+    else
+      TypeAnnotation.FromKeywordArgument ctxt typingContext (KeywordArgument.Defined kClass.Name)
   | _ -> failwithf "Unexpected expression %A" e
   
 and addToContext (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, Literal, Position, Unit>) (typingContext:InferenceContext) =
@@ -335,49 +363,60 @@ and rebuildTypedLocal (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keywor
           yield rebuildTypedConstrained ctxt a (TypeAnnotation.FromKeywordArgument ctxt typingContext aType) typingContext ]
     typingContext.RemoveLocalGenericParameters addedLocalGenericParameters
     let eType =
-      match kClass.Class with
-      | KeywordArgument.Generic(actualClass, genericArguments) ->
+      if kClass.IsGeneric then
         let argTypes = [ for typedArg in typedArgs -> typedArg.TypeInformation ]
-        let actualArguments = [ for g in genericArguments -> findInParameters g kClass.Arguments argTypes ]
-        TypeAnnotation.Generic(TypeAnnotation.Native actualClass, actualArguments)
-      | _ ->
-        TypeAnnotation.FromKeywordArgument ctxt typingContext kClass.Class
+        let actualArguments = [ for g in kClass.GenericArguments -> findInParameters g kClass.Arguments argTypes ]
+        TypeAnnotation.Generic(TypeAnnotation.Defined kClass.Name, actualArguments)
+      else
+        TypeAnnotation.FromKeywordArgument ctxt typingContext (KeywordArgument.Defined kClass.Name)
     Application(b, kTyped :: typedArgs, pos, eType |> findMostSpecificMatch  ctxt typingContext)
   | _ -> failwithf "Cannot extract input keyword from %A" e
 
 and findInParameters (genericArgument:KeywordArgument) (args:List<KeywordArgument>) (argTypes:List<TypeAnnotation>) =
-  let argIndex = 
+  let argIndex =
     args |> List.findIndex (fun arg -> arg.Contains genericArgument)
   let arg,argType = args.[argIndex], argTypes.[argIndex]
   match arg with
   | KeywordArgument.Defined a -> argType
-  | KeywordArgument.Generic(s,args) -> 
-    failwithf "Cannot extract generic argument instance %A in %A" genericArgument argTypes
+  | KeywordArgument.Generic(s,args) ->
+    match argType with
+    | Generic(sT, argsTypes) ->
+      findInParameters genericArgument args argTypes
+    | _ ->
+      failwithf "Cannot extract generic argument instance %A in %A" genericArgument argTypes
   | _ -> failwithf "Cannot extract generic argument instance %A in %A" genericArgument argTypes
 
-and findMostSpecificMatch (ctxt:ConcreteExpressionContext) (typingContext:InferenceContext) (t:TypeAnnotation) = t
-//  match t with
-//  | Builtin -> t
-//  | Defined _ -> t
-//  | Native _ -> t
-//  | Variable v ->
-//    match typingContext.TypeEquivalence |> Map.tryFind v with
-//    | Some vEq ->
-//      let bestRepresentative = vEq.Members |> Seq.max
-//      findMostSpecificVariable ctxt typingContext bestRepresentative
-//    | None -> 
-//      t
-//  | Generic(t, args) ->
-//    let res = Generic(t |> findMostSpecificMatch ctxt typingContext, [ for a in args -> a  |> findMostSpecificMatch ctxt typingContext ])
-//    res
-//
-//and findMostSpecificVariable (ctxt:ConcreteExpressionContext) (typingContext:InferenceContext) (v:TypeVariable) =
-//  match v with
-//  | Fresh _ -> Variable v
-//  | LocalGenericParameter _ -> Variable v
-//  | GenericParameter _ -> Variable v
-//  | Composite t -> 
-//    findMostSpecificMatch ctxt typingContext t
+and findMostSpecificMatch (ctxt:ConcreteExpressionContext) (typingContext:InferenceContext) (t:TypeAnnotation) =
+  let res = findMostSpecificMatch' ctxt typingContext t
+  res
+
+and findMostSpecificMatch' (ctxt:ConcreteExpressionContext) (typingContext:InferenceContext) (t:TypeAnnotation) =
+  match t with
+  | Builtin -> t
+  | Defined _ -> t
+  | Native _ -> t
+  | Variable v ->
+    match typingContext.TypeEquivalence |> Map.tryFind v with
+    | Some vEq ->
+      let bestRepresentative = vEq.Members |> Seq.max
+      if bestRepresentative = v |> not then
+        findMostSpecificVariable ctxt typingContext bestRepresentative
+      else
+        Variable bestRepresentative
+    | None ->
+      t
+  | Generic(t, args) ->
+    let specifiedArgs = [ for a in args -> a  |> findMostSpecificMatch' ctxt typingContext ]
+    let res = Generic(t |> findMostSpecificMatch' ctxt typingContext, specifiedArgs)
+    res
+
+and findMostSpecificVariable (ctxt:ConcreteExpressionContext) (typingContext:InferenceContext) (v:TypeVariable) =
+  match v with
+  | Fresh _ -> Variable v |> findMostSpecificMatch' ctxt typingContext
+  | LocalGenericParameter _ -> Variable v |> findMostSpecificMatch' ctxt typingContext
+  | GenericParameter _ -> Variable v |> findMostSpecificMatch' ctxt typingContext
+  | Composite t -> 
+    findMostSpecificMatch' ctxt typingContext t
 
 let rec rebuildTyped (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, Literal, Position, Unit>) (typingContext:InferenceContext) =
   match e with
@@ -408,13 +447,12 @@ let rec rebuildTyped (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword
       [ for a, aType in Seq.zip args kClass.Arguments do
           yield rebuildTypedConstrained ctxt a (TypeAnnotation.FromKeywordArgument ctxt typingContext aType) typingContext ]
     let eType =
-      match kClass.Class with
-      | KeywordArgument.Generic(actualClass, genericArguments) ->
+      if kClass.IsGeneric then
         let argTypes = [ for typedArg in typedArgs -> typedArg.TypeInformation ]
-        let actualArguments = [ for g in genericArguments -> findInParameters g kClass.Arguments argTypes ]
-        TypeAnnotation.Generic(TypeAnnotation.Native actualClass, actualArguments)
-      | _ ->
-        TypeAnnotation.FromKeywordArgument ctxt typingContext kClass.Class
+        let actualArguments = [ for g in kClass.GenericArguments -> findInParameters g kClass.Arguments argTypes ]
+        TypeAnnotation.Generic(TypeAnnotation.Defined kClass.Name, actualArguments)
+      else
+        TypeAnnotation.FromKeywordArgument ctxt typingContext (KeywordArgument.Defined kClass.Name)
     Application(b, kTyped :: typedArgs, pos, eType |> findMostSpecificMatch  ctxt typingContext)
   | _ -> failwithf "Cannot extract input keyword from %A" e
 
@@ -475,5 +513,5 @@ let inferTypeAnnotations (input:BasicExpression<Keyword, Var, Literal, Position,
 //  let _ = debug_log (inputTyped.ToString(), outputTyped.ToString(), [ for c in clausesTyped -> c.ToString() ]) //, typingContext)
 //  let _ = Console.ReadLine()
 //  do printfn "\n\n\n\n\n\n\n\n\n"
-  input, output, clauses
+  inputTyped, outputTyped, clausesTyped
 
