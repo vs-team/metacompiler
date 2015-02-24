@@ -276,7 +276,17 @@ and inheritanceRelationships() =
       let! abstracter = customClass()
       let! bs = blank_space()
       let! el = empty_lines()
-      return (new System.String(concreter |> Seq.toArray), new System.String(abstracter |> Seq.toArray))
+      let c = 
+        match concreter with
+        | Native c
+        | Defined c
+        | Generic(c,_) -> c
+      let a = 
+        match abstracter with
+        | Native a
+        | Defined a
+        | Generic(a,_) -> a
+      return (c, a)
     }
   p{
     let! r1 = singleRelation() + p { return () }
@@ -498,17 +508,76 @@ and clause depth =
   }
 
 and customClass() =
-  let rec customClass = 
-    function 
-    | [] -> fail()
-    | (k : string) :: ks ->
-      p{
-        let! w = word k ++ customClass ks
-        return w
-      }
+  let commaSeparator() = 
+    p{
+      let! sep = character ',' + blank_space()
+      let! bs = blank_space()
+      return ()
+    }
+  let blankSpaceSeparator() =
+    p{
+      let! bs = blank_space()
+      return ()
+    }
+  let rec identifiers firstCall separator =
+    p{
+      let! ob = word "<<" + p{ return () }
+      let! id = longIdentifier() + p{ return () }
+      match id with
+      | First id ->
+        match ob with
+        | First _ ->
+          let! openBracket = word "<" + p{return () }
+          match openBracket with
+          | First _ ->
+            let! innerIdentifiers = identifiers false commaSeparator
+            let! closedBracket = word ">"
+            let! cb = word ">>" + p{ return () }
+            let! bs = separator()
+            let! ids = identifiers false separator
+            return Generic(id,innerIdentifiers) :: ids
+          | _ -> 
+            let! cb = word ">>" + p{ return () }
+            return Native id :: []
+        | _ ->
+          let! openBracket = word "[" + p{return () }
+          match openBracket with
+          | First _ ->
+            let! innerIdentifiers = identifiers false commaSeparator
+            let! closedBracket = word "]"
+            return Generic(id,innerIdentifiers) :: []
+          | _ -> 
+            if firstCall |> not then
+              let! bs = separator()
+              let! ids = identifiers false separator
+              let decorator =
+                match id with
+                | "string" -> Native
+                | "int" -> Native
+                | "float" -> Native
+                | "bool" -> Native
+                | "double" -> Native
+                | _ -> Defined
+              return decorator id :: ids
+            else
+              let decorator =
+                match id with
+                | "string" -> Native
+                | "int" -> Native
+                | "float" -> Native
+                | "bool" -> Native
+                | "double" -> Native
+                | _ -> Defined
+              return decorator id :: []
+      | Second _ -> 
+        return []
+    }
   p{
-    let! customKeywordsByPrefix = getCustomKeywordsByPrefix()
-    return! customClass [ for k in customKeywordsByPrefix -> k.Class.Argument ]
+    let! customClasses = identifiers true blankSpaceSeparator
+    match customClasses with
+    | c :: [] -> 
+      return c
+    | _ -> return! fail()
   }
 
 and customKeyword() =

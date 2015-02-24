@@ -1,4 +1,3 @@
-- excessively broad interfaces and multiple inheritance
 - higher order terms
 - open directive
 - association of keywords (left or right)

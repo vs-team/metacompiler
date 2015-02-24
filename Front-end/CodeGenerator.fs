@@ -6,7 +6,7 @@ open ParserMonad
 open BasicExpression
 open ConcreteExpressionParser
 
-let private generateLineDirectives = false
+let private generateLineDirectives = true
 
 let cleanupWithoutDot (s:string) =
   match s with
@@ -444,7 +444,9 @@ type GeneratedClass =
             sprintf "public override bool Equals(object other) {\n var tmp = other as %s;\n if(tmp != null) return %s; \n else return false; }\n" c.Name parameters
           else
             sprintf "public override bool Equals(object other) {\n return other is %s; \n}\n" c.Name
-        sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n%s}\n\n" c.Name c.Interface genericConstraints parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath))) ++ 2) missing_methods to_string equals
+        let hash =
+          sprintf "public override int GetHashCode() {\n return 0; \n}\n"
+        sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n}\n\n" c.Name c.Interface genericConstraints parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath))) ++ 2) missing_methods to_string equals hash
 
 let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position, Unit>) (rule_path:Path) (hasScope:bool) ctxt =
   let method_path = rule_path.Tail
@@ -535,7 +537,7 @@ let generateCode (originalFilePath:string) (program_name:string)
     let interfacesCode = 
       [
         for i in interfaces do
-          match inheritanceRelationships |> Map.tryFind (i.ArgumentCSharpStyle (!)) with
+          match inheritanceRelationships |> Map.tryFind (i.BaseName) with
           | Some ir ->
             let explicitInterfaces = ir.BaseInterfaces
             yield sprintf "public interface %s : %s {}\n" (i.ArgumentCSharpStyle (!)) (explicitInterfaces |> Seq.reduce (fun s x -> s + ", " + x))

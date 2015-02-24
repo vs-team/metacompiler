@@ -13,7 +13,8 @@ Keyword = "runTest1" LeftArguments = [] RightArguments = [] Priority = 0 Class =
 
 Bool is Expr
 Id is Expr
-List[t] is Expr
+List[a] is Expr
+List[<<int>>] is Id
 
 l := ($1;($2;($3;nil)))
 p := l contains $3

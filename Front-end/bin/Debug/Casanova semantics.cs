@@ -50,6 +50,11 @@ public override bool Equals(object other) {
  var tmp = other as _opDollar;
  if(tmp != null) return this.P1.Equals(tmp.P1); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _opDollarb : BoolConst  {
@@ -77,6 +82,11 @@ public override bool Equals(object other) {
  var tmp = other as _opDollarb;
  if(tmp != null) return this.P1.Equals(tmp.P1); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _opDollari : IntConst  {
@@ -104,6 +114,11 @@ public override bool Equals(object other) {
  var tmp = other as _opDollari;
  if(tmp != null) return this.P1.Equals(tmp.P1); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _opDollarm : Locals  {
@@ -131,6 +146,11 @@ public override bool Equals(object other) {
  var tmp = other as _opDollarm;
  if(tmp != null) return this.P1.Equals(tmp.P1); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _opAnd : BoolExpr  {
@@ -160,6 +180,11 @@ public override bool Equals(object other) {
  var tmp = other as _opAnd;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _opMultiplication : IntExpr  {
@@ -189,6 +214,11 @@ public override bool Equals(object other) {
  var tmp = other as _opMultiplication;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _opAddition : IntExpr  {
@@ -218,6 +248,11 @@ public override bool Equals(object other) {
  var tmp = other as _opAddition;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _Comma : ExprList  {
@@ -247,6 +282,11 @@ public override bool Equals(object other) {
  var tmp = other as _Comma;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _opSubtraction : IntExpr  {
@@ -276,6 +316,11 @@ public override bool Equals(object other) {
  var tmp = other as _opSubtraction;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _opDivision : IntExpr  {
@@ -305,6 +350,11 @@ public override bool Equals(object other) {
  var tmp = other as _opDivision;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _Colon : ExprResultList  {
@@ -334,6 +384,11 @@ public override bool Equals(object other) {
  var tmp = other as _Colon;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _Semicolon : Expr  {
@@ -363,6 +418,11 @@ public override bool Equals(object other) {
  var tmp = other as _Semicolon;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _Semicolon_Prime : ExprResult  {
@@ -392,6 +452,11 @@ public override bool Equals(object other) {
  var tmp = other as _Semicolon_Prime;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _opEquals : BoolExpr  {
@@ -421,6 +486,11 @@ public override bool Equals(object other) {
  var tmp = other as _opEquals;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _opGreaterThan : BoolExpr  {
@@ -450,6 +520,11 @@ public override bool Equals(object other) {
  var tmp = other as _opGreaterThan;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class add : Locals  {
@@ -462,10 +537,15 @@ public static add Create(Locals P1, string P2, Expr P3) { return new add(P1, P2,
 
   public IEnumerable<IRunnable> Run() {   
  { 
- var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollarm; 
+ #line 69 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollarm; 
+ #line 69 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var M = tmp_1.P1; var k = tmp_0.P2; var v = tmp_0.P3; var M_Prime = (M.Add (k,v)); 
+ #line 69 "Content\Casanova semantics\transform.mc"
 if(M_Prime is System.Collections.Immutable.ImmutableDictionary<string, Expr>) { 
+ #line 69 "Content\Casanova semantics\transform.mc"
 var result = _opDollarm.Create(M_Prime as System.Collections.Immutable.ImmutableDictionary<string, Expr>);
+ #line 69 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
@@ -490,6 +570,11 @@ public override bool Equals(object other) {
  var tmp = other as add;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2) && this.P3.Equals(tmp.P3); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _Else : Else  {
@@ -510,6 +595,11 @@ return "else";
 public override bool Equals(object other) {
  return other is _Else; 
 }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class eval : Expr  {
@@ -522,114 +612,190 @@ public static eval Create(float P1, Locals P2, Expr P3) { return new eval(P1, P2
 
   public IEnumerable<IRunnable> Run() {   
  { 
- var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _If; 
+ #line 58 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _If; 
+ #line 58 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var c = tmp_1.P1; var tmp_2 = tmp_1.P2 as _Then; 
+ #line 58 "Content\Casanova semantics\transform.mc"
 if (tmp_2 != null) { var t = tmp_1.P3; var tmp_3 = tmp_1.P4 as _Else; 
+ #line 58 "Content\Casanova semantics\transform.mc"
 if (tmp_3 != null) { var e = tmp_1.P5; 
+ #line 58 "Content\Casanova semantics\transform.mc"
 if(!c.Equals(_opDollarb.Create(true))) { 
+ #line 58 "Content\Casanova semantics\transform.mc"
 if(!c.Equals(_opDollarb.Create(false))) { 
+ #line 58 "Content\Casanova semantics\transform.mc"
 if(M is Locals && c is Expr) { 
+ #line 58 "Content\Casanova semantics\transform.mc"
 var tmp_5 = eval.Create(dt, M as Locals, c as Expr);
+ #line 58 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_4 in tmp_5.Run()) { var c_Prime = tmp_4; 
+ #line 58 "Content\Casanova semantics\transform.mc"
 if(M is Locals && c_Prime is BoolExpr && t is Expr && e is Expr) { 
+ #line 58 "Content\Casanova semantics\transform.mc"
 var tmp_7 = eval.Create(dt, M as Locals, _If.Create(c_Prime as BoolExpr, _Then.Create(), t as Expr, _Else.Create(), e as Expr));
+ #line 58 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_6 in tmp_7.Run()) { var res = tmp_6; 
+ #line 58 "Content\Casanova semantics\transform.mc"
 var result = res;
+ #line 58 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } } } } } }
  } 
 
   }
   public IEnumerable<IRunnable> Run3_() {   
  { 
- var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _If; 
+ #line 79 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _If; 
+ #line 79 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollarb; 
+ #line 79 "Content\Casanova semantics\transform.mc"
 if (tmp_2 != null) { 
+ #line 79 "Content\Casanova semantics\transform.mc"
 if (tmp_2.P1 == true) { var tmp_3 = tmp_1.P2 as _Then; 
+ #line 79 "Content\Casanova semantics\transform.mc"
 if (tmp_3 != null) { var t = tmp_1.P3; var tmp_4 = tmp_1.P4 as _Else; 
+ #line 79 "Content\Casanova semantics\transform.mc"
 if (tmp_4 != null) { var e = tmp_1.P5; 
+ #line 79 "Content\Casanova semantics\transform.mc"
 if(M is Locals && t is Expr) { 
+ #line 79 "Content\Casanova semantics\transform.mc"
 var tmp_6 = eval.Create(dt, M as Locals, t as Expr);
+ #line 79 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_5 in tmp_6.Run3_()) { var res = tmp_5; 
+ #line 79 "Content\Casanova semantics\transform.mc"
 var result = res;
+ #line 79 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } } } }
  } 
 
   
  { 
- var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _If; 
+ #line 83 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _If; 
+ #line 83 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollarb; 
+ #line 83 "Content\Casanova semantics\transform.mc"
 if (tmp_2 != null) { 
+ #line 83 "Content\Casanova semantics\transform.mc"
 if (tmp_2.P1 == false) { var tmp_3 = tmp_1.P2 as _Then; 
+ #line 83 "Content\Casanova semantics\transform.mc"
 if (tmp_3 != null) { var t = tmp_1.P3; var tmp_4 = tmp_1.P4 as _Else; 
+ #line 83 "Content\Casanova semantics\transform.mc"
 if (tmp_4 != null) { var e = tmp_1.P5; 
+ #line 83 "Content\Casanova semantics\transform.mc"
 if(M is Locals && e is Expr) { 
+ #line 83 "Content\Casanova semantics\transform.mc"
 var tmp_6 = eval.Create(dt, M as Locals, e as Expr);
+ #line 83 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_5 in tmp_6.Run3_()) { var res = tmp_5; 
+ #line 83 "Content\Casanova semantics\transform.mc"
 var result = res;
+ #line 83 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } } } }
  } 
 
   
  { 
- var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _opDollar; 
+ #line 87 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _opDollar; 
+ #line 87 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var v = tmp_1.P1; 
+ #line 87 "Content\Casanova semantics\transform.mc"
 if(M is Locals) { 
+ #line 87 "Content\Casanova semantics\transform.mc"
 var tmp_3 = lookup.Create(M as Locals, v);
+ #line 87 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_2 in tmp_3.Run3_()) { var res = tmp_2; 
+ #line 87 "Content\Casanova semantics\transform.mc"
 var result = res;
+ #line 87 "Content\Casanova semantics\transform.mc"
 yield return result;  } } }
  } 
 
   
  { 
- var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as wait; 
+ #line 91 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as wait; 
+ #line 91 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var t = tmp_1.P1; 
+ #line 91 "Content\Casanova semantics\transform.mc"
 if((dt>=t).Equals(true)) { var dt_Prime = (dt-t); 
+ #line 91 "Content\Casanova semantics\transform.mc"
 var result = setDt.Create(dt_Prime);
+ #line 91 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
   
  { 
- var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as wait; 
+ #line 96 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as wait; 
+ #line 96 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var t = tmp_1.P1; 
+ #line 96 "Content\Casanova semantics\transform.mc"
 if((dt<t).Equals(true)) { var t_Prime = (t-dt); 
+ #line 96 "Content\Casanova semantics\transform.mc"
 var result = waitResult.Create(t_Prime);
+ #line 96 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
   
  { 
- var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _opDollari; 
+ #line 101 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _opDollari; 
+ #line 101 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var val = tmp_1.P1; 
+ #line 101 "Content\Casanova semantics\transform.mc"
 var result = _opDollari.Create(val);
+ #line 101 "Content\Casanova semantics\transform.mc"
 yield return result;  }
  } 
 
   
  { 
- var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as yield; 
+ #line 104 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as yield; 
+ #line 104 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _Comma; 
+ #line 104 "Content\Casanova semantics\transform.mc"
 if (tmp_2 != null) { var e = tmp_2.P1; var exprs = tmp_2.P2; 
+ #line 104 "Content\Casanova semantics\transform.mc"
 if(M is Locals && e is Expr && exprs is ExprList) { 
+ #line 104 "Content\Casanova semantics\transform.mc"
 var tmp_4 = evalMany.Create(dt, M as Locals, _Comma.Create(e as Expr, exprs as ExprList));
+ #line 104 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_3 in tmp_4.Run3_6_()) { var vals = tmp_3; 
+ #line 104 "Content\Casanova semantics\transform.mc"
 if(vals is ExprResultList) { 
+ #line 104 "Content\Casanova semantics\transform.mc"
 var result = yieldResult.Create(vals as ExprResultList);
+ #line 104 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } }
  } 
 
   
  { 
- var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _Semicolon; 
+ #line 120 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _Semicolon; 
+ #line 120 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_1.P2; 
+ #line 120 "Content\Casanova semantics\transform.mc"
 if(M is Locals && a is Expr) { 
+ #line 120 "Content\Casanova semantics\transform.mc"
 var tmp_3 = eval.Create(dt, M as Locals, a as Expr);
+ #line 120 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_2 in tmp_3.Run3_7_()) { var a_Prime = tmp_2; 
+ #line 120 "Content\Casanova semantics\transform.mc"
 if(M is Locals && a_Prime is ExprResult && b is Expr) { 
+ #line 120 "Content\Casanova semantics\transform.mc"
 var tmp_5 = stepOrSuspend .Create(dt, M as Locals, a_Prime as ExprResult, b as Expr);
+ #line 120 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_4 in tmp_5.Run3_7_()) { var res = tmp_4; 
+ #line 120 "Content\Casanova semantics\transform.mc"
 var result = res;
+ #line 120 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } }
  } 
 
@@ -653,6 +819,11 @@ public override bool Equals(object other) {
  var tmp = other as eval;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2) && this.P3.Equals(tmp.P3); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class evalMany : Expr  {
@@ -665,26 +836,43 @@ public static evalMany Create(float P1, Locals P2, ExprList P3) { return new eva
 
   public IEnumerable<IRunnable> Run3_6_() {   
  { 
- var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _Comma; 
+ #line 109 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _Comma; 
+ #line 109 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var e = tmp_1.P1; var exprs = tmp_1.P2; 
+ #line 109 "Content\Casanova semantics\transform.mc"
 if (e is Expr && exprs is ExprList) { var es = _Comma.Create(e as Expr, exprs as ExprList); 
+ #line 109 "Content\Casanova semantics\transform.mc"
 if(M is Locals && e is Expr) { 
+ #line 109 "Content\Casanova semantics\transform.mc"
 var tmp_3 = eval.Create(dt, M as Locals, e as Expr);
+ #line 109 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_2 in tmp_3.Run3_6_()) { var val = tmp_2; 
+ #line 109 "Content\Casanova semantics\transform.mc"
 if(M is Locals && exprs is ExprList) { 
+ #line 109 "Content\Casanova semantics\transform.mc"
 var tmp_5 = evalMany.Create(dt, M as Locals, exprs as ExprList);
+ #line 109 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_4 in tmp_5.Run3_6_()) { var vals = tmp_4; 
+ #line 109 "Content\Casanova semantics\transform.mc"
 if (val is ExprResult && vals is ExprResultList) { var res = _Colon.Create(val as ExprResult, vals as ExprResultList); 
+ #line 109 "Content\Casanova semantics\transform.mc"
 if(val is ExprResult && vals is ExprResultList) { 
+ #line 109 "Content\Casanova semantics\transform.mc"
 var result = _Colon.Create(val as ExprResult, vals as ExprResultList);
+ #line 109 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } } } } }
  } 
 
   
  { 
- var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as nil; 
+ #line 116 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as nil; 
+ #line 116 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { 
+ #line 116 "Content\Casanova semantics\transform.mc"
 var result = nilr.Create();
+ #line 116 "Content\Casanova semantics\transform.mc"
 yield return result;  }
  } 
 
@@ -709,6 +897,11 @@ public override bool Equals(object other) {
  var tmp = other as evalMany;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2) && this.P3.Equals(tmp.P3); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _If : Expr  {
@@ -744,6 +937,11 @@ public override bool Equals(object other) {
  var tmp = other as _If;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2) && this.P3.Equals(tmp.P3) && this.P4.Equals(tmp.P4) && this.P5.Equals(tmp.P5); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class lookup : Expr  {
@@ -755,9 +953,13 @@ public static lookup Create(Locals P1, string P2) { return new lookup(P1, P2); }
 
   public IEnumerable<IRunnable> Run() {   
  { 
- var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollarm; 
+ #line 65 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollarm; 
+ #line 65 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var M = tmp_1.P1; var k = tmp_0.P2; var v = (M.GetKey (k)); 
+ #line 65 "Content\Casanova semantics\transform.mc"
 var result = v;
+ #line 65 "Content\Casanova semantics\transform.mc"
 yield return result;  }
  } 
 
@@ -781,6 +983,11 @@ public override bool Equals(object other) {
  var tmp = other as lookup;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class nil : ExprList  {
@@ -801,6 +1008,11 @@ return "nil";
 public override bool Equals(object other) {
  return other is nil; 
 }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class nilr : ExprResultList  {
@@ -821,6 +1033,11 @@ return "nilr";
 public override bool Equals(object other) {
  return other is nilr; 
 }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class runTest1 : Test  {
@@ -830,11 +1047,17 @@ public static runTest1 Create() { return new runTest1(); }
 
   public IEnumerable<IRunnable> Run() {   
  { 
- var tmp_0 = this as runTest1; var dt = 0.020000f; var M = _opDollarm.Create(System.Collections.Immutable.ImmutableDictionary<string,Expr >.Empty); 
+ #line 73 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this as runTest1; var dt = 0.020000f; var M = _opDollarm.Create(System.Collections.Immutable.ImmutableDictionary<string,Expr >.Empty); 
+ #line 73 "Content\Casanova semantics\transform.mc"
 if(M is Locals) { 
+ #line 73 "Content\Casanova semantics\transform.mc"
 var tmp_2 = eval.Create(dt, M as Locals, _Semicolon.Create(wait.Create(0.010000f), yield.Create(_Comma.Create(_opDollari.Create(1), nil.Create()))));
+ #line 73 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_1 in tmp_2.Run3_()) { var res = tmp_1; 
+ #line 73 "Content\Casanova semantics\transform.mc"
 var result = res;
+ #line 73 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
@@ -851,6 +1074,11 @@ return "runTest1";
 public override bool Equals(object other) {
  return other is runTest1; 
 }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class setDt : ExprResult  {
@@ -878,6 +1106,11 @@ public override bool Equals(object other) {
  var tmp = other as setDt;
  if(tmp != null) return this.P1.Equals(tmp.P1); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class stepOrSuspend  : Expr  {
@@ -891,30 +1124,47 @@ public static stepOrSuspend  Create(float P1, Locals P2, ExprResult P3, Expr P4)
 
   public IEnumerable<IRunnable> Run3_7_() {   
  { 
- var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as setDt; 
+ #line 125 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as setDt; 
+ #line 125 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var dt_Prime = tmp_1.P1; var b = tmp_0.P4; 
+ #line 125 "Content\Casanova semantics\transform.mc"
 if(M is Locals && b is Expr) { 
+ #line 125 "Content\Casanova semantics\transform.mc"
 var tmp_3 = eval.Create(dt_Prime, M as Locals, b as Expr);
+ #line 125 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_2 in tmp_3.Run3_7_()) { var res = tmp_2; 
+ #line 125 "Content\Casanova semantics\transform.mc"
 var result = res;
+ #line 125 "Content\Casanova semantics\transform.mc"
 yield return result;  } } }
  } 
 
   
  { 
- var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as waitResult; 
+ #line 129 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as waitResult; 
+ #line 129 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var t = tmp_1.P1; var b = tmp_0.P4; 
+ #line 129 "Content\Casanova semantics\transform.mc"
 if(b is Expr) { 
+ #line 129 "Content\Casanova semantics\transform.mc"
 var result = _Semicolon_Prime.Create(waitResult.Create(t), b as Expr);
+ #line 129 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
   
  { 
- var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as yieldResult; 
+ #line 132 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as yieldResult; 
+ #line 132 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var vals = tmp_1.P1; var b = tmp_0.P4; 
+ #line 132 "Content\Casanova semantics\transform.mc"
 if(vals is ExprResultList && b is Expr) { 
+ #line 132 "Content\Casanova semantics\transform.mc"
 var result = _Semicolon_Prime.Create(yieldResult.Create(vals as ExprResultList), b as Expr);
+ #line 132 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
@@ -940,6 +1190,11 @@ public override bool Equals(object other) {
  var tmp = other as stepOrSuspend ;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2) && this.P3.Equals(tmp.P3) && this.P4.Equals(tmp.P4); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _Then : Then  {
@@ -960,6 +1215,11 @@ return "then";
 public override bool Equals(object other) {
  return other is _Then; 
 }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class wait : Expr  {
@@ -987,6 +1247,11 @@ public override bool Equals(object other) {
  var tmp = other as wait;
  if(tmp != null) return this.P1.Equals(tmp.P1); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class waitResult : ExprResult  {
@@ -1014,6 +1279,11 @@ public override bool Equals(object other) {
  var tmp = other as waitResult;
  if(tmp != null) return this.P1.Equals(tmp.P1); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class yield : Expr  {
@@ -1041,6 +1311,11 @@ public override bool Equals(object other) {
  var tmp = other as yield;
  if(tmp != null) return this.P1.Equals(tmp.P1); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class yieldResult : ExprResult  {
@@ -1068,6 +1343,11 @@ public override bool Equals(object other) {
  var tmp = other as yieldResult;
  if(tmp != null) return this.P1.Equals(tmp.P1); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 public class _opOr : BoolExpr  {
@@ -1097,6 +1377,11 @@ public override bool Equals(object other) {
  var tmp = other as _opOr;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
 }
 
 
