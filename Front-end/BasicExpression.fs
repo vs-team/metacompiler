@@ -1,5 +1,9 @@
 ﻿module BasicExpression
 
+(*
+    Different Bracket types are to give context to an expression.
+    If no an expression does not have a bracket then the type Implicit is used.
+*)
 type Bracket = Implicit | Square | Curly | Angle | Regular
   with 
     static member FromChar = 
@@ -11,7 +15,23 @@ type Bracket = Implicit | Square | Curly | Angle | Regular
       | '≪' -> Angle
       | c -> failwithf "Unsupported bracket type %A" c
 
+(*
+    A typical Expression can take form of a Keyword, an Application, an Import or an Extension.
+    The Position of the Expression is stored in the 'di variable.
+            
+    An Application consists of list of expressions, these expressions in order contain:
+        - An operation on the given expressions
+        - The lefthand arguments
+        - The righthand arguments
 
+    Note that these arguments can be Applications themselves.
+
+    A Keyword is a typical Keyword found in the ConcreteExpressionParser.
+
+    An Extension functoins as an identifier.
+
+    An Imported Expressions functionas as a Literal
+*)
 type BasicExpression<'k, 'e, 'i, 'di> =
   | Keyword of 'k * 'di
   | Application of Bracket * List<BasicExpression<'k, 'e, 'i, 'di>> * 'di
