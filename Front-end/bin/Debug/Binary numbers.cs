@@ -339,7 +339,8 @@ public override bool Equals(object other) {
 
 
 public class EntryPoint {
- static public IEnumerable<IRunnable> Run(bool printInput)
+ static public int Print(string s) { System.Console.WriteLine(s); return 0; } 
+static public IEnumerable<IRunnable> Run(bool printInput)
 {
  #line 1 "input"
  var p = _opAddition.Create(_Comma.Create(_Comma.Create(_Comma.Create(_Comma.Create(nil.Create(), d0.Create()), d1.Create()), d1.Create()), d1.Create()), _Comma.Create(_Comma.Create(_Comma.Create(_Comma.Create(nil.Create(), d0.Create()), d0.Create()), d0.Create()), d1.Create()));

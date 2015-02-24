@@ -110,7 +110,6 @@ and [<CustomEquality; CustomComparison>] TypeAnnotation =
         let args = args |> Seq.map (fun a -> a.ToString()) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
         sprintf "%s<%s>" (gt.ToString()) args
 
-    static member FreshVariable = cnt <- cnt + 1; sprintf "T%d" cnt |> Fresh |> Variable
     static member FromKeywordArgument (ctxt:ConcreteExpressionContext) (typingContext:InferenceContext) (a:KeywordArgument) =
       match a with
       | KeywordArgument.Native k -> Native k
@@ -167,6 +166,14 @@ and InferenceContext = {
   mutable TypeEquivalence : Map<TypeVariable, TypeEquivalence> 
   }
   with 
+    member ctxt.CreateFreshVariable = 
+      cnt <- cnt + 1
+      let v = sprintf "T%d" cnt |> Fresh 
+      match ctxt.TypeEquivalence |> Map.tryFind v with
+      | Some eq -> 
+        ctxt.TypeEquivalence <- ctxt.TypeEquivalence.Add(v, eq + (TypeEquivalence.Singleton v))
+      | None -> ctxt.TypeEquivalence <- ctxt.TypeEquivalence.Add(v, TypeEquivalence.Singleton v)
+      v |> Variable
     static member Empty = { VarBindings = Map.empty; LocalGenericParameters = Map.empty; GenericParameters = Set.empty; TypeEquivalence = Map.empty }
     member ctxt.AddLocalGenericParameter (l:TypeVariable) =
       match ctxt.LocalGenericParameters |> Map.tryFind l with
@@ -235,6 +242,8 @@ let rec unify (ctxt:ConcreteExpressionContext) (typingContext:InferenceContext) 
   | Variable v, other 
   | other, Variable v -> 
     typingContext.AddTypeVariableEquivalence v other
+  | _, Defined "CSharpExpr"
+  | Defined "CSharpExpr", _ -> ()
   | _ -> failwithf "Cannot unify types %A and %A" t1 t2
 
 and typeCheck (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, Literal, Position, Unit>) (typingContext:InferenceContext) =
@@ -247,13 +256,13 @@ and typeCheck (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, 
     | SingleLiteral s -> Native "float"
     | DoubleLiteral d -> Native "double"
   | Application(Angle, _, _, ()) ->
-    TypeAnnotation.FreshVariable
+    typingContext.CreateFreshVariable
   | Application(_,Extension({ Name = var }, _, ()) :: [], _, _) 
   | Extension({ Name = var }, _, ()) -> 
     match typingContext.VarBindings |> Map.tryFind var with
     | Some t -> t
     | None -> 
-      let t = TypeAnnotation.FreshVariable
+      let t = typingContext.CreateFreshVariable
       typingContext.VarBindings <- typingContext.VarBindings.Add(var, t)
       t
   | Keyword(Custom k, _, _) ->
@@ -296,7 +305,7 @@ and addToContext (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Va
   | Application(_,Extension({ Name = var }, _, ()) :: [], _, _) 
   | Extension({ Name = var }, _, ()) -> 
     if typingContext.VarBindings.ContainsKey var |> not then
-      typingContext.VarBindings <- typingContext.VarBindings |> Map.add var TypeAnnotation.FreshVariable
+      typingContext.VarBindings <- typingContext.VarBindings |> Map.add var typingContext.CreateFreshVariable
   | Application(_, (Keyword(Custom k, _, _)) :: args, pos, _) ->
     let inputClass = ctxt.CustomKeywordsMap.[k]
     if inputClass.IsGeneric then
@@ -340,7 +349,7 @@ and rebuildTypedLocal (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keywor
     let typedArgs = 
       [ for a in args do
           yield rebuildTypedLocal ConcreteExpressionContext.CSharp a typingContext ]
-    Application(Angle, typedArgs, pos, TypeAnnotation.FreshVariable)
+    Application(Angle, typedArgs, pos, typingContext.CreateFreshVariable)
   | Application(b,Extension({ Name = var }, extPos, ()) :: [], appPos, ()) ->
     let t = typeCheck ctxt e typingContext |> findMostSpecificMatch  ctxt typingContext
     Application(b,Extension({ Name = var }, extPos, t) :: [], appPos, t)
@@ -427,7 +436,7 @@ let rec rebuildTyped (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword
     let typedArgs = 
       [ for a in args do
           yield rebuildTyped ConcreteExpressionContext.CSharp a typingContext ]
-    Application(Angle, typedArgs, pos, TypeAnnotation.FreshVariable)
+    Application(Angle, typedArgs, pos, typingContext.CreateFreshVariable)
   | Application(b,Extension({ Name = var }, extPos, ()) :: [], appPos, ()) ->
     let t = typeCheck ctxt e typingContext |> findMostSpecificMatch  ctxt typingContext
     Application(b,Extension({ Name = var }, extPos, t) :: [], appPos, t)

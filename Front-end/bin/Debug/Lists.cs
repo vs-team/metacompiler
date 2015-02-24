@@ -148,7 +148,8 @@ public override bool Equals(object other) {
 
 
 public class EntryPoint {
- static public IEnumerable<IRunnable> Run(bool printInput)
+ static public int Print(string s) { System.Console.WriteLine(s); return 0; } 
+static public IEnumerable<IRunnable> Run(bool printInput)
 {
  #line 1 "input"
  var p = contains.Create(_Semicolon.Create(0, _Semicolon.Create(1, _Semicolon.Create(2, _Semicolon.Create(3, nil.Create())))), -1);

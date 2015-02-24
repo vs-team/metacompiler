@@ -531,8 +531,8 @@ if(!c.Equals(_opDollarb.Create(false))) {
 if(M is Locals && c is Expr) { 
 var tmp_5 = eval.Create(dt, M as Locals, c as Expr);
 foreach (var tmp_4 in tmp_5.Run2_()) { var c_Prime = tmp_4; 
-if(M is Locals && c_Prime is BoolExpr && t is Expr && e is Expr) { 
-var tmp_7 = eval.Create(dt, M as Locals, _If.Create(c_Prime as BoolExpr, _Then.Create(), t as Expr, _Else.Create(), e as Expr));
+if(M is Locals && c_Prime is T19 && t is Expr && e is Expr) { 
+var tmp_7 = eval.Create(dt, M as Locals, _If.Create(c_Prime as T19, _Then.Create(), t as Expr, _Else.Create(), e as Expr));
 foreach (var tmp_6 in tmp_7.Run2_()) { var res = tmp_6; 
 var result = res;
 yield return result;  } } } } } } } } }
@@ -1103,7 +1103,8 @@ public override bool Equals(object other) {
 
 
 public class EntryPoint {
- static public IEnumerable<IRunnable> Run(bool printInput)
+ static public int Print(string s) { System.Console.WriteLine(s); return 0; } 
+static public IEnumerable<IRunnable> Run(bool printInput)
 {
  #line 1 "input"
  var p = runTest1.Create();

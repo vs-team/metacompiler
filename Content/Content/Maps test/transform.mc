@@ -2,6 +2,7 @@
 Keyword = "run" LeftArguments = [] RightArguments = [MapIntString] Priority = 0 Class = "Expr"
 Keyword = "add" LeftArguments = [MapIntString] RightArguments = [<<int>> <<string>>] Priority = 1 Class = "Expr"
 
+MapIntString is Expr
 
 M' := <<M.Add(k,v)>>
 ---------------------

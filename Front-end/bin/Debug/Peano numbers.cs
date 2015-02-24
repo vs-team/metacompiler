@@ -225,7 +225,8 @@ public override bool Equals(object other) {
 
 
 public class EntryPoint {
- static public IEnumerable<IRunnable> Run(bool printInput)
+ static public int Print(string s) { System.Console.WriteLine(s); return 0; } 
+static public IEnumerable<IRunnable> Run(bool printInput)
 {
  #line 1 "input"
  var p = _opBang.Create(_opMultiplication.Create(_opMultiplication.Create(s.Create(s.Create(z.Create())), s.Create(s.Create(z.Create()))), _opAddition.Create(s.Create(s.Create(z.Create())), s.Create(z.Create()))));

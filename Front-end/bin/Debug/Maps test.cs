@@ -7,7 +7,7 @@ namespace Maps_test {
 
 
 public interface Expr : IRunnable {}
-public interface MapIntString : IRunnable {}
+public interface MapIntString : Expr {}
 
 
 
@@ -116,7 +116,8 @@ public override bool Equals(object other) {
 
 
 public class EntryPoint {
- static public IEnumerable<IRunnable> Run(bool printInput)
+ static public int Print(string s) { System.Console.WriteLine(s); return 0; } 
+static public IEnumerable<IRunnable> Run(bool printInput)
 {
  #line 1 "input"
  var p = run.Create(_opDollar.Create(System.Collections.Immutable.ImmutableDictionary<int,string >.Empty));

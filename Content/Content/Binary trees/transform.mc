@@ -1,7 +1,5 @@
 ﻿Keyword = "nil" LeftArguments = [] RightArguments = [] Priority = 0 Class = "BinTreeInt"
-Keyword = "+-" LeftArguments = [BinTreeInt] RightArguments = [<<int>>] Priority = 1010 Class = "BinTreeIntLeft"
-Keyword = "-+" LeftArguments = [BinTreeIntLeft] RightArguments = [BinTreeInt] Priority = 1000 Class = "BinTreeInt"
-
+Keyword = "node" LeftArguments = [] RightArguments = [BinTreeInt <<int>> BinTreeInt] Priority = 1010 Class = "BinTreeInt"
 Keyword = "add" LeftArguments = [BinTreeInt] RightArguments = [<<int>>] Priority = 100 Class = "Expr"
 Keyword = "contains" LeftArguments = [BinTreeInt] RightArguments = [<<int>>] Priority = 100 Class = "Expr"
 
@@ -19,25 +17,25 @@ t2b add 15 => t3
 t3 add 1 => t4
 t4 add 16 => t
 t contains 7 => res
---------------------
+--------------------------
 run => (t contains 7),res
 
   -----------------------------
-  nil add k => nil +- k -+ nil
+  nil add k => node nil k nil
 
   x == k
   -------------------------------------
-  (l +- k -+ r) add x => (l +- k -+ r)
+  (node l k r) add x => node l k r
 
   x < k
   l add x => l'
-  --------------------------------------
-  (l +- k -+ r) add x => (l' +- k -+ r)
+  -----------------------------------
+  (node l k r) add x => node l' k r
 
   x > k
   r add x => r'
   --------------------------------------
-  (l +- k -+ r) add x => (l +- k -+ r')
+  (node l k r) add x => (node l k r')
 
 
   -------------------------
@@ -45,15 +43,15 @@ run => (t contains 7),res
 
   x == k
   ----------------------------------
-  (l +- k -+ r) contains x => $true
+  (node l k r) contains x => $true
 
   x < k
   l contains x => res
   --------------------------------
-  (l +- k -+ r) contains x => res
+  (node l k r) contains x => res
 
   x > k
   r contains x => res
   --------------------------------
-  (l +- k -+ r) contains x => res
+  (node l k r) contains x => res
 
