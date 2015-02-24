@@ -1,4 +1,14 @@
 ﻿module BottomUpPriorityParser
+(*
+    The BottomUpPriorityParser is responsible for prioritizing a list of expressions into possibly shorter lists of expressions and eliminating ambigious expressions.
+*)
+
+
+(*
+    A node consists of 4 attributes: it's Element, a flag if this Node has been collapsed yet and a Left and Right children.
+
+    The Collapsed Flag will make sure that a Node does not get collapsed twice.
+*)
 
 [<CustomEquality; CustomComparison>]
 type Node<'a when 'a : equality and 'a : comparison> = 
@@ -26,6 +36,15 @@ type Node<'a when 'a : equality and 'a : comparison> =
       match this.Right with
       | None -> failwith "Cannot lookup right element"
       | Some x -> x
+    (*
+        The collapse function will make sure that every element has the same amount of left and right arguments as its ariety given the left ariety and right arity.
+        The function will return the merged expression, merging is done by the given function f.
+        This is done by iterating over every left and right element and assigning those elements to the either left or right element.
+        The iterations are stopped once the amount of elements assigned to this Node is equal to its ariety.
+
+        It is important to note that this function will give an error if it is not possible to satisfy this expression's ariety.
+        If the operator '+' has a left and right ariety of 1 then the expression '+ 2' will not be valid because it's left ariety is not satisfied.
+    *)
     member this.Collapse (leftCount:int) (rightCount:int) f =
       let mutable left = []
       if leftCount > 0 then
@@ -60,7 +79,40 @@ type Node<'a when 'a : equality and 'a : comparison> =
           | :? Node<'a> as y -> compare x.Element y.Element
           | _ -> invalidArg "yobj" "cannot compare values of different types"
 
+(*
+    The prioritize function accepts a list of Expressions, a function returning the left and right ariety of an expression,
+    a function returning the priority of an expression and a function that enables merging multiple expressions into one.
 
+    The prioritizing is done by comparing the priority of multiple expressions and comparing these to it's neighbours.
+    If an expression takes a higher priority than it's neighbour, and this expression has an ariety of 1 or more, the element and it's neighbour will be merged depending on the ariety.
+
+    Example:
+
+    Given:
+     - the expression e : 3 + 1 * 3
+     - the operator '+' has a left ariety of 1 , a right ariety of 1 and a priority of 1
+     - the operator '*' has a left ariety of 1 , a right ariety of 1 and a priority of 2
+
+    If e were to be parsed into a list it could be represented as the following:
+
+    {literal(3); operator('+', 1, 1, 1); literal(1); operator('*', 1, 1, 2); literal(3)}
+
+    Sorted on priority:
+
+    {operator('*', 1, 1, 2); operator('+', 1, 1, 1); literal(3); literal(1); literal(3)}
+
+    Iterating over the sorted list will start of at the '*' operator.
+    We first check if this expression has an ariety that is greater than 0.
+    In this case '*' has a left and right ariety of 1.
+    If this expression is not collapsed yet, we will collapse ( see Node.Collapse ) this expression.
+    
+    After this step there will be two not-collapsed elements left in the list of expressions.
+    
+    The next element in the list of sorted expressions will be the '+' operator.
+    Now, we simply collapse this expression and we will end up with a prioritized list of expressions.
+
+    Note that the prioritized list is shorter than it's original. This is because the new List will only contain expressions that have not collapsed.
+*)
 let prioritize (l:List<'a>) ariety priority merge =
   match l with
   | [] -> failwith "Cannot prioritize empty list"
