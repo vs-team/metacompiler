@@ -29,12 +29,12 @@ type Bracket = Implicit | Square | Curly | Angle | Regular
     A Keyword is a typical Keyword found in the ConcreteExpressionParser.
 
     An Extension functoins as an identifier.
-
-type BasicExpression<'k, 'e, 'i, 'di> =
-  | Keyword of 'k * 'di
-  | Application of Bracket * List<BasicExpression<'k, 'e, 'i, 'di>> * 'di
-  | Imported of 'i * 'di
-  | Extension of 'e * 'di
+*)
+type BasicExpression<'k, 'e, 'i, 'di, 'ti> =
+  | Keyword of 'k * 'di * 'ti
+  | Application of Bracket * List<BasicExpression<'k, 'e, 'i, 'di, 'ti>> * 'di * 'ti
+  | Imported of 'i * 'di * 'ti
+  | Extension of 'e * 'di * 'ti
   with 
     member this.TypeInformation =
       match this with
