@@ -1,8 +1,8 @@
 ﻿module BasicExpression
 
 (*
-    Different Bracket types are to give context to an expression.
-    If no an expression does not have a bracket then the type Implicit is used.
+    Different Bracket types are used to give context to an expression.
+    If an expression does not have a bracket then the type Implicit is used.
 *)
 type Bracket = Implicit | Square | Curly | Angle | Regular
   with 
@@ -28,7 +28,7 @@ type Bracket = Implicit | Square | Curly | Angle | Regular
 
     A Keyword is a typical Keyword found in the ConcreteExpressionParser.
 
-    An Extension functoins as an identifier.
+    An Extension functions as an identifier.
 *)
 type BasicExpression<'k, 'e, 'i, 'di, 'ti> =
   | Keyword of 'k * 'di * 'ti
