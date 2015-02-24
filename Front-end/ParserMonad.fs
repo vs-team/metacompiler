@@ -3,6 +3,10 @@
 
 open Utilities
 
+(*
+    A Position type holds the current line index while parsing.
+    The Position is used as context for errors.
+*)
 type Position = { Line : int }
   with member this.NextLine = { this with Line = this.Line + 1 }
        static member Zero = { Line = 1 }
@@ -43,7 +47,19 @@ type Error = Error of Position
 
 type Parser<'a, 'ctxt> = { Parse : List<char> -> 'ctxt -> Position -> List<'a * List<char> * 'ctxt * Position> * List<Error>}
   with
+    (*
+        The Make function is used to construct a new Parser Monad.
+        This function accepts a function in the form of p:List<char> -> 'ctxt -> Position -> List<'a * List<char> * 'ctxt * Position> * List<Error> and assigns the Parser's Parse function to this value.
+    *)
     static member Make(p:List<char> -> 'ctxt -> Position -> List<'a * List<char> * 'ctxt * Position> * List<Error>) : Parser<'a,'ctxt> = { Parse = p }
+    (*
+        The ++ function constructs an error monad with the given two Parsers p1 and p2.
+        
+        The Error Monad will try to match the first Parser ( p1 ), if this Parser was not able to match the buffer then the second Parser ( p2 ) will try to get matched.
+        If neither matched an error is returned.
+        If p1 matched, p1's result will be returned.
+        if p2 matched, p2's result will be returned.        
+    *)
     static member (++) (p1:Parser<'a,'ctxt>, p2:Parser<'a,'ctxt>) : Parser<'a,'ctxt> = 
      (fun buf ctxt p ->
         match p1.Parse buf ctxt p with
@@ -54,6 +70,14 @@ type Parser<'a, 'ctxt> = { Parse : List<char> -> 'ctxt -> Position -> List<'a * 
             [ for res,restBuf,ctxt',pos in p2res -> res, restBuf, ctxt', pos ], []
         | p1res,err1 ->
           [ for res,restBuf,ctxt',pos in p1res -> res, restBuf, ctxt', pos ], []) |> Parser.Make
+    (*
+        The + function construct an error monad with the given two Parsers p1 and p2.
+        
+        The key difference between '++' and '+' is that the function '+' returns an Either monad whereas the '++' function simply returns the result of the first matched Parser.
+        If neither matched an error is returned.
+        If p1 matched, an Either Monad will be returned with it's First value as p1's match.
+        if p2 matched, an Either monad will be returned with it's Second value as p2's match.
+    *)
     static member (+) (p1:Parser<'a,'ctxt>, p2:Parser<'b,'ctxt>) : Parser<Either<'a,'b>,'ctxt> = 
      (fun buf ctxt p ->
         match p1.Parse buf ctxt p with
@@ -64,6 +88,20 @@ type Parser<'a, 'ctxt> = { Parse : List<char> -> 'ctxt -> Position -> List<'a * 
             [ for res,restBuf,ctxt',pos in p2res -> Second res, restBuf, ctxt', pos ], []
         | p1res,err1 ->
           [ for res,restBuf,ctxt',pos in p1res -> First res, restBuf, ctxt', pos ], []) |> Parser.Make
+    (*
+        The !! function will execute the Parser, this function will thus advance one step in the parsing process.
+        This function can be used to skip over lexemes from the input.
+        
+
+        A use of this function is checking for closing brackets.
+
+        p {
+            let closing_bracket = !!(character '}')
+            //some test for a closing bracket
+        }        
+
+        This function is mostly used to directly use a Parser without the need of chaining the Parser.
+    *)
     static member (!!) (p:Parser<'a,'ctxt>) : Parser<'a,'ctxt> = 
       (fun buf ctxt pos -> 
         let all_res,err = p.Parse buf ctxt pos
@@ -75,9 +113,36 @@ type Parser<'a, 'ctxt> = { Parse : List<char> -> 'ctxt -> Position -> List<'a * 
 (*
   Parser monad. The parser monad is responsible for the (lazy) chaining of the parsing operations.
   The chaining happens with the methods Bind and Combine. Bind takes as input one parser which performs
-  the first parsing step...
+  the first parsing step. If this parsing step succeeds the next Parser step will be executed.
+  
+  This process get's repeated untill an error is found or the last Parser step has been executed.
+
+  If all parsing steps are satisfied, all the matched input will be returned.
 *)
 and ParserBuilder() =
+  (*
+    The Bind function is responsible for the chaining multiple parsers to eachother.
+    The Bind function accepts a Parser and a function that will result in a Parser.
+    If the Parser p found a match the Parsing is continued and k's Parse is called.
+    If the Parser p's Parse function did not find a match the Parsing process is stopped for this Parser Monad.
+
+    The function Bind will return all the results found while parsing.
+
+    The Bind function will appear in it's sugared syntax.
+
+    p {
+        let! x = character 'x'
+        return x
+    }
+
+    is syntatic sugar for:
+
+    p.Delay(
+        p.Bind(character 'x', 
+            p.Return(x)
+        )
+    )
+  *)
   member this.Bind(p:Parser<'a,'ctxt>, k:'a->Parser<'b,'ctxt>) : Parser<'b,'ctxt> =
    (fun buf ctxt pos ->
       let all_res,err = p.Parse buf ctxt pos
@@ -87,6 +152,12 @@ and ParserBuilder() =
           yield (k res).Parse restBuf ctxt' pos'
         ]
       out |> List.map fst |> List.concat, err @ (out |> List.map snd |> List.concat)) |> Parser.Make
+  (*
+
+  The Behaviour of the Combine function is almost identical to the Behaviour of the Bind function.
+  The Combine function accepts two Parsers instead of a Parser and a function resulting in a Parser.
+
+  *)
   member this.Combine(p:Parser<'a,'ctxt>, k:Parser<'b,'ctxt>) : Parser<'b,'ctxt> =
    (fun buf ctxt pos ->
       let all_res,err = p.Parse buf ctxt pos
@@ -96,6 +167,9 @@ and ParserBuilder() =
           yield k.Parse restBuf ctxt' pos'
         ]
       out |> List.map fst |> List.concat, err @ (out |> List.map snd |> List.concat)) |> Parser.Make
+  (*
+    The function Return creates a new Parser from any type 'a.
+  *)
   member this.Return(x:'a) : Parser<'a,'ctxt> =
     (fun buf ctxt pos -> [x,buf,ctxt,pos],[]) |> Parser.Make
   member this.ReturnFrom(x:Parser<'a,'ctxt>) : Parser<'a,'ctxt> = x
@@ -105,6 +179,7 @@ and ParserBuilder() =
   member this.Run(f:Parser<'a,'ctxt>) = f
 
 let parser = ParserBuilder()
+//the main parser builder used for constructing different Parsers.
 let p = parser  
 
 (*
@@ -252,9 +327,22 @@ let rec takeWhile' (p:char -> bool) : Parser<List<char>,'ctxt> =
       [ for res,resBuf,ctxt',pos' in all_res -> c::res,resBuf,ctxt',pos' ],err
     | buf -> [[],buf,ctxt,pos],[]) |> Parser.Make
 
+(*
+    Simple helper function to determine whether the given character c is in range of the codepoints of '0' and '9'.
+*)
 let isDigit c = c >= '0' && c <= '9'
+(*
+    Simple helper function to determine whether the given character c is in range of the codepoints of 'A' and 'Z' and 'a' and 'z'.
+*)
 let isAlpha c = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
 
+(*
+    Creates a Parser satisfying the input ( in EBNF ):
+
+    digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+
+    int_literal ::= ['-'] digit {digit}
+*)
 let intLiteral() = 
   p{
     let! sign = character '-' + p{ return () }
@@ -268,6 +356,13 @@ let intLiteral() =
       return s |> System.Int32.Parse
   }
 
+(*
+    Creates a Parser satisfying the input ( in EBNF ):
+
+    digit ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+
+    float_literal ::= int_literal '.' digit {digit}
+*)
 let floatLiteral() = 
   p{
     let! i = intLiteral()
@@ -278,14 +373,25 @@ let floatLiteral() =
     let f = s |> System.Double.Parse
     return float i + f
   }  
+(*
+    Creates a Parser satisfying the input ( in EBNF ):
 
+    identifier ::= (letter | '_' | '\'') {(letter | digit || '-' || '_' || ''')}
+
+    Where letter is any alphabetic character and digit is any digit ranging from 0 to 9.
+*)
 let identifier() =
   p{
-    let! c = character' (fun c -> isAlpha c || c = '_' || c = '\'')
+    let! c = character' (fun c -> isAlpha c || c = '_' || c = ''')
     let! cs = takeWhile (character' (fun c -> isAlpha c || isDigit c || c = '-' || c = '_' || c = '\'' ))
     return new System.String(c::cs |> Seq.toArray)
   }
+(*
+    Creates a Parser satisfying the input ( in EBNF ):
 
+    long_identifier ::= identifier '.' long_identifier |
+                        identifier '.' identifier
+*)
 let rec longIdentifier() =
   p{
     let! id = identifier()
@@ -296,7 +402,13 @@ let rec longIdentifier() =
       return id + "." + rest
     | Second _ -> return id
   }
+(*
+    Creates a Parser satisfying the input ( in EBNF ):
 
+    string_literal ::= '"' text '"'
+
+    Where text is any character not equal to the character '"'
+*)
 let stringLiteral() =
   p{
     let! q1 = character '\"'
@@ -304,21 +416,32 @@ let stringLiteral() =
     let! q2 = character '\"'
     return s
   }
+(*
+    Creates a Parser satisfying the input ( in EBNF ):
 
+    tab ::= '\t'
+*)
 let tab() = 
   p{
     let! t = (character '\t') + (word "  ")
     return ()
   }
-
+(*
+    Helper function to see if the input buffer is empty.
+    If the input buffer is empty the end of the file has been reached.
+*)
 let eof() =
   (fun buf ctxt pos ->
      match buf with
      | [] -> [(),[],ctxt,pos],[]
      | _ -> [],[Error pos]) |> Parser.Make
-
+(*
+    Helper function to check for a valid new line.
+*)
 let newline() = word "\r\n" + word "\n\r" + character '\n'
-
+(*
+    The function blanc_space creates a new Parser matcing all whitespaces of the form of ' '.
+*)
 let blank_space() = takeWhile (character ' ')
 
 let empty_line() = 
