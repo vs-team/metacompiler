@@ -105,8 +105,8 @@ yield return result;  }
  { 
  var tmp_0 = this; var tmp_1 = tmp_0.P1 as s; 
 if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_0.P2; 
-if(a is Expr && b is Expr) { 
-var tmp_3 = _opMultiplication.Create(a as Expr, b as Expr);
+if(a is Num && b is Expr) { 
+var tmp_3 = _opMultiplication.Create(a as Num, b as Expr);
 foreach (var tmp_2 in tmp_3.Run()) { var c = tmp_2; 
 if(c is Expr && b is Expr) { 
 var tmp_5 = _opAddition.Create(c as Expr, b as Expr);
@@ -153,8 +153,8 @@ yield return result;  }
  { 
  var tmp_0 = this; var tmp_1 = tmp_0.P1 as s; 
 if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_0.P2; 
-if(a is Expr && b is Expr) { 
-var tmp_3 = _opAddition.Create(a as Expr, b as Expr);
+if(a is Num && b is Expr) { 
+var tmp_3 = _opAddition.Create(a as Num, b as Expr);
 foreach (var tmp_2 in tmp_3.Run()) { var c = tmp_2; 
 if(c is Num) { 
 var result = s.Create(c as Num);

@@ -293,6 +293,10 @@ and typeCheck (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, 
       do typingContext.RemoveLocalGenericParameters addedLocalGenericParameters
       TypeAnnotation.Generic(TypeAnnotation.Defined kClass.Name, [ for a in addedLocalGenericParameters -> Variable a ])
     else
+      for a,aArgument in Seq.zip args kClass.Arguments do
+        let aType = typeCheck ctxt a typingContext
+        let expectedAType = TypeAnnotation.FromKeywordArgument ctxt typingContext aArgument
+        unify ctxt typingContext aType expectedAType
       TypeAnnotation.FromKeywordArgument ctxt typingContext (KeywordArgument.Defined kClass.Name)
   | _ -> failwithf "Unexpected expression %A" e
   

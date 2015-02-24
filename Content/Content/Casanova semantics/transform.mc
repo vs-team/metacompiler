@@ -52,7 +52,15 @@ BoolExpr is Expr
 IntConst is IntExpr
 IntConst is ExprResult
 IntExpr is Expr
+ExprResult is Expr
 
+
+c != $b true
+c != $b false
+eval dt M c => c'
+eval dt M (if c' then t else e) => res
+---------------------------------------
+eval dt M (if c then t else e) => res
 
 v := <<M.GetKey(k)>>
 ---------------------
@@ -67,13 +75,6 @@ M := $m <<System.Collections.Immutable.ImmutableDictionary<string, Expr>.Empty>>
 eval dt M ((wait 0.01); (yield (($i 1),nil))) => res
 ---------------------------------------------------------------------------------
 runTest1 => res
-
-  c != $b true
-  c != $b false
-  eval dt M c => c'
-  eval dt M (if c' then t else e) => res
-  ---------------------------------------
-  eval dt M (if c then t else e) => res
 
   eval dt M t => res
   ----------------------------------------------

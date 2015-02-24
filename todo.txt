@@ -1,4 +1,3 @@
-- generic keywords
 - excessively broad interfaces and multiple inheritance
 - higher order terms
 - open directive
