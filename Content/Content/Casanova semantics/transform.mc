@@ -130,8 +130,10 @@ runTest1 => res
     ----------------------------------------
     stepOrSuspend dt M (setDt dt') b => res
 
+    res := (waitResult t) ;' b
+    <<EntryPoint.Print(res.ToString())>>
     -----------------------------------------------------------
-    stepOrSuspend dt M (waitResult t) b => (waitResult t) ;' b
+    stepOrSuspend dt M (waitResult t) b => res
 
     ---------------------------------------------------------------
     stepOrSuspend dt M (yieldResult vals) b => (yieldResult vals) ;' b
