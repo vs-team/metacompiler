@@ -219,7 +219,9 @@ let rec unify (ctxt:ConcreteExpressionContext) (typingContext:InferenceContext) 
   | Builtin, Builtin -> ()
   | Native s1, Native s2 when s1 = s2 -> ()
   | Defined s1, Defined s2 when s1 = s2 -> ()
-  | Defined s1, Defined s2 -> 
+  | Defined s1, Defined s2 
+  | Generic(Defined s1, _), Defined s2
+  | Defined s1, Generic(Defined s2, _) -> 
     if ctxt.Inherits s1 s2 ||
        ctxt.Inherits s2 s1 then
       ()
@@ -431,6 +433,34 @@ and findMostSpecificVariable (ctxt:ConcreteExpressionContext) (typingContext:Inf
   | Composite t -> 
     findMostSpecificMatch' ctxt typingContext t
 
+let rec rebuildTypedCSharp (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, Literal, Position, Unit>) (typingContext:InferenceContext) =
+  match e with
+  | Imported(i,pos,()) ->
+    let iType = typeCheck ctxt e typingContext |> findMostSpecificMatch  ctxt typingContext
+    Imported(i,pos,iType)
+  | Application(Angle, args, pos, ()) ->
+    let typedArgs = 
+      [ for a in args do
+          yield rebuildTypedCSharp ConcreteExpressionContext.CSharp a typingContext ]
+    Application(Angle, typedArgs, pos, Builtin)
+  | Application(b,Extension({ Name = var }, extPos, ()) :: [], appPos, ()) ->
+    Application(b,Extension({ Name = var }, extPos, Builtin) :: [], appPos, Builtin)
+  | Extension({ Name = var }, pos, ()) -> 
+    Extension({ Name = var }, pos, Builtin)
+  | Keyword(Custom k, kPos, ()) ->
+    Keyword(Custom k, kPos, Builtin)
+  | Application(b, (Keyword(Custom k, kPos, ())) :: args, pos, ()) ->
+    let kClass = ctxt.CustomKeywordsMap.[k]
+    let kTyped = rebuildTypedCSharp ctxt (Keyword(Custom k, kPos, ())) typingContext
+    let typedArgs = 
+      [ for a, aType in Seq.zip args kClass.Arguments do
+          yield rebuildTypedCSharp ctxt a typingContext ]
+    let eType = Builtin
+    Application(b, kTyped :: typedArgs, pos, eType |> findMostSpecificMatch  ctxt typingContext)
+  | Application(Regular, Imported(i,iPos,())::[], pos, ()) ->
+    Application(Regular, Imported(i,iPos,Builtin)::[], pos, Builtin)
+  | _ -> failwithf "Cannot extract input keyword from %A" e
+
 let rec rebuildTyped (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, Literal, Position, Unit>) (typingContext:InferenceContext) =
   match e with
   | Imported(i,pos,()) ->
@@ -439,7 +469,7 @@ let rec rebuildTyped (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword
   | Application(Angle, args, pos, ()) ->
     let typedArgs = 
       [ for a in args do
-          yield rebuildTyped ConcreteExpressionContext.CSharp a typingContext ]
+          yield rebuildTypedCSharp ConcreteExpressionContext.CSharp a typingContext ]
     Application(Angle, typedArgs, pos, typingContext.CreateFreshVariable)
   | Application(b,Extension({ Name = var }, extPos, ()) :: [], appPos, ()) ->
     let t = typeCheck ctxt e typingContext |> findMostSpecificMatch  ctxt typingContext
@@ -467,6 +497,8 @@ let rec rebuildTyped (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword
       else
         TypeAnnotation.FromKeywordArgument ctxt typingContext (KeywordArgument.Defined kClass.Name)
     Application(b, kTyped :: typedArgs, pos, eType |> findMostSpecificMatch  ctxt typingContext)
+  | Application(Regular, Imported(i,iPos,())::[], pos, ()) ->
+    Application(Regular, Imported(i,iPos,Builtin)::[], pos, Builtin)
   | _ -> failwithf "Cannot extract input keyword from %A" e
 
 

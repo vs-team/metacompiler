@@ -16,12 +16,10 @@ Keyword = "/" LeftArguments = [IntExpr] RightArguments = [IntExpr] Priority = 91
 Keyword = "+" LeftArguments = [IntExpr] RightArguments = [IntExpr] Priority = 900 Class = "IntExpr"
 Keyword = "-" LeftArguments = [IntExpr] RightArguments = [IntExpr] Priority = 900 Class = "IntExpr"
 
-Keyword = "nil" LeftArguments = [] RightArguments = [] Priority = 500 Class = "ExprList"
-Keyword = "," LeftArguments = [Expr] RightArguments = [ExprList] Priority = 910 Class = "ExprList"
+Keyword = "evalRule" LeftArguments = [] RightArguments = [<<float>> Locals <<string>> Expr] Priority = 1000 Class = "Entity"
 
-Keyword = "nilr" LeftArguments = [] RightArguments = [] Priority = 500 Class = "ExprResultList"
-Keyword = ":" LeftArguments = [ExprResult] RightArguments = [ExprResultList] Priority = 910 Class = "ExprResultList"
-
+Keyword = "nil" GenericArguments = [t] LeftArguments = [] RightArguments = [] Priority = 0 Class = "List[t]"
+Keyword = "," GenericArguments = [t] LeftArguments = [t] RightArguments = [List[t]] Priority = 1000 Class = "List[t]"
 
 Keyword = "if" LeftArguments = [] RightArguments = [BoolExpr Then Expr Else Expr] Priority = 500 Class = "Expr"
 Keyword = "then" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Then"
@@ -30,8 +28,8 @@ Keyword = "else" LeftArguments = [] RightArguments = [] Priority = 0 Class = "El
 Keyword = "wait" LeftArguments = [] RightArguments = [<<float>>] Priority = 0 Class = "Expr"
 Keyword = "waitResult" LeftArguments = [] RightArguments = [<<float>>] Priority = 0 Class = "ExprResult"
 
-Keyword = "yield" LeftArguments = [] RightArguments = [ExprList] Priority = 0 Class = "Expr"
-Keyword = "yieldResult" LeftArguments = [] RightArguments = [ExprResultList] Priority = 0 Class = "ExprResult"
+Keyword = "yield" LeftArguments = [] RightArguments = [List[Expr]] Priority = 0 Class = "Expr"
+Keyword = "yieldResult" LeftArguments = [] RightArguments = [List[ExprResult]] Priority = 0 Class = "ExprResult"
 
 Keyword = ";" LeftArguments = [Expr] RightArguments = [Expr] Priority = -10 Class = "Expr"
 Keyword = "setDt" LeftArguments = [] RightArguments = [<<float>>] Priority = -10 Class = "ExprResult"
@@ -39,7 +37,7 @@ Keyword = "setDt" LeftArguments = [] RightArguments = [<<float>>] Priority = -10
 Keyword = ";'" LeftArguments = [ExprResult] RightArguments = [Expr] Priority = -10 Class = "ExprResult"
 
 Keyword = "eval" LeftArguments = [] RightArguments = [<<float>> Locals Expr] Priority = -1000 Class = "Expr"
-Keyword = "evalMany" LeftArguments = [] RightArguments = [<<float>> Locals ExprList] Priority = -1000 Class = "Expr"
+Keyword = "evalMany" LeftArguments = [] RightArguments = [<<float>> Locals List[Expr]] Priority = -1000 Class = "Expr"
 Keyword = "stepOrSuspend " LeftArguments = [] RightArguments = [<<float>> Locals ExprResult Expr] Priority = -1000 Class = "Expr"
 
 Keyword = "runTest1" LeftArguments = [] RightArguments = [] Priority = -10000 Class = "Test"
@@ -69,6 +67,7 @@ v := <<M.GetKey(k)>>
 M' := <<M.Add(k,v)>>
 ------------------------
 ($m M) add k v => $m M'
+
 
 dt := 0.02
 M := $m <<System.Collections.Immutable.ImmutableDictionary<string, Expr>.Empty>>
@@ -109,16 +108,21 @@ runTest1 => res
    es := e,exprs
    eval dt M e => val
    evalMany dt M exprs => vals
-   res := val : vals
+   res := val,vals
    ----------------------------------
-   evalMany dt M (e,exprs) => val:vals
+   evalMany dt M (e,exprs) => val,vals
 
    ---------------------------
-   evalMany dt M nil => nilr
+   evalMany dt M nil => nil
 
 
-  eval dt M a => a'
-  stepOrSuspend dt M a' b => res
+  debug := <<EntryPoint.Print("---------")>>
+  debug1 := <<EntryPoint.Print(a)>>
+  eval dt M a => a1
+  debug2 := <<EntryPoint.Print(a1)>>
+  stepOrSuspend dt M a1 b => res
+  debug3 := <<EntryPoint.Print(b)>>
+  debug1000 := <<EntryPoint.Print("++++++++")>>
   -----------------------------------
   eval dt M (a; b) => res
 

@@ -11,6 +11,7 @@ open System.Runtime.Serialization
 open System.Xml.Serialization
 
 do System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.GetCultureInfo("EN-US")
+let numSteps = 0
 
 let runDeduction path =
   let originalFilePath = System.IO.Path.Combine(path, "transform.mc")
@@ -38,14 +39,13 @@ let runDeduction path =
           for error in results.Errors do
             if error.IsWarning |> not then
               do sprintf "%s at %d: %s" error.FileName error.Line error.ErrorText |> addOutput 
-          //do System.IO.File.WriteAllText(generatedPath, "")
+          do System.IO.File.WriteAllText(generatedPath, "")
         else
           let types = results.CompiledAssembly.GetTypes()
           let entryPoint = types |> Seq.find (fun t -> t.Name = "EntryPoint")
           let run = entryPoint.GetMethod("Run")
           let results = run.Invoke(null, [|false|]) :?> seq<obj> |> Seq.toList
           do timer.Start()
-          let numSteps = 1000
           for i = 1 to numSteps do
             do run.Invoke(null, [|false|]) :?> seq<obj> |> Seq.toList |> ignore
           do timer.Stop()
@@ -73,7 +73,7 @@ let main argv =
       "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
       "Lambda calculus", @"(\$""y"" -> $""y"" | \$""y"" -> $""y"") | ($""x"" | $""z"")"
       "Binary trees", "run"
-      "Casanova semantics", @"runTest1"
+//      "Casanova semantics", @"runTest1"
     ]
 
   for name,input in samples 
