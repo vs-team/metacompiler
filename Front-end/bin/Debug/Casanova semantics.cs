@@ -41,7 +41,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "$"; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+ res += " $ "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -73,7 +73,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "$b"; res += P1.ToString(); 
+ res += " $b "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -105,7 +105,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "$i"; res += P1.ToString(); 
+ res += " $i "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -137,7 +137,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "$m"; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+ res += " $m "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -171,7 +171,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "&&"; res += P2.ToString(); 
+ res += " && "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -205,7 +205,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "*"; res += P2.ToString(); 
+ res += " * "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -239,7 +239,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "+"; res += P2.ToString(); 
+ res += " + "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -273,7 +273,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "-"; res += P2.ToString(); 
+ res += " - "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -307,7 +307,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "/"; res += P2.ToString(); 
+ res += " / "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -315,40 +315,6 @@ res += P1.ToString();
 
 public override bool Equals(object other) {
  var tmp = other as _opDivision;
- if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
- else return false; }
-
-public override int GetHashCode() {
- return 0; 
-}
-
-}
-
-public class _Colon : ExprResultList  {
-public ExprResult P1;
-public ExprResultList P2;
-
-public _Colon(ExprResult P1, ExprResultList P2) {this.P1 = P1; this.P2 = P2;}
-public static _Colon Create(ExprResult P1, ExprResultList P2) { return new _Colon(P1, P2); }
-
-
-public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
-public IEnumerable<IRunnable> Run3_() { foreach(var p in Run()) yield return p; }
-public IEnumerable<IRunnable> Run3_7_() { foreach(var p in Run3_()) yield return p; }
-public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return p; }
-
-public override string ToString() {
- var res = "("; 
-res += P1.ToString(); 
-
- res += ":"; res += P2.ToString(); 
-
- res += ")";
- return res;
-}
-
-public override bool Equals(object other) {
- var tmp = other as _Colon;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
 
@@ -375,7 +341,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += ";"; res += P2.ToString(); 
+ res += " ; "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -409,7 +375,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "="; res += P2.ToString(); 
+ res += " = "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -443,7 +409,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += ">"; res += P2.ToString(); 
+ res += " > "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -490,7 +456,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "add"; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " add "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 if (P3 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P3 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P3.ToString(); } 
 
  res += ")";
@@ -500,6 +466,40 @@ if (P3 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P3 as S
 public override bool Equals(object other) {
  var tmp = other as add;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2) && this.P3.Equals(tmp.P3); 
+ else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
+}
+
+public class consResult : ExprResultList  {
+public ExprResult P1;
+public ExprResultList P2;
+
+public consResult(ExprResult P1, ExprResultList P2) {this.P1 = P1; this.P2 = P2;}
+public static consResult Create(ExprResult P1, ExprResultList P2) { return new consResult(P1, P2); }
+
+
+public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run3_() { foreach(var p in Run()) yield return p; }
+public IEnumerable<IRunnable> Run3_7_() { foreach(var p in Run3_()) yield return p; }
+public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return p; }
+
+public override string ToString() {
+ var res = "("; 
+res += P1.ToString(); 
+
+ res += " consResult "; res += P2.ToString(); 
+
+ res += ")";
+ return res;
+}
+
+public override bool Equals(object other) {
+ var tmp = other as consResult;
+ if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
 
 public override int GetHashCode() {
@@ -523,7 +523,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "continueWith"; res += P1.ToString(); 
+ res += " continueWith "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -719,58 +719,58 @@ yield return result;  }
   
  { 
  #line 108 "Content\Casanova semantics\transform.mc"
-var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as yield; 
- #line 108 "Content\Casanova semantics\transform.mc"
-if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _Semicolon; 
- #line 108 "Content\Casanova semantics\transform.mc"
-if (tmp_2 != null) { var e = tmp_2.P1; var exprs = tmp_2.P2; 
- #line 108 "Content\Casanova semantics\transform.mc"
-if(M is Locals && e is Expr && exprs is ExprList) { 
- #line 108 "Content\Casanova semantics\transform.mc"
-var tmp_4 = evalMany.Create(dt, M as Locals, _Semicolon.Create(e as Expr, exprs as ExprList));
- #line 108 "Content\Casanova semantics\transform.mc"
-foreach (var tmp_3 in tmp_4.Run3_()) { var vals = tmp_3; 
- #line 108 "Content\Casanova semantics\transform.mc"
-if(vals is ExprResultList) { 
- #line 108 "Content\Casanova semantics\transform.mc"
-var result = yieldResult.Create(vals as ExprResultList);
- #line 108 "Content\Casanova semantics\transform.mc"
-yield return result;  } } } } }
- } 
-
-  
- { 
- #line 112 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as nil; 
- #line 112 "Content\Casanova semantics\transform.mc"
+ #line 108 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { 
- #line 112 "Content\Casanova semantics\transform.mc"
+ #line 108 "Content\Casanova semantics\transform.mc"
 var result = nilResult.Create();
- #line 112 "Content\Casanova semantics\transform.mc"
+ #line 108 "Content\Casanova semantics\transform.mc"
 yield return result;  }
  } 
 
   
  { 
- #line 126 "Content\Casanova semantics\transform.mc"
+ #line 111 "Content\Casanova semantics\transform.mc"
+var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as yield; 
+ #line 111 "Content\Casanova semantics\transform.mc"
+if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _Semicolon; 
+ #line 111 "Content\Casanova semantics\transform.mc"
+if (tmp_2 != null) { var e = tmp_2.P1; var exprs = tmp_2.P2; var debug0 = (EntryPoint.Print("Evaluating yield...")); var debug1 = (EntryPoint.Print(e)); var debug1b = (EntryPoint.Print(exprs)); 
+ #line 111 "Content\Casanova semantics\transform.mc"
+if(M is Locals && e is Expr && exprs is ExprList) { 
+ #line 111 "Content\Casanova semantics\transform.mc"
+var tmp_4 = evalMany.Create(dt, M as Locals, _Semicolon.Create(e as Expr, exprs as ExprList));
+ #line 111 "Content\Casanova semantics\transform.mc"
+foreach (var tmp_3 in tmp_4.Run3_7_()) { var vals = tmp_3; var debug2 = (EntryPoint.Print(vals)); 
+ #line 111 "Content\Casanova semantics\transform.mc"
+if(vals is ExprResultList) { 
+ #line 111 "Content\Casanova semantics\transform.mc"
+var result = yieldResult.Create(vals as ExprResultList);
+ #line 111 "Content\Casanova semantics\transform.mc"
+yield return result;  } } } } }
+ } 
+
+  
+ { 
+ #line 132 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _Semicolon; 
- #line 126 "Content\Casanova semantics\transform.mc"
+ #line 132 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_1.P2; 
- #line 126 "Content\Casanova semantics\transform.mc"
+ #line 132 "Content\Casanova semantics\transform.mc"
 if(M is Locals && a is Expr) { 
- #line 126 "Content\Casanova semantics\transform.mc"
+ #line 132 "Content\Casanova semantics\transform.mc"
 var tmp_3 = eval.Create(dt, M as Locals, a as Expr);
- #line 126 "Content\Casanova semantics\transform.mc"
+ #line 132 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_2 in tmp_3.Run3_8_()) { var a_Prime = tmp_2; 
- #line 126 "Content\Casanova semantics\transform.mc"
+ #line 132 "Content\Casanova semantics\transform.mc"
 if(M is Locals && a_Prime is ExprResult && b is Expr) { 
- #line 126 "Content\Casanova semantics\transform.mc"
+ #line 132 "Content\Casanova semantics\transform.mc"
 var tmp_5 = stepOrSuspend.Create(dt, M as Locals, a_Prime as ExprResult, b as Expr);
- #line 126 "Content\Casanova semantics\transform.mc"
+ #line 132 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_4 in tmp_5.Run3_8_()) { var res = tmp_4; 
- #line 126 "Content\Casanova semantics\transform.mc"
+ #line 132 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 126 "Content\Casanova semantics\transform.mc"
+ #line 132 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } }
  } 
 
@@ -782,7 +782,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "eval"; res += P1.ToString(); 
+ res += " eval "; res += P1.ToString(); 
 res += P2.ToString(); 
 res += P3.ToString(); 
 
@@ -811,41 +811,41 @@ public static evalMany Create(float P1, Locals P2, ExprList P3) { return new eva
 
   public IEnumerable<IRunnable> Run3_7_() {   
  { 
- #line 116 "Content\Casanova semantics\transform.mc"
+ #line 119 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as _Semicolon; 
- #line 116 "Content\Casanova semantics\transform.mc"
-if (tmp_1 != null) { var e = tmp_1.P1; var exprs = tmp_1.P2; 
- #line 116 "Content\Casanova semantics\transform.mc"
+ #line 119 "Content\Casanova semantics\transform.mc"
+if (tmp_1 != null) { var e = tmp_1.P1; var exprs = tmp_1.P2; var debug1 = (EntryPoint.Print("Evaluating yield arguments...")); 
+ #line 119 "Content\Casanova semantics\transform.mc"
 if(M is Locals && e is Expr) { 
- #line 116 "Content\Casanova semantics\transform.mc"
+ #line 119 "Content\Casanova semantics\transform.mc"
 var tmp_3 = eval.Create(dt, M as Locals, e as Expr);
- #line 116 "Content\Casanova semantics\transform.mc"
-foreach (var tmp_2 in tmp_3.Run3_7_()) { var val = tmp_2; 
- #line 116 "Content\Casanova semantics\transform.mc"
+ #line 119 "Content\Casanova semantics\transform.mc"
+foreach (var tmp_2 in tmp_3.Run3_7_()) { var val = tmp_2; var debug2 = (EntryPoint.Print(val)); 
+ #line 119 "Content\Casanova semantics\transform.mc"
 if(M is Locals && exprs is ExprList) { 
- #line 116 "Content\Casanova semantics\transform.mc"
+ #line 119 "Content\Casanova semantics\transform.mc"
 var tmp_5 = evalMany.Create(dt, M as Locals, exprs as ExprList);
- #line 116 "Content\Casanova semantics\transform.mc"
-foreach (var tmp_4 in tmp_5.Run3_7_()) { var vals = tmp_4; 
- #line 116 "Content\Casanova semantics\transform.mc"
-if (val is ExprResult && vals is ExprResultList) { var res = _Colon.Create(val as ExprResult, vals as ExprResultList); 
- #line 116 "Content\Casanova semantics\transform.mc"
+ #line 119 "Content\Casanova semantics\transform.mc"
+foreach (var tmp_4 in tmp_5.Run3_7_()) { var vals = tmp_4; var debug3 = (EntryPoint.Print(vals)); 
+ #line 119 "Content\Casanova semantics\transform.mc"
+if (val is ExprResult && vals is ExprResultList) { var res = consResult.Create(val as ExprResult, vals as ExprResultList); 
+ #line 119 "Content\Casanova semantics\transform.mc"
 if(val is ExprResult && vals is ExprResultList) { 
- #line 116 "Content\Casanova semantics\transform.mc"
-var result = _Colon.Create(val as ExprResult, vals as ExprResultList);
- #line 116 "Content\Casanova semantics\transform.mc"
+ #line 119 "Content\Casanova semantics\transform.mc"
+var result = consResult.Create(val as ExprResult, vals as ExprResultList);
+ #line 119 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } } } }
  } 
 
   
  { 
- #line 122 "Content\Casanova semantics\transform.mc"
+ #line 128 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as nil; 
- #line 122 "Content\Casanova semantics\transform.mc"
+ #line 128 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { 
- #line 122 "Content\Casanova semantics\transform.mc"
+ #line 128 "Content\Casanova semantics\transform.mc"
 var result = nilResult.Create();
- #line 122 "Content\Casanova semantics\transform.mc"
+ #line 128 "Content\Casanova semantics\transform.mc"
 yield return result;  }
  } 
 
@@ -858,7 +858,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "evalMany"; res += P1.ToString(); 
+ res += " evalMany "; res += P1.ToString(); 
 res += P2.ToString(); 
 res += P3.ToString(); 
 
@@ -896,7 +896,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "if"; res += P1.ToString(); 
+ res += " if "; res += P1.ToString(); 
 res += P2.ToString(); 
 res += P3.ToString(); 
 res += P4.ToString(); 
@@ -946,7 +946,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "lookup"; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " lookup "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -1069,7 +1069,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "setDt"; res += P1.ToString(); 
+ res += " setDt "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -1097,47 +1097,47 @@ public static stepOrSuspend Create(float P1, Locals P2, ExprResult P3, Expr P4) 
 
   public IEnumerable<IRunnable> Run3_8_() {   
  { 
- #line 131 "Content\Casanova semantics\transform.mc"
+ #line 137 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as setDt; 
- #line 131 "Content\Casanova semantics\transform.mc"
+ #line 137 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var dt_Prime = tmp_1.P1; var b = tmp_0.P4; 
- #line 131 "Content\Casanova semantics\transform.mc"
+ #line 137 "Content\Casanova semantics\transform.mc"
 if(M is Locals && b is Expr) { 
- #line 131 "Content\Casanova semantics\transform.mc"
+ #line 137 "Content\Casanova semantics\transform.mc"
 var tmp_3 = eval.Create(dt_Prime, M as Locals, b as Expr);
- #line 131 "Content\Casanova semantics\transform.mc"
+ #line 137 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_2 in tmp_3.Run3_8_()) { var res = tmp_2; 
- #line 131 "Content\Casanova semantics\transform.mc"
+ #line 137 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 131 "Content\Casanova semantics\transform.mc"
+ #line 137 "Content\Casanova semantics\transform.mc"
 yield return result;  } } }
  } 
 
   
  { 
- #line 136 "Content\Casanova semantics\transform.mc"
+ #line 142 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as waitResult; 
- #line 136 "Content\Casanova semantics\transform.mc"
+ #line 142 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var t = tmp_1.P1; var b = tmp_0.P4; 
- #line 136 "Content\Casanova semantics\transform.mc"
+ #line 142 "Content\Casanova semantics\transform.mc"
 if (b is ExprList) { var res = continueWith.Create(_Semicolon.Create(wait.Create(t), b as ExprList)); 
- #line 136 "Content\Casanova semantics\transform.mc"
+ #line 142 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 136 "Content\Casanova semantics\transform.mc"
+ #line 142 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
   
  { 
- #line 140 "Content\Casanova semantics\transform.mc"
+ #line 146 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as yieldResult; 
- #line 140 "Content\Casanova semantics\transform.mc"
+ #line 146 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var vals = tmp_1.P1; var b = tmp_0.P4; 
- #line 140 "Content\Casanova semantics\transform.mc"
+ #line 146 "Content\Casanova semantics\transform.mc"
 if (vals is ExprResultList && b is ExprList) { var res = updateFieldsAndContinueWith.Create(vals as ExprResultList, b as ExprList); 
- #line 140 "Content\Casanova semantics\transform.mc"
+ #line 146 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 140 "Content\Casanova semantics\transform.mc"
+ #line 146 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
@@ -1150,7 +1150,7 @@ public IEnumerable<IRunnable> Run3_7_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "stepOrSuspend"; res += P1.ToString(); 
+ res += " stepOrSuspend "; res += P1.ToString(); 
 res += P2.ToString(); 
 res += P3.ToString(); 
 res += P4.ToString(); 
@@ -1211,7 +1211,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "updateFieldsAndContinueWith"; res += P1.ToString(); 
+ res += " updateFieldsAndContinueWith "; res += P1.ToString(); 
 res += P2.ToString(); 
 
  res += ")";
@@ -1244,7 +1244,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "wait"; res += P1.ToString(); 
+ res += " wait "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -1276,7 +1276,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "waitResult"; res += P1.ToString(); 
+ res += " waitResult "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -1308,7 +1308,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "yield"; res += P1.ToString(); 
+ res += " yield "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -1340,7 +1340,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "yieldResult"; res += P1.ToString(); 
+ res += " yieldResult "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -1374,7 +1374,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "||"; res += P2.ToString(); 
+ res += " || "; res += P2.ToString(); 
 
  res += ")";
  return res;

@@ -20,7 +20,7 @@ Keyword [] "nil" [] Priority 500 Class ExprList
 Keyword [Expr] ";" [ExprList] Priority 910 Class ExprList
 
 Keyword [] "nilResult" [] Priority 500 Class ExprResultList
-Keyword [ExprResult] ":" [ExprResultList] Priority 910 Class ExprResultList
+Keyword [ExprResult] "consResult" [ExprResultList] Priority 910 Class ExprResultList
 
 
 Keyword [] "if" [BoolExpr Then ExprList Else ExprList] Priority 500 Class Expr
@@ -104,20 +104,26 @@ runTest1 => res
 
   ------------------------------
   eval dt M ($i val) => $i val
- 
-  evalMany dt M (e;exprs) => vals
-  -------------------------------------------------
-  eval dt M (yield (e;exprs)) => yieldResult vals
 
   --------------------------
   eval dt M nil => nilResult
-
  
+  debug0 := <<EntryPoint.Print("Evaluating yield...")>>
+  debug1 := <<EntryPoint.Print(e)>>
+  debug1b := <<EntryPoint.Print(exprs)>>
+  evalMany dt M (e;exprs) => vals
+  debug2 := <<EntryPoint.Print(vals)>>
+  -------------------------------------------------
+  eval dt M (yield (e;exprs)) => yieldResult vals
+
+   debug1 := <<EntryPoint.Print("Evaluating yield arguments...")>>
    eval dt M e => val
+   debug2 := <<EntryPoint.Print(val)>>
    evalMany dt M exprs => vals
-   res := val : vals
-   ----------------------------------
-   evalMany dt M (e;exprs) => val:vals
+   debug3 := <<EntryPoint.Print(vals)>>
+   res := val consResult vals
+   ----------------------------------------------
+   evalMany dt M (e;exprs) => val consResult vals
 
    -------------------------------
    evalMany dt M nil => nilResult

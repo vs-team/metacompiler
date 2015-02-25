@@ -438,7 +438,7 @@ type GeneratedClass =
                 sprintf "res += %s.ToString(); \n" p.Name
             let leftParameters = c.Parameters |> Seq.filter (fun x -> x.IsLeft) |> Seq.map (fun x -> printParameter x) |> Seq.fold (+) ""
             let rightParameters = c.Parameters |> Seq.filter (fun x -> x.IsLeft |> not) |> Seq.map (fun x -> printParameter x) |> Seq.fold (+) ""
-            sprintf "public override string ToString() {\n var res = \"(\"; \n%s\n res += \"%s\"; %s\n res += \")\";\n return res;\n}\n" leftParameters (escape c.BasicName) rightParameters
+            sprintf "public override string ToString() {\n var res = \"(\"; \n%s\n res += \" %s \"; %s\n res += \")\";\n return res;\n}\n" leftParameters (escape c.BasicName) rightParameters
           else
             sprintf "public override string ToString() {\nreturn \"%s\";\n}\n" (escape c.BasicName)
         let equals =
