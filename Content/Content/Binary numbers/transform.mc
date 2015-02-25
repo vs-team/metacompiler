@@ -1,12 +1,12 @@
-﻿Keyword = "overflow" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Num"
-Keyword = "nil" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Num"
-Keyword = "d0" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Digit"
-Keyword = "d1" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Digit"
-Keyword = "," LeftArguments = [Num] RightArguments = [Digit] Priority = 10 Class = "Num"
+﻿Keyword [] "overflow" [] Priority 0 Class Num
+Keyword [] "nil" [] Priority 0 Class Num
+Keyword [] "d0" [] Priority 0 Class Digit
+Keyword [] "d1" [] Priority 0 Class Digit
+Keyword [Num] "," [Digit] Priority 10 Class Num
 
-Keyword = "+" LeftArguments = [Num] RightArguments = [Num] Priority = 5 Class = "Expr"
-Keyword = "addCarry" LeftArguments = [] RightArguments = [Num Num Digit] Priority = 5 Class = "Expr"
-Keyword = "addDigits" LeftArguments = [] RightArguments = [Digit Digit Digit] Priority = 5 Class = "Expr"
+Keyword [Num] "+" [Num] Priority 5 Class Expr
+Keyword [] "addCarry" [Num Num Digit] Priority 5 Class Expr
+Keyword [] "addDigits" [Digit Digit Digit] Priority 5 Class Expr
 
 Num is Expr
 

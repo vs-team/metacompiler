@@ -4,6 +4,7 @@ open System
 open Utilities
 open ParserMonad
 open BasicExpression
+open ConcreteExpressionParserPrelude
 open ConcreteExpressionParser
 
 let private generateLineDirectives = true
@@ -166,7 +167,7 @@ and generate_inline =
   | Application(Regular, a :: [], _, _) ->
     sprintf "(%s)" (a |> generate_inline)
   | Application(Regular, arg :: args, _, _) ->
-    let pars = [ for x in args -> x |> generate_inline ] |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
+    let pars = [ for x in args -> x |> generate_inline ] |> Seq.reduce (fun s x -> sprintf "%s%s" s x)
     sprintf "%s(%s)" (arg |> generate_inline) pars
   | Application(Angle, arg :: args, pos, ti) ->
     let res = Application(Implicit, arg :: args, pos, ti) |> generate_inline
@@ -178,8 +179,7 @@ and generate_inline =
   | Application(Implicit, arg :: [], _, _) ->
     arg |> generate_inline
   | Application(Implicit, arg :: args, _, _) ->
-    let pars = [ for x in args -> x |> generate_inline ] |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
-    let res = sprintf "%s %s" (arg |> generate_inline) pars
+    let res = [ for x in arg :: args -> x |> generate_inline ] |> Seq.reduce (fun s x -> sprintf "%s%s" s x)
     res
   | Imported(l,di,_) ->
     l.ToString()
@@ -196,7 +196,8 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
       else "\n"
     match x with
     | Var(name, expr) -> 
-      sprintf "var %s = %s; %s" !name expr (generate_instructions debugPosition originalFilePath ctxt xs)
+      let res = sprintf "var %s = %s; %s" !name expr (generate_instructions debugPosition originalFilePath ctxt xs)
+      res
     | VarAs(name, expr, as_type) ->
       sprintf "var %s = %s as %s; %s" !name expr as_type (generate_instructions debugPosition originalFilePath  ctxt xs)
     | CheckNull(var_name) ->
@@ -429,7 +430,8 @@ type GeneratedClass =
           if c.Parameters.Count > 0 then
             let printParameter (p:Parameter) = 
               match p.Type with
-              | Generic _ ->
+              | Generic(t,_)
+              | Native t when t <> "int" && t <> "float" && t <> "double" && t <> "bool" ->
                 sprintf "if (%s is System.Collections.IEnumerable) { res += \"{\"; foreach(var x in %s as System.Collections.IEnumerable) res += x.ToString(); res += \"}\";  } else { res += %s.ToString(); } \n" p.Name p.Name p.Name
               | _ -> 
                 sprintf "res += %s.ToString(); \n" p.Name

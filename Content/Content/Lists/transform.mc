@@ -1,10 +1,10 @@
-﻿Keyword = "nil" LeftArguments = [] RightArguments = [] Priority = 0 Class = "ListInt"
-Keyword = ";" LeftArguments = [<<int>>] RightArguments = [ListInt] Priority = 1000 Class = "ListInt"
+﻿Keyword [] "nil" [] Priority 0 Class ListInt
+Keyword [<<int>>] ";" [ListInt] Priority 1000 Class ListInt
 
-Keyword = "contains" LeftArguments = [ListInt] RightArguments = [<<int>>] Priority = 100 Class = "Expr"
+Keyword [ListInt] "contains" [<<int>>] Priority 100 Class Expr
 
-Keyword = "yes" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Bool"
-Keyword = "no" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Bool"
+Keyword [] "yes" [] Priority 0 Class Bool
+Keyword [] "no" [] Priority 0 Class Bool
 
 
 ---------------------

@@ -1,10 +1,10 @@
-﻿Keyword = "$" LeftArguments = [] RightArguments = [<<string>>] Priority = 10 Class = "Id"
-Keyword = "\" LeftArguments = [] RightArguments = [Id Dot Term] Priority = 9 Class = "Term"
-Keyword = "|" LeftArguments = [Term] RightArguments = [Term] Priority = 8 Class = "Term"
-Keyword = "->" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Dot"
+﻿Keyword [] "$" [<<string>>] Priority 10 Class Id
+Keyword [] "\" [Id Dot Term] Priority 9 Class Term
+Keyword [Term] "|" [Term] Priority 8 Class Term
+Keyword [] "->" [] Priority 0 Class Dot
 
-Keyword = "as" LeftArguments = [Term] RightArguments = [Term] Priority = 6 Class = "Where"
-Keyword = "with" LeftArguments = [Term] RightArguments = [Where] Priority = 5 Class = "With"
+Keyword [Term] "as" [Term] Priority 6 Class Where
+Keyword [Term] "with" [Where] Priority 5 Class With
 
 Id is Term
 

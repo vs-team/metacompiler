@@ -1,12 +1,12 @@
-﻿Keyword = "nil" LeftArguments = [] RightArguments = [] Priority = 0 Class = "BinTreeInt"
-Keyword = "node" LeftArguments = [] RightArguments = [BinTreeInt <<int>> BinTreeInt] Priority = 1010 Class = "BinTreeInt"
-Keyword = "add" LeftArguments = [BinTreeInt] RightArguments = [<<int>>] Priority = 100 Class = "Expr"
-Keyword = "contains" LeftArguments = [BinTreeInt] RightArguments = [<<int>>] Priority = 100 Class = "Expr"
+﻿Keyword [] "nil" [] Priority 0 Class BinTreeInt
+Keyword [] "node" [BinTreeInt <<int>> BinTreeInt] Priority 1010 Class BinTreeInt
+Keyword [BinTreeInt] "add" [<<int>>] Priority 100 Class Expr
+Keyword [BinTreeInt] "contains" [<<int>>] Priority 100 Class Expr
 
-Keyword = "," LeftArguments = [Expr] RightArguments = [Expr] Priority = 1010 Class = "Expr"
-Keyword = "$" LeftArguments = [] RightArguments = [<<bool>>] Priority = 100 Class = "BoolExpr"
+Keyword [Expr] "," [Expr] Priority 1010 Class Expr
+Keyword [] "$" [<<bool>>] Priority 100 Class BoolExpr
 
-Keyword = "run" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Expr"
+Keyword [] "run" [] Priority 0 Class Expr
 
 BoolExpr is Expr
 

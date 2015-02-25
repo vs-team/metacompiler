@@ -59,6 +59,7 @@
     <Compile Include="ParserMonad.fs" />
     <Compile Include="BottomUpPriorityParser.fs" />
     <Compile Include="BasicExpression.fs" />
+    <Compile Include="ConcreteExpressionParserPrelude.fs" />
     <Compile Include="ConcreteExpressionParser.fs" />
     <Compile Include="TypeInference.fs" />
     <Compile Include="CodeGenerator.fs" />

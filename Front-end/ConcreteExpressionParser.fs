@@ -5,246 +5,10 @@
 open Utilities
 open ParserMonad
 open BasicExpression
+open ConcreteExpressionParserPrelude
 
 let mutable debug_expr = false
 let mutable debug_rules = false
-
-type KeywordArgument = Native of string | Defined of string | Generic of string * List<KeywordArgument>
-  with member this.Contains tgt = 
-         if this = tgt then true
-         else
-           match this with 
-           | Native a -> false
-           | Defined a -> false
-           | Generic(a,args) -> 
-             args |> Seq.exists (fun a -> a.Contains tgt)
-       member this.BaseName =
-         match this with 
-         | Native a -> a 
-         | Defined a -> a 
-         | Generic(a,args) -> a
-       member this.Argument = 
-         match this with 
-         | Native a -> a 
-         | Defined a -> a 
-         | Generic(a,args) -> 
-           sprintf "%s[%s]" a (args |> Seq.map (fun a -> a.Argument) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
-       member this.ArgumentCSharpStyle cleanup = 
-         match this with 
-         | Native a -> a 
-         | Defined a -> cleanup a 
-         | Generic(a,args) -> 
-           sprintf "%s<%s>" (cleanup a) (args |> Seq.map (fun a -> a.ArgumentCSharpStyle cleanup) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
-type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | GreaterOrEqual | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of name : string
-  with 
-    static member ParseWithoutComparison = 
-      p{
-        let! br = !!(word "<<" + word ">>") + p{ return () }
-        match br with
-        | First _ -> 
-          return! fail()
-        | _ ->
-          let! ar = word "=>" + ((word "==" + word "!=") + word ":=")
-          match ar with
-          | First _ -> 
-            return DoubleArrow
-          | Second ar' ->
-            match ar' with
-            | First ar'' -> 
-              match ar'' with
-              | First( _) -> return Equals
-              | Second( _) -> return NotEquals
-            | Second _ -> 
-              return DefinedAs
-      }
-    static member Parse = 
-      p{
-        let! br = !!(word "<<" + word ">>") + p{ return () }
-        match br with
-        | First _ -> 
-          return! fail()
-        | _ ->
-          let! ar = word "=>" + (((word "==" + word "!=") + ((word ">=" + word ">") + (word "<=" + word "<"))) + word ":=")
-          match ar with
-          | First _ -> 
-            return DoubleArrow
-          | Second ar' ->
-            match ar' with
-            | First ar'' -> 
-              match ar'' with
-              | First(First _) -> return Equals
-              | First(Second _) -> return NotEquals
-              | Second(First(First _)) -> return GreaterOrEqual
-              | Second(First(Second _)) -> return GreaterThan
-              | Second(Second(First _)) -> return SmallerOrEqual
-              | Second(Second(Second _)) -> return SmallerThan
-            | Second _ -> 
-              return DefinedAs
-      }
-    override this.ToString() =
-      match this with
-      | Inlined -> "<<>>"
-      | Sequence -> ""
-      | SmallerThan -> "<"
-      | SmallerOrEqual -> "<="
-      | GreaterThan -> ">"
-      | GreaterOrEqual -> ">="
-      | Equals -> "=="
-      | NotEquals -> "!="
-      | DoubleArrow -> "=>"
-      | DefinedAs -> ":="
-      | FractionLine -> "\n-------------------\n"
-      | Nesting -> ""
-      | Custom name -> name
-
-and CustomKeyword = { Name : string; GenericArguments : List<KeywordArgument>; LeftArguments : List<KeywordArgument>; RightArguments : List<KeywordArgument>; Priority : int; Class : KeywordArgument }
-  with member this.IsGeneric = this.GenericArguments.IsEmpty |> not
-       member this.LeftAriety = this.LeftArguments.Length
-       member this.RightAriety = this.RightArguments.Length
-       member this.Arguments = this.LeftArguments @ this.RightArguments
-
-and ConcreteExpressionContext = 
-  {
-    PredefinedKeywords : Parser<Keyword, ConcreteExpressionContext>
-    CustomKeywords : List<CustomKeyword>
-    CustomKeywordsByPrefix : List<CustomKeyword>
-    CustomKeywordsMap : Map<string,CustomKeyword>    
-    InheritanceRelationships : Map<string, Set<string>>
-  } with
-      member this.AllInheritanceRelationships =
-        seq{
-          for x in this.InheritanceRelationships do
-            let i = x.Key
-            for o in x.Value do
-              yield i,o
-        }
-      member this.Inherits s1 s2 =
-        match this.InheritanceRelationships |> Map.tryFind s1 with
-        | Some os -> os.Contains s2
-        | _ -> false
-      member ctxt.CustomClasses =
-        seq{
-          for k in ctxt.CustomKeywords do
-          yield k.Class.BaseName
-        } |> Set.ofSeq
-      static member Empty =
-        {
-          PredefinedKeywords       = Keyword.Parse
-          CustomKeywords           = []
-          CustomKeywordsByPrefix   = []
-          CustomKeywordsMap        = Map.empty
-          InheritanceRelationships = Map.empty
-        }
-      static member CSharp =
-        let ks = 
-          [
-            { Name = "true"
-              GenericArguments = []
-              LeftArguments = []
-              RightArguments = []
-              Priority = 0
-              Class = Defined "CSharpExpr" }
-            { Name = "false"
-              GenericArguments = []
-              LeftArguments = []
-              RightArguments = []
-              Priority = 0
-              Class = Defined "CSharpExpr" }
-            { Name = ","
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 1
-              Class = Defined "CSharpExpr" }
-            { Name = ">"
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 10
-              Class = Defined "CSharpExpr" }
-            { Name = "<"
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 10
-              Class = Defined "CSharpExpr" }
-            { Name = ">="
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 10
-              Class = Defined "CSharpExpr" }
-            { Name = "<="
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 10
-              Class = Defined "CSharpExpr" }
-            { Name = "+"
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 100
-              Class = Defined "CSharpExpr" }
-            { Name = "-"
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 100
-              Class = Defined "CSharpExpr" }
-            { Name = "."
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 1000
-              Class = Defined "CSharpExpr" }
-          ]
-        {
-          PredefinedKeywords = Keyword.ParseWithoutComparison
-          CustomKeywords = ks
-          CustomKeywordsByPrefix = ks |> List.sortBy (fun k -> k.Name) |> List.rev
-          CustomKeywordsMap = ks |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
-          InheritanceRelationships = Map.empty
-        }
-
-let getPredefinedKeywords() =
-  p{
-    let! ctxt = getContext()
-    return ctxt.PredefinedKeywords
-  }
-
-let getCustomKeywords() =
-  p{
-    let! ctxt = getContext()
-    return ctxt.CustomKeywords
-  }
-
-let getCustomKeywordsByPrefix() =
-  p{
-    let! ctxt = getContext()
-    return ctxt.CustomKeywordsByPrefix
-  }
-
-let getCustomKeywordsMap() =
-  p{
-    let! ctxt = getContext()
-    return ctxt.CustomKeywordsMap
-  }
-
-type Var = { Name : string }
-  with 
-    override this.ToString() =
-      this.Name
-
-type Literal = StringLiteral of string | IntLiteral of int | BoolLiteral of bool | SingleLiteral of float32 | DoubleLiteral of float
-  with 
-    override this.ToString() =
-      match this with
-      | StringLiteral l -> sprintf "\"%s\"" l
-      | IntLiteral i -> sprintf "%d" i
-      | BoolLiteral b -> sprintf "%b" b
-      | SingleLiteral s -> sprintf "%ff" s
-      | DoubleLiteral d -> sprintf "%ff" d
 
 let rec program() = 
   p{
@@ -269,24 +33,13 @@ let rec program() =
 and inheritanceRelationships() =
   let singleRelation() =
     p{
-      let! concreter = customClass()
-      let! bs = blank_space()
-      let! inherits = word "is"
-      let! bs = blank_space()
-      let! abstracter = customClass()
-      let! bs = blank_space()
-      let! el = empty_lines()
-      let c = 
-        match concreter with
-        | Native c
-        | Defined c
-        | Generic(c,_) -> c
-      let a = 
-        match abstracter with
-        | Native a
-        | Defined a
-        | Generic(a,_) -> a
-      return (c, a)
+      let! relation = expr()
+      match relation with
+      | Application(Implicit, [Extension(concreter,_,_); Extension(is,_,_); Extension(abstracter,_,_)], _, _) ->
+        let! el = empty_lines()
+        return (concreter.Name, abstracter.Name)
+      | _ ->
+        return! fail()
     }
   p{
     let! r1 = singleRelation() + p { return () }
@@ -324,105 +77,38 @@ and keyword : Parser<CustomKeyword,ConcreteExpressionContext> =
       let! bs = blank_space()
       return ()
     }
-  let identifiers() =
-    let commaSeparator() = 
-      p{
-        let! sep = character ',' + blank_space()
-        let! bs = blank_space()
-        return ()
-      }
-    let blankSpaceSeparator() =
-      p{
-        let! bs = blank_space()
-        return ()
-      }
-    let rec identifiers separator =
-      p{
-        let! ob = word "<<" + p{ return () }
-        let! id = longIdentifier() + p{ return () }
-        match id with
-        | First id ->
-          match ob with
-          | First _ ->
-            let! openBracket = word "<" + p{return () }
-            match openBracket with
-            | First _ ->
-              let! innerIdentifiers = identifiers commaSeparator
-              let! closedBracket = word ">"
-              let! cb = word ">>" + p{ return () }
-              let! bs = separator()
-              let! ids = identifiers separator
-              return Generic(id,innerIdentifiers) :: ids
-            | _ -> 
-              let! cb = word ">>" + p{ return () }
-              let! bs = separator()
-              let! ids = identifiers separator
-              return Native id :: ids
-          | _ ->
-            let! openBracket = word "[" + p{return () }
-            match openBracket with
-            | First _ ->
-              let! innerIdentifiers = identifiers commaSeparator
-              let! closedBracket = word "]"
-              let! bs = separator()
-              let! ids = identifiers separator
-              return Generic(id,innerIdentifiers) :: ids
-            | _ -> 
-              let! bs = separator()
-              let! ids = identifiers separator
-              let decorator =
-                match id with
-                | "string" -> Native
-                | "int" -> Native
-                | "float" -> Native
-                | "bool" -> Native
-                | "double" -> Native
-                | _ -> Defined
-              return decorator id :: ids
-        | Second _ -> 
-          return []
-      }
-    identifiers blankSpaceSeparator
-  let genericArguments() = 
-    p{
-      do! label "GenericArguments"
-      do! equals
-      do! label "["
-      let! arguments = identifiers()
-      do! label "]"
-      return arguments
-    } ++ p { return [] }
   p{
     do! label "Keyword"
-    do! equals
-    do! label "\""
-    let! bs = blank_space()
-    let! name = takeWhile' ((<>) '\"')
-    do! label "\""
-    let! genericArguments = genericArguments()
-    do! label "LeftArguments"
-    do! equals
-    do! label "["
-    let! leftArguments = identifiers()
-    do! label "]"
-    do! label "RightArguments"
-    do! equals
-    do! label "["
-    let! rightArguments = identifiers()
-    do! label "]"
-    do! label "Priority"
-    do! equals
-    let! priority = intLiteral()
-    do! label "Class"
-    do! equals
-    do! label "\""
-    let! classNames = identifiers()
-    do! label "\""
-    match classNames with
-    | [className] ->
-      return { Name = new System.String(name |> Seq.toArray); GenericArguments = genericArguments; LeftArguments = leftArguments; RightArguments = rightArguments; Priority = priority; Class = className }
+    let! k = expr()
+    match k with
+    | Application(Implicit, // no generic arguments
+                  [
+                    leftArgs
+                    name
+                    rightArgs
+                    Extension(_, _, _) // Priority
+                    Imported(IntLiteral priority, _, _)
+                    Extension(_, _, _) // Class
+                    className
+                  ], _, _) ->
+      let rec removeOuterSquares args =
+        match args with
+        | Application(Square, [arg], _, _) -> arg |> removeOuterSquares
+        | Application(Square, args, _, _) -> args
+        | arg -> [arg]
+      let leftArguments = leftArgs |> removeOuterSquares 
+      let rightArguments = rightArgs |> removeOuterSquares
+      let name,genericArguments =
+        match name with
+        | Imported(StringLiteral(name), _, _) -> name, []
+        | _ -> failwithf "Malformed keyword name %A" name
+      let className = 
+        match className with
+        | Extension(className:Var, _, _) -> className
+        | _ -> failwithf "Malformed keyword class name %A" className
+      return { Name = name; GenericArguments = genericArguments; LeftArguments = leftArguments |> List.map KeywordArgument.Create; RightArguments = rightArguments |> List.map KeywordArgument.Create; Priority = priority; Class = Defined className.Name }
     | _ -> 
-      return! fail()
+      return failwithf "Malformed keyword expression %A" k
   }
 
 and rules depth = 
@@ -507,79 +193,6 @@ and clause depth =
       return Application(Bracket.Implicit, Keyword(ar,pos, ()) :: i :: o :: [], pos, ())
   }
 
-and customClass() =
-  let commaSeparator() = 
-    p{
-      let! sep = character ',' + blank_space()
-      let! bs = blank_space()
-      return ()
-    }
-  let blankSpaceSeparator() =
-    p{
-      let! bs = blank_space()
-      return ()
-    }
-  let rec identifiers firstCall separator =
-    p{
-      let! ob = word "<<" + p{ return () }
-      let! id = longIdentifier() + p{ return () }
-      match id with
-      | First id ->
-        match ob with
-        | First _ ->
-          let! openBracket = word "<" + p{return () }
-          match openBracket with
-          | First _ ->
-            let! innerIdentifiers = identifiers false commaSeparator
-            let! closedBracket = word ">"
-            let! cb = word ">>" + p{ return () }
-            let! bs = separator()
-            let! ids = identifiers false separator
-            return Generic(id,innerIdentifiers) :: ids
-          | _ -> 
-            let! cb = word ">>" + p{ return () }
-            return Native id :: []
-        | _ ->
-          let! openBracket = word "[" + p{return () }
-          match openBracket with
-          | First _ ->
-            let! innerIdentifiers = identifiers false commaSeparator
-            let! closedBracket = word "]"
-            return Generic(id,innerIdentifiers) :: []
-          | _ -> 
-            if firstCall |> not then
-              let! bs = separator()
-              let! ids = identifiers false separator
-              let decorator =
-                match id with
-                | "string" -> Native
-                | "int" -> Native
-                | "float" -> Native
-                | "bool" -> Native
-                | "double" -> Native
-                | _ -> Defined
-              return decorator id :: ids
-            else
-              let decorator =
-                match id with
-                | "string" -> Native
-                | "int" -> Native
-                | "float" -> Native
-                | "bool" -> Native
-                | "double" -> Native
-                | _ -> Defined
-              return decorator id :: []
-      | Second _ -> 
-        return []
-    }
-  p{
-    let! customClasses = identifiers true blankSpaceSeparator
-    match customClasses with
-    | c :: [] -> 
-      return c
-    | _ -> return! fail()
-  }
-
 and customKeyword() =
   let rec customKeyword = 
     function 
@@ -614,7 +227,7 @@ and literal() =
   }
 
 and expr() = 
-  let shrink bracket_type pos (es:List<BasicExpression<_,_,_,_,_>>) customKeywordsMap : BasicExpression<_,_,_,_,_> =
+  let rec shrink bracket_type pos (es:List<BasicExpression<_,_,_,_,_>>) customKeywordsMap : BasicExpression<_,_,_,_,_> =
     let ariety (b:BasicExpression<_,_,_,_,_>) = 
       match b with
       | Keyword(Custom(k),pos, ()) ->
@@ -635,17 +248,25 @@ and expr() =
       | _ -> -1,-index
     let merge (n,i) l r =
       Application(Implicit, n :: (l |> List.map fst) @ (r |> List.map fst), pos, ()), i
-    let prioritize_es = BottomUpPriorityParser.prioritize es ariety priority merge
     if debug_expr then
       do printfn "%A" es
-      do printfn "is prioritized into %A" prioritize_es
-      do printfn ""
-      let _ = System.Console.ReadLine()
-      ()
-    match prioritize_es with
-    | [x] -> x
-    | l -> Application(bracket_type, l, pos, ())
-  let rec base_expr bracket_type = 
+    match bracket_type with
+    | Angle ->
+      if debug_expr then
+        do printfn "does not need prioritization"
+      Application(bracket_type, es, pos, ())
+    | _ ->
+      let prioritize_es = BottomUpPriorityParser.prioritize es ariety priority merge
+      if debug_expr then
+        do printfn "is prioritized into %A" prioritize_es
+        do printfn ""
+        let _ = System.Console.ReadLine()
+        ()
+      match prioritize_es with
+      | [x] -> x
+      | l -> Application(bracket_type, l, pos, ())
+
+  and base_expr bracket_type = 
     p{
       let! pos = getPosition()
       let! e = inner_expr
@@ -663,11 +284,12 @@ and expr() =
       | _ -> 
         return Application(bracket_type, [], pos, ())
     }
+
   and inner_expr =
     p{
       let! pos = getPosition()
       let! parseKeyword = getPredefinedKeywords()
-      let! end_line = !!(word "--" + parseKeyword) + p{ return () }
+      let! end_line = !!(word "--" + parseKeyword + newline()) + p{ return () }
       match end_line with
       | First _ -> 
         return []
@@ -726,6 +348,7 @@ and expr() =
       | First bes -> return bes
       | _ -> return []
     }
+
   base_expr Bracket.Implicit
 
 and end_clauses depth =

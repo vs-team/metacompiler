@@ -38,7 +38,7 @@ public IEnumerable<IRunnable> Run4_() { foreach(var p in Run()) yield return p; 
 public override string ToString() {
  var res = "("; 
 
- res += "$"; res += P1.ToString(); 
+ res += "$"; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -408,7 +408,7 @@ public override int GetHashCode() {
 
 
 public class EntryPoint {
- static public int Print(object s) { System.Console.WriteLine(s.ToString()); return 0; } 
+ static public int Print(string s) { System.Console.WriteLine(s); return 0; } 
 static public IEnumerable<IRunnable> Run(bool printInput)
 {
  #line 1 "input"

@@ -1,10 +1,8 @@
-﻿Keyword = "z" LeftArguments = [] RightArguments = [] Priority = 2 Class = "Num"
-Keyword = "s" LeftArguments = [] RightArguments = [Num] Priority = 3 Class = "Num"
-
-Keyword = "+" LeftArguments = [Expr] RightArguments = [Expr] Priority = 0 Class = "Expr"
-Keyword = "*" LeftArguments = [Expr] RightArguments = [Expr] Priority = 1 Class = "Expr"
-
-Keyword = "!" LeftArguments = [] RightArguments = [Expr] Priority = 1 Class = "Expr"
+﻿Keyword [] "z" []         Priority 2  Class Num
+Keyword [] "s" [Num]      Priority 3  Class Num
+Keyword [Expr] "+" [Expr] Priority 0  Class Expr
+Keyword [Expr] "*" [Expr] Priority 1  Class Expr
+Keyword [] "!" [Expr]     Priority 1  Class Expr
 
 Num is Expr
 

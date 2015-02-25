@@ -1,15 +1,15 @@
-﻿Keyword = "$" LeftArguments = [] RightArguments = [<<int>>] Priority = 10000 Class = "Id"
+﻿Keyword [] "$" [<<int>>] Priority 10000 Class Id
 
-Keyword = "nil" GenericArguments = [t] LeftArguments = [] RightArguments = [] Priority = 0 Class = "List[t]"
-Keyword = ";" GenericArguments = [t] LeftArguments = [t] RightArguments = [List[t]] Priority = 1000 Class = "List[t]"
+Keyword [] ("nil"[t]) [] Priority 0 Class (List[t])
+Keyword [t] (";"[t]) [List[t]] Priority 1000 Class (List[t])
 
-Keyword = "contains" GenericArguments = [a] LeftArguments = [List[a]] RightArguments = [a] Priority = 100 Class = "Expr"
+Keyword [List[a]] ("contains"[a]) [a] Priority 100 Class Expr
 
-Keyword = "yes" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Bool"
-Keyword = "no" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Bool"
+Keyword [] "yes" [] Priority 0 Class Bool
+Keyword [] "no" [] Priority 0 Class Bool
 
-Keyword = "," LeftArguments = [Expr] RightArguments = [Expr] Priority = 100 Class = "Expr"
-Keyword = "runTest1" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Expr"
+Keyword [Expr] "," [Expr] Priority 100 Class Expr
+Keyword [] "runTest1" [] Priority 0 Class Expr
 
 Bool is Expr
 Id is Expr

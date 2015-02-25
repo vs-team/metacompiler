@@ -1,6 +1,6 @@
-﻿Keyword = "$" LeftArguments = [] RightArguments = [<<System.Collections.Immutable.ImmutableDictionary<int, string>>>] Priority = 10000 Class = "MapIntString"
-Keyword = "run" LeftArguments = [] RightArguments = [MapIntString] Priority = 0 Class = "Expr"
-Keyword = "add" LeftArguments = [MapIntString] RightArguments = [<<int>> <<string>>] Priority = 1 Class = "Expr"
+﻿Keyword [] "$" [<<System.Collections.Immutable.ImmutableDictionary<int, string> >>] Priority 10000 Class MapIntString
+Keyword [] "run" [MapIntString] Priority 0 Class Expr
+Keyword [MapIntString] "add" [<<int>> <<string>>] Priority 1 Class Expr
 
 MapIntString is Expr
 

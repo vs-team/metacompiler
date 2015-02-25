@@ -12,10 +12,10 @@ public interface MapIntString : Expr {}
 
 
 public class _opDollar : MapIntString  {
-public System.Collections.Immutable.ImmutableDictionary<int, string> P1;
+public System.Collections.Immutable.ImmutableDictionary<int,string> P1;
 
-public _opDollar(System.Collections.Immutable.ImmutableDictionary<int, string> P1) {this.P1 = P1;}
-public static _opDollar Create(System.Collections.Immutable.ImmutableDictionary<int, string> P1) { return new _opDollar(P1); }
+public _opDollar(System.Collections.Immutable.ImmutableDictionary<int,string> P1) {this.P1 = P1;}
+public static _opDollar Create(System.Collections.Immutable.ImmutableDictionary<int,string> P1) { return new _opDollar(P1); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -53,13 +53,11 @@ public static add Create(MapIntString P1, int P2, string P3) { return new add(P1
  #line 7 "Content\Maps test\transform.mc"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollar; 
  #line 7 "Content\Maps test\transform.mc"
-if (tmp_1 != null) { var M = tmp_1.P1; var k = tmp_0.P2; var v = tmp_0.P3; var M_Prime = (M.Add (k,v)); 
+if (tmp_1 != null) { var M = tmp_1.P1; var k = tmp_0.P2; var v = tmp_0.P3; var M_Prime = (M.Add(k,v)); 
  #line 7 "Content\Maps test\transform.mc"
-if(M_Prime is System.Collections.Immutable.ImmutableDictionary<int, string>) { 
+var result = _opDollar.Create(M_Prime);
  #line 7 "Content\Maps test\transform.mc"
-var result = _opDollar.Create(M_Prime as System.Collections.Immutable.ImmutableDictionary<int, string>);
- #line 7 "Content\Maps test\transform.mc"
-yield return result;  } }
+yield return result;  }
  } 
 
   }
@@ -70,7 +68,7 @@ public override string ToString() {
 res += P1.ToString(); 
 
  res += "add"; res += P2.ToString(); 
-res += P3.ToString(); 
+if (P3 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P3 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P3.ToString(); } 
 
  res += ")";
  return res;
@@ -148,11 +146,11 @@ public override int GetHashCode() {
 
 
 public class EntryPoint {
- static public int Print(object s) { System.Console.WriteLine(s.ToString()); return 0; } 
+ static public int Print(string s) { System.Console.WriteLine(s); return 0; } 
 static public IEnumerable<IRunnable> Run(bool printInput)
 {
  #line 1 "input"
- var p = run.Create(_opDollar.Create(System.Collections.Immutable.ImmutableDictionary<int,string >.Empty));
+ var p = run.Create(_opDollar.Create(System.Collections.Immutable.ImmutableDictionary<int,string>.Empty));
 if(printInput) System.Console.WriteLine(p.ToString());
 foreach(var x in p.Run())
 yield return x;
