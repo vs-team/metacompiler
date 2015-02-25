@@ -1,49 +1,49 @@
-﻿Keyword = "$m" LeftArguments = [] RightArguments = [<<System.Collections.Immutable.ImmutableDictionary<string, ExprResult>>>] Priority = 10000 Class = "Locals"
-Keyword = "add" LeftArguments = [Locals] RightArguments = [<<string>> <<ExprResult>>] Priority = 1000 Class = "Locals"
-Keyword = "lookup" LeftArguments = [Locals] RightArguments = [<<string>>] Priority = 1000 Class = "MemoryOp"
+﻿Keyword [Locals] "add" [<<string>> <<ExprResult>>] Priority 1000 Class Locals
+Keyword [Locals] "lookup" [<<string>>] Priority 1000 Class MemoryOp
+Keyword [] "$m" [<<System.Collections.Immutable.ImmutableDictionary<string, ExprResult> >>] Priority 10000 Class Locals
 
-Keyword = "$" LeftArguments = [] RightArguments = [<<string>>] Priority = 10000 Class = "Id"
+Keyword [] "$" [<<string>>] Priority 10000 Class Id
 
-Keyword = "$b" LeftArguments = [] RightArguments = [<<bool>>] Priority = 10000 Class = "BoolConst"
-Keyword = ">" LeftArguments = [IntExpr] RightArguments = [IntExpr] Priority = 1100 Class = "BoolExpr"
-Keyword = "=" LeftArguments = [IntExpr] RightArguments = [IntExpr] Priority = 1100 Class = "BoolExpr"
-Keyword = "&&" LeftArguments = [BoolExpr] RightArguments = [BoolExpr] Priority = 1000 Class = "BoolExpr"
-Keyword = "||" LeftArguments = [BoolExpr] RightArguments = [BoolExpr] Priority = 900 Class = "BoolExpr"
+Keyword [] "$b" [<<bool>>] Priority 10000 Class BoolConst
+Keyword [IntExpr] ">" [IntExpr] Priority 1100 Class BoolExpr
+Keyword [IntExpr] "=" [IntExpr] Priority 1100 Class BoolExpr
+Keyword [BoolExpr] "&&" [BoolExpr] Priority 1000 Class BoolExpr
+Keyword [BoolExpr] "||" [BoolExpr] Priority 900 Class BoolExpr
 
-Keyword = "$i" LeftArguments = [] RightArguments = [<<int>>] Priority = 10000 Class = "IntConst"
-Keyword = "*" LeftArguments = [IntExpr] RightArguments = [IntExpr] Priority = 910 Class = "IntExpr"
-Keyword = "/" LeftArguments = [IntExpr] RightArguments = [IntExpr] Priority = 910 Class = "IntExpr"
-Keyword = "+" LeftArguments = [IntExpr] RightArguments = [IntExpr] Priority = 900 Class = "IntExpr"
-Keyword = "-" LeftArguments = [IntExpr] RightArguments = [IntExpr] Priority = 900 Class = "IntExpr"
+Keyword [] "$i" [<<int>>] Priority 10000 Class IntConst
+Keyword [IntExpr] "*" [IntExpr] Priority 910 Class IntExpr
+Keyword [IntExpr] "/" [IntExpr] Priority 910 Class IntExpr
+Keyword [IntExpr] "+" [IntExpr] Priority 900 Class IntExpr
+Keyword [IntExpr] "-" [IntExpr] Priority 900 Class IntExpr
 
-Keyword = "nil" LeftArguments = [] RightArguments = [] Priority = 500 Class = "ExprList"
-Keyword = ";" LeftArguments = [Expr] RightArguments = [ExprList] Priority = 910 Class = "ExprList"
+Keyword [] "nil" [] Priority 500 Class ExprList
+Keyword [Expr] ";" [ExprList] Priority 910 Class ExprList
 
-Keyword = "nilResult" LeftArguments = [] RightArguments = [] Priority = 500 Class = "ExprResultList"
-Keyword = ":" LeftArguments = [ExprResult] RightArguments = [ExprResultList] Priority = 910 Class = "ExprResultList"
-
-
-Keyword = "if" LeftArguments = [] RightArguments = [BoolExpr Then ExprList Else ExprList] Priority = 500 Class = "Expr"
-Keyword = "then" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Then"
-Keyword = "else" LeftArguments = [] RightArguments = [] Priority = 0 Class = "Else"
-
-Keyword = "wait" LeftArguments = [] RightArguments = [<<float>>] Priority = 0 Class = "Expr"
-Keyword = "waitResult" LeftArguments = [] RightArguments = [<<float>>] Priority = 0 Class = "ExprResult"
-
-Keyword = "yield" LeftArguments = [] RightArguments = [ExprList] Priority = 0 Class = "Expr"
-Keyword = "yieldResult" LeftArguments = [] RightArguments = [ExprResultList] Priority = 0 Class = "ExprResult"
-
-Keyword = "setDt" LeftArguments = [] RightArguments = [<<float>>] Priority = -10 Class = "ExprResult"
-
-Keyword = "eval" LeftArguments = [] RightArguments = [<<float>> Locals Expr] Priority = -1000 Class = "Expr"
-Keyword = "evalMany" LeftArguments = [] RightArguments = [<<float>> Locals ExprList] Priority = -1000 Class = "Expr"
-Keyword = "stepOrSuspend " LeftArguments = [] RightArguments = [<<float>> Locals ExprResult Expr] Priority = -1000 Class = "Expr"
-
-Keyword = "continueWith" LeftArguments = [] RightArguments = [ExprList] Priority = -1000 Class = "ExprResult"
-Keyword = "updateFieldsAndContinueWith" LeftArguments = [] RightArguments = [ExprResultList ExprList] Priority = -1000 Class = "ExprResult"
+Keyword [] "nilResult" [] Priority 500 Class ExprResultList
+Keyword [ExprResult] ":" [ExprResultList] Priority 910 Class ExprResultList
 
 
-Keyword = "runTest1" LeftArguments = [] RightArguments = [] Priority = -10000 Class = "Test"
+Keyword [] "if" [BoolExpr Then ExprList Else ExprList] Priority 500 Class Expr
+Keyword [] "then" [] Priority 0 Class Then
+Keyword [] "else" [] Priority 0 Class Else
+
+Keyword [] "wait" [<<float>>] Priority 0 Class Expr
+Keyword [] "waitResult" [<<float>>] Priority 0 Class ExprResult
+
+Keyword [] "yield" [ExprList] Priority 0 Class Expr
+Keyword [] "yieldResult" [ExprResultList] Priority 0 Class ExprResult
+
+Keyword [] "setDt" [<<float>>] Priority -10 Class ExprResult
+
+Keyword [] "eval" [<<float>> Locals Expr] Priority -1000 Class Expr
+Keyword [] "evalMany" [<<float>> Locals ExprList] Priority -1000 Class Expr
+Keyword [] "stepOrSuspend" [<<float>> Locals ExprResult Expr] Priority -1000 Class Expr
+
+Keyword [] "continueWith" [ExprList] Priority -1000 Class ExprResult
+Keyword [] "updateFieldsAndContinueWith" [ExprResultList ExprList] Priority -1000 Class ExprResult
+
+
+Keyword [] "runTest1" [] Priority -10000 Class Test
 
 
 Id is Expr
@@ -74,9 +74,9 @@ M' := <<M.Add(k,v)>>
 
 dt := 0.02
 M := $m <<System.Collections.Immutable.ImmutableDictionary<string, ExprResult>.Empty>>
-yield1 := yield (($i 1);nil)
-yield2 := yield (($i 2);nil)
-eval dt M (yield1;(yield2;nil)) => res
+y1 := yield (($i 1);nil)
+y2 := yield (($i 2);nil)
+eval dt M (y1;(y2;nil)) => res
 ---------------------------------------------------------------------------------
 runTest1 => res
 
