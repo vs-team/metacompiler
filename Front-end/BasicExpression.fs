@@ -61,3 +61,16 @@ type BasicExpression<'k, 'e, 'i, 'di, 'ti> =
         | Angle -> sprintf "<<%s>> @ %s :: %s" ls (di.ToString()) (ti.ToString())
       | Imported(i,di,ti) -> sprintf "%s @ %s :: %s" (i.ToString()) (di.ToString()) (ti.ToString())
       | Extension(e,di,ti) -> e.ToString() 
+    member this.ToStringCompact =
+      match this with
+      | Keyword(k,di,ti) -> sprintf "%s" (k.ToString())
+      | Application(b,l,di,ti) -> 
+        let ls = l |> Seq.fold (fun s x -> s + x.ToStringCompact) ""
+        match b with
+        | Implicit -> sprintf "%s" ls
+        | Regular -> sprintf "(%s)" ls
+        | Square -> sprintf "[%s]" ls
+        | Curly -> sprintf "{%s}" ls
+        | Angle -> sprintf "<<%s>>" ls
+      | Imported(i,di,ti) -> sprintf "%s" (i.ToString())
+      | Extension(e,di,ti) -> e.ToString() 

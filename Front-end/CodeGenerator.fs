@@ -158,7 +158,7 @@ and generate_inline =
   | Extension(v:Var,_,_) ->
     sprintf "%s" v.Name
   | Application(Angle, (Keyword(Inlined, _, _)) :: args, di, ti) ->
-    let res = Application(Regular, args, di, ti) |> generate_inline
+    let res = Application(Implicit, args, di, ti) |> generate_inline
     res
   | Application(Regular, a :: [], _, _) ->
     sprintf "(%s)" (a |> generate_inline)
@@ -346,7 +346,12 @@ type Rule = {
             if constraints.IsEmpty |> not then
               o <- o @ [CustomCheck(constraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x))]
             o <- o @ [Var(iVar.Name, oExpr)]
-          | _ -> failwithf "Invalid definition. Expected a variable name, found %A" c_i
+          | _ -> 
+            let iVar = c_i.ToStringCompact
+            let oExpr,constraints = create_element ctxt c_o
+            if constraints.IsEmpty |> not then
+              o <- o @ [CustomCheck(constraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x))]
+            o <- o @ [Var(iVar, oExpr)]
         | Inlined ->
             o <- o @ [Inline(c_i)]
         | _ -> failwithf "Unsupported clause keyword %A for code generation" k

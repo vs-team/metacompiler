@@ -13,7 +13,7 @@ open System.Xml.Serialization
 
 do System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.GetCultureInfo("EN-US")
 
-let flushCSFileOnError = true
+let flushCSFileOnError = false
 let numSteps = 0
 
 let runDeduction path =
@@ -72,14 +72,14 @@ let main argv =
     [
 //      "Generic lists", @"runTest1"
 
-//      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
-//      "Lists", "0;(1;(2;(3;nil))) contains -1"
-//      "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
-//      "Binary trees", "run"
-//      "Lambda calculus", @"(\$""y"" -> $""y"" | \$""y"" -> $""y"") | ($""x"" | $""z"")"
-//      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
+      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
+      "Lists", "0;(1;(2;(3;nil))) contains -1"
+      "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
+      "Binary trees", "run"
+      "Lambda calculus", @"(\$""y"" -> $""y"" | \$""y"" -> $""y"") | ($""x"" | $""z"")"
+      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
 
-      "Casanova semantics", @"runTest1"
+//      "Casanova semantics", @"runTest1"
     ]
 
   for name,input in samples 
