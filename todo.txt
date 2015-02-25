@@ -1,11 +1,14 @@
+- basic expressions as types
+- type inference
+  - first stage should create generic types
+  - second stage should unify the variables
+- type checker (while parsing) to verify arieties
 - higher order terms
-- open directive
 - association of keywords (left or right)
-- multiple files
+- open directive for namespaces
+- import directive for multiple files
 - GUI should save delayed compiler to not recompile rules unnecessarily
-- special bracket application and concrete semantics
 - resolution of < and > for generic types
-- stronger type checking of polymorphic constraints
 
 
 Lectures:
