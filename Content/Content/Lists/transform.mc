@@ -18,3 +18,4 @@ x != k
 xs contains k => res
 -----------------------
 x;xs contains k => res
+

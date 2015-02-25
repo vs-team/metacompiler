@@ -83,22 +83,20 @@ let rec create_element (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keywo
     | Keyword(Custom k, _, ti) 
     | Application(Regular,(Keyword(Custom k, _, ti)) :: [], _, _)
     | Application(Implicit,(Keyword(Custom k, _, ti)) :: [], _, _) -> 
-      let tiAnnot = ti.CSharpString cleanupWithoutDot
-      sprintf "%s.Create()" tiAnnot, []
+      sprintf "%s.Create()" !k, []
     | Application(Regular,(Keyword(Custom k, _, ti)) :: es, pos, _)
     | Application(Implicit,(Keyword(Custom k, _, ti)) :: es, pos, _) ->
-      let tiAnnot = ti.CSharpString cleanupWithoutDot
       let actualKeyword = ctxt.CustomKeywordsMap.[k]
       let args,cargs = es |> Seq.mapi (fun i e -> create_element' actualKeyword.Arguments.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
       //do printfn "Inner creation of %A with expectedType %A" (k, args) expectedType
-      sprintf "%s.Create(%s)" tiAnnot args, cargs
+      sprintf "%s.Create(%s)" !k args, cargs
     | Extension(v:Var, _, ti) ->
       match expectedType with
       | Native t ->
         sprintf "%s" !v.Name, []
       | _ ->
-        let tiAnnot = ti.CSharpString cleanupWithoutDot
-        sprintf "%s as %s" !v.Name tiAnnot, [sprintf "%s is %s" !v.Name tiAnnot]
+        let t = expectedType.BaseName
+        sprintf "%s as %s" !v.Name t, [sprintf "%s is %s" !v.Name t]
     | Application(Angle,e::[],pos, _) ->
       let res = generate_inline e
       sprintf "%s" res, []
@@ -119,11 +117,9 @@ let rec create_element (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keywo
   | Keyword(Custom k, _,ti) 
   | Application(Regular,(Keyword(Custom k, _,ti)) :: [],_,_)
   | Application(Implicit,(Keyword(Custom k, _,ti)) :: [],_,_) -> 
-    let tiAnnot = ti.CSharpString cleanupWithoutDot
-    sprintf "%s.Create()" tiAnnot, []
+    sprintf "%s.Create()" !k, []
   | Application(Regular,(Keyword(Custom k, _,ti)) :: es,pos,_)
   | Application(Implicit,(Keyword(Custom k, _,ti)) :: es,pos,_) ->
-    let tiAnnot = ti.CSharpString cleanupWithoutDot
     let actualKeyword = ctxt.CustomKeywordsMap.[k]
     let args,cargs = es |> Seq.mapi (fun i e -> create_element' actualKeyword.Arguments.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
     let trimmedArgs = 
@@ -132,7 +128,7 @@ let rec create_element (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keywo
       else
         args
     //do printfn "Outer creation of %A" (k, args)
-    let res = sprintf "%s.Create(%s)" tiAnnot trimmedArgs, cargs
+    let res = sprintf "%s.Create(%s)" !k trimmedArgs, cargs
     res
   | Application(Angle,e::es,pos,ti) ->
     let res = generate_inline (Application(Regular,e::es,pos,ti))
@@ -255,20 +251,20 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
     if self <> "this" then
       prefix @ 
       [
-        VarAs(sprintf "tmp_%d" tmp_id, self, ti.CSharpString cleanupWithoutDot)
+        VarAs(sprintf "tmp_%d" tmp_id, self, !k)
         CheckNull(sprintf "tmp_%d" tmp_id)
       ], tmp_id+1
     else
       prefix @
       [
-        VarAs(sprintf "tmp_%d" tmp_id, self, ti.CSharpString cleanupWithoutDot)
+        VarAs(sprintf "tmp_%d" tmp_id, self, !k)
       ], tmp_id+1
   | Extension(v:Var, _, _) ->
       prefix @
       [
         Var(v.Name, self)
       ], tmp_id
-  | Application(Angle,es,pos, ti) ->
+  | Application(Angle,es,pos,ti) ->
     let output,tmp_id = 
       let expectedSelf = generate_inline(Application(Angle,es,pos,ti))
       prefix @
@@ -282,7 +278,7 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
       if self <> "this" then
           prefix @
           [
-            VarAs(sprintf "tmp_%d" tmp_id, self, k_ti.CSharpString cleanupWithoutDot)
+            VarAs(sprintf "tmp_%d" tmp_id, self, !k)
             CheckNull(sprintf "tmp_%d" tmp_id)
           ], sprintf "tmp_%d" tmp_id, tmp_id+1
       else

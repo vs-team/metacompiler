@@ -152,9 +152,9 @@ var tmp_0 = this; var tmp_1 = tmp_0.P1 as s;
  #line 20 "Content\Peano numbers\transform.mc"
 if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_0.P2; 
  #line 20 "Content\Peano numbers\transform.mc"
-if(a is Num && b is Expr) { 
+if(a is Expr && b is Expr) { 
  #line 20 "Content\Peano numbers\transform.mc"
-var tmp_3 = _opMultiplication.Create(a as Num, b as Expr);
+var tmp_3 = _opMultiplication.Create(a as Expr, b as Expr);
  #line 20 "Content\Peano numbers\transform.mc"
 foreach (var tmp_2 in tmp_3.Run()) { var c = tmp_2; 
  #line 20 "Content\Peano numbers\transform.mc"
@@ -219,9 +219,9 @@ var tmp_0 = this; var tmp_1 = tmp_0.P1 as s;
  #line 13 "Content\Peano numbers\transform.mc"
 if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_0.P2; 
  #line 13 "Content\Peano numbers\transform.mc"
-if(a is Num && b is Expr) { 
+if(a is Expr && b is Expr) { 
  #line 13 "Content\Peano numbers\transform.mc"
-var tmp_3 = _opAddition.Create(a as Num, b as Expr);
+var tmp_3 = _opAddition.Create(a as Expr, b as Expr);
  #line 13 "Content\Peano numbers\transform.mc"
 foreach (var tmp_2 in tmp_3.Run()) { var c = tmp_2; 
  #line 13 "Content\Peano numbers\transform.mc"
@@ -311,7 +311,7 @@ public override int GetHashCode() {
 
 
 public class EntryPoint {
- static public int Print(string s) { System.Console.WriteLine(s); return 0; } 
+ static public int Print(object s) { System.Console.WriteLine(s.ToString()); return 0; } 
 static public IEnumerable<IRunnable> Run(bool printInput)
 {
  #line 1 "input"

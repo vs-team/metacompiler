@@ -146,7 +146,7 @@ public override int GetHashCode() {
 
 
 public class EntryPoint {
- static public int Print(string s) { System.Console.WriteLine(s); return 0; } 
+ static public int Print(object s) { System.Console.WriteLine(s.ToString()); return 0; } 
 static public IEnumerable<IRunnable> Run(bool printInput)
 {
  #line 1 "input"
