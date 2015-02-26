@@ -1,4 +1,3 @@
-- basic expressions as types
 - type inference
   - first stage should create generic types
   - second stage should unify the variables

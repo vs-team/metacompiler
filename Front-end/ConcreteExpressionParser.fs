@@ -39,7 +39,7 @@ and inheritanceRelationships() =
         let! el = empty_lines()
         return (concreter.Name, abstracter.Name)
       | _ ->
-        return! fail()
+        return! fail (sprintf "Malformed inheritance relationship %A" relation)
     }
   p{
     let! r1 = singleRelation() + p { return () }
@@ -113,7 +113,7 @@ and keyword : Parser<CustomKeyword,ConcreteExpressionContext> =
 
 and rules depth = 
   p{
-    let! r = rule depth + (deindentation depth + end_rules)
+    let! r = rule depth + (deindentation depth + end_rules())
     match r with
     | First(r) ->
       let! rs = rules depth
@@ -144,10 +144,10 @@ and deindentation depth =
     if depth1 < depth then
       return ()
     else
-      return! fail()
+      return! fail "Indentation error"
   }
 
-and end_rules = 
+and end_rules() = 
   p{
     let! el = empty_lines() + eof()
     return! eof()
@@ -196,7 +196,7 @@ and clause depth =
 and customKeyword() =
   let rec customKeyword = 
     function 
-    | [] -> fail()
+    | [] -> fail "Expected keyword"
     | (k : CustomKeyword) :: ks ->
       p{
         let! r = word k.Name + customKeyword ks
@@ -323,7 +323,7 @@ and expr() =
             let! r_es = maybe_inner_expr
             return i_e :: r_es
           else
-            return! fail()
+            return! fail(sprintf "Unmatched open bracket %A" extracted_open_bracket)
         | First(Second(closed_bracket)) -> 
           return []
         | Second(First(k)) -> 
@@ -374,5 +374,5 @@ and require_indentation depth =
     if depth = depth1 then
       return()
     else
-      return! fail()
+      return! fail "Indentation error"
   }

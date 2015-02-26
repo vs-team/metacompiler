@@ -11,9 +11,9 @@ type Position = { Line : int }
   with member this.NextLine = { this with Line = this.Line + 1 }
        static member Zero = { Line = 1 }
 
-type Error = Error of Position
+type Error = Error of Position * string
   with 
-    member this.Line = let (Error p) = this in p.Line
+    member this.Line = let (Error(p,s)) = this in p.Line
     static member Distinct (errors:List<Error>) = 
       errors |> Set.ofList |> Set.toSeq
       
@@ -185,8 +185,9 @@ let p = parser
 (*
   Utility function to easily create a Parser type containing an error at it's current location.  
 *)
-let fail() = 
-  (fun _ _ pos -> [],[Error pos]) |> Parser.Make 
+
+let fail s = 
+  (fun _ _ pos -> [],[Error(pos, s)]) |> Parser.Make 
 
 (*
     The function character(c) will test if the next character in a Parser's input buffer matches the given character c.
@@ -215,7 +216,7 @@ let character(c:char) : Parser<char, 'ctxt> =
       else 
         pos
     [c, cs, ctxt, pos'],[]
-  | _ -> [],[Error pos]) |> Parser.Make
+  | _ -> [],[Error(pos, sprintf "Expected character %A" c)]) |> Parser.Make
 
 (*
     The function word(s) will test if the given string s's characters match the next characters found in a Parser's input buffer.
@@ -298,7 +299,7 @@ let rec character' (p:char -> bool) : Parser<char, 'ctxt> =
  (fun buf ctxt (pos:Position) ->
     match buf with
     | c::cs when p c -> [c, cs, ctxt, if c = '\n' then pos.NextLine else pos],[]
-    | buf -> [],[Error pos]) |> Parser.Make
+    | buf -> [],[Error(pos, sprintf "Unexpected character")]) |> Parser.Make
 
 (*
     The function takeWhile'(p:char->bool) will consume characters from a Parser's input buffer as long as the given function p is satisfied ( p(c) will return true ).
@@ -434,7 +435,7 @@ let eof() =
   (fun buf ctxt pos ->
      match buf with
      | [] -> [(),[],ctxt,pos],[]
-     | _ -> [],[Error pos]) |> Parser.Make
+     | _ -> [],[Error(pos, "Expected end of file")]) |> Parser.Make
 (*
     Helper function to check for a valid new line.
 *)

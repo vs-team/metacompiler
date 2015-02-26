@@ -41,7 +41,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " $ "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+ res += "$"; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -73,7 +73,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " $b "; res += P1.ToString(); 
+ res += "$b"; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -105,7 +105,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " $i "; res += P1.ToString(); 
+ res += "$i"; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -137,7 +137,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " $m "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+ res += "$m"; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -171,7 +171,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += " && "; res += P2.ToString(); 
+ res += "&&"; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -205,7 +205,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += " * "; res += P2.ToString(); 
+ res += "*"; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -239,7 +239,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += " + "; res += P2.ToString(); 
+ res += "+"; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -273,7 +273,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += " - "; res += P2.ToString(); 
+ res += "-"; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -307,7 +307,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += " / "; res += P2.ToString(); 
+ res += "/"; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -341,7 +341,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += " ; "; res += P2.ToString(); 
+ res += ";"; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -375,7 +375,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += " = "; res += P2.ToString(); 
+ res += "="; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -409,7 +409,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += " > "; res += P2.ToString(); 
+ res += ">"; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -456,7 +456,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += " add "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += "add"; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 if (P3 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P3 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P3.ToString(); } 
 
  res += ")";
@@ -491,7 +491,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += " consResult "; res += P2.ToString(); 
+ res += "consResult"; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -523,7 +523,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " continueWith "; res += P1.ToString(); 
+ res += "continueWith"; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -782,7 +782,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " eval "; res += P1.ToString(); 
+ res += "eval"; res += P1.ToString(); 
 res += P2.ToString(); 
 res += P3.ToString(); 
 
@@ -858,7 +858,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " evalMany "; res += P1.ToString(); 
+ res += "evalMany"; res += P1.ToString(); 
 res += P2.ToString(); 
 res += P3.ToString(); 
 
@@ -896,7 +896,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " if "; res += P1.ToString(); 
+ res += "if"; res += P1.ToString(); 
 res += P2.ToString(); 
 res += P3.ToString(); 
 res += P4.ToString(); 
@@ -946,7 +946,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += " lookup "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += "lookup"; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -1069,7 +1069,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " setDt "; res += P1.ToString(); 
+ res += "setDt"; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -1150,7 +1150,7 @@ public IEnumerable<IRunnable> Run3_7_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " stepOrSuspend "; res += P1.ToString(); 
+ res += "stepOrSuspend"; res += P1.ToString(); 
 res += P2.ToString(); 
 res += P3.ToString(); 
 res += P4.ToString(); 
@@ -1211,7 +1211,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " updateFieldsAndContinueWith "; res += P1.ToString(); 
+ res += "updateFieldsAndContinueWith"; res += P1.ToString(); 
 res += P2.ToString(); 
 
  res += ")";
@@ -1244,7 +1244,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " wait "; res += P1.ToString(); 
+ res += "wait"; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -1276,7 +1276,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " waitResult "; res += P1.ToString(); 
+ res += "waitResult"; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -1308,7 +1308,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " yield "; res += P1.ToString(); 
+ res += "yield"; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -1340,7 +1340,7 @@ public IEnumerable<IRunnable> Run3_8_() { foreach(var p in Run3_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += " yieldResult "; res += P1.ToString(); 
+ res += "yieldResult"; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -1374,7 +1374,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += " || "; res += P2.ToString(); 
+ res += "||"; res += P2.ToString(); 
 
  res += ")";
  return res;

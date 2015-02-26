@@ -107,12 +107,12 @@ let rec create_element (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keywo
       let res, conds = create_element' expectedType e
       sprintf "(%s)" res, conds
     | Application(b,e::es,pos,typeInfo) ->
-      failwithf "Application %A cannot be created" (Application(b,e::es,pos,typeInfo))
+      failwithf "Code generation error @ %A" pos
     | Application(b,[],pos,typeInfo) ->
-      failwith "Application with empty argument list cannot be created"
+      failwithf "Code generation error @ %A" pos
     | Imported(l,pos,typeInfo) -> l.ToString(), []
-    | Keyword(k, _, typeInfo) -> 
-      failwithf "Non-custom keyword %A cannot be matched" k
+    | Keyword(k, pos, typeInfo) -> 
+      failwithf "Unexpected keyword %A @ %A cannot be matched" k pos
   match e with
   | Keyword(Custom k, _,ti) 
   | Application(Regular,(Keyword(Custom k, _,ti)) :: [],_,_)
@@ -136,12 +136,12 @@ let rec create_element (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keywo
   | Extension(v:Var,_,_) ->
     sprintf "%s" !v.Name, []
   | Application(b,e::es,pos,ti) ->
-    failwithf "Application %A cannot be created" (Application(b,e::es,pos,ti))
+    failwithf "Code generation error @ %A" pos
   | Application(b,[],pos,_) ->
-    failwith "Application with empty argument list cannot be created"
+    failwithf "Code generation error @ %A" pos
   | Imported(l,pos,_) -> l.ToString(), []
-  | Keyword(k,_,_) -> 
-    failwithf "Non-custom keyword %A cannot be matched" k
+  | Keyword(k,pos,_) -> 
+    failwithf "Non-custom keyword %A @ %A cannot be matched" k pos
 
 and generate_inline =
   function
@@ -180,7 +180,7 @@ and generate_inline =
   | Imported(l,di,_) ->
     l.ToString()
   | i -> 
-    failwithf "Unsupported inline pattern %A" i
+    failwithf "Code generation error @ %A" i.DebugInformation
   
 
 let rec generate_instructions (debugPosition:Position) (originalFilePath:string) (ctxt:ConcreteExpressionContext) = 
@@ -210,7 +210,7 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
         | GreaterOrEqual -> "", ">=", "" 
         | SmallerThan -> "", "<", "" 
         | SmallerOrEqual -> "", "<=", "" 
-        | _ -> failwith "Unsupported"
+        | _ -> failwith "Unsupported comparison operator %s @ %A" comparison expr1.DebugInformation
       if creationConstraints.IsEmpty |> not then
         let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
         sprintf "%sif(%s) { %sif(%s%s%s%s%s) { %s } }" newLine creationConstraints newLine preComparison newElement1 inlineComparison newElement2 postComparison (generate_instructions debugPosition originalFilePath  ctxt xs)
@@ -234,14 +234,6 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
         sprintf "%sif(%s) { %svar result = %s;%syield return result; %s }" newLine creationConstraints newLine newElement newLine (generate_instructions debugPosition originalFilePath ctxt xs)
       else
         sprintf "%svar result = %s;%syield return result; %s" newLine newElement newLine (generate_instructions debugPosition originalFilePath ctxt xs)
-
-let unifyConstraints (typeConstraint:KeywordArgument) (keywordClass:KeywordArgument) = 
-  match typeConstraint, keywordClass with
-  | KeywordArgument.Generic(tC, tCArgs), 
-    KeywordArgument.Generic(kC, kCArgs) when tC = kC && tCArgs.Length = kCArgs.Length ->  
-      let res = tCArgs |> List.map (fun x -> x.ArgumentCSharpStyle (!)) |> List.reduce (fun s x -> sprintf "%s, %s" s x)
-      res
-  | _ -> failwithf "Error: cannot unify generic types of %A and %A." typeConstraint keywordClass
   
 
 let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) (self:string) (prefix:List<Instruction>) 
@@ -301,17 +293,17 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
   | Application(Square,e::es,pos,_) ->
     prefix, tmp_id
   | Application(b,e::es,pos,_) ->
-    failwith "Application %A cannot be matched" e
+    failwithf "Code generator error @ %A" pos
   | Application(b,[],pos,_) ->
-    failwith "Application with empty argument list cannot be matched"
+    failwithf "Code generator error @ %A" pos
   | Imported(l,pos,_) ->
     let cond = sprintf "%s == %s" self (l.ToString())
     prefix @
     [
       CustomCheck(cond)
     ], tmp_id
-  | Keyword(_) -> 
-    failwithf "Non-custom keyword %A cannot be matched" e
+  | Keyword(k,pos,ti) -> 
+    failwithf "Unexpected keyword %A @ %A" k pos
 
 type Rule = {
   Position   : Position
@@ -354,7 +346,7 @@ type Rule = {
             o <- o @ [Var(iVar, oExpr)]
         | Inlined ->
             o <- o @ [Inline(c_i)]
-        | _ -> failwithf "Unsupported clause keyword %A for code generation" k
+        | _ -> failwithf "Unexpected operator %A @ %A" k c_i.DebugInformation
       o <- i @ o @ [Yield r.Output]
       if generateLineDirectives then
         sprintf "\n { \n #line %d \"%s\"\n%s\n } \n" r.Position.Line originalFilePath (generate_instructions r.Position originalFilePath ctxt o)
@@ -473,13 +465,13 @@ let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position, Unit>) (rul
               | Application(_, Keyword(GreaterOrEqual, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield GreaterOrEqual, c_i, c_o
               | Application(_, Keyword(SmallerThan, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield SmallerThan, c_i, c_o
               | Application(_, Keyword(SmallerOrEqual, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield SmallerOrEqual, c_i, c_o
-              | _ -> failwithf "Cannot process clause %A" c
+              | _ -> failwithf "Unexpected clause @ %A" c.DebugInformation
           ] 
         Output   = output
         Path     = rule_path
         HasScope = hasScope })
   | _ ->
-    failwithf "Cannot extract rule shape from %A" rule
+    failwithf "Cannot extract rule shape @ %A" rule.DebugInformation
 
 let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rules:List<BasicExpression<_,_,Literal,Position, Unit>>) ctxt = 
   for rule,i in rules |> Seq.mapi (fun i r -> r,i) do
@@ -496,10 +488,10 @@ let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rul
         match input with
         | Keyword(Custom k, _, _) -> k
         | Application(Implicit, (Keyword(Custom k, _, _)) :: _, pos, _) -> k
-        | _ -> failwithf "Cannot extract input keyword from %A" input
+        | _ -> failwithf "Cannot extract input keyword @ %A" input.DebugInformation
       let inputClass = classes.[inputKeyword]
       do add_rule inputClass self (Path path') hasScope ctxt
-    | _ -> failwithf "Malformed rule %A" self
+    | _ -> failwithf "Malformed rule @ %A" self.DebugInformation
     ()
 
 
@@ -567,4 +559,4 @@ let generateCode (originalFilePath:string) (program_name:string)
       yield main
       yield "\n}\n"
     ] |> Seq.fold (+) "" |> (fun txt -> System.IO.File.WriteAllText(program_name + ".cs", txt); program_name + ".cs")
-  | _ -> failwith "Cannot extract rules from input program."
+  | _ -> failwithf "Cannot extract rules from input program @ %A" rules.DebugInformation

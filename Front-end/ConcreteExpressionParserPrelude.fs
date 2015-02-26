@@ -11,7 +11,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | GreaterOr
         let! br = !!(word "<<" + word ">>") + p{ return () }
         match br with
         | First _ -> 
-          return! fail()
+          return! fail "Expected keyword"
         | _ ->
           let! ar = word "=>" + ((word "==" + word "!=") + word ":=")
           match ar with
@@ -31,7 +31,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | GreaterOr
         let! br = !!(word "<<" + word ">>") + p{ return () }
         match br with
         | First _ -> 
-          return! fail()
+          return! fail "Expected keyword"
         | _ ->
           let! ar = word "=>" + (((word "==" + word "!=") + ((word ">=" + word ">") + (word "<=" + word "<"))) + word ":=")
           match ar with
