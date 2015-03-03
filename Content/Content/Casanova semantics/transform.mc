@@ -106,6 +106,7 @@ M' := <<M.SetItem(k,v)>>
 
 
 dt := 1.0
+iterations := 10
 Me := $m <<System.Collections.Immutable.ImmutableDictionary<string, ExprResult>.Empty>>
 Me add "F1" ($i 100) => Ml
 Ml add "F2" ($i 100) => M
@@ -122,7 +123,7 @@ r1 := rule dom1 b1
 r2 := rule dom2 b2
 rs := r1 consRule (r2 consRule nilRule)
 e := entity "E" M rs
-updateEntity dt e 10 => res
+updateEntity dt e iterations => res
 debug := <<EntryPoint.Print("Done!")>>
 ------------------------------------------------------------
 runTest1 => res
