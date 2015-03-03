@@ -110,6 +110,7 @@ Me := $m <<System.Collections.Immutable.ImmutableDictionary<string, ExprResult>.
 Me add "F1" ($i 100) => Ml
 Ml add "F2" ($i 100) => M
 dom1 := "F1" consDomain nilDomain
+dom2 := "F2" consDomain nilDomain
 f1 := (($i 90);(($i 50);nil))
 w1 := wait 3.0
 w2 := wait 2.0
@@ -118,10 +119,10 @@ y2 := yield(($i 20);nil)
 b1 := w1;(y1;nil)
 b2 := w2;(y2;nil)
 r1 := rule dom1 b1
-r2 := rule dom1 b2
+r2 := rule dom2 b2
 rs := r1 consRule (r2 consRule nilRule)
 e := entity "E" M rs
-updateEntity dt e 2 => res
+updateEntity dt e 10 => res
 debug := <<EntryPoint.Print("Done!")>>
 ------------------------------------------------------------
 runTest1 => res
@@ -131,7 +132,9 @@ runTest1 => res
   updateEntity dt (entity name fields rs) updates => entity name fields' rs'
 
   <<i > 0>> == true
-  debug := <<EntryPoint.Print("Looping rules")>>
+  outputString := <<"\n----------------\n" + (fields.ToString()) + "\n\n" + (rs.ToString()) + "\n----------------\n">>
+  outputUpdate := <<EntryPoint.Print(outputString)>>
+  sleeping := <<EntryPoint.Sleep(dt)>>
   updateRules dt fields startingRules rs => updateResult updatedFields updatedRules
   j := <<i - 1>>
   loopRules dt updatedFields startingRules updatedRules j => updateResult fs' rs'

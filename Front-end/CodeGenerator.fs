@@ -546,7 +546,7 @@ let generateCode (originalFilePath:string) (program_name:string)
     let run_methods =
       all_method_paths |> Seq.map (fun p -> sprintf "IEnumerable<IRunnable> Run%s();\n" (p.ToString())) |> Seq.reduce (+)
     let prelude = sprintf "using System.Collections.Generic;\nusing System.Linq;\nnamespace %s {\n %s\n public interface IRunnable { %s }" (program_name.Replace(" ", "_")) extensions run_methods
-    let main = sprintf "public class EntryPoint {\n static public int Print(object s) { System.Console.WriteLine(s.ToString()); return 0; } \nstatic public IEnumerable<IRunnable> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" (create_element ctxt programTyped |> fst)
+    let main = sprintf "public class EntryPoint {\n static public int Print(object s) { System.Console.WriteLine(s.ToString()); return 0; } \n static public int Sleep(float s) { int t = (int)(s * 1000.0f); System.Threading.Thread.Sleep(t); return 0; } \nstatic public IEnumerable<IRunnable> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" (create_element ctxt programTyped |> fst)
     [
       yield prelude
       yield "\n\n\n"
