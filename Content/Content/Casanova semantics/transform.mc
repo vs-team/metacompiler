@@ -29,7 +29,6 @@ Keyword [] "else" [] Priority 0 Class Else
 
 Keyword [] "wait" [<<float>>] Priority 0 Class Expr
 Keyword [] "waitResult" [<<float>>] Priority 0 Class ExprResult
-Keyword [] "loop" [ExprList] Priority 0 Class Loop
 
 Keyword [] "yield" [ExprList] Priority 0 Class Expr
 Keyword [] "yieldResult" [ExprResultList] Priority 0 Class ExprResult
@@ -40,6 +39,13 @@ Keyword [] "updateFields" [Locals Domain ExprResultList] Priority 0 Class Memory
 
 Keyword [] "suspend" [] Priority 0 Class ExprResult
 
+Keyword [] "updateRules" [<<float>> Locals RuleList] Priority -1000 Class RuleManager
+
+Keyword [] "nilRule" [] Priority 500 Class RuleList
+Keyword [Rule] "consRule" [RuleList] Priority 910 Class RuleList 
+Keyword [] "rule" [Domain ExprList] Priority 0 Class Rule
+Keyword [] "updateResult" [Locals RuleList] Priority -1000 Class UpdateResult
+
 Keyword [] "setDt" [<<float>>] Priority -10 Class ExprResult
 
 Keyword [] "nilDomain" [] Priority 500 Class Domain
@@ -47,13 +53,14 @@ Keyword [<<string>>] "consDomain" [Domain] Priority 910 Class Domain
 
 Keyword [] "eval" [<<float>> Locals Expr] Priority -1000 Class Expr
 Keyword [] "evalMany" [<<float>> Locals ExprList] Priority -1000 Class Expr
-Keyword [] "evalRule" [<<float>> Locals Domain ExprList] Priority -1000 Class RuleEvaluation
+Keyword [] "evalRule" [<<float>> Locals Domain ExprList ExprList] Priority -1000 Class RuleEvaluation
 Keyword [] "stepOrSuspend" [<<float>> Locals ExprResult Expr] Priority -1000 Class Expr
 Keyword [] "ruleResult" [Locals ExprList] Priority -1000 Class RuleResult
 
 Keyword [] "suspendResult" [] Priority -1000 Class ExprResult
-Keyword [] "skip" [] Priority -1000 Class ExprResult
 Keyword [] "continueWith" [ExprList] Priority -1000 Class ExprResult
+Keyword [] "atomic" [] Priority -1000 Class ExprResult
+Keyword [] "reEvaluate" [ExprList] Priority -1000 Class ExprResult
 Keyword [] "updateFieldsAndContinueWith" [ExprResultList ExprList] Priority -1000 Class ExprResult
 
 
@@ -69,8 +76,6 @@ IntConst is ExprResult
 IntExpr is Expr
 ExprResult is Expr
 ExprList is Expr
-Loop is Expr
-Loop is ExprList
 
 
 c != $b true
@@ -84,111 +89,133 @@ v := <<M.GetKey(k)>>
 ---------------------
 ($m M) lookup k => v
 
+<<M.ContainsKey(k)>> == false
 M' := <<M.Add(k,v)>>
+------------------------
+($m M) add k v => $m M'
+
+<<M.ContainsKey(k)>> == true
+M' := <<M.SetItem(k,v)>>
 ------------------------
 ($m M) add k v => $m M'
 
 
 
 dt := 0.02
-M := $m <<System.Collections.Immutable.ImmutableDictionary<string, ExprResult>.Empty>>
-y1 := yield (($i 1);nil)
-y2 := yield (($i 2);nil)
-b := (y1;(y2;nil))
-evalRule dt M ("Life" consDomain nilDomain) (loop(b)) => res
+Me := $m <<System.Collections.Immutable.ImmutableDictionary<string, ExprResult>.Empty>>
+Me add "F1" ($i 100) => Ml
+Ml add "F2" ($i 100) => M
+dom1 := "F1" consDomain nilDomain
+f1 := (($i 90);(($i 50);nil))
+w1 := wait 3.0
+w2 := wait 2.0
+y1 := yield(($i 10);nil)
+y2 := yield(($i 20);nil)
+b1 := w1;(y1;nil)
+b2 := w2;(y2;nil)
+r1 := rule dom1 b1
+r2 := rule dom1 b2
+rs := r1 consRule (r2 consRule nilRule)
+updateRules dt M rs => res
+debug := <<EntryPoint.Print("Done!")>>
 ------------------------------------------------------------
 runTest1 => res
 
+  evalRule dt M domain block block => ruleResult M' continuation
+  updatedRule := rule domain continuation
+  updateRules dt M' rs => updateResult M'' rs'
+  ----------------------------------------------------------------------------------------------
+  updateRules dt M ((rule domain block) consRule rs) => updateResult M'' (updatedRule consRule rs')
+
+  --------------------------------------------------
+  updateRules dt M nilRule => updateResult M nilRule
+
   eval dt M block => continueWith((wait t); b)
-  -----------------------------------------------------------
-  evalRule dt M domain block => ruleResult M b 
+  debug := <<EntryPoint.Print("Wait result")>>
+  ---------------------------------------------------------------------
+  evalRule dt M domain statringBlock block => ruleResult M ((wait t);b) 
 
-  eval dt M block => updateFieldsAndContinueWith vals b
+  eval dt M block => (updateFieldsAndContinueWith vals b)
   updateFields M domain vals => M'
-  ------------------------------------------------------
-  evalRule dt M domain block => ruleResult M' b
+  debug := <<EntryPoint.Print("Yield result")>>
+  -----------------------------------------------------------
+  evalRule dt M domain startingBlock block => ruleResult M' b
 
-  M add field v => M'
-  updateFields M' fields vals => M''
-  -----------------------------------------------------------------------
-  updateFields M (field consDomain fields) (v consResult vals) => M''
+    M add field v => M'
+    updateFields M' fields vals => M''
+    -----------------------------------------------------------------------
+    updateFields M (field consDomain fields) (v consResult vals) => M''
 
-  eval dt M block => continueWith(skip;b)
+    ---------------------------------------
+    updateFields M nilDomain nilResult => M
+
+  eval dt M block => reEvaluate b
+  debug := <<EntryPoint.Print("Re-evaluation result")>>
+  evalRule dt M domain startingBlock b => res
+  ---------------------------------------------------------------------------------
+  evalRule dt M domain startingBlock block => res
+
+  ---------------------------------------------------------------------
+  evalRule dt M domain startingBlock nil => ruleResult M startingBlock
+
+  eval dt M t => res
   ----------------------------------------------
-  evalRule dt M domain block => ruleResult M b
+  eval dt M (if ($b true) then t else e) => res
 
-    eval dt M t => res
-    ----------------------------------------------
-    eval dt M (if ($b true) then t else e) => res
+  eval dt M e => res
+  -----------------------------------------------
+  eval dt M (if ($b false) then t else e) => res
 
-    eval dt M e => res
-    -----------------------------------------------
-    eval dt M (if ($b false) then t else e) => res
+  M lookup v => res
+  ----------------------
+  eval dt M ($v) => res
 
-    M lookup v => res
-    ----------------------
-    eval dt M ($v) => res
+  <<dt >= t>> == true
+  -------------------------------
+  eval dt M (wait t) => atomic
 
-    <<dt >= t>> == true
-    dt' := <<dt - t>>
-    --------------------------------------
-    eval dt M (wait t) => setDt dt'
+  <<dt < t>> == true
+  t' := <<t - dt>>
+  ------------------------------------
+  eval dt M (wait t) => waitResult t'
 
-    <<dt < t>> == true
-    t' := <<t - dt>>
-    ------------------------------------
-    eval dt M (wait t) => waitResult t'
+  ------------------------------
+  eval dt M ($i val) => $i val
 
-    -------------------------------------------
-    eval dt M (loop b) => eval dt M (b;(loop b))
-
-    --------------------------
-    eval dt M suspend => skip
-
-    ------------------------------
-    eval dt M ($i val) => $i val
-
-    --------------------------
-    eval dt M nil => nilResult
+  --------------------------
+  eval dt M nil => nilResult
  
-    debug0 := <<EntryPoint.Print("Evaluating yield...")>>
-    debug1 := <<EntryPoint.Print(e)>>
-    debug1b := <<EntryPoint.Print(exprs)>>
-    evalMany dt M (e;exprs) => vals
-    debug2 := <<EntryPoint.Print(vals)>>
-    -------------------------------------------------
-    eval dt M (yield (e;exprs)) => yieldResult vals
+  evalMany dt M (e;exprs) => vals
+  -------------------------------------------------
+  eval dt M (yield (e;exprs)) => yieldResult vals
 
-     debug1 := <<EntryPoint.Print("Evaluating yield arguments...")>>
-     eval dt M e => val
-     debug2 := <<EntryPoint.Print(val)>>
-     evalMany dt M exprs => vals
-     debug3 := <<EntryPoint.Print(vals)>>
-     res := val consResult vals
-     ----------------------------------------------
-     evalMany dt M (e;exprs) => val consResult vals
+    eval dt M e => val
+    evalMany dt M exprs => vals
+    res := val consResult vals
+    ----------------------------------------------
+    evalMany dt M (e;exprs) => val consResult vals
 
-     -------------------------------
-     evalMany dt M nil => nilResult
+    -------------------------------
+    evalMany dt M nil => nilResult
 
 
-    eval dt M a => a'
-    stepOrSuspend dt M a' b => res
-    -----------------------------------
-    eval dt M (a; b) => res
+  eval dt M a => a1
+  stepOrSuspend dt M a1 b => res
+  -----------------------------------
+  eval dt M (a; b) => res
 
-      eval dt' M b => res
-      ----------------------------------------
-      stepOrSuspend dt M (setDt dt') b => res
+    res := reEvaluate b
+    ----------------------------------------
+    stepOrSuspend dt M atomic b => res
 
+    res := reEvaluate b
+    ----------------------------------------
+    stepOrSuspend dt M nilResult b => res
 
-      res := continueWith((wait t);b) 
-      -------------------------------------------
-      stepOrSuspend dt M (waitResult t) b => res
+    res := continueWith((wait t);b)
+    -------------------------------------------
+    stepOrSuspend dt M (waitResult t) b => res
 
-      -----------------------------------------------------
-      stepOrSuspend dt M suspendResult b => continueWith(skip;b)
-
-      res := updateFieldsAndContinueWith vals b
-      ----------------------------------------------
-      stepOrSuspend dt M (yieldResult vals) b => res
+    res := updateFieldsAndContinueWith vals b
+    ----------------------------------------------
+    stepOrSuspend dt M (yieldResult vals) b => res
