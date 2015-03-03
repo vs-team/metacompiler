@@ -39,7 +39,11 @@ Keyword [] "updateFields" [Locals Domain ExprResultList] Priority 0 Class Memory
 
 Keyword [] "suspend" [] Priority 0 Class ExprResult
 
-Keyword [] "updateRules" [<<float>> Locals RuleList] Priority -1000 Class RuleManager
+Keyword [] "updateRules" [<<float>> Locals RuleList RuleList] Priority -1000 Class RuleManager
+Keyword [] "loopRules" [<<float>> Locals RuleList RuleList <<int>>] Priority -1000 Class RuleManager
+
+Keyword [] "entity" [<<string>> Locals RuleList] Priority 0 Class Entity
+Keyword [] "updateEntity" [<<float>> Entity <<int>>] Priority -1000 Class EntityManager
 
 Keyword [] "nilRule" [] Priority 500 Class RuleList
 Keyword [Rule] "consRule" [RuleList] Priority 910 Class RuleList 
@@ -101,7 +105,7 @@ M' := <<M.SetItem(k,v)>>
 
 
 
-dt := 0.02
+dt := 1.0
 Me := $m <<System.Collections.Immutable.ImmutableDictionary<string, ExprResult>.Empty>>
 Me add "F1" ($i 100) => Ml
 Ml add "F2" ($i 100) => M
@@ -116,28 +120,43 @@ b2 := w2;(y2;nil)
 r1 := rule dom1 b1
 r2 := rule dom1 b2
 rs := r1 consRule (r2 consRule nilRule)
-updateRules dt M rs => res
+e := entity "E" M rs
+updateEntity dt e 2 => res
 debug := <<EntryPoint.Print("Done!")>>
 ------------------------------------------------------------
 runTest1 => res
 
-  evalRule dt M domain block block => ruleResult M' continuation
-  updatedRule := rule domain continuation
-  updateRules dt M' rs => updateResult M'' rs'
-  ----------------------------------------------------------------------------------------------
-  updateRules dt M ((rule domain block) consRule rs) => updateResult M'' (updatedRule consRule rs')
+  loopRules dt fields rs rs updates => updateResult fields' rs'
+  --------------------------------------------------------------------------
+  updateEntity dt (entity name fields rs) updates => entity name fields' rs'
 
-  --------------------------------------------------
-  updateRules dt M nilRule => updateResult M nilRule
+  <<i > 0>> == true
+  debug := <<EntryPoint.Print("Looping rules")>>
+  updateRules dt fields startingRules rs => updateResult updatedFields updatedRules
+  j := <<i - 1>>
+  loopRules dt updatedFields startingRules updatedRules j => updateResult fs' rs'
+  ----------------------------------------------------------------------------------
+  loopRules dt fields startingRules rs i => updateResult fs' rs'
+
+  ----------------------------------------------------------
+  loopRules dt fields startingRules rs 0 => updateResult fields rs
+
+
+  evalRule dt M domain sb block => ruleResult M' continuation
+  updatedRule := rule domain continuation
+  updateRules dt M' startingRules rs => updateResult M'' rs'
+  ------------------------------------------------------------------------------------------
+  updateRules dt M ((rule sd sb) consRule startingRules) ((rule domain block) consRule rs) => updateResult M'' (updatedRule consRule rs')
+
+  ----------------------------------------------------------
+  updateRules dt M rs nilRule => updateResult M nilRule
 
   eval dt M block => continueWith((wait t); b)
-  debug := <<EntryPoint.Print("Wait result")>>
   ---------------------------------------------------------------------
-  evalRule dt M domain statringBlock block => ruleResult M ((wait t);b) 
+  evalRule dt M domain startingBlock block => ruleResult M ((wait t);b) 
 
   eval dt M block => (updateFieldsAndContinueWith vals b)
   updateFields M domain vals => M'
-  debug := <<EntryPoint.Print("Yield result")>>
   -----------------------------------------------------------
   evalRule dt M domain startingBlock block => ruleResult M' b
 
@@ -150,7 +169,6 @@ runTest1 => res
     updateFields M nilDomain nilResult => M
 
   eval dt M block => reEvaluate b
-  debug := <<EntryPoint.Print("Re-evaluation result")>>
   evalRule dt M domain startingBlock b => res
   ---------------------------------------------------------------------------------
   evalRule dt M domain startingBlock block => res
