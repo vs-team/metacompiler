@@ -23,7 +23,7 @@ public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) y
 public override string ToString() {
  var res = "("; 
 
- res += "$"; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+ res += " $ "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -67,7 +67,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "add"; res += P2.ToString(); 
+ res += " add "; res += P2.ToString(); 
 if (P3 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P3 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P3.ToString(); } 
 
  res += ")";
@@ -125,7 +125,7 @@ yield return result;  } } } } } }
 public override string ToString() {
  var res = "("; 
 
- res += "run"; res += P1.ToString(); 
+ res += " run "; res += P1.ToString(); 
 
  res += ")";
  return res;

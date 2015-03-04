@@ -26,7 +26,7 @@ public IEnumerable<IRunnable> Run0_() { foreach(var p in Run()) yield return p; 
 public override string ToString() {
  var res = "("; 
 
- res += "$"; res += P1.ToString(); 
+ res += " $ "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -58,7 +58,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += ","; res += P2.ToString(); 
+ res += " , "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -162,7 +162,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "add"; res += P2.ToString(); 
+ res += " add "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -260,7 +260,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "contains"; res += P2.ToString(); 
+ res += " contains "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -315,7 +315,7 @@ public IEnumerable<IRunnable> Run0_() { foreach(var p in Run()) yield return p; 
 public override string ToString() {
  var res = "("; 
 
- res += "node"; res += P1.ToString(); 
+ res += " node "; res += P1.ToString(); 
 res += P2.ToString(); 
 res += P3.ToString(); 
 

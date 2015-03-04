@@ -26,7 +26,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += ";"; res += P2.ToString(); 
+ res += " ; "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -103,7 +103,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "contains"; res += P2.ToString(); 
+ res += " contains "; res += P2.ToString(); 
 
  res += ")";
  return res;

@@ -156,12 +156,18 @@ and end_rules() =
 and clauses depth = 
   let rec clauses = 
     p{
-      let! c = clause depth
+      let! c = comment depth + clause depth
       do! empty_line()
       let! cs = clauses + end_clauses depth
-      match cs with
-      | First cs -> return c::cs
-      | _ -> return [c]
+      let cs = 
+        match cs with
+        | First cs -> cs
+        | _ -> []
+      match c with
+      | First() ->
+        return cs
+      | Second c -> 
+        return c :: cs
     }
   p{
     let! cs = clauses + end_clauses depth
@@ -170,6 +176,14 @@ and clauses depth =
       return cs
     | _ -> 
       return []
+  }
+
+and comment depth : Parser<Unit,_> = 
+  p{
+    do! require_indentation depth
+    let! open_comment = word "//"
+    let! cmt = takeWhile' ((<>) '\n')
+    return ()
   }
 
 and clause depth =

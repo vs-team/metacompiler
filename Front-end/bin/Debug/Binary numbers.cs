@@ -46,7 +46,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "+"; res += P2.ToString(); 
+ res += " + "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -79,7 +79,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += ","; res += P2.ToString(); 
+ res += " , "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -178,7 +178,7 @@ public IEnumerable<IRunnable> Run0_2_() { foreach(var p in Run0_()) yield return
 public override string ToString() {
  var res = "("; 
 
- res += "addCarry"; res += P1.ToString(); 
+ res += " addCarry "; res += P1.ToString(); 
 res += P2.ToString(); 
 res += P3.ToString(); 
 
@@ -341,7 +341,7 @@ public IEnumerable<IRunnable> Run0_() { foreach(var p in Run()) yield return p; 
 public override string ToString() {
  var res = "("; 
 
- res += "addDigits"; res += P1.ToString(); 
+ res += " addDigits "; res += P1.ToString(); 
 res += P2.ToString(); 
 res += P3.ToString(); 
 

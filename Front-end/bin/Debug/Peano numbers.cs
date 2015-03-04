@@ -19,87 +19,87 @@ public static _opBang Create(Expr P1) { return new _opBang(P1); }
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 26 "Content\Peano numbers\transform.mc"
+ #line 27 "Content\Peano numbers\transform.mc"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as z; 
- #line 26 "Content\Peano numbers\transform.mc"
+ #line 27 "Content\Peano numbers\transform.mc"
 if (tmp_1 != null) { 
- #line 26 "Content\Peano numbers\transform.mc"
+ #line 27 "Content\Peano numbers\transform.mc"
 var result = z.Create();
- #line 26 "Content\Peano numbers\transform.mc"
+ #line 27 "Content\Peano numbers\transform.mc"
 yield return result;  }
  } 
 
   
  { 
- #line 29 "Content\Peano numbers\transform.mc"
+ #line 30 "Content\Peano numbers\transform.mc"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as s; 
- #line 29 "Content\Peano numbers\transform.mc"
+ #line 30 "Content\Peano numbers\transform.mc"
 if (tmp_1 != null) { var a = tmp_1.P1; 
- #line 29 "Content\Peano numbers\transform.mc"
+ #line 30 "Content\Peano numbers\transform.mc"
 if(a is Num) { 
- #line 29 "Content\Peano numbers\transform.mc"
+ #line 30 "Content\Peano numbers\transform.mc"
 var result = s.Create(a as Num);
- #line 29 "Content\Peano numbers\transform.mc"
+ #line 30 "Content\Peano numbers\transform.mc"
 yield return result;  } }
  } 
 
   
  { 
- #line 32 "Content\Peano numbers\transform.mc"
+ #line 33 "Content\Peano numbers\transform.mc"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opAddition; 
- #line 32 "Content\Peano numbers\transform.mc"
+ #line 33 "Content\Peano numbers\transform.mc"
 if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_1.P2; 
- #line 32 "Content\Peano numbers\transform.mc"
+ #line 33 "Content\Peano numbers\transform.mc"
 if(a is Expr) { 
- #line 32 "Content\Peano numbers\transform.mc"
+ #line 33 "Content\Peano numbers\transform.mc"
 var tmp_3 = _opBang.Create(a as Expr);
- #line 32 "Content\Peano numbers\transform.mc"
+ #line 33 "Content\Peano numbers\transform.mc"
 foreach (var tmp_2 in tmp_3.Run()) { var a_Prime = tmp_2; 
- #line 32 "Content\Peano numbers\transform.mc"
+ #line 33 "Content\Peano numbers\transform.mc"
 if(b is Expr) { 
- #line 32 "Content\Peano numbers\transform.mc"
+ #line 33 "Content\Peano numbers\transform.mc"
 var tmp_5 = _opBang.Create(b as Expr);
- #line 32 "Content\Peano numbers\transform.mc"
+ #line 33 "Content\Peano numbers\transform.mc"
 foreach (var tmp_4 in tmp_5.Run()) { var b_Prime = tmp_4; 
- #line 32 "Content\Peano numbers\transform.mc"
+ #line 33 "Content\Peano numbers\transform.mc"
 if(a_Prime is Expr && b_Prime is Expr) { 
- #line 32 "Content\Peano numbers\transform.mc"
+ #line 33 "Content\Peano numbers\transform.mc"
 var tmp_7 = _opAddition.Create(a_Prime as Expr, b_Prime as Expr);
- #line 32 "Content\Peano numbers\transform.mc"
+ #line 33 "Content\Peano numbers\transform.mc"
 foreach (var tmp_6 in tmp_7.Run()) { var c = tmp_6; 
- #line 32 "Content\Peano numbers\transform.mc"
+ #line 33 "Content\Peano numbers\transform.mc"
 var result = c;
- #line 32 "Content\Peano numbers\transform.mc"
+ #line 33 "Content\Peano numbers\transform.mc"
 yield return result;  } } } } } } }
  } 
 
   
  { 
- #line 38 "Content\Peano numbers\transform.mc"
+ #line 39 "Content\Peano numbers\transform.mc"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opMultiplication; 
- #line 38 "Content\Peano numbers\transform.mc"
+ #line 39 "Content\Peano numbers\transform.mc"
 if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_1.P2; 
- #line 38 "Content\Peano numbers\transform.mc"
+ #line 39 "Content\Peano numbers\transform.mc"
 if(a is Expr) { 
- #line 38 "Content\Peano numbers\transform.mc"
+ #line 39 "Content\Peano numbers\transform.mc"
 var tmp_3 = _opBang.Create(a as Expr);
- #line 38 "Content\Peano numbers\transform.mc"
+ #line 39 "Content\Peano numbers\transform.mc"
 foreach (var tmp_2 in tmp_3.Run()) { var a_Prime = tmp_2; 
- #line 38 "Content\Peano numbers\transform.mc"
+ #line 39 "Content\Peano numbers\transform.mc"
 if(b is Expr) { 
- #line 38 "Content\Peano numbers\transform.mc"
+ #line 39 "Content\Peano numbers\transform.mc"
 var tmp_5 = _opBang.Create(b as Expr);
- #line 38 "Content\Peano numbers\transform.mc"
+ #line 39 "Content\Peano numbers\transform.mc"
 foreach (var tmp_4 in tmp_5.Run()) { var b_Prime = tmp_4; 
- #line 38 "Content\Peano numbers\transform.mc"
+ #line 39 "Content\Peano numbers\transform.mc"
 if(a_Prime is Expr && b_Prime is Expr) { 
- #line 38 "Content\Peano numbers\transform.mc"
+ #line 39 "Content\Peano numbers\transform.mc"
 var tmp_7 = _opMultiplication.Create(a_Prime as Expr, b_Prime as Expr);
- #line 38 "Content\Peano numbers\transform.mc"
+ #line 39 "Content\Peano numbers\transform.mc"
 foreach (var tmp_6 in tmp_7.Run()) { var c = tmp_6; 
- #line 38 "Content\Peano numbers\transform.mc"
+ #line 39 "Content\Peano numbers\transform.mc"
 var result = c;
- #line 38 "Content\Peano numbers\transform.mc"
+ #line 39 "Content\Peano numbers\transform.mc"
 yield return result;  } } } } } } }
  } 
 
@@ -109,7 +109,7 @@ yield return result;  } } } } } } }
 public override string ToString() {
  var res = "("; 
 
- res += "!"; res += P1.ToString(); 
+ res += " ! "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -135,37 +135,37 @@ public static _opMultiplication Create(Expr P1, Expr P2) { return new _opMultipl
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 17 "Content\Peano numbers\transform.mc"
+ #line 18 "Content\Peano numbers\transform.mc"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as z; 
- #line 17 "Content\Peano numbers\transform.mc"
+ #line 18 "Content\Peano numbers\transform.mc"
 if (tmp_1 != null) { var a = tmp_0.P2; 
- #line 17 "Content\Peano numbers\transform.mc"
+ #line 18 "Content\Peano numbers\transform.mc"
 var result = z.Create();
- #line 17 "Content\Peano numbers\transform.mc"
+ #line 18 "Content\Peano numbers\transform.mc"
 yield return result;  }
  } 
 
   
  { 
- #line 20 "Content\Peano numbers\transform.mc"
+ #line 21 "Content\Peano numbers\transform.mc"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as s; 
- #line 20 "Content\Peano numbers\transform.mc"
+ #line 21 "Content\Peano numbers\transform.mc"
 if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_0.P2; 
- #line 20 "Content\Peano numbers\transform.mc"
+ #line 21 "Content\Peano numbers\transform.mc"
 if(a is Expr && b is Expr) { 
- #line 20 "Content\Peano numbers\transform.mc"
+ #line 21 "Content\Peano numbers\transform.mc"
 var tmp_3 = _opMultiplication.Create(a as Expr, b as Expr);
- #line 20 "Content\Peano numbers\transform.mc"
+ #line 21 "Content\Peano numbers\transform.mc"
 foreach (var tmp_2 in tmp_3.Run()) { var c = tmp_2; 
- #line 20 "Content\Peano numbers\transform.mc"
+ #line 21 "Content\Peano numbers\transform.mc"
 if(c is Expr && b is Expr) { 
- #line 20 "Content\Peano numbers\transform.mc"
+ #line 21 "Content\Peano numbers\transform.mc"
 var tmp_5 = _opAddition.Create(c as Expr, b as Expr);
- #line 20 "Content\Peano numbers\transform.mc"
+ #line 21 "Content\Peano numbers\transform.mc"
 foreach (var tmp_4 in tmp_5.Run()) { var d = tmp_4; 
- #line 20 "Content\Peano numbers\transform.mc"
+ #line 21 "Content\Peano numbers\transform.mc"
 var result = d;
- #line 20 "Content\Peano numbers\transform.mc"
+ #line 21 "Content\Peano numbers\transform.mc"
 yield return result;  } } } } }
  } 
 
@@ -176,7 +176,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "*"; res += P2.ToString(); 
+ res += " * "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -223,7 +223,7 @@ if(a is Expr && b is Expr) {
  #line 13 "Content\Peano numbers\transform.mc"
 var tmp_3 = _opAddition.Create(a as Expr, b as Expr);
  #line 13 "Content\Peano numbers\transform.mc"
-foreach (var tmp_2 in tmp_3.Run()) { var c = tmp_2; 
+foreach (var tmp_2 in tmp_3.Run()) { var c = tmp_2; var res = (3*100/20); 
  #line 13 "Content\Peano numbers\transform.mc"
 if(c is Num) { 
  #line 13 "Content\Peano numbers\transform.mc"
@@ -239,7 +239,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += "+"; res += P2.ToString(); 
+ res += " + "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -268,7 +268,7 @@ public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) y
 public override string ToString() {
  var res = "("; 
 
- res += "s"; res += P1.ToString(); 
+ res += " s "; res += P1.ToString(); 
 
  res += ")";
  return res;
