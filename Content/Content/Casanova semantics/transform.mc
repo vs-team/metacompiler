@@ -217,6 +217,18 @@ runTest1 => res
   --------------------------------
   eval dt M lv (e1 - e2) => ($i res)
 
+  eval dt M lv e1 => ($i res1)
+  eval dt M lv e2 => ($i res2)
+  res := <<res1 * res2>>
+  --------------------------------
+  eval dt M lv (e1 * e2) => ($i res)
+
+  eval dt M lv e1 => ($i res1)
+  eval dt M lv e2 => ($i res2)
+  res := <<res1 / res2>>
+  --------------------------------
+  eval dt M lv (e1 / e2) => ($i res)
+
   <<dt >= t>> == true
   -------------------------------
   eval dt M lv (wait t) => atomic
