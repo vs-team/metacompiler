@@ -12,7 +12,8 @@ Keyword [] "node" [List] Priority 0 Class BTree
 Keyword [] "isLeaf" [BTree] Priority 0 Class Expr
 Keyword [] "split" [List] Priority 0 Class Expr
 Keyword [List] "insertSort" [ListElem BTree] Priority 0 Class Expr
-Keyword [ListElem] "insertInto" [List] Priority 0 Class Expr
+Keyword [<<int>>] "insertInto" [List] Priority 0 Class Expr
+Keyword [] "merge" [BTree List] Priority 0 Class Expr
 
 Keyword [BTree] "insert" [<<int>>] Priority 0 Class Expr
 Keyword [BTree] "contains" [<<int>>] Priority 0 Class Expr
@@ -58,6 +59,30 @@ xs insertSort k r => xs'
 l;$x;xs insertSort k r => l;$x;xs'
 
 
+---------------------------------------
+merge (node l;k;r;nil) xs => l;k;r;xs
+
+--------------------------------------------------
+merge (node l;k1;m;rs) xs => (node l;k1;m;rs);xs
+
+
+l insert k => l'
+merge l' nil => l''
+---------------------------
+k insertInto l;nil => l''
+
+x > k
+l insert k => l'
+merge l' ($x;xs) => l''
+-------------------------------
+k insertInto l;$x;xs => l''
+
+x <= k
+k insertInto xs => xs'
+------------------------------------
+k insertInto l;$x;xs => l;$x;xs'
+
+
 isLeaf l => yes
 l insertSort k empty => l'
 split l' => splitRes
@@ -65,9 +90,6 @@ split l' => splitRes
 (node l) insert k => splitRes
 
 isLeaf l => no
-// insertInto adds k to the appropriate node
-// if a 2-node comes up as the result then it insertionSorts it with the other elements of l and then splits it
-// if a more than 2-node comes up as the result then it just puts it back into l
 k insertInto l => l'
 split l' => splitRes
 -------------------------------
