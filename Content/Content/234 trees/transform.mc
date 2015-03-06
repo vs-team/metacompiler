@@ -49,11 +49,15 @@ split (l;k1;l_m;k2;m;k3;r_m;k4;r;nil) => node l';k2;r';nil
 ------------------------------------
 l;nil insertSort k r => l;$k;r;nil
 
+x = k
+----------------------------------------
+l;$x;xs insertSort k r => l;$k;r;$x;xs
+
 x > k
 ----------------------------------------
 l;$x;xs insertSort k r => l;$k;r;$x;xs
 
-x <= k
+x < k
 xs insertSort k r => xs'
 ------------------------------------
 l;$x;xs insertSort k r => l;$x;xs'
@@ -77,7 +81,11 @@ merge l' ($x;xs) => l''
 -------------------------------
 k insertInto l;$x;xs => l''
 
-x <= k
+x = k
+------------------------------------
+k insertInto l;$x;xs => l;$k;xs
+
+x < k
 k insertInto xs => xs'
 ------------------------------------
 k insertInto l;$x;xs => l;$x;xs'
