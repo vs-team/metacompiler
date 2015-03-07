@@ -73,6 +73,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Content\C minus minus\transform.mc" />
     <None Include="Content\trees 234\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
