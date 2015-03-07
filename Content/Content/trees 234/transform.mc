@@ -1,8 +1,9 @@
 ﻿Keyword [] "yes" [] Priority 0 Class BoolExpr
 Keyword [] "no" [] Priority 0 Class BoolExpr
 
-Keyword [] "$" [<<int>>] Priority 300 Class ListElem
-Keyword [] "$s" [<<string>>] Priority 300 Class ListElem
+Keyword [] "$i" [<<int>>] Priority 300 Class Value
+Keyword [] "$s" [<<string>>] Priority 300 Class Key
+Keyword [] "entry" [Key Value] Priority 200 Class ListElem
 
 Keyword [] "nil" [] Priority 0 Class List
 Keyword [ListElem] ";" [List] Priority 100 Class List
@@ -13,19 +14,18 @@ Keyword [] "node" [List] Priority 0 Class BTree
 Keyword [] "isLeaf" [List] Priority 0 Class Expr
 Keyword [] "split" [List] Priority 0 Class Expr
 Keyword [List] "insertSort" [ListElem BTree] Priority 0 Class Expr
-Keyword [<<int>>] "insertInto" [List] Priority 0 Class Expr
+Keyword [ListElem] "insertInto" [List] Priority 0 Class Expr
 Keyword [] "merge" [BTree List] Priority 0 Class Expr
 
-Keyword [] "generateString" [BTree] Priority 0 Class PrintUtils
 Keyword [] "prettyPrint" [BTree] Priority 0 Class PrintUtils
-Keyword [] "toString" [BTree] Priority 0 Class PrintUtils
 
-Keyword [BTree] "insert" [<<int>>] Priority 0 Class Expr
-Keyword [BTree] "contains" [<<int>>] Priority 0 Class Expr
+Keyword [BTree] "insert" [ListElem] Priority 0 Class Expr
+Keyword [BTree] "contains" [<<string>>] Priority 0 Class Expr
 
 Keyword [] "main" [] Priority 0 Class Expr
 
 BTree is ListElem
+
 
 
 ---------------------------------
@@ -52,20 +52,20 @@ split l;(k1;(l_m;(k2;(m;(k3;(r_m;(k4;(r;nil)))))))) => node l';(k2;(r';nil))
 
 
 ------------------------------------
-l;nil insertSort ($k) r => l;($k;(r;nil))
+l;nil insertSort (entry $s k $i v) r => l;(entry $s k $i v;(r;nil))
 
-x == k
+<< System.String.Compare(x,k,false) >> == 0
 ----------------------------------------
-(l;($x;xs)) insertSort ($k) r => l;($k;(r;($x;xs)))
+(l;(entry $s x $i v1;xs)) insertSort (entry $s k $i v) r => l;(entry $s k $i v;xs)
 
-x > k
+<< System.String.Compare(x,k,false) >> == 1
 ----------------------------------------
-(l;($x;xs)) insertSort ($k) r => l;($k;(r;($x;xs)))
+(l;(entry $s x $i v1;xs)) insertSort (entry $s k $i v) r => l;(entry $s k $i v;(r;(entry $s x $i v1;xs)))
 
-x < k
-xs insertSort ($k) r => xs'
+<< System.String.Compare(x,k,false) >> == -1
+xs insertSort (entry $s k $i v) r => xs'
 ------------------------------------
-(l;($x;xs)) insertSort ($k) r => l;($x;xs')
+(l;(entry $s x $i v1;xs)) insertSort (entry $s k $i v) r => l;(entry $s x $i v1;xs')
 
 
 ---------------------------------------
@@ -80,96 +80,45 @@ merge l' nil => l''
 ---------------------------
 k insertInto l;nil => l''
 
-x > k
-l insert k => l'
-merge l' ($x;xs) => l''
--------------------------------
-k insertInto (l;($x;xs)) => l''
+<< System.String.Compare(x,k,false) >> == 1
+l insert (entry $s k $i v) => l'
+merge l' (entry $s x $i v1;xs) => l''
+---------------------------------------------
+(entry $s k $i v) insertInto (l;(entry $s x $i v1;xs)) => l''
 
-x == k
+<< System.String.Compare(x,k,false) >> == 0
 ------------------------------------
-k insertInto (l;($x;xs)) => l;($k;xs)
+(entry $s k $i v) insertInto (l;(entry $s x $i v1;xs)) => l;(entry $s k $i v;xs)
 
-x < k
-k insertInto xs => xs'
+<< System.String.Compare(x,k,false) >> == -1
+(entry $s k $i v) insertInto xs => xs'
 ------------------------------------
-k insertInto (l;($x;xs)) => l;($x;xs')
+(entry $s k $i v) insertInto (l;(entry $s x $i v1;xs)) => l;(entry $s x $i v1;xs')
 
 
 isLeaf l => yes
-l insertSort ($k) empty => l1
+l insertSort kv empty => l1
 split l1 => res
 -------------------------------
-(node l) insert k => res
+(node l) insert kv => res
 
 isLeaf l => no
-k insertInto l => l'
+kv insertInto l => l'
 split l' => res
--------------------------------
-(node l) insert k => res
+----------------------------------------
+(node l) insert kv => res
 
 ----------------------------------------------
-empty insert k => node (empty;($ k;(empty;nil)))
+empty insert kv => node (empty;(kv;(empty;nil)))
 
 
 
-s := <<"n2 = (" + (k.ToString()) + ")">>
----------------------------------------------------------
-generateString (node l;(k;(r;nil))) => ($s s)
-
-
-s := <<"n3 = (" + (k1.ToString()) + "," + (k2.ToString()) + ")">>
------------------------------------------------------------
-generateString (node l;(k1;(m;(k2;(r;nil))))) => ($s s)
-
-
-s := <<"n4 = (" + (k1.ToString()) + "," + (k2.ToString()) + "," + (k3.ToString()) + ")">>
------------------------------------------------------------
-generateString (node l;(k1;(l_m;(k2;(r_m;(k3;(r;nil))))))) => ($s s)
-
-
-generateString (node l;(k;(r;nil))) => ($s s1)
-toString l => ($s s2)
-toString r => ($s s3)
-s := << s1 + "\n--------\n" + s2 + "  " + s3 >>
--------------------------------------------------------
-toString (node l;(k;(r;nil))) => ($s s)
-
-generateString (node l;(k1;(m;(k2;(r;nil))))) => ($s s1)
-toString l => ($s s2)
-toString m => ($s s3)
-toString r => ($s s4)
-s := << s1 + "\n--------\n" + s2 + "  " + s3 + "  " + s4 >>
--------------------------------------------------------
-toString (node l;(k1;(m;(k2;(r;nil))))) => ($s s)
-
-generateString (node l;(k1;(l_m;(k2;(r_m;(k3;(r;nil))))))) => ($s s1)
-toString l => ($s s2)
-toString l_m => ($s s3)
-toString r_m => ($s s4)
-toString r => ($s s5)
-s := << s1 + "\n--------\n" + s2 + "  " + s3 + "  " + s4 + "  " + s5 >>
--------------------------------------------------------
-toString (node l;(k1;(l_m;(k2;(r_m;(k3;(r;nil))))))) => ($s s)
-
-
------------------------------
-toString empty => ($s "()")
-
-
-toString n => ($s s)
-output := <<EntryPoint.Print(s)>>
-----------------------------------------------
-prettyPrint n => empty
-
-
-empty insert 10 => t1
-t1 insert 5 => t2
-t2 insert 7 => t2b
-t2b insert 15 => t3
-t3 insert 1 => t4
-t4 insert 16 => t
-prettyPrint t4 => empty
+empty insert (entry $s "i" $i 10) => t1
+t1 insert (entry $s "b" $i 5) => t2
+t2 insert (entry $s "l" $i 7) => t2b
+t2b insert (entry $s "k" $i 15) => t3
+t3 insert (entry $s "a" $i 1) => t4
+t4 insert (entry $s "w" $i 16) => t
 --------------------------
-main => empty
+main => t
 
