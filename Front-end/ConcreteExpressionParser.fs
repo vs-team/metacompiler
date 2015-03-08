@@ -12,6 +12,7 @@ let mutable debug_rules = false
 
 let rec program() = 
   p{
+    let! imps = import_stmts
     let! ks = keywords
     let newContext = 
           {
@@ -20,6 +21,7 @@ let rec program() =
             CustomKeywordsByPrefix    = ks |> List.sortBy (fun k -> k.Name) |> List.rev
             CustomKeywordsMap         = ks |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
             InheritanceRelationships  = Map.empty
+            ImportedModules           = imps
           }
     do! setContext newContext
     let! inheritance = inheritanceRelationships()
@@ -365,6 +367,26 @@ and expr() =
 
   base_expr Bracket.Implicit
 
+and import_stmt() =
+    p {
+        let! bs = blank_space()
+        let! w = word "import"
+        let! bs = blank_space()
+        let! imported_type = longIdentifier()
+        return imported_type
+    }
+
+and import_stmts =
+    p{
+        let! statement = import_stmt() + p {return ()}
+        match statement with
+        | First stmt ->
+            let! nl = empty_lines()
+            let! stmts = import_stmts
+            return stmt :: stmts
+        | Second _ ->
+            return []
+    }
 and end_clauses depth =
   p{
     do! require_indentation depth

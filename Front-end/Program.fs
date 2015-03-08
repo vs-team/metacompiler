@@ -83,7 +83,7 @@ let main argv =
       "Lambda calculus", @"(\$""y"" -> $""y"" | \$""y"" -> $""y"") | ($""x"" | $""z"")"
       "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
 
-      "Casanova semantics", @"runTest1"
+//      "Casanova semantics", @"runTest1"
     ]
 
   for name,input in samples 

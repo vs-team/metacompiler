@@ -234,7 +234,6 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
         sprintf "%sif(%s) { %svar result = %s;%syield return result; %s }" newLine creationConstraints newLine newElement newLine (generate_instructions debugPosition originalFilePath ctxt xs)
       else
         sprintf "%svar result = %s;%syield return result; %s" newLine newElement newLine (generate_instructions debugPosition originalFilePath ctxt xs)
-  
 
 let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) (self:string) (prefix:List<Instruction>) 
                   (ctxt:ConcreteExpressionContext) (typeConstraint:Option<KeywordArgument>) =
@@ -501,6 +500,7 @@ let generateCode (originalFilePath:string) (program_name:string)
                  (rules:BasicExpression<Keyword, Var, Literal, Position, Unit>)
                  (program:BasicExpression<Keyword, Var, Literal, Position, Unit>)
                  (ctxt:ConcreteExpressionContext) =
+  
   match rules with
   | Application(Implicit, Keyword(Sequence, _, _) :: rules, pos, _) ->
     let mutable classes = Map.empty
@@ -545,9 +545,17 @@ let generateCode (originalFilePath:string) (program_name:string)
       } |> Seq.reduce (+)
     let run_methods =
       all_method_paths |> Seq.map (fun p -> sprintf "IEnumerable<IRunnable> Run%s();\n" (p.ToString())) |> Seq.reduce (+)
+    let imports = 
+        if ctxt.ImportedModules.Length > 0 then
+            (ctxt.ImportedModules
+                    |> List.map (fun x -> sprintf "using %s;\n" x)
+                    |> List.reduce (fun x y -> x + y))
+        else
+            ""
     let prelude = sprintf "using System.Collections.Generic;\nusing System.Linq;\nnamespace %s {\n %s\n public interface IRunnable { %s }" (program_name.Replace(" ", "_")) extensions run_methods
     let main = sprintf "public class EntryPoint {\n static public int Print(object s) { System.Console.WriteLine(s.ToString()); return 0; } \n static public int Sleep(float s) { int t = (int)(s * 1000.0f); System.Threading.Thread.Sleep(t); return 0; } \nstatic public IEnumerable<IRunnable> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" (create_element ctxt programTyped |> fst)
     [
+      yield imports
       yield prelude
       yield "\n\n\n"
       yield interfacesCode

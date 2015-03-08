@@ -79,6 +79,7 @@ and ConcreteExpressionContext =
     CustomKeywordsByPrefix : List<CustomKeyword>
     CustomKeywordsMap : Map<string,CustomKeyword>    
     InheritanceRelationships : Map<string, Set<string>>
+    ImportedModules : List<string>
   } with
       member this.AllInheritanceRelationships =
         seq{
@@ -103,6 +104,7 @@ and ConcreteExpressionContext =
           CustomKeywordsByPrefix   = []
           CustomKeywordsMap        = Map.empty
           InheritanceRelationships = Map.empty
+          ImportedModules          = []
         }
       static member CSharp =
         let ks = 
@@ -186,6 +188,7 @@ and ConcreteExpressionContext =
           CustomKeywordsByPrefix = ks |> List.sortBy (fun k -> k.Name) |> List.rev
           CustomKeywordsMap = ks |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
           InheritanceRelationships = Map.empty
+          ImportedModules          = []
         }
 
 and Var = { Name : string }
