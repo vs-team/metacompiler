@@ -113,8 +113,8 @@ empty insert kv => node (empty;(kv;(empty;nil)))
 
 
 
-empty insert (entry $s "i" $i 10) => t1
-t1 insert (entry $s "b" $i 5) => t2
+empty insert (entry $s "aab" $i 10) => t1
+t1 insert (entry $s "bce" $i 5) => t2
 t2 insert (entry $s "l" $i 7) => t2b
 t2b insert (entry $s "k" $i 15) => t3
 t3 insert (entry $s "a" $i 1) => t4

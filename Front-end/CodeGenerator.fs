@@ -87,9 +87,12 @@ let rec create_element (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keywo
     | Application(Regular,(Keyword(Custom k, _, ti)) :: es, pos, _)
     | Application(Implicit,(Keyword(Custom k, _, ti)) :: es, pos, _) ->
       let actualKeyword = ctxt.CustomKeywordsMap.[k]
-      let args,cargs = es |> Seq.mapi (fun i e -> create_element' actualKeyword.Arguments.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
-      //do printfn "Inner creation of %A with expectedType %A" (k, args) expectedType
-      sprintf "%s.Create(%s)" !k args, cargs
+      if es.Length = actualKeyword.Arguments.Length then
+        let args,cargs = es |> Seq.mapi (fun i e -> create_element' actualKeyword.Arguments.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
+        //do printfn "Inner creation of %A with expectedType %A" (k, args) expectedType
+        sprintf "%s.Create(%s)" !k args, cargs
+      else
+        failwithf "Invalid number of keyword arguments @ %A" pos
     | Extension(v:Var, _, ti) ->
       match expectedType with
       | Native t ->
