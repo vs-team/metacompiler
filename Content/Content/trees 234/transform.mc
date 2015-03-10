@@ -23,7 +23,7 @@ Keyword [] "prettyPrint" [BTree] Priority 0 Class PrintUtils
 
 Keyword [BTree] "insert" [ListElem] Priority 0 Class Expr
 Keyword [BTree] "find" [Key] Priority 0 Class Expr
-Keyword [] "lookup" [ListElem Key] Priority 0 Class Expr
+Keyword [] "lookup" [BTree Key] Priority -10 Class Expr
 
 Keyword [BTree] "contains" [<<string>>] Priority 0 Class Expr
 
@@ -117,105 +117,65 @@ split l' => res
 empty insert kv => node (empty;(kv;(empty;nil)))
 
 
-------------------------
-empty find k => nothing
 
 
 debug0 := <<EntryPoint.Print("Searching for key")>>
-debug0a := <<EntryPoint.Print(l)>>
-debug0b := <<EntryPoint.Print(k)>>
-lookup l k => kv
+lookup tree k => kv
 debug1 := <<EntryPoint.Print("Done!")>>
 ------------------------
-(node l) find k => kv
+tree find k => kv
+
+----------------------------
+lookup empty key => nothing
 
 
-------------------------
-lookup l key => nothing
-
-debug0 := <<EntryPoint.Print(key)>>
-debug1 := <<EntryPoint.Print(k)>>
 << System.String.Compare(key,k,false) >> == 0
----------------------------------------------------------------
-lookup (l;(entry $s k $i v;(r;nil))) ($s key) => entry $s k $i v
+--------------------------------------------------------------------
+lookup node(l;(entry $s k $i v;(r;nil))) ($s key) => entry $s k $i v
 
 << System.String.Compare(key,k,false) >> == -1
-lookup l ($s key) => kv
----------------------------------------------------------
-lookup l;(entry $s k $i v;(r;nil)) ($s key) => kv
+lookup l ($s key) => kv 
+--------------------------------------------------------------------
+lookup node(l;(entry $s k $i v;(r;nil))) ($s key) => kv
 
 << System.String.Compare(key,k,false) >> == 1
-lookup r ($s key) => kv
----------------------------------------------------------
-lookup l;(entry $s k $i v;(r;nil)) ($s key) => kv
+lookup r ($s key) => kv 
+--------------------------------------------------------------------
+lookup node(l;(entry $s k $i v;(r;nil))) ($s key) => kv
 
 << System.String.Compare(key,k1,false) >> == 0
-------------------------------------------------------------------------------------------
-lookup l;(entry $s k1 $i v1;(m;(entry $s k2 $i v2;(r;nil)))) ($s key) => entry $s k1 $i v1
+--------------------------------------------------------------------
+lookup node(l;(entry $s k1 $i v1;(m;(k2;(r;nil))))) ($s key) => entry $s k1 $i v1
 
 << System.String.Compare(key,k2,false) >> == 0
-------------------------------------------------------------------------------------------
-lookup l;(entry $s k1 $i v1;(m;(entry $s k2 $i v2;(r;nil)))) ($s key) => entry $s k2 $i v2
+--------------------------------------------------------------------
+lookup node(l;(k1;(m;(entry $s k2 $i v2;(r;nil))))) ($s key) => entry $s k2 $i v2
 
 << System.String.Compare(key,k1,false) >> == -1
 lookup l ($s key) => kv
----------------------------------------------------------------------------
-lookup l;(entry $s k1 $i v1;(m;(entry $s k2 $i v2;(r;nil)))) ($s key) => kv
+--------------------------------------------------------------------
+lookup node(l;(entry $s k1 $i v1;(m;(entry $s k2 $i v2;(r;nil))))) ($s key) => kv
 
 << System.String.Compare(key,k1,false) >> == 1
 << System.String.Compare(key,k2,false) >> == -1
 lookup m ($s key) => kv
----------------------------------------------------------------------------
-lookup l;(entry $s k1 $i v1;(m;(entry $s k2 $i v2;(r;nil)))) ($s key) => kv
+--------------------------------------------------------------------
+lookup node(l;(entry $s k1 $i v1;(m;(entry $s k2 $i v2;(r;nil))))) ($s key) => kv
 
 << System.String.Compare(key,k2,false) >> == 1
 lookup r ($s key) => kv
----------------------------------------------------------------------------
-lookup l;(entry $s k1 $i v1;(m;(entry $s k2 $i v2;(r;nil)))) ($s key) => kv
-
-
-<< System.String.Compare(key,k1,false) >> == 0
---------------------------------------------------------------------------------------------------
-lookup l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil)))))) ($s key) => entry $s k1 $i v1
-
-<< System.String.Compare(key,k2,false) >> == 0
---------------------------------------------------------------------------------------------------
-lookup l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil)))))) ($s key) => entry $s k2 $i v2
-
-<< System.String.Compare(key,k3,false) >> == 0
---------------------------------------------------------------------------------------------------
-lookup l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil)))))) ($s key) => entry $s k3 $i v3
-
-<< System.String.Compare(key,k1,false) >> == -1
-lookup l ($s key) => kv
---------------------------------------------------------------------------------------------------
-lookup l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil)))))) ($s key) => kv
-
-<< System.String.Compare(key,k1,false) >> == 1
-<< System.String.Compare(key,k2,false) >> == -1
-lookup l_m ($s key) => kv
---------------------------------------------------------------------------------------------------
-lookup l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil)))))) ($s key) => kv
-
-<< System.String.Compare(key,k2,false) >> == 1
-<< System.String.Compare(key,k3,false) >> == -1
-lookup r_m ($s key) => kv
---------------------------------------------------------------------------------------------------
-lookup l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil)))))) ($s key) => kv
-
-<< System.String.Compare(key,k3,false) >> == 1
-lookup r ($s key) => kv
---------------------------------------------------------------------------------------------------
-lookup l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil)))))) ($s key) => kv
+--------------------------------------------------------------------
+lookup node(l;(entry $s k1 $i v1;(m;(entry $s k2 $i v2;(r;nil))))) ($s key) => kv
 
 
 empty insert (entry $s "aab" $i 10) => t1
 t1 insert (entry $s "bce" $i 5) => t2
 t2 insert (entry $s "l" $i 7) => t2b
 t2b insert (entry $s "k" $i 15) => t3
-t3 insert (entry $s "a" $i 1) => t4
-t4 insert (entry $s "w" $i 16) => t
-//t1 find ($s "aab") => kv
+//t3 insert (entry $s "a" $i 1) => t4
+//t4 insert (entry $s "w" $i 16) => t
+debug0 := <<EntryPoint.Print(t3)>>
+t3 find ($s "x") => kv
 --------------------------
-main => t4
+main => kv
 
