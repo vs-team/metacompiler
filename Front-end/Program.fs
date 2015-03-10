@@ -75,6 +75,7 @@ let main argv =
   let samples = 
     [
 //      "Generic lists", @"runTest1"
+      "Trees 234", @"main"
 
       "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
       "Lists", "0;(1;(2;(3;nil))) contains -1"

@@ -147,7 +147,6 @@ public override int GetHashCode() {
 
 public class EntryPoint {
  static public int Print(object s) { System.Console.WriteLine(s.ToString()); return 0; } 
- static public int Sleep(float s) { int t = (int)(s * 1000.0f); System.Threading.Thread.Sleep(t); return 0; } 
 static public IEnumerable<IRunnable> Run(bool printInput)
 {
  #line 1 "input"
