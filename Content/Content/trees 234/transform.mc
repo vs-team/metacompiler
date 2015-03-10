@@ -217,5 +217,5 @@ t3 insert (entry $s "a" $i 1) => t4
 t4 insert (entry $s "w" $i 16) => t
 //t1 find ($s "aab") => kv
 --------------------------
-main => kv
+main => t4
 
