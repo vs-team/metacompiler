@@ -119,9 +119,7 @@ empty insert kv => node (empty;(kv;(empty;nil)))
 
 
 
-debug0 := <<EntryPoint.Print("Searching for key")>>
 lookup tree k => kv
-debug1 := <<EntryPoint.Print("Done!")>>
 ------------------------
 tree find k => kv
 
@@ -167,15 +165,53 @@ lookup r ($s key) => kv
 --------------------------------------------------------------------
 lookup node(l;(entry $s k1 $i v1;(m;(entry $s k2 $i v2;(r;nil))))) ($s key) => kv
 
+<< System.String.Compare(key,k1,false) >> == 0
+--------------------------------------------------------------------
+lookup node(l;(entry $s k1 $i v1;(l_m;(k2;(r_m;(k3;(r;nil))))))) ($s key) => entry $s k1 $i v1
+
+<< System.String.Compare(key,k2,false) >> == 0
+--------------------------------------------------------------------
+lookup node(l;(k1;(l_m;(entry $s k2 $i v2;(r_m;(k3;(r;nil))))))) ($s key) => entry $s k2 $i v2
+
+<< System.String.Compare(key,k3,false) >> == 0
+--------------------------------------------------------------------
+lookup node(l;(k1;(l_m;(k2;(r_m;(entry $s k3 $i v3;(r;nil))))))) ($s key) => entry $s k3 $i v3
+
+<< System.String.Compare(key,k1,false) >> == -1
+lookup l ($s key) => kv
+-----------------------------------------------------------------------------------------------
+lookup node(l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil))))))) ($s key) => kv
+
+<< System.String.Compare(key,k1,false) >> == 1
+<< System.String.Compare(key,k2,false) >> == -1
+lookup l_m ($s key) => kv
+-----------------------------------------------------------------------------------------------
+lookup node(l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil))))))) ($s key) => kv
+
+<< System.String.Compare(key,k2,false) >> == 1
+<< System.String.Compare(key,k3,false) >> == -1
+lookup r_m ($s key) => kv
+-----------------------------------------------------------------------------------------------
+lookup node(l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil))))))) ($s key) => kv
+
+<< System.String.Compare(key,k3,false) >> == 1
+lookup r ($s key) => kv
+-----------------------------------------------------------------------------------------------
+lookup node(l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil))))))) ($s key) => kv
+
 
 empty insert (entry $s "aab" $i 10) => t1
 t1 insert (entry $s "bce" $i 5) => t2
 t2 insert (entry $s "l" $i 7) => t2b
 t2b insert (entry $s "k" $i 15) => t3
-//t3 insert (entry $s "a" $i 1) => t4
-//t4 insert (entry $s "w" $i 16) => t
-debug0 := <<EntryPoint.Print(t3)>>
-t3 find ($s "x") => kv
+t3 insert (entry $s "a" $i 1) => t4
+t4 insert (entry $s "w" $i 16) => t5
+t5 insert (entry $s "z" $i 100) => t6
+t6 insert (entry $s "b" $i 3) => t7
+t7 insert (entry $s "ax" $i 1) => t8
+t8 insert (entry $s "c" $i 12) => t9
+finalTree := <<EntryPoint.Print(t9)>>
+t9 find ($s "z") => kv
 --------------------------
 main => kv
 
