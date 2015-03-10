@@ -26,6 +26,11 @@ Keyword [Expr] "/" [Expr] Priority 100 Class Expr
 Keyword [Expr] "&&" [Expr] Priority 100 Class Expr
 Keyword [Expr] "||" [Expr] Priority 100 Class Expr
 Keyword [] "!" [Expr] Priority 100 Class Expr
+Keyword [Expr] "equals" [Expr] Priority 100 Class Expr
+Keyword [Expr] "ls" [Expr] Priority 100 Class Expr
+Keyword [Expr] "leq" [Expr] Priority 100 Class Expr
+Keyword [Expr] "grt" [Expr] Priority 100 Class Expr
+Keyword [Expr] "geq" [Expr] Priority 100 Class Expr
 
 Keyword [] "t_int" [] Priority 500 Class Type
 Keyword [] "t_double" [] Priority 500 Class Type
@@ -37,6 +42,7 @@ Keyword [Id] "=" [Expr] Priority 10 Class Expr
 Keyword [] "then" [] Priority 10 Class Then
 Keyword [] "else" [] Priority 10 Class Else
 Keyword [] "if" [Expr Then Expr Else Expr] Priority 10 Class Expr
+Keyword [] "loop" [Expr Expr] Priority 10 Class Expr
 
 Keyword [] "Yes" [] Priority 100 Class Answer
 Keyword [] "No" [] Priority 100 Class Answer
@@ -85,13 +91,15 @@ M' := <<M.SetItem(k,v)>>
 ($m M) contains k => No
 
 emptyDictionary => M
-sumAssign := $"x" = $b true
-varDecl := variable t_int $"y"
-varAssign1 := $"y" = $i 1 + ($i 5)
-varAssign2 := $"y" = $i 1 + $i 10
-varAssign3 := $"z" = $"y"
-choice := if $"x" then (varDecl ; (varAssign1 ; (varAssign3 ; nop))) else (varDecl ; (varAssign2 ; (varAssign3 ; nop)))
-code := variable t_bool $"x"; ( variable t_int $"z" ; (sumAssign ; (choice ; nop)))
+decl_fact := variable t_int $"fact"
+decl_n := variable t_int $"n"
+decl_j := variable t_int $"j"
+assign1 := $"fact" = $i 1
+assign2 := $"n" = $i 10
+assign3 := $"j" = $i 1
+l_block := ($"fact" = $"fact" * $"j") ; ($"j" = $"j" + $i 1 ; nop)
+l := loop ($"j" leq $"n") l_block
+code := decl_fact ; (decl_n ; (decl_j ; (assign1 ; (assign2 ; (assign3 ; (l ;nop))))))
 program M code => M'
 ---------------------------------------------------------------------
 runProgram => M'
@@ -125,7 +133,6 @@ symbols contains ($name) => No
 eval tables ($name) => evalResult tables' val
 ------------------------------------------------------------------------------------
 eval (symbols nextTable tables) ($name) => evalResult (symbols nextTable tables') val
-
 
 
 eval tables expr1 => evalResult tables' ($i val1)
@@ -201,6 +208,66 @@ boolResult := << !val >>
 --------------------------------------------------------
 eval tables (!expr) => evalResult tables' ($b boolResult)
 
+eval tables expr1 => evalResult tables' val1
+eval tables' expr2 => evalResult tables'' val2
+val1 == val2
+--------------------------------------------------------
+eval tables (expr1 equals expr2) => evalResult tables' ($b true)
+
+eval tables expr1 => evalResult tables' val1
+eval tables' expr2 => evalResult tables'' val2
+val1 != val2
+--------------------------------------------------------
+eval tables (expr1 equals expr2) => evalResult tables' ($b false)
+
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
+boolResult := << val1 < val2 >>
+---------------------------------------------------------
+eval tables (expr1 ls expr2) => evalResult tables' ($b boolResult)
+
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
+boolResult := << val1 <= val2 >>
+---------------------------------------------------------
+eval tables (expr1 leq expr2) => evalResult tables' ($b boolResult)
+
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
+boolResult := << val1 > val2 >>
+---------------------------------------------------------
+eval tables (expr1 grt expr2) => evalResult tables' ($b boolResult)
+
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
+boolResult := << val1 >= val2 >>
+---------------------------------------------------------
+eval tables (expr1 geq expr2) => evalResult tables' ($b boolResult)
+
+eval tables expr1 => evalResult tables' ($d val1)
+eval tables' expr2 => evalResult tables'' ($d val2)
+boolResult := << val1 < val2 >>
+---------------------------------------------------------
+eval tables (expr1 ls expr2) => evalResult tables' ($b boolResult)
+
+eval tables expr1 => evalResult tables' ($d val1)
+eval tables' expr2 => evalResult tables'' ($d val2)
+boolResult := << val1 <= val2 >>
+---------------------------------------------------------
+eval tables (expr1 leq expr2) => evalResult tables' ($b boolResult)
+
+eval tables expr1 => evalResult tables' ($d val1)
+eval tables' expr2 => evalResult tables'' ($d val2)
+boolResult := << val1 > val2 >>
+---------------------------------------------------------
+eval tables (expr1 grt expr2) => evalResult tables' ($b boolResult)
+
+eval tables expr1 => evalResult tables' ($d val1)
+eval tables' expr2 => evalResult tables'' ($d val2)
+boolResult := << val1 >= val2 >>
+---------------------------------------------------------
+eval tables (expr1 geq expr2) => evalResult tables' ($b boolResult)
+
 
 symbols defineVariable id => symbols'
 ---------------------------------------------------------------------------------------------
@@ -240,6 +307,17 @@ emptyDictionary => table
 eval (table nextTable tables) expr2 => evalResult (table' nextTable tables'') val
 ------------------------------------------------------------------------------------
 eval tables (if condition then expr1 else expr2) => evalResult tables'' val
+
+eval tables condition => evalResult tables' ($b true)
+emptyDictionary => table
+eval (table nextTable tables) expr => evalResult (table' nextTable tables'') val
+eval tables'' (loop condition expr) => res
+---------------------------------------------------
+eval tables (loop condition expr) => res
+
+eval tables condition => evalResult tables' ($b false)
+-----------------------------------------------------------
+eval tables (loop condition expr) => evalResult tables' $void
 
 --------------------------------------------------
 eval tables nop => evalResult tables $void
