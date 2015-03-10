@@ -85,7 +85,7 @@ let main argv =
       "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
 
       "Casanova semantics", @"runTest1"
-      //"Cmm", @"runProgram"
+      "Cmm", @"runProgram"
     ]
 
   for name,input in samples 

@@ -8,6 +8,7 @@ Keyword [SymbolTable] "nextTable" [TableList] Priority 10 Class TableList
 Keyword [] "nilTable" [] Priority 500 Class TableList
 
 Keyword [SymbolTable] "defineVariable" [Id] Priority 300 Class MemoryOp
+Keyword [] "updateTables" [TableList TableList Id Expr] Priority 0 Class MemoryOp
 
 Keyword [] "$i" [<<int>>] Priority 300 Class Value
 Keyword [] "$d" [<<double>>] Priority 300 Class Value
@@ -43,7 +44,7 @@ Keyword [] "No" [] Priority 100 Class Answer
 Keyword [Expr] ";" [ExprList] Priority 5 Class ExprList
 Keyword [] "nop" [] Priority 500 Class ExprList
 
-Keyword [] "eval" [TableList TableList Expr] Priority 0 Class RuntimeOp
+Keyword [] "eval" [TableList Expr] Priority 0 Class RuntimeOp
 Keyword [] "evalResult" [TableList Value] Priority 0 Class EvaluationResult
 
 Keyword [] "error" [<<string>>] Priority 300 Class Error
@@ -86,7 +87,7 @@ M' := <<M.SetItem(k,v)>>
 emptyDictionary => M
 sumAssign := $"x" = $b true
 varDecl := variable t_int $"y"
-varAssign1 := $"y" = $i 1 + $i 5
+varAssign1 := $"y" = $i 1 + ($i 5)
 varAssign2 := $"y" = $i 1 + $i 10
 varAssign3 := $"z" = $"y"
 choice := if $"x" then (varDecl ; (varAssign1 ; (varAssign3 ; nop))) else (varDecl ; (varAssign2 ; (varAssign3 ; nop)))
@@ -97,114 +98,113 @@ runProgram => M'
 
 
 
-eval (memory nextTable nilTable) (memory nextTable nilTable) code => evalResult (memory' nextTable nilTable) $void
-debug0 := <<EntryPoint.Print("Done!")>>
+eval (memory nextTable nilTable) code => evalResult (memory' nextTable nilTable) $void
 -----------------------------------------------------------------------------------------
 program memory code => memory'
 
 
 ------------------------------------------------
-eval globals tables ($i v) => evalResult tables ($i v)
+eval tables ($i v) => evalResult tables ($i v)
 
 -----------------------------------------------
-eval globals tables ($d v) => evalResult tables ($d v)
+eval tables ($d v) => evalResult tables ($d v)
 
 -----------------------------------------------
-eval globals tables ($s v) => evalResult tables ($s v)
+eval tables ($s v) => evalResult tables ($s v)
 
 -----------------------------------------------
-eval globals tables ($b v) => evalResult tables ($b v)
+eval tables ($b v) => evalResult tables ($b v)
 
 symbols contains ($name) => Yes
 symbols lookup ($name) => val
 ------------------------------------------------------------------------------------
-eval (symbols nextTable tables) ts ($name) => evalResult (symbols nextTable tables) val
+eval (symbols nextTable tables) ($name) => evalResult (symbols nextTable tables) val
 
 
 symbols contains ($name) => No
-eval tables ts ($name) => evalResult tables' val
+eval tables ($name) => evalResult tables' val
 ------------------------------------------------------------------------------------
-eval (symbols nextTable tables) ts ($name) => evalResult (symbols nextTable tables') val
+eval (symbols nextTable tables) ($name) => evalResult (symbols nextTable tables') val
 
 
 
-eval globals tables expr1 => evalResult tables' ($i val1)
-eval globals tables' expr2 => evalResult tables'' ($i val2)
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
 arithmeticResult := <<val1 + val2>>
 ----------------------------------------------------------------------
-eval globals tables expr1 + expr2 => evalResult tables'' ($i arithmeticResult)
+eval tables expr1 + expr2 => evalResult tables'' ($i arithmeticResult)
 
-eval globals tables expr1 => evalResult tables' ($i val1)
-eval globals tables' expr2 => evalResult tables'' ($i val2)
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
 arithmeticResult := <<val1 - val2>>
 ----------------------------------------------------------------------
-eval globals tables expr1 - expr2 => evalResult tables'' ($i arithmeticResult)
+eval tables expr1 - expr2 => evalResult tables'' ($i arithmeticResult)
 
-eval globals tables expr1 => evalResult tables' ($i val1)
-eval globals tables' expr2 => evalResult tables'' ($i val2)
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
 arithmeticResult := <<val1 * val2>>
 ----------------------------------------------------------------------
-eval globals tables expr1 * expr2 => evalResult tables'' ($i arithmeticResult)
+eval tables expr1 * expr2 => evalResult tables'' ($i arithmeticResult)
 
-eval globals tables expr1 => evalResult tables' ($i val1)
-eval globals tables' expr2 => evalResult tables'' ($i val2)
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
 arithmeticResult := <<val1 / val2>>
 ----------------------------------------------------------------------
-eval globals tables expr1 / expr2 => evalResult tables'' ($i arithmeticResult)
+eval tables expr1 / expr2 => evalResult tables'' ($i arithmeticResult)
 
-eval globals tables expr1 => evalResult tables' ($d val1)
-eval globals tables' expr2 => evalResult tables'' ($d val2)
+eval tables expr1 => evalResult tables' ($d val1)
+eval tables' expr2 => evalResult tables'' ($d val2)
 arithmeticResult := <<val1 + val2>>
 ----------------------------------------------------------------------
-eval globals tables expr1 + expr2 => evalResult tables'' ($d arithmeticResult)
+eval tables expr1 + expr2 => evalResult tables'' ($d arithmeticResult)
 
-eval globals tables expr1 => evalResult tables' ($d val1)
-eval globals tables' expr2 => evalResult tables'' ($d val2)
+eval tables expr1 => evalResult tables' ($d val1)
+eval tables' expr2 => evalResult tables'' ($d val2)
 arithmeticResult := <<val1 - val2>>
 ----------------------------------------------------------------------
-eval globals tables expr1 - expr2 => evalResult tables'' ($d arithmeticResult)
+eval tables expr1 - expr2 => evalResult tables'' ($d arithmeticResult)
 
-eval globals tables expr1 => evalResult tables' ($d val1)
-eval globals tables' expr2 => evalResult tables'' ($d val2)
+eval tables expr1 => evalResult tables' ($d val1)
+eval tables' expr2 => evalResult tables'' ($d val2)
 arithmeticResult := <<val1 * val2>>
 ----------------------------------------------------------------------
-eval globals tables expr1 * expr2 => evalResult tables'' ($d arithmeticResult)
+eval tables expr1 * expr2 => evalResult tables'' ($d arithmeticResult)
 
-eval globals tables expr1 => evalResult tables' ($d val1)
-eval globals tables' expr2 => evalResult tables'' ($d val2)
+eval tables expr1 => evalResult tables' ($d val1)
+eval tables' expr2 => evalResult tables'' ($d val2)
 arithmeticResult := <<val1 / val2>>
 ----------------------------------------------------------------------
-eval globals tables expr1 / expr2 => evalResult tables'' ($d arithmeticResult)
+eval tables expr1 / expr2 => evalResult tables'' ($d arithmeticResult)
 
-eval globals tables expr1 => evalResult tables' ($s val1)
-eval globals tables' expr2 => evalResult tables'' ($s val2)
+eval tables expr1 => evalResult tables' ($s val1)
+eval tables' expr2 => evalResult tables'' ($s val2)
 arithmeticResult := <<val1 + val2>>
 ----------------------------------------------------------------------
-eval globals tables expr1 + expr2 => evalResult tables'' ($s arithmeticResult)
+eval tables expr1 + expr2 => evalResult tables'' ($s arithmeticResult)
 
 
-eval globals tables expr1 => evalResult tables' ($b val1)
-eval globals tables' expr2 => evalResult tables'' ($b val2)
+eval tables expr1 => evalResult tables' ($b val1)
+eval tables' expr2 => evalResult tables'' ($b val2)
 boolResult := <<val1 && val2>>
 ----------------------------------------------------------------------
-eval globals tables expr1 && expr2 => evalResult tables'' ($b boolResult)
+eval tables expr1 && expr2 => evalResult tables'' ($b boolResult)
 
-eval globals tables expr1 => evalResult tables' ($b val1)
-eval globals tables' expr2 => evalResult tables'' ($b val2)
+eval tables expr1 => evalResult tables' ($b val1)
+eval tables' expr2 => evalResult tables'' ($b val2)
 boolResult := <<val1 || val2>>
 ----------------------------------------------------------------------
-eval globals tables expr1 || expr2 => evalResult tables'' ($b boolResult)
+eval tables expr1 || expr2 => evalResult tables'' ($b boolResult)
 
 
-eval globals tables expr => evalResult tables' ($b val)
+eval tables expr => evalResult tables' ($b val)
 boolResult := << !val >>
 --------------------------------------------------------
-eval globals tables (!expr) => evalResult tables' ($b boolResult)
+eval tables (!expr) => evalResult tables' ($b boolResult)
 
 
 symbols defineVariable id => symbols'
 ---------------------------------------------------------------------------------------------
-eval globals (symbols nextTable tables) (variable t id) => evalResult (symbols' nextTable tables) $void
+eval (symbols nextTable tables) (variable t id) => evalResult (symbols' nextTable tables) $void
 
 
   symbols add id $void => symbols'
@@ -213,36 +213,40 @@ eval globals (symbols nextTable tables) (variable t id) => evalResult (symbols' 
 
 
 symbols contains id => Yes
-eval globals (symbols nextTable tables) expr => evalResult (symbols' nextTable tables') val
-symbols' add id val => symbols''
----------------------------------------------------------------------------------------------
-eval globals (symbols nextTable tables) (id = expr) => evalResult (symbols'' nextTable tables) $void
+eval globals expr => evalResult globals' val
+symbols add id val => symbols'
+-------------------------------------------------------------------------------------------------
+updateTables globals (symbols nextTable tables) id expr => evalResult (symbols' nextTable tables) $void 
 
 symbols contains id => No
-eval globals tables (id = expr) => evalResult tables' $void
---------------------------------------------------------------------------------------------
-eval globals (symbols nextTable tables) (id = expr) => evalResult (symbols nextTable tables') $void
+updateTables globals tables id expr => evalResult tables' $void
+-------------------------------------------------------------------------------------------------
+updateTables globals (symbols nextTable tables) id expr => evalResult (symbols nextTable tables') $void
 
 
-eval globals tables condition => evalResult tables' ($b true)
+updateTables tables tables id expr => res
+----------------------------------------
+eval tables (id = expr) => res
+
+
+eval tables condition => evalResult tables' ($b true)
 emptyDictionary => table
-eval globals (table nextTable tables) expr1 => evalResult (table' nextTable tables'') val
+eval (table nextTable tables) expr1 => evalResult (table' nextTable tables'') val
 ------------------------------------------------------------------------------------
-eval globals tables (if condition then expr1 else expr2) => evalResult tables'' val
+eval tables (if condition then expr1 else expr2) => evalResult tables'' val
 
-eval globals tables condition => evalResult tables' ($b false)
+eval tables condition => evalResult tables' ($b false)
 emptyDictionary => table
-eval globals (table nextTable tables) expr2 => evalResult (table' nextTable tables'') val
+eval (table nextTable tables) expr2 => evalResult (table' nextTable tables'') val
 ------------------------------------------------------------------------------------
-eval globals tables (if condition then expr1 else expr2) => evalResult tables'' val
+eval tables (if condition then expr1 else expr2) => evalResult tables'' val
 
 --------------------------------------------------
-eval globals tables nop => evalResult tables $void
+eval tables nop => evalResult tables $void
 
-eval globals tables a => evalResult tables' $void
+eval tables a => evalResult tables' $void
 tables1 := tables'
-debug1 := <<EntryPoint.Print(tables1)>>
-eval tables' tables' b => res
+eval tables' b => res
 ----------------------------------------
-eval globals tables (a;b) => res
+eval tables (a;b) => res
 
