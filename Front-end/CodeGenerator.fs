@@ -213,12 +213,16 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
         | GreaterOrEqual -> "", ">=", "" 
         | SmallerThan -> "", "<", "" 
         | SmallerOrEqual -> "", "<=", "" 
+        | Divisible -> "", "%", "== 0" 
+        | NotDivisible -> "", "%", "!= 0" 
         | _ -> failwith "Unsupported comparison operator %s @ %A" comparison expr1.DebugInformation
-      if creationConstraints.IsEmpty |> not then
-        let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
-        sprintf "%sif(%s) { %sif(%s%s%s%s%s) { %s } }" newLine creationConstraints newLine preComparison newElement1 inlineComparison newElement2 postComparison (generate_instructions debugPosition originalFilePath  ctxt xs)
-      else 
-        sprintf "%sif(%s%s%s%s%s) { %s }" newLine preComparison newElement1 inlineComparison newElement2 postComparison (generate_instructions debugPosition originalFilePath  ctxt xs)
+      let res =
+        if creationConstraints.IsEmpty |> not then
+          let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
+          sprintf "%sif(%s) { %sif(%s%s%s%s%s) { %s } }" newLine creationConstraints newLine preComparison newElement1 inlineComparison newElement2 postComparison (generate_instructions debugPosition originalFilePath  ctxt xs)
+        else 
+          sprintf "%sif(%s%s%s%s%s) { %s }" newLine preComparison newElement1 inlineComparison newElement2 postComparison (generate_instructions debugPosition originalFilePath  ctxt xs)
+      res
     | Iterate(var_name, tmp_var_name, expr, path) ->
       let newElement, creationConstraints = create_element ctxt expr
       if creationConstraints.IsEmpty |> not then
@@ -331,7 +335,7 @@ type Rule = {
           let o',tmp_id' = matchCast (tmp_id+2) c_o (sprintf "tmp_%d" tmp_id) [] ctxt None
           o <- o @ o'
           tmp_id <- tmp_id'
-        | Equals | NotEquals | GreaterThan | GreaterOrEqual | SmallerThan | SmallerOrEqual -> 
+        | Equals | NotEquals | Divisible | NotDivisible | GreaterThan | GreaterOrEqual | SmallerThan | SmallerOrEqual -> 
           o <- o @ [Compare(k, c_i, c_o)]
         | DefinedAs -> 
           match c_i with
@@ -467,6 +471,8 @@ let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position, Unit>) (rul
               | Application(_, Keyword(GreaterOrEqual, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield GreaterOrEqual, c_i, c_o
               | Application(_, Keyword(SmallerThan, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield SmallerThan, c_i, c_o
               | Application(_, Keyword(SmallerOrEqual, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield SmallerOrEqual, c_i, c_o
+              | Application(_, Keyword(Divisible, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield Divisible, c_i, c_o
+              | Application(_, Keyword(NotDivisible, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield NotDivisible, c_i, c_o
               | _ -> failwithf "Unexpected clause @ %A" c.DebugInformation
           ] 
         Output   = output

@@ -976,145 +976,145 @@ yield return result;  } } } } } } }
 
   
  { 
- #line 227 "Content\Casanova semantics\transform.mc"
+ #line 226 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var lv = tmp_0.P3; var tmp_1 = tmp_0.P4 as _opDivision; 
- #line 227 "Content\Casanova semantics\transform.mc"
+ #line 226 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var e1 = tmp_1.P1; var e2 = tmp_1.P2; 
- #line 227 "Content\Casanova semantics\transform.mc"
+ #line 226 "Content\Casanova semantics\transform.mc"
 if(M is Locals && lv is Locals && e1 is Expr) { 
- #line 227 "Content\Casanova semantics\transform.mc"
+ #line 226 "Content\Casanova semantics\transform.mc"
 var tmp_3 = eval.Create(dt, M as Locals, lv as Locals, e1 as Expr);
- #line 227 "Content\Casanova semantics\transform.mc"
+ #line 226 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_2 in tmp_3.Run3_()) { var tmp_4 = tmp_2 as _opDollari; 
- #line 227 "Content\Casanova semantics\transform.mc"
+ #line 226 "Content\Casanova semantics\transform.mc"
 if (tmp_4 != null) { var res1 = tmp_4.P1; 
- #line 227 "Content\Casanova semantics\transform.mc"
+ #line 226 "Content\Casanova semantics\transform.mc"
 if(M is Locals && lv is Locals && e2 is Expr) { 
- #line 227 "Content\Casanova semantics\transform.mc"
+ #line 226 "Content\Casanova semantics\transform.mc"
 var tmp_6 = eval.Create(dt, M as Locals, lv as Locals, e2 as Expr);
- #line 227 "Content\Casanova semantics\transform.mc"
+ #line 226 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_5 in tmp_6.Run3_()) { var tmp_7 = tmp_5 as _opDollari; 
- #line 227 "Content\Casanova semantics\transform.mc"
+ #line 226 "Content\Casanova semantics\transform.mc"
 if (tmp_7 != null) { var res2 = tmp_7.P1; var res = (res1/res2); 
- #line 227 "Content\Casanova semantics\transform.mc"
+ #line 226 "Content\Casanova semantics\transform.mc"
 var result = _opDollari.Create(res);
- #line 227 "Content\Casanova semantics\transform.mc"
+ #line 226 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } } } }
  } 
 
   
  { 
- #line 233 "Content\Casanova semantics\transform.mc"
+ #line 232 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var lv = tmp_0.P3; var tmp_1 = tmp_0.P4 as wait; 
- #line 233 "Content\Casanova semantics\transform.mc"
+ #line 232 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var t = tmp_1.P1; 
- #line 233 "Content\Casanova semantics\transform.mc"
+ #line 232 "Content\Casanova semantics\transform.mc"
 if((dt>=t).Equals(true)) { 
- #line 233 "Content\Casanova semantics\transform.mc"
+ #line 232 "Content\Casanova semantics\transform.mc"
 var result = atomic.Create();
- #line 233 "Content\Casanova semantics\transform.mc"
+ #line 232 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
   
  { 
- #line 237 "Content\Casanova semantics\transform.mc"
+ #line 236 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var lv = tmp_0.P3; var tmp_1 = tmp_0.P4 as wait; 
- #line 237 "Content\Casanova semantics\transform.mc"
+ #line 236 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var t = tmp_1.P1; 
- #line 237 "Content\Casanova semantics\transform.mc"
+ #line 236 "Content\Casanova semantics\transform.mc"
 if((dt<t).Equals(true)) { var t_Prime = (t-dt); 
- #line 237 "Content\Casanova semantics\transform.mc"
+ #line 236 "Content\Casanova semantics\transform.mc"
 var result = waitResult.Create(t_Prime);
- #line 237 "Content\Casanova semantics\transform.mc"
+ #line 236 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
   
  { 
- #line 242 "Content\Casanova semantics\transform.mc"
+ #line 241 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var lv = tmp_0.P3; var tmp_1 = tmp_0.P4 as _opDollari; 
- #line 242 "Content\Casanova semantics\transform.mc"
+ #line 241 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var val = tmp_1.P1; 
- #line 242 "Content\Casanova semantics\transform.mc"
+ #line 241 "Content\Casanova semantics\transform.mc"
 var result = _opDollari.Create(val);
- #line 242 "Content\Casanova semantics\transform.mc"
+ #line 241 "Content\Casanova semantics\transform.mc"
 yield return result;  }
  } 
 
   
  { 
- #line 245 "Content\Casanova semantics\transform.mc"
+ #line 244 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var lv = tmp_0.P3; var tmp_1 = tmp_0.P4 as _opDollar; 
- #line 245 "Content\Casanova semantics\transform.mc"
+ #line 244 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var id = tmp_1.P1; 
- #line 245 "Content\Casanova semantics\transform.mc"
+ #line 244 "Content\Casanova semantics\transform.mc"
 if(lv is Locals) { 
- #line 245 "Content\Casanova semantics\transform.mc"
+ #line 244 "Content\Casanova semantics\transform.mc"
 var tmp_3 = lookup.Create(lv as Locals, id);
- #line 245 "Content\Casanova semantics\transform.mc"
+ #line 244 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_2 in tmp_3.Run3_()) { var val = tmp_2; 
- #line 245 "Content\Casanova semantics\transform.mc"
+ #line 244 "Content\Casanova semantics\transform.mc"
 var result = val;
- #line 245 "Content\Casanova semantics\transform.mc"
+ #line 244 "Content\Casanova semantics\transform.mc"
 yield return result;  } } }
  } 
 
   
  { 
- #line 249 "Content\Casanova semantics\transform.mc"
+ #line 248 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var lv = tmp_0.P3; var tmp_1 = tmp_0.P4 as nil; 
- #line 249 "Content\Casanova semantics\transform.mc"
+ #line 248 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { 
- #line 249 "Content\Casanova semantics\transform.mc"
+ #line 248 "Content\Casanova semantics\transform.mc"
 var result = nilResult.Create();
- #line 249 "Content\Casanova semantics\transform.mc"
+ #line 248 "Content\Casanova semantics\transform.mc"
 yield return result;  }
  } 
 
   
  { 
- #line 252 "Content\Casanova semantics\transform.mc"
+ #line 251 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var lv = tmp_0.P3; var tmp_1 = tmp_0.P4 as yield; 
- #line 252 "Content\Casanova semantics\transform.mc"
+ #line 251 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _Semicolon; 
- #line 252 "Content\Casanova semantics\transform.mc"
+ #line 251 "Content\Casanova semantics\transform.mc"
 if (tmp_2 != null) { var e = tmp_2.P1; var exprs = tmp_2.P2; 
- #line 252 "Content\Casanova semantics\transform.mc"
+ #line 251 "Content\Casanova semantics\transform.mc"
 if(M is Locals && lv is Locals && e is Expr && exprs is ExprList) { 
- #line 252 "Content\Casanova semantics\transform.mc"
+ #line 251 "Content\Casanova semantics\transform.mc"
 var tmp_4 = evalMany.Create(dt, M as Locals, lv as Locals, _Semicolon.Create(e as Expr, exprs as ExprList));
- #line 252 "Content\Casanova semantics\transform.mc"
+ #line 251 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_3 in tmp_4.Run3_23_()) { var vals = tmp_3; 
- #line 252 "Content\Casanova semantics\transform.mc"
+ #line 251 "Content\Casanova semantics\transform.mc"
 if(vals is ExprResultList) { 
- #line 252 "Content\Casanova semantics\transform.mc"
+ #line 251 "Content\Casanova semantics\transform.mc"
 var result = yieldResult.Create(vals as ExprResultList);
- #line 252 "Content\Casanova semantics\transform.mc"
+ #line 251 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } }
  } 
 
   
  { 
- #line 266 "Content\Casanova semantics\transform.mc"
+ #line 265 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var lv = tmp_0.P3; var tmp_1 = tmp_0.P4 as _Semicolon; 
- #line 266 "Content\Casanova semantics\transform.mc"
+ #line 265 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_1.P2; 
- #line 266 "Content\Casanova semantics\transform.mc"
+ #line 265 "Content\Casanova semantics\transform.mc"
 if(M is Locals && lv is Locals && a is Expr) { 
- #line 266 "Content\Casanova semantics\transform.mc"
+ #line 265 "Content\Casanova semantics\transform.mc"
 var tmp_3 = eval.Create(dt, M as Locals, lv as Locals, a as Expr);
- #line 266 "Content\Casanova semantics\transform.mc"
+ #line 265 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_2 in tmp_3.Run3_24_()) { var a1 = tmp_2; 
- #line 266 "Content\Casanova semantics\transform.mc"
+ #line 265 "Content\Casanova semantics\transform.mc"
 if(M is Locals && a1 is ExprResult && b is Expr) { 
- #line 266 "Content\Casanova semantics\transform.mc"
+ #line 265 "Content\Casanova semantics\transform.mc"
 var tmp_5 = stepOrSuspend.Create(dt, M as Locals, a1 as ExprResult, b as Expr);
- #line 266 "Content\Casanova semantics\transform.mc"
+ #line 265 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_4 in tmp_5.Run3_24_()) { var res = tmp_4; 
- #line 266 "Content\Casanova semantics\transform.mc"
+ #line 265 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 266 "Content\Casanova semantics\transform.mc"
+ #line 265 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } }
  } 
 
@@ -1159,41 +1159,41 @@ public static evalMany Create(float P1, Locals P2, Locals P3, ExprList P4) { ret
 
   public IEnumerable<IRunnable> Run3_23_() {   
  { 
- #line 256 "Content\Casanova semantics\transform.mc"
+ #line 255 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var lv = tmp_0.P3; var tmp_1 = tmp_0.P4 as _Semicolon; 
- #line 256 "Content\Casanova semantics\transform.mc"
+ #line 255 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var e = tmp_1.P1; var exprs = tmp_1.P2; 
- #line 256 "Content\Casanova semantics\transform.mc"
+ #line 255 "Content\Casanova semantics\transform.mc"
 if(M is Locals && lv is Locals && e is Expr) { 
- #line 256 "Content\Casanova semantics\transform.mc"
+ #line 255 "Content\Casanova semantics\transform.mc"
 var tmp_3 = eval.Create(dt, M as Locals, lv as Locals, e as Expr);
- #line 256 "Content\Casanova semantics\transform.mc"
+ #line 255 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_2 in tmp_3.Run3_23_()) { var val = tmp_2; 
- #line 256 "Content\Casanova semantics\transform.mc"
+ #line 255 "Content\Casanova semantics\transform.mc"
 if(M is Locals && lv is Locals && exprs is ExprList) { 
- #line 256 "Content\Casanova semantics\transform.mc"
+ #line 255 "Content\Casanova semantics\transform.mc"
 var tmp_5 = evalMany.Create(dt, M as Locals, lv as Locals, exprs as ExprList);
- #line 256 "Content\Casanova semantics\transform.mc"
+ #line 255 "Content\Casanova semantics\transform.mc"
 foreach (var tmp_4 in tmp_5.Run3_23_()) { var vals = tmp_4; 
- #line 256 "Content\Casanova semantics\transform.mc"
+ #line 255 "Content\Casanova semantics\transform.mc"
 if (val is ExprResult && vals is ExprResultList) { var res = consResult.Create(val as ExprResult, vals as ExprResultList); 
- #line 256 "Content\Casanova semantics\transform.mc"
+ #line 255 "Content\Casanova semantics\transform.mc"
 if(val is ExprResult && vals is ExprResultList) { 
- #line 256 "Content\Casanova semantics\transform.mc"
+ #line 255 "Content\Casanova semantics\transform.mc"
 var result = consResult.Create(val as ExprResult, vals as ExprResultList);
- #line 256 "Content\Casanova semantics\transform.mc"
+ #line 255 "Content\Casanova semantics\transform.mc"
 yield return result;  } } } } } } }
  } 
 
   
  { 
- #line 262 "Content\Casanova semantics\transform.mc"
+ #line 261 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var lv = tmp_0.P3; var tmp_1 = tmp_0.P4 as nil; 
- #line 262 "Content\Casanova semantics\transform.mc"
+ #line 261 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { 
- #line 262 "Content\Casanova semantics\transform.mc"
+ #line 261 "Content\Casanova semantics\transform.mc"
 var result = nilResult.Create();
- #line 262 "Content\Casanova semantics\transform.mc"
+ #line 261 "Content\Casanova semantics\transform.mc"
 yield return result;  }
  } 
 
@@ -1954,71 +1954,71 @@ public static stepOrSuspend Create(float P1, Locals P2, ExprResult P3, Expr P4) 
 
   public IEnumerable<IRunnable> Run3_24_() {   
  { 
- #line 271 "Content\Casanova semantics\transform.mc"
+ #line 270 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as atomic; 
- #line 271 "Content\Casanova semantics\transform.mc"
+ #line 270 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var b = tmp_0.P4; 
- #line 271 "Content\Casanova semantics\transform.mc"
+ #line 270 "Content\Casanova semantics\transform.mc"
 if (b is ExprList) { var res = reEvaluate.Create(b as ExprList); 
- #line 271 "Content\Casanova semantics\transform.mc"
+ #line 270 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 271 "Content\Casanova semantics\transform.mc"
+ #line 270 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
   
  { 
- #line 275 "Content\Casanova semantics\transform.mc"
+ #line 274 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as letResult; 
- #line 275 "Content\Casanova semantics\transform.mc"
+ #line 274 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var id = tmp_1.P1; var exp = tmp_1.P2; var b = tmp_0.P4; 
- #line 275 "Content\Casanova semantics\transform.mc"
+ #line 274 "Content\Casanova semantics\transform.mc"
 if (id is Id && exp is ExprResult && b is ExprList) { var res = binding.Create(id as Id, exp as ExprResult, b as ExprList); 
- #line 275 "Content\Casanova semantics\transform.mc"
+ #line 274 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 275 "Content\Casanova semantics\transform.mc"
+ #line 274 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
   
  { 
- #line 279 "Content\Casanova semantics\transform.mc"
+ #line 278 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as nilResult; 
- #line 279 "Content\Casanova semantics\transform.mc"
+ #line 278 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var b = tmp_0.P4; 
- #line 279 "Content\Casanova semantics\transform.mc"
+ #line 278 "Content\Casanova semantics\transform.mc"
 if (b is ExprList) { var res = reEvaluate.Create(b as ExprList); 
- #line 279 "Content\Casanova semantics\transform.mc"
+ #line 278 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 279 "Content\Casanova semantics\transform.mc"
+ #line 278 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
   
  { 
- #line 283 "Content\Casanova semantics\transform.mc"
+ #line 282 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as waitResult; 
- #line 283 "Content\Casanova semantics\transform.mc"
+ #line 282 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var t = tmp_1.P1; var b = tmp_0.P4; 
- #line 283 "Content\Casanova semantics\transform.mc"
+ #line 282 "Content\Casanova semantics\transform.mc"
 if (b is ExprList) { var res = continueWith.Create(_Semicolon.Create(wait.Create(t), b as ExprList)); 
- #line 283 "Content\Casanova semantics\transform.mc"
+ #line 282 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 283 "Content\Casanova semantics\transform.mc"
+ #line 282 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 
   
  { 
- #line 287 "Content\Casanova semantics\transform.mc"
+ #line 286 "Content\Casanova semantics\transform.mc"
 var tmp_0 = this; var dt = tmp_0.P1; var M = tmp_0.P2; var tmp_1 = tmp_0.P3 as yieldResult; 
- #line 287 "Content\Casanova semantics\transform.mc"
+ #line 286 "Content\Casanova semantics\transform.mc"
 if (tmp_1 != null) { var vals = tmp_1.P1; var b = tmp_0.P4; 
- #line 287 "Content\Casanova semantics\transform.mc"
+ #line 286 "Content\Casanova semantics\transform.mc"
 if (vals is ExprResultList && b is ExprList) { var res = updateFieldsAndContinueWith.Create(vals as ExprResultList, b as ExprList); 
- #line 287 "Content\Casanova semantics\transform.mc"
+ #line 286 "Content\Casanova semantics\transform.mc"
 var result = res;
- #line 287 "Content\Casanova semantics\transform.mc"
+ #line 286 "Content\Casanova semantics\transform.mc"
 yield return result;  } }
  } 
 

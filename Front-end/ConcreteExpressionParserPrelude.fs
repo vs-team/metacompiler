@@ -4,7 +4,7 @@ open Utilities
 open ParserMonad
 open BasicExpression
 
-type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | GreaterOrEqual | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of name : string
+type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisible | Divisible | GreaterOrEqual | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of name : string
   with 
     static member ParseWithoutComparison = 
       p{
@@ -33,7 +33,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | GreaterOr
         | First _ -> 
           return! fail "Expected keyword"
         | _ ->
-          let! ar = word "=>" + (((word "==" + word "!=") + ((word ">=" + word ">") + (word "<=" + word "<"))) + word ":=")
+          let! ar = word "=>" + ((((word "==" + word "!=") + (word "%" + word "!%")) + ((word ">=" + word ">") + (word "<=" + word "<"))) + word ":=")
           match ar with
           | First _ -> 
             return DoubleArrow
@@ -41,8 +41,10 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | GreaterOr
             match ar' with
             | First ar'' -> 
               match ar'' with
-              | First(First _) -> return Equals
-              | First(Second _) -> return NotEquals
+              | First(First(First _)) -> return Equals
+              | First(First(Second _)) -> return NotEquals
+              | First(Second(First _)) -> return Divisible
+              | First(Second(Second _)) -> return NotDivisible
               | Second(First(First _)) -> return GreaterOrEqual
               | Second(First(Second _)) -> return GreaterThan
               | Second(Second(First _)) -> return SmallerOrEqual
@@ -58,6 +60,8 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | GreaterOr
       | SmallerOrEqual -> "<="
       | GreaterThan -> ">"
       | GreaterOrEqual -> ">="
+      | Divisible -> "%"
+      | NotDivisible -> "!%"
       | Equals -> "=="
       | NotEquals -> "!="
       | DoubleArrow -> "=>"
@@ -169,6 +173,18 @@ and ConcreteExpressionContext =
               RightArguments = [Defined "CSharpExpr"]
               Priority = 10
               Class = Defined "CSharpExpr" }
+            { Name = "=="
+              GenericArguments = []
+              LeftArguments = [Defined "CSharpExpr"]
+              RightArguments = [Defined "CSharpExpr"]
+              Priority = 10
+              Class = Defined "CSharpExpr" }
+            { Name = "!="
+              GenericArguments = []
+              LeftArguments = [Defined "CSharpExpr"]
+              RightArguments = [Defined "CSharpExpr"]
+              Priority = 10
+              Class = Defined "CSharpExpr" }
             { Name = "/"
               GenericArguments = []
               LeftArguments = [Defined "CSharpExpr"]
@@ -176,6 +192,12 @@ and ConcreteExpressionContext =
               Priority = 100
               Class = Defined "CSharpExpr" }
             { Name = "*"
+              GenericArguments = []
+              LeftArguments = [Defined "CSharpExpr"]
+              RightArguments = [Defined "CSharpExpr"]
+              Priority = 100
+              Class = Defined "CSharpExpr" }
+            { Name = "%"
               GenericArguments = []
               LeftArguments = [Defined "CSharpExpr"]
               RightArguments = [Defined "CSharpExpr"]

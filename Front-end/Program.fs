@@ -13,8 +13,8 @@ open System.Xml.Serialization
 
 do System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.GetCultureInfo("EN-US")
 
-let flushCSFileOnError = false
-let numSteps = 0
+let flushCSFileOnError = true
+let numSteps = 100
 
 let runDeduction path =
   let originalFilePath = System.IO.Path.Combine(path, "transform.mc")
@@ -75,19 +75,19 @@ let main argv =
   let samples = 
     [
 //      "Generic lists", @"runTest1"
-      "Trees 234", @"main"
+//      "C minus minus", @"runProgram"
+//      "Trees 234", @"main"
+//      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
 
-      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
-      "Lists", "0;(1;(2;(3;nil))) contains -1"
-      "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
-      "Binary trees", "run"
-      "Lambda calculus", @"(\$""y"" -> $""y"" | \$""y"" -> $""y"") | ($""x"" | $""z"")"
-      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
+//      "Lists", "$0;($1;($2;($3;nil))) contains -1"
+      "Lists", "removeOdd $0;($1;($2;($3;nil)))"
 
-      "Casanova semantics", @"runTest1"
-      "Cmm", @"runProgram"
-//      "Cmm Type Checker", @"runTypeCheck"
-
+//      "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
+//      "Binary trees", "run"
+//      "Lambda calculus", @"(\$""y"" -> $""y"" | \$""y"" -> $""y"") | ($""x"" | $""z"")"
+//      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
+//
+//      "Casanova semantics", @"runTest1"
     ]
 
   for name,input in samples 
