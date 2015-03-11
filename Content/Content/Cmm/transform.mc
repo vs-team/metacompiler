@@ -43,7 +43,7 @@ Keyword [Id] "=" [Expr] Priority 10 Class Expr
 Keyword [] "then" [] Priority 10 Class Then
 Keyword [] "else" [] Priority 10 Class Else
 Keyword [] "if" [Expr Then Expr Else Expr] Priority 10 Class Expr
-Keyword [] "loop" [Expr Expr] Priority 10 Class Expr
+Keyword [] "while" [Expr Expr] Priority 10 Class Expr
 
 Keyword [] "Yes" [] Priority 100 Class Answer
 Keyword [] "No" [] Priority 100 Class Answer
@@ -99,7 +99,7 @@ assign1 := $"fact" = $i 1
 assign2 := $"n" = $i 10
 assign3 := $"j" = $i 1
 l_block := ($"fact" = $"fact" * $"j") ; ($"j" = $"j" + $i 1 ; nop)
-l := loop ($"j" leq $"n") l_block
+l := while ($"j" leq $"n") l_block
 code := decl_fact ; (decl_n ; (decl_j ; (assign1 ; (assign2 ; (assign3 ; (l ;nop))))))
 program M code => M'
 ---------------------------------------------------------------------
@@ -319,13 +319,13 @@ eval tables (if condition then expr1 else expr2) => evalResult tables'' val
 eval tables condition => evalResult tables' ($b true)
 emptyDictionary => table
 eval (table nextTable tables) expr => evalResult (table' nextTable tables'') val
-eval tables'' (loop condition expr) => res
+eval tables'' (while condition expr) => res
 ---------------------------------------------------
-eval tables (loop condition expr) => res
+eval tables (while condition expr) => res
 
 eval tables condition => evalResult tables' ($b false)
 -----------------------------------------------------------
-eval tables (loop condition expr) => evalResult tables' $void
+eval tables (while condition expr) => evalResult tables' $void
 
 --------------------------------------------------
 eval tables nop => evalResult tables $void

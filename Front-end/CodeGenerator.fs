@@ -14,6 +14,7 @@ let cleanupWithoutDot (s:string) =
   | "is" -> "_Is"
   | "as" -> "_As"
   | "if" -> "_If"
+  | "while" -> "_While"
   | "then" -> "_Then"
   | "else" -> "_Else"
   | "for" -> "_For"
