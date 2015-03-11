@@ -27,6 +27,7 @@ Keyword [Expr] "&&" [Expr] Priority 100 Class Expr
 Keyword [Expr] "||" [Expr] Priority 100 Class Expr
 Keyword [] "!" [Expr] Priority 100 Class Expr
 Keyword [Expr] "equals" [Expr] Priority 100 Class Expr
+Keyword [Expr] "neq" [Expr] Priority 100 Class Expr
 Keyword [Expr] "ls" [Expr] Priority 100 Class Expr
 Keyword [Expr] "leq" [Expr] Priority 100 Class Expr
 Keyword [Expr] "grt" [Expr] Priority 100 Class Expr
@@ -219,6 +220,13 @@ eval tables' expr2 => evalResult tables'' val2
 val1 != val2
 --------------------------------------------------------
 eval tables (expr1 equals expr2) => evalResult tables' ($b false)
+
+
+eval tables (expr1 equals expr2) => evalResult tables' ($b res)
+boolResult := << !res >>
+-------------------------------------------------------------------
+eval tables (expr1 neq expr2) => evalResult tables' ($b boolResult)
+
 
 eval tables expr1 => evalResult tables' ($i val1)
 eval tables' expr2 => evalResult tables'' ($i val2)

@@ -211,7 +211,7 @@ t6 insert (entry $s "b" $i 3) => t7
 t7 insert (entry $s "ax" $i 1) => t8
 t8 insert (entry $s "c" $i 12) => t9
 finalTree := <<EntryPoint.Print(t9)>>
-t9 find ($s "z") => kv
+t9 find ($s "b") => kv
 --------------------------
 main => kv
 
