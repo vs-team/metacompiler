@@ -86,6 +86,8 @@ let main argv =
 
       "Casanova semantics", @"runTest1"
       "Cmm", @"runProgram"
+//      "Cmm Type Checker", @"runTypeCheck"
+
     ]
 
   for name,input in samples 
