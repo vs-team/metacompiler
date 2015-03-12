@@ -12,9 +12,12 @@ let mutable debug_rules = false
 
 let rec program() = 
   p{
+    let! incs = merge_included_files
+    let inc_rules = fst incs
+    let inc_ctxt = snd incs
     let! imps = import_stmts
     let! ks = keywords
-    let newContext = 
+    let ctxt = 
           {
             PredefinedKeywords        = Keyword.Parse
             CustomKeywords            = ks
@@ -23,13 +26,14 @@ let rec program() =
             InheritanceRelationships  = Map.empty
             ImportedModules           = imps
           }
+    let newContext = ctxt
     do! setContext newContext
     let! inheritance = inheritanceRelationships()
-    let newContext = { newContext with InheritanceRelationships = inheritance |> Utilities.transitiveClosure }
+    let newContext = { newContext with InheritanceRelationships = inheritance |> Utilities.transitiveClosure } ++ inc_ctxt
     do! setContext newContext
     let! rs = rules 0
     let! p = getPosition()
-    return Application(Implicit, Keyword(Sequence,p, ()) :: rs, p, ())
+    return Application(Implicit, Keyword(Sequence,p, ()) :: (List.append inc_rules rs), p, ())
   }
 
 and inheritanceRelationships() =
@@ -374,6 +378,64 @@ and import_stmt() =
         let! bs = blank_space()
         let! imported_type = longIdentifier()
         return imported_type
+    }
+
+and included_file()=
+    p {
+        let! bs = blank_space()
+        let! w = word "include"
+        let! bs = blank_space()
+        let! included = longIdentifier()
+        let trailingIndex = (included.LastIndexOf '.')
+        let path = included.Substring(0,  trailingIndex).Replace(".", "/") + included.Substring trailingIndex
+        let rules = System.IO.File.ReadAllText(path)
+        return (program()).Parse (rules |> Seq.toList) ConcreteExpressionContext.Empty Position.Zero
+    }
+
+and included_files =
+    p {
+        let! inc = included_file() + p { return () }
+        match inc with
+        | First file ->
+            match file with
+            | (rules, _, ctxt, _)::ls,[] ->
+                let! el = empty_lines()
+                let! incs = included_files
+                return (rules, ctxt) :: incs
+            | _ ->
+                return []
+        | Second err ->
+            return []
+    }
+
+and merge_included_files =
+    let rec merge_rules exprs =
+        [
+            for exp in exprs do
+            match exp with
+            | x::xs ->
+                match x with
+                | Application (_, rules,_, _) ->
+                    match rules with
+                    | r::rules ->
+                        yield rules
+                    | _ -> ()
+                | _ -> ()
+            | _ -> ()
+        ] |> List.concat       
+    let rec merge_context ctxt =
+        match ctxt with
+        | x::xs ->
+            let ctxts = merge_context xs
+            x ++ ctxts
+        | [] ->
+            ConcreteExpressionContext.Empty
+    p {
+        let! includes = included_files
+        let s = ( List.map fst includes )
+        let rules = merge_rules (List.toSeq [s])
+        let context = merge_context ( List.map snd includes )
+        return (rules, context)
     }
 
 and import_stmts =

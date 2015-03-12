@@ -110,6 +110,17 @@ and ConcreteExpressionContext =
           InheritanceRelationships = Map.empty
           ImportedModules          = []
         }
+      static member (++) (ctxt:ConcreteExpressionContext, ctxt':ConcreteExpressionContext) =
+        let concatMap (p:Map<'a,'b>) (q:Map<'a,'b>) = 
+            Map(Seq.concat [ (Map.toSeq p) ; (Map.toSeq q) ])
+        {
+            PredefinedKeywords = ctxt.PredefinedKeywords
+            CustomKeywords = ctxt.CustomKeywords |> List.append ctxt'.CustomKeywords
+            CustomKeywordsByPrefix = ctxt.CustomKeywordsByPrefix |> List.append ctxt'.CustomKeywordsByPrefix
+            CustomKeywordsMap = ctxt.CustomKeywordsMap |> concatMap ctxt'.CustomKeywordsMap
+            InheritanceRelationships = ctxt.InheritanceRelationships |> concatMap ctxt'.InheritanceRelationships
+            ImportedModules = ctxt.ImportedModules |> List.append ctxt'.ImportedModules
+        }
       static member CSharp =
         let ks = 
           [
