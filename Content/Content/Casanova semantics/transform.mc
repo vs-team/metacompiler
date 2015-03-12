@@ -5,16 +5,18 @@ Keyword [] "$m" [<<System.Collections.Immutable.ImmutableDictionary<string, Expr
 Keyword [] "$" [<<string>>] Priority 10000 Class Id
 
 Keyword [] "$b" [<<bool>>] Priority 10000 Class BoolConst
-Keyword [IntExp] ">" [IntExp] Priority 1100 Class BoolExpr
-Keyword [IntExp] "=" [IntExp] Priority 1100 Class BoolExpr
+Keyword [IntExpr] ">" [IntExpr] Priority 1100 Class BoolExpr
+Keyword [IntExpr] "=" [IntExpr] Priority 1100 Class BoolExpr
 Keyword [BoolExpr] "&&" [BoolExpr] Priority 1000 Class BoolExpr
 Keyword [BoolExpr] "||" [BoolExpr] Priority 900 Class BoolExpr
 
 Keyword [] "$i" [<<int>>] Priority 10000 Class IntConst
-Keyword [IntExp] "*" [IntExp] Priority 910 Class IntExp
-Keyword [IntExp] "/" [IntExp] Priority 910 Class IntExp
-Keyword [IntExp] "+" [IntExp] Priority 900 Class IntExp
-Keyword [IntExp] "-" [IntExp] Priority 900 Class IntExp
+Keyword [IntExpr] "*" [IntExpr] Priority 1000 Class IntExpr
+Keyword [IntExpr] "/" [IntExpr] Priority 1000 Class IntExpr
+Keyword [IntExpr] "+" [IntExpr] Priority 1000 Class IntExpr
+Keyword [IntExpr] "-" [IntExpr] Priority 1000 Class IntExpr
+
+Keyword [] "nothing" [] Priority 10000 Class ExprResult
 
 Keyword [] "let" [Id Expr] Priority 500 Class Expr
 Keyword [] "letResult" [Id ExprResult] Priority 0 Class ExprResult
@@ -74,19 +76,26 @@ Keyword [] "runTest1" [] Priority -10000 Class Test
 
 
 Id is Expr
+Id is IntExpr
+Id is BoolExpr
 BoolConst is BoolExpr
 BoolConst is ExprResult
 BoolExpr is Expr
-IntConst is IntExp
+IntConst is IntExpr
 IntConst is ExprResult
-IntExp is Expr
+IntExpr is Expr
 ExprResult is Expr
 ExprList is Expr
 
 
+<<M.ContainsKey(k)>> == true
 v := <<M.GetKey(k)>>
----------------------
+------------------------
 ($m M) lookup k => v
+
+<<M.ContainsKey(k)>> == false
+------------------------
+($m M) lookup k => nothing
 
 <<M.ContainsKey(k)>> == false
 M' := <<M.Add(k,v)>>
@@ -111,12 +120,12 @@ dom1 := "F1" consDomain nilDomain
 dom2 := "F2" consDomain nilDomain
 f1 := (($i 90);(($i 50);nil))
 l1 := let $"x" $i 100
-w1 := wait 2.0
+w1 := wait 1.0
 w2 := wait 2.0
-y1 := yield(($i 10 + $i 30);nil)
+y1 := yield($"F1" + $i 10 ; nil)
 y2 := yield(($i 20);nil)
 y3 := yield($"x";nil)
-b1 := l1;(w1;(y1;(w1;(y3;nil))))
+b1 := w1; (y1 ; nil)
 b2 := w2;(y2;nil)
 r1 := rule dom1 b1 L1
 r2 := rule dom2 b2 L2
@@ -242,7 +251,12 @@ runTest1 => res
   eval dt M lv ($i val) => $i val
 
   lv lookup id => val
+  val != nothing
   -------------------------
+  eval dt M lv ($ id) => val
+
+  M lookup id => val
+  ---------------------------
   eval dt M lv ($ id) => val
 
   --------------------------
