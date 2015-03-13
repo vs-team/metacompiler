@@ -103,7 +103,7 @@ assign3 := $"j" = $i 1
 l_block := ($"fact" = $"fact" * $"j") ; ($"j" = $"j" + $i 1 ; nop)
 l := while ($"j" leq $"n") l_block
 f := for ($"j" = $i 1) ($"j" leq $"n") ($"j" = $"j" + $i 1) ($"fact" = $"fact" * $"j")
-code := decl_fact ; (decl_n ; (decl_j ; (assign1 ; (assign2 ; (assign3 ; (l ;nop))))))
+code := decl_fact ; (decl_n ; (decl_j ; (assign1 ; (assign2 ; (assign3 ; (f ;nop))))))
 program M code => M'
 ---------------------------------------------------------------------
 runProgram => M'

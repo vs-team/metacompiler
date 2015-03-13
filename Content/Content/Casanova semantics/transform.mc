@@ -118,15 +118,12 @@ L1 := $m <<System.Collections.Immutable.ImmutableDictionary<string, ExprResult>.
 L2 := $m <<System.Collections.Immutable.ImmutableDictionary<string, ExprResult>.Empty>>
 dom1 := "F1" consDomain nilDomain
 dom2 := "F2" consDomain nilDomain
-f1 := (($i 90);(($i 50);nil))
-l1 := let $"x" $i 100
 w1 := wait 1.0
-w2 := wait 2.0
-y1 := yield($"F1" + $i 10 ; nil)
-y2 := yield(($i 20);nil)
-y3 := yield($"x";nil)
-b1 := (y1 ; nil)
-b2 := w2;(y2;nil)
+w2 := wait 3.0
+y1 := yield (($"F1" + $i 10) ; nil)
+y2 := yield ($i 40 ; nil)
+b1 := w1 ; (y1 ; nil)
+b2 := w2 ; (y2 ; nil)
 r1 := rule dom1 b1 L1
 r2 := rule dom2 b2 L2
 rs := r1 consRule nilRule
@@ -192,8 +189,9 @@ runTest1 => res
   ---------------------------------------------------------------------------------
   evalRule dt M lv domain startingBlock block => res
 
-  ---------------------------------------------------------------------
-  evalRule dt M lv domain startingBlock nil => ruleResult M lv startingBlock
+  evalRule dt M lv domain startingBlock startingBlock => res
+  -----------------------------------------------------------------------------------------------
+  evalRule dt M lv domain startingBlock nil => res
 
   eval dt M lv exp => exp'
   ---------------------------------------------
@@ -274,6 +272,7 @@ runTest1 => res
 
     -------------------------------
     evalMany dt M lv nil => nilResult
+
 
 
   eval dt M lv a => a1
