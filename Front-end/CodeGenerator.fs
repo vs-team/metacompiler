@@ -192,7 +192,7 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
   | [] -> ""
   | x :: xs ->
     let newLine = 
-      if generateLineDirectives then sprintf "\n #line %d \"%s\"\n" debugPosition.Line originalFilePath
+      if generateLineDirectives then sprintf "\n #line %d \"%s\"\n" debugPosition.Line debugPosition.File
       else "\n"
     match x with
     | Var(name, expr) -> 
@@ -356,7 +356,7 @@ type Rule = {
         | _ -> failwithf "Unexpected operator %A @ %A" k c_i.DebugInformation
       o <- i @ o @ [Yield r.Output]
       if generateLineDirectives then
-        sprintf "\n { \n #line %d \"%s\"\n%s\n } \n" r.Position.Line originalFilePath (generate_instructions r.Position originalFilePath ctxt o)
+        sprintf "\n { \n #line %d \"%s\"\n%s\n } \n" r.Position.Line r.Position.File (generate_instructions r.Position originalFilePath ctxt o)
       else
         sprintf "\n { \n %s\n } \n" (generate_instructions r.Position originalFilePath ctxt o)
 

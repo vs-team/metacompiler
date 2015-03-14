@@ -7,9 +7,11 @@ open Utilities
     A Position type holds the current line index while parsing.
     The Position is used as context for errors.
 *)
-type Position = { Line : int }
-  with member this.NextLine = { this with Line = this.Line + 1 }
-       static member Zero = { Line = 1 }
+type Position = { Line : int ; Col : int ; File : string} with
+   member this.NextLine = { this with Line = this.Line + 1 ; Col = 1 ; File = this.File}
+   member this.NextCol = {this with Line = this.Line ; Col = this.Col + 1 ; File = this.File}
+       static member Zero = { Line = 1 ; Col = 1 ; File = ""}
+       static member Create file = { Line = 1 ; Col = 1 ; File = file}
 
 type Error = Error of Position * string
   with 
@@ -214,7 +216,7 @@ let character(c:char) : Parser<char, 'ctxt> =
       if x = '\n' then 
         pos.NextLine 
       else 
-        pos
+        pos.NextCol
     [c, cs, ctxt, pos'],[]
   | _ -> [],[Error(pos, sprintf "Expected character %A" c)]) |> Parser.Make
 
@@ -298,7 +300,7 @@ let rec takeWhile (s:Parser<'a,'ctxt>) : Parser<List<'a>, 'ctxt> =
 let rec character' (p:char -> bool) : Parser<char, 'ctxt> =
  (fun buf ctxt (pos:Position) ->
     match buf with
-    | c::cs when p c -> [c, cs, ctxt, if c = '\n' then pos.NextLine else pos],[]
+    | c::cs when p c -> [c, cs, ctxt, if c = '\n' then pos.NextLine else pos.NextCol],[]
     | buf -> [],[Error(pos, sprintf "Unexpected character")]) |> Parser.Make
 
 (*

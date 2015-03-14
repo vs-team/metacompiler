@@ -389,7 +389,7 @@ and included_file()=
         let trailingIndex = (included.LastIndexOf '.')
         let path = included.Substring(0,  trailingIndex).Replace(".", "/") + included.Substring trailingIndex
         let rules = System.IO.File.ReadAllText(path)
-        return (program()).Parse (rules |> Seq.toList) ConcreteExpressionContext.Empty Position.Zero
+        return (program()).Parse (rules |> Seq.toList) ConcreteExpressionContext.Empty (Position.Create path)
     }
 
 and included_files =
