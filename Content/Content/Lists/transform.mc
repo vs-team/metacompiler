@@ -5,8 +5,19 @@ Keyword [] "$" [<<int>>] Priority 10000 Class IntValue
 Keyword [ListInt] "contains" [<<int>>] Priority 100 Class Expr
 Keyword [] "removeOdd" [ListInt] Priority 100 Class Expr
 
+Keyword [] "add" [ListInt] Priority 100 Class Expr
+
 Keyword [] "yes" [] Priority 0 Class Bool
 Keyword [] "no" [] Priority 0 Class Bool
+
+
+---------------
+add nil => $0
+
+add xs => $res
+res' := <<x + res>>
+--------------------
+add $x;xs => $res'
 
 
 ---------------------
