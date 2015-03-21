@@ -3,7 +3,7 @@
   - second stage should unify the variables
 - type checker (while parsing) to verify arieties
 - higher order terms
-- association of keywords (left or right)
+- association of keywords (left or right) (priority depends on index if left, -index if right at "let priority (b:BasicExpression<_,_,_,_,_>,index:int) = ")
 - GUI should save delayed compiler to not recompile rules unnecessarily
 - resolution of < and > for generic types
 - << res' >>
