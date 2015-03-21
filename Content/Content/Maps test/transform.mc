@@ -1,4 +1,6 @@
-﻿Keyword [] "$" [<<System.Collections.Immutable.ImmutableDictionary<int, string> >>] Priority 10000 Class MapIntString
+﻿import System.Collections.Immutable
+
+Keyword [] "$" [<<ImmutableDictionary<int, string> >>] Priority 10000 Class MapIntString
 Keyword [] "run" [MapIntString] Priority 0 Class Expr
 Keyword [MapIntString] "add" [<<int>> <<string>>] Priority 1 Class Expr
 

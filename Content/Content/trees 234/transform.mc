@@ -1,4 +1,6 @@
-﻿Keyword [] "yes" [] Priority 0 Class BoolExpr
+﻿import System
+
+Keyword [] "yes" [] Priority 0 Class BoolExpr
 Keyword [] "no" [] Priority 0 Class BoolExpr
 
 Keyword [] "$i" [<<int>>] Priority 300 Class Value
@@ -210,7 +212,7 @@ t5 insert (entry $s "z" $i 100) => t6
 t6 insert (entry $s "b" $i 3) => t7
 t7 insert (entry $s "ax" $i 1) => t8
 t8 insert (entry $s "c" $i 12) => t9
-finalTree := <<EntryPoint.Print(t9)>>
+<<Console.WriteLine(t9)>>
 t9 find ($s "b") => kv
 --------------------------
 main => kv

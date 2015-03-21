@@ -75,6 +75,7 @@ let main argv =
   let samples = 
     [
 //      "Generic lists", @"runTest1"
+
 //      "Cmm", @"runProgram"
 //      "Trees 234", @"main"
 //      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
@@ -88,7 +89,7 @@ let main argv =
 //      "Lambda calculus", @"(\$""y"" -> $""y"" | \$""y"" -> $""y"") | ($""x"" | $""z"")"
 //      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
 //
-      "Casanova semantics", @"runTest1"
+//      "Casanova semantics", @"runTest1"
     ]
 
   for name,input in samples 

@@ -1,6 +1,10 @@
-﻿Keyword [Locals] "add" [<<string>> <<ExprResult>>] Priority 1000 Class Locals
+﻿import System
+import System.Threading
+import System.Collections.Immutable
+
+Keyword [Locals] "add" [<<string>> <<ExprResult>>] Priority 1000 Class Locals
 Keyword [Locals] "lookup" [<<string>>] Priority 1000 Class MemoryOp
-Keyword [] "$m" [<<System.Collections.Immutable.ImmutableDictionary<string, ExprResult> >>] Priority 10000 Class Locals
+Keyword [] "$m" [<<ImmutableDictionary<string, ExprResult> >>] Priority 10000 Class Locals
 
 Keyword [] "$" [<<string>>] Priority 10000 Class Id
 
@@ -111,11 +115,11 @@ M' := <<M.SetItem(k,v)>>
 
 dt := 1.0
 iterations := 10
-Me := $m <<System.Collections.Immutable.ImmutableDictionary<string, ExprResult>.Empty>>
+Me := $m <<ImmutableDictionary<string, ExprResult>.Empty>>
 Me add "F1" ($i 100) => Ml
 Ml add "F2" ($i 100) => M
-L1 := $m <<System.Collections.Immutable.ImmutableDictionary<string, ExprResult>.Empty>>
-L2 := $m <<System.Collections.Immutable.ImmutableDictionary<string, ExprResult>.Empty>>
+L1 := $m <<ImmutableDictionary<string, ExprResult>.Empty>>
+L2 := $m <<ImmutableDictionary<string, ExprResult>.Empty>>
 dom1 := "F1" consDomain nilDomain
 dom2 := "F2" consDomain nilDomain
 w1 := wait 1.0
@@ -129,7 +133,7 @@ r2 := rule dom2 b2 L2
 rs := r1 consRule nilRule
 e := entity "E" M rs
 updateEntity dt e iterations => res
-debug := <<EntryPoint.Print("Done!")>>
+<<Console.WriteLine("Done!")>>
 ------------------------------------------------------------
 runTest1 => res
 
@@ -139,8 +143,8 @@ runTest1 => res
 
   <<i > 0>> == true
   outputString := <<"\n----------------\n" + (fields.ToString()) + "\n\n" + (rs.ToString()) + "\n----------------\n">>
-  outputUpdate := <<EntryPoint.Print(outputString)>>
-  sleeping := <<EntryPoint.Sleep(dt)>>
+  <<Console.WriteLine(outputString)>>
+  <<Thread.Sleep((int)(dt * 1000))>>
   updateRules dt fields startingRules rs => updateResult updatedFields updatedRules
   j := <<i - 1>>
   loopRules dt updatedFields startingRules updatedRules j => updateResult fs' rs'

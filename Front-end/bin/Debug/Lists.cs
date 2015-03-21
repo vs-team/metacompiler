@@ -99,7 +99,7 @@ var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Semicolon;
  #line 19 ""
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
  #line 19 ""
-if (tmp_2 != null) { var x = tmp_2.P1; var xs = tmp_1.P2; 
+if (tmp_2 != null) { var x_Prime = tmp_2.P1; var xs = tmp_1.P2; 
  #line 19 ""
 if(xs is ListInt) { 
  #line 19 ""
@@ -107,9 +107,9 @@ var tmp_4 = add.Create(xs as ListInt);
  #line 19 ""
 foreach (var tmp_3 in tmp_4.Run()) { var tmp_5 = tmp_3 as _opDollar; 
  #line 19 ""
-if (tmp_5 != null) { var res = tmp_5.P1; var res_Prime = (x+res); 
+if (tmp_5 != null) { var res = tmp_5.P1; 
  #line 19 ""
-var result = _opDollar.Create(res_Prime);
+var result = _opDollar.Create(x_Prime+res);
  #line 19 ""
 yield return result;  } } } } }
  } 
@@ -146,51 +146,51 @@ public static contains Create(ListInt P1, int P2) { return new contains(P1, P2);
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 25 ""
+ #line 24 ""
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as nil; 
- #line 25 ""
+ #line 24 ""
 if (tmp_1 != null) { var k = tmp_0.P2; 
- #line 25 ""
+ #line 24 ""
 var result = no.Create();
- #line 25 ""
+ #line 24 ""
 yield return result;  }
  } 
 
   
  { 
- #line 28 ""
+ #line 27 ""
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Semicolon; 
- #line 28 ""
+ #line 27 ""
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 28 ""
+ #line 27 ""
 if (tmp_2 != null) { var x = tmp_2.P1; var xs = tmp_1.P2; var k = tmp_0.P2; 
- #line 28 ""
+ #line 27 ""
 if(x.Equals(k)) { 
- #line 28 ""
+ #line 27 ""
 var result = yes.Create();
- #line 28 ""
+ #line 27 ""
 yield return result;  } } }
  } 
 
   
  { 
- #line 32 ""
+ #line 31 ""
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Semicolon; 
- #line 32 ""
+ #line 31 ""
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 32 ""
+ #line 31 ""
 if (tmp_2 != null) { var x = tmp_2.P1; var xs = tmp_1.P2; var k = tmp_0.P2; 
- #line 32 ""
+ #line 31 ""
 if(!x.Equals(k)) { 
- #line 32 ""
+ #line 31 ""
 if(xs is ListInt) { 
- #line 32 ""
+ #line 31 ""
 var tmp_4 = contains.Create(xs as ListInt, k);
- #line 32 ""
+ #line 31 ""
 foreach (var tmp_3 in tmp_4.Run()) { var res = tmp_3; 
- #line 32 ""
+ #line 31 ""
 var result = res;
- #line 32 ""
+ #line 31 ""
 yield return result;  } } } } }
  } 
 
@@ -270,59 +270,59 @@ public static removeOdd Create(ListInt P1) { return new removeOdd(P1); }
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 38 ""
+ #line 37 ""
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as nil; 
- #line 38 ""
+ #line 37 ""
 if (tmp_1 != null) { 
- #line 38 ""
+ #line 37 ""
 var result = nil.Create();
- #line 38 ""
+ #line 37 ""
 yield return result;  }
  } 
 
   
  { 
- #line 41 ""
+ #line 40 ""
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Semicolon; 
- #line 41 ""
+ #line 40 ""
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 41 ""
+ #line 40 ""
 if (tmp_2 != null) { var x = tmp_2.P1; var xs = tmp_1.P2; 
- #line 41 ""
+ #line 40 ""
 if((x%2).Equals(0)) { 
- #line 41 ""
+ #line 40 ""
 if(xs is ListInt) { 
- #line 41 ""
+ #line 40 ""
 var tmp_4 = removeOdd.Create(xs as ListInt);
- #line 41 ""
+ #line 40 ""
 foreach (var tmp_3 in tmp_4.Run()) { var xs_Prime = tmp_3; 
- #line 41 ""
+ #line 40 ""
 var result = xs_Prime;
- #line 41 ""
+ #line 40 ""
 yield return result;  } } } } }
  } 
 
   
  { 
- #line 46 ""
+ #line 45 ""
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Semicolon; 
- #line 46 ""
+ #line 45 ""
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 46 ""
+ #line 45 ""
 if (tmp_2 != null) { var x = tmp_2.P1; var xs = tmp_1.P2; 
- #line 46 ""
+ #line 45 ""
 if((x%2).Equals(1)) { 
- #line 46 ""
+ #line 45 ""
 if(xs is ListInt) { 
- #line 46 ""
+ #line 45 ""
 var tmp_4 = removeOdd.Create(xs as ListInt);
- #line 46 ""
+ #line 45 ""
 foreach (var tmp_3 in tmp_4.Run()) { var xs_Prime = tmp_3; 
- #line 46 ""
+ #line 45 ""
 if(xs_Prime is ListInt) { 
- #line 46 ""
+ #line 45 ""
 var result = _Semicolon.Create(_opDollar.Create(x), xs_Prime as ListInt);
- #line 46 ""
+ #line 45 ""
 yield return result;  } } } } } }
  } 
 
@@ -375,8 +375,7 @@ public override int GetHashCode() {
 
 
 public class EntryPoint {
- static public int Print(object s) { System.Console.WriteLine(s.ToString()); return 0; } 
- static public int Sleep(float s) { int t = (int)(s * 1000.0f); System.Threading.Thread.Sleep(t); return 0; } 
+ static public int Sleep(float s) { int t = (int)(s * 1000.0f); ; return 0; } 
 static public IEnumerable<IRunnable> Run(bool printInput)
 {
  #line 1 "input"
