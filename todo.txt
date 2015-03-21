@@ -4,20 +4,9 @@
 - type checker (while parsing) to verify arieties
 - higher order terms
 - association of keywords (left or right)
-- open directive for namespaces
-- import directive for multiple files
 - GUI should save delayed compiler to not recompile rules unnecessarily
 - resolution of < and > for generic types
-
-
-Lectures:
-- red-black-trees
-- maps as variable environments; basic constructs of program semantics
-  - var declaration
-  - var lookup
-  - numeric and boolean expressions
-  - if-then-else
-- while-do
-- stack of environments and function declaraction
-- proof of induction of equivalence between while and its recursive translation
-- list-comprehensions (requires lambda's)
+- << res' >>
+- samples
+  - open directive for namespaces
+  - import directive for multiple files

@@ -1,4 +1,6 @@
-﻿Keyword [] "nil" [] Priority 0 Class ListInt
+﻿import System
+
+Keyword [] "nil" [] Priority 0 Class ListInt
 Keyword [IntValue] ";" [ListInt] Priority 1000 Class ListInt
 Keyword [] "$" [<<int>>] Priority 10000 Class IntValue
 
@@ -11,13 +13,12 @@ Keyword [] "yes" [] Priority 0 Class Bool
 Keyword [] "no" [] Priority 0 Class Bool
 
 
----------------
+--------------
 add nil => $0
 
 add xs => $res
-res' := <<x + res>>
---------------------
-add $x;xs => $res'
+--------------------------
+add $x;xs => $<<x + res>>
 
 
 ---------------------
@@ -33,20 +34,15 @@ xs contains k => res
 $x;xs contains k => res
 
 
-x == k
-------------------------
-$x;xs contains k => yes
-
-
 ---------------------
 removeOdd nil => nil
 
-x % 2
+<< x % 2 >> == 0
 removeOdd xs => xs'
-------------------------
+-----------------------
 removeOdd $x;xs => xs'
 
-x !% 2
+<< x % 2 >> == 1
 removeOdd xs => xs'
-------------------------
+--------------------------
 removeOdd $x;xs => $x;xs'

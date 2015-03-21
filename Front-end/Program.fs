@@ -14,7 +14,7 @@ open System.Xml.Serialization
 do System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.GetCultureInfo("EN-US")
 
 let flushCSFileOnError = true
-let numSteps = 1
+let numSteps = 0
 
 let runDeduction path =
   let originalFilePath = System.IO.Path.Combine(path, "transform.mc")
@@ -79,8 +79,9 @@ let main argv =
 //      "Trees 234", @"main"
 //      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
 
-//      "Lists", "$0;($1;($2;($3;nil))) contains -1"
+      "Lists", "$0;($1;($2;($3;nil))) contains 2"
       "Lists", "removeOdd $0;($1;($2;($3;nil)))"
+      "Lists", "add $0;($1;($2;($3;nil)))"
 
 //      "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
 //      "Binary trees", "run"

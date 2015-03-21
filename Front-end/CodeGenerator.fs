@@ -464,6 +464,7 @@ let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position, Unit>) (rul
           [ for c in clauses do
               match c with
               | Application(_, Keyword(Inlined, _, _) :: _, clausePos, _) -> yield Inlined, c, c
+              | Application(_, Keyword(DoubleArrow, _, _) :: (Application(Angle, _, _, _) as c_i) :: (Extension(_,_,_) as c_o) :: [], clausePos, _) -> yield DefinedAs, c_o, c_i
               | Application(_, Keyword(DoubleArrow, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield DoubleArrow, c_i, c_o
               | Application(_, Keyword(Equals, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield Equals, c_i, c_o
               | Application(_, Keyword(NotEquals, _, _) :: c_i :: c_o :: [], clausePos, _) -> yield NotEquals, c_i, c_o
