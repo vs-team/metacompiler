@@ -44,11 +44,11 @@ public override int GetHashCode() {
 }
 
 public class _Semicolon : ListInt  {
-public IntValue P1;
+public int P1;
 public ListInt P2;
 
-public _Semicolon(IntValue P1, ListInt P2) {this.P1 = P1; this.P2 = P2;}
-public static _Semicolon Create(IntValue P1, ListInt P2) { return new _Semicolon(P1, P2); }
+public _Semicolon(int P1, ListInt P2) {this.P1 = P1; this.P2 = P2;}
+public static _Semicolon Create(int P1, ListInt P2) { return new _Semicolon(P1, P2); }
 
 
 public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
@@ -97,21 +97,19 @@ yield return result;  }
  #line 19 ""
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Semicolon; 
  #line 19 ""
-if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 19 ""
-if (tmp_2 != null) { var x_Prime = tmp_2.P1; var xs = tmp_1.P2; 
+if (tmp_1 != null) { var x = tmp_1.P1; var xs = tmp_1.P2; 
  #line 19 ""
 if(xs is ListInt) { 
  #line 19 ""
-var tmp_4 = add.Create(xs as ListInt);
+var tmp_3 = add.Create(xs as ListInt);
  #line 19 ""
-foreach (var tmp_3 in tmp_4.Run()) { var tmp_5 = tmp_3 as _opDollar; 
+foreach (var tmp_2 in tmp_3.Run()) { var tmp_4 = tmp_2 as _opDollar; 
  #line 19 ""
-if (tmp_5 != null) { var res = tmp_5.P1; 
+if (tmp_4 != null) { var res = tmp_4.P1; 
  #line 19 ""
-var result = _opDollar.Create(x_Prime+res);
+var result = _opDollar.Create(x+res);
  #line 19 ""
-yield return result;  } } } } }
+yield return result;  } } } }
  } 
 
   }
@@ -161,15 +159,13 @@ yield return result;  }
  #line 27 ""
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Semicolon; 
  #line 27 ""
-if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 27 ""
-if (tmp_2 != null) { var x = tmp_2.P1; var xs = tmp_1.P2; var k = tmp_0.P2; 
+if (tmp_1 != null) { var x = tmp_1.P1; var xs = tmp_1.P2; var k = tmp_0.P2; 
  #line 27 ""
 if(x.Equals(k)) { 
  #line 27 ""
 var result = yes.Create();
  #line 27 ""
-yield return result;  } } }
+yield return result;  } }
  } 
 
   
@@ -177,21 +173,19 @@ yield return result;  } } }
  #line 31 ""
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Semicolon; 
  #line 31 ""
-if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 31 ""
-if (tmp_2 != null) { var x = tmp_2.P1; var xs = tmp_1.P2; var k = tmp_0.P2; 
+if (tmp_1 != null) { var x = tmp_1.P1; var xs = tmp_1.P2; var k = tmp_0.P2; 
  #line 31 ""
 if(!x.Equals(k)) { 
  #line 31 ""
 if(xs is ListInt) { 
  #line 31 ""
-var tmp_4 = contains.Create(xs as ListInt, k);
+var tmp_3 = contains.Create(xs as ListInt, k);
  #line 31 ""
-foreach (var tmp_3 in tmp_4.Run()) { var res = tmp_3; 
+foreach (var tmp_2 in tmp_3.Run()) { var res = tmp_2; 
  #line 31 ""
 var result = res;
  #line 31 ""
-yield return result;  } } } } }
+yield return result;  } } } }
  } 
 
   }
@@ -285,21 +279,19 @@ yield return result;  }
  #line 40 ""
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Semicolon; 
  #line 40 ""
-if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 40 ""
-if (tmp_2 != null) { var x = tmp_2.P1; var xs = tmp_1.P2; 
+if (tmp_1 != null) { var x = tmp_1.P1; var xs = tmp_1.P2; 
  #line 40 ""
 if((x%2).Equals(0)) { 
  #line 40 ""
 if(xs is ListInt) { 
  #line 40 ""
-var tmp_4 = removeOdd.Create(xs as ListInt);
+var tmp_3 = removeOdd.Create(xs as ListInt);
  #line 40 ""
-foreach (var tmp_3 in tmp_4.Run()) { var xs_Prime = tmp_3; 
+foreach (var tmp_2 in tmp_3.Run()) { var xs_Prime = tmp_2; 
  #line 40 ""
 var result = xs_Prime;
  #line 40 ""
-yield return result;  } } } } }
+yield return result;  } } } }
  } 
 
   
@@ -307,23 +299,21 @@ yield return result;  } } } } }
  #line 45 ""
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Semicolon; 
  #line 45 ""
-if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 45 ""
-if (tmp_2 != null) { var x = tmp_2.P1; var xs = tmp_1.P2; 
+if (tmp_1 != null) { var x = tmp_1.P1; var xs = tmp_1.P2; 
  #line 45 ""
 if((x%2).Equals(1)) { 
  #line 45 ""
 if(xs is ListInt) { 
  #line 45 ""
-var tmp_4 = removeOdd.Create(xs as ListInt);
+var tmp_3 = removeOdd.Create(xs as ListInt);
  #line 45 ""
-foreach (var tmp_3 in tmp_4.Run()) { var xs_Prime = tmp_3; 
+foreach (var tmp_2 in tmp_3.Run()) { var xs_Prime = tmp_2; 
  #line 45 ""
 if(xs_Prime is ListInt) { 
  #line 45 ""
-var result = _Semicolon.Create(_opDollar.Create(x), xs_Prime as ListInt);
+var result = _Semicolon.Create(x, xs_Prime as ListInt);
  #line 45 ""
-yield return result;  } } } } } }
+yield return result;  } } } } }
  } 
 
   }
@@ -379,7 +369,7 @@ public class EntryPoint {
 static public IEnumerable<IRunnable> Run(bool printInput)
 {
  #line 1 "input"
- var p = add.Create(_Semicolon.Create(_opDollar.Create(0), _Semicolon.Create(_opDollar.Create(1), _Semicolon.Create(_opDollar.Create(2), _Semicolon.Create(_opDollar.Create(3), nil.Create())))));
+ var p = add.Create(_Semicolon.Create(0, _Semicolon.Create(1, _Semicolon.Create(2, _Semicolon.Create(3, nil.Create())))));
 if(printInput) System.Console.WriteLine(p.ToString());
 foreach(var x in p.Run())
 yield return x;
