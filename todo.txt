@@ -1,10 +1,12 @@
 - type inference
   - first stage should create generic types
   - second stage should unify the variables
-- type checker (while parsing) to verify arieties
-- higher order terms
+  - type checker
+    - verify arieties
+    - resolution of < and > for generic types
+    - higher order terms
+    - equality with == on primitive types
 - association of keywords (left or right) (priority depends on index if left, -index if right at "let priority (b:BasicExpression<_,_,_,_,_>,index:int) = ")
 - GUI should save delayed compiler to not recompile rules unnecessarily
-- resolution of < and > for generic types
 - samples
   - import directive for multiple files
