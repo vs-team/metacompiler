@@ -4,7 +4,9 @@ open Utilities
 open ParserMonad
 open BasicExpression
 
-type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisible | Divisible | GreaterOrEqual | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of name : string
+type KeywordIndex = Name | LeftArguments | RightArguments | BothArguments | GenericArguments | Class | Priority
+
+type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisible | Divisible | GreaterOrEqual | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of string
   with 
     static member ParseWithoutComparison = 
       p{
@@ -68,20 +70,146 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
       | DefinedAs -> ":="
       | FractionLine -> "\n-------------------\n"
       | Nesting -> ""
-      | Custom name -> name
+      | Custom m -> m
 
-and CustomKeyword = { Name : string; GenericArguments : List<KeywordArgument>; LeftArguments : List<KeywordArgument>; RightArguments : List<KeywordArgument>; Priority : int; Class : KeywordArgument }
-  with member this.IsGeneric = this.GenericArguments.IsEmpty |> not
-       member this.LeftAriety = this.LeftArguments.Length
-       member this.RightAriety = this.RightArguments.Length
-       member this.Arguments = this.LeftArguments @ this.RightArguments
+    static member Fold bracket genericArguments leftArguments name rightArguments priority kwType =
+        let rec removeOuterSquares args =
+            match args with
+            | Application(Square, [arg], _, _) -> arg |> removeOuterSquares
+            | Application(Square, args, _, _) -> args
+            | arg -> [arg]
+        let mergeGenerics arguments generics =
+            let genericNames = generics |> List.map Keyword.Name
+            let rec merge prev next = 
+                if genericNames |> List.exists (fun x -> x = Keyword.Name next) then
+                    match prev with
+                    | [last] -> 
+                        Application(Generic, last :: next :: [], Position.Zero, ()) :: []
+                    | last :: list -> 
+                        list @ Application(Generic, last :: next :: [], Position.Zero, ()) :: []
+                    | [] ->
+                        Application(Generic, [next], Position.Zero, ()) :: []
+                else 
+                    prev @ next :: []
+            Application(Square, arguments |> List.fold merge [], Position.Zero, ())
+        let genericArgs = removeOuterSquares genericArguments
+        let leftArgs = mergeGenerics (removeOuterSquares leftArguments) genericArgs
+        let rightArgs = mergeGenerics (removeOuterSquares rightArguments) genericArgs
+        Application(bracket, Application(Square, genericArgs, Position.Zero, ()) :: leftArgs :: name :: rightArgs :: priority :: kwType :: [], Position.Zero, ())
+
+    static member ExtractArguments index keyword =
+        let rec removeOuterSquares args =
+            match args with
+            | Application(Square, args, _, _) -> args
+            | _ -> failwithf "Cannot extract arguments %A" keyword
+        match index with
+        | LeftArguments -> removeOuterSquares (Keyword.Extract LeftArguments keyword)
+        | RightArguments -> removeOuterSquares (Keyword.Extract RightArguments keyword)
+        | GenericArguments -> removeOuterSquares (Keyword.Extract GenericArguments keyword)
+        | BothArguments -> (Keyword.ExtractArguments LeftArguments keyword) @ (Keyword.ExtractArguments RightArguments keyword)
+        | _ -> failwithf "%A is not a argument index" index
+
+    static member Arguments keyword =
+        Keyword.ExtractArguments BothArguments keyword
+
+    static member LeftArguments keyword =
+        Keyword.ExtractArguments LeftArguments keyword
+
+    static member RightArguments keyword =
+        Keyword.ExtractArguments RightArguments keyword
+
+    static member GenericArguments keyword =
+        Keyword.ExtractArguments GenericArguments keyword
+
+    static member ArgumentCSharpStyle keyword cleanup =
+        match keyword with
+        | Application(Generic, arg::args, _ ,_) -> 
+            sprintf "%s<%s>" (cleanup (Keyword.Name arg)) (args |> Seq.map (fun a -> Keyword.ArgumentCSharpStyle a cleanup) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
+        | _ ->
+            match Keyword.IsNative keyword with
+            | true -> Keyword.Name keyword
+            | false -> cleanup (Keyword.Name keyword)
+
+    static member Class keyword =
+        match(Keyword.Extract Class keyword) with
+        | Extension(cls, _, _) -> cls.Name
+        | _ -> failwithf "Cannot extract class %A" keyword
+
+    static member Priority keyword =
+        match(Keyword.Extract Priority keyword) with
+        | Imported(IntLiteral(priority),_,_) -> priority
+        | _ -> failwith "Cannot find priority %A when looking up keyword priority" keyword
+
+    static member Ariety index keyword =
+        match index with
+        | LeftArguments -> (Keyword.LeftArguments keyword).Length
+        | RightArguments -> (Keyword.RightArguments keyword).Length
+        | _ -> failwithf "%A is not a valid ariety... " index
+      
+    static member IsNative keyword = 
+        match keyword with
+        | Extension(arg,_,_) -> false
+        | Application(Angle, [Extension(arg,_,_)], _, _) -> true
+        | Application(Angle, [arg], _, _) -> Keyword.IsNative arg
+        | Application(Angle, args, _, _) -> true
+        | _ -> failwithf "Cannot match argument %A when checking for native keyword" keyword
+
+    static member Extract index keyword:BasicExpression<Keyword, Var, Literal, Position, unit> =
+        match keyword with 
+        | Application(Data, exp, _, _) ->
+            match index with
+            | GenericArguments -> exp.[0]
+            | Name -> exp.[2]
+            | LeftArguments -> exp.[1]
+            | RightArguments -> exp.[3]
+            | Priority -> exp.[4]
+            | Class -> exp.[5]
+            | BothArguments -> failwithf "Cannot extract both arguments from expression"
+        | Application(Function, exp, _, _) ->
+            match index with
+            | GenericArguments -> exp.[0]
+            | Name -> exp.[2]
+            | LeftArguments -> exp.[1]
+            | RightArguments -> exp.[3]
+            | Priority -> exp.[4]
+            | Class -> exp.[5]
+            | BothArguments -> failwithf "Cannot extract both arguments from expression"
+        | _ -> failwithf "Invalid keyword %A" keyword
+
+    static member Name keyword =
+        match keyword with
+        | Application(Generic, arg::args, _, _) -> Keyword.Name arg
+        | Extension(name,_,_) -> name.Name
+        | Application(Angle, [Extension(arg,_,_)], _, _) -> arg.Name
+        | Application(Angle, [arg], _, _) -> arg |> Keyword.Name
+        | Application(Angle, args, _, _) -> 
+          let rec printSequence =
+            function
+            | Keyword(Custom k,_,_) :: es -> k + printSequence es
+            | Extension(arg,_,_) :: es -> arg.Name + printSequence es
+            | [] -> ""
+            | es -> failwithf "Cannot match argument %A" es
+          args |> printSequence
+        | _ ->
+            match Keyword.Extract Name keyword with
+            | Imported(StringLiteral(name), _, _) -> name
+            | _ -> failwithf "Cannot extract keyword name %A" keyword
+        
+    static member CreateCSharpKeyword (name, genericArguments, leftArguments, rightArguments, priority, className) =
+        let transformIntLiteral lit =
+            Imported(IntLiteral(lit), Position.Zero, ())
+        let transformIdentifier ident =
+            Extension({Var.Name = ident}, Position.Zero, ())
+        let transformArguments args = 
+            Application(Square, args |> List.map transformIdentifier, Position.Zero, ())
+        Application(Data, transformArguments genericArguments :: transformArguments leftArguments :: Imported(StringLiteral(name), Position.Zero, ()) :: transformArguments rightArguments :: transformIntLiteral priority :: transformIdentifier className :: [], Position.Zero, ())
 
 and ConcreteExpressionContext = 
   {
     PredefinedKeywords : Parser<Keyword, ConcreteExpressionContext>
-    CustomKeywords : List<CustomKeyword>
-    CustomKeywordsByPrefix : List<CustomKeyword>
-    CustomKeywordsMap : Map<string,CustomKeyword>    
+    CustomKeywords : List<BasicExpression<Keyword, Var, Literal, Position, unit>>
+    CustomKeywordsByPrefix : List<BasicExpression<Keyword, Var, Literal, Position, unit>>
+    CustomKeywordsMap : Map<string, BasicExpression<Keyword, Var, Literal, Position, unit>>    
     InheritanceRelationships : Map<string, Set<string>>
     ImportedModules : List<string>
   } with
@@ -99,7 +227,7 @@ and ConcreteExpressionContext =
       member ctxt.CustomClasses =
         seq{
           for k in ctxt.CustomKeywords do
-          yield k.Class.BaseName
+          yield Keyword.Name k
         } |> Set.ofSeq
       static member Empty =
         {
@@ -124,120 +252,31 @@ and ConcreteExpressionContext =
       static member CSharp =
         let ks = 
           [
-            { Name = "true"
-              GenericArguments = []
-              LeftArguments = []
-              RightArguments = []
-              Priority = 0
-              Class = Defined "CSharpExpr" }
-            { Name = "false"
-              GenericArguments = []
-              LeftArguments = []
-              RightArguments = []
-              Priority = 0
-              Class = Defined "CSharpExpr" }
-            { Name = "&&"
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 1
-              Class = Defined "CSharpExpr" }
-            { Name = "||"
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 1
-              Class = Defined "CSharpExpr" }
-            { Name = "!"
-              GenericArguments = []
-              LeftArguments = []
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 1
-              Class = Defined "CSharpExpr" }
-            { Name = ","
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 1
-              Class = Defined "CSharpExpr" }
-            { Name = ">"
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 10
-              Class = Defined "CSharpExpr" }
-            { Name = "<"
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 10
-              Class = Defined "CSharpExpr" }
-            { Name = ">="
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 10
-              Class = Defined "CSharpExpr" }
-            { Name = "<="
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 10
-              Class = Defined "CSharpExpr" }
-            { Name = "=="
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 10
-              Class = Defined "CSharpExpr" }
-            { Name = "!="
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 10
-              Class = Defined "CSharpExpr" }
-            { Name = "/"
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 100
-              Class = Defined "CSharpExpr" }
-            { Name = "*"
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 100
-              Class = Defined "CSharpExpr" }
-            { Name = "%"
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 100
-              Class = Defined "CSharpExpr" }
-            { Name = "+"
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 100
-              Class = Defined "CSharpExpr" }
-            { Name = "-"
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 100
-              Class = Defined "CSharpExpr" }
-            { Name = "."
-              GenericArguments = []
-              LeftArguments = [Defined "CSharpExpr"]
-              RightArguments = [Defined "CSharpExpr"]
-              Priority = 1000
-              Class = Defined "CSharpExpr" }
-          ]
+            ("true", [], [], [], 0, "CSharpExpr")
+            ("false", [], [], [], 0, "CSharpExpr")
+            ("&&", [], ["CSharpExpr"], ["CSharpExpr"], 1, "CSharpExpr")
+            ("||", [], ["CSharpExpr"], ["CSharpExpr"], 1, "CSharpExpr")
+            ("!", [], [], ["CSharpExpr"], 1, "CSharpExpr")
+            (",", [], ["CSharpExpr"], ["CSharpExpr"], 1, "CSharpExpr")
+            ("<", [], ["CSharpExpr"], ["CSharpExpr"], 10, "CSharpExpr")
+            (">", [], ["CSharpExpr"], ["CSharpExpr"], 10, "CSharpExpr")
+            (">=", [], ["CSharpExpr"], ["CSharpExpr"], 10, "CSharpExpr")
+            ("<=", [], ["CSharpExpr"], ["CSharpExpr"], 10, "CSharpExpr")
+            ("==", [], ["CSharpExpr"], ["CSharpExpr"], 10, "CSharpExpr")
+            ("!=", [], ["CSharpExpr"], ["CSharpExpr"], 10, "CSharpExpr")
+            ("/", [], ["CSharpExpr"], ["CSharpExpr"], 100, "CSharpExpr")
+            ("*", [], ["CSharpExpr"], ["CSharpExpr"], 10, "CSharpExpr")
+            ("%", [], ["CSharpExpr"], ["CSharpExpr"], 100, "CSharpExpr")
+            ("+", [], ["CSharpExpr"], ["CSharpExpr"], 100, "CSharpExpr")
+            ("-", [], ["CSharpExpr"], ["CSharpExpr"], 100, "CSharpExpr")
+            (".", [], ["CSharpExpr"], ["CSharpExpr"], 1000, "CSharpExpr")
+          ] |> Seq.map Keyword.CreateCSharpKeyword
+            |> Seq.toList
         {
           PredefinedKeywords = Keyword.ParseWithoutComparison
           CustomKeywords = ks
-          CustomKeywordsByPrefix = ks |> List.sortBy (fun k -> k.Name) |> List.rev
-          CustomKeywordsMap = ks |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
+          CustomKeywordsByPrefix = ks |> List.sortBy (fun k -> Keyword.Extract Name k) |> List.rev
+          CustomKeywordsMap = ks |> Seq.map (fun x -> (Keyword.Name x), x) |> Map.ofSeq
           InheritanceRelationships = Map.empty
           ImportedModules          = []
         }
@@ -256,48 +295,6 @@ and Literal = StringLiteral of string | IntLiteral of int | BoolLiteral of bool 
       | BoolLiteral b -> sprintf "%b" b
       | SingleLiteral s -> sprintf "%ff" s
       | DoubleLiteral d -> sprintf "%ff" d
-
-and KeywordArgument = Native of string | Defined of string | Generic of string * List<KeywordArgument>
-  with static member Create (e:BasicExpression<Keyword,Var,Literal,_,_>) =
-        match e with
-        | Extension(arg,_,_) -> Defined arg.Name
-        | Application(Angle, [Extension(arg,_,_)], _, _) -> Native arg.Name
-        | Application(Angle, [arg], _, _) -> arg |> KeywordArgument.Create
-        | Application(Angle, args, _, _) -> 
-          let rec printSequence =
-            function
-            | Keyword(Custom k,_,_) :: es -> k + printSequence es
-            | Extension(arg,_,_) :: es -> arg.Name + printSequence es
-            | [] -> ""
-            | es -> failwithf "Cannot match argument %A" es
-          let res = args |> printSequence
-          res |> Native 
-        | _ -> failwithf "Cannot match argument %A" e
-       member this.Contains tgt = 
-         if this = tgt then true
-         else
-           match this with 
-           | Native a -> false
-           | Defined a -> false
-           | Generic(a,args) -> 
-             args |> Seq.exists (fun a -> a.Contains tgt)
-       member this.BaseName =
-         match this with 
-         | Native a -> a 
-         | Defined a -> a 
-         | Generic(a,args) -> a
-       member this.Argument = 
-         match this with 
-         | Native a -> a 
-         | Defined a -> a 
-         | Generic(a,args) -> 
-           sprintf "%s[%s]" a (args |> Seq.map (fun a -> a.Argument) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
-       member this.ArgumentCSharpStyle cleanup = 
-         match this with 
-         | Native a -> a 
-         | Defined a -> cleanup a 
-         | Generic(a,args) -> 
-           sprintf "%s<%s>" (cleanup a) (args |> Seq.map (fun a -> a.ArgumentCSharpStyle cleanup) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
 
 let getPredefinedKeywords() =
   p{

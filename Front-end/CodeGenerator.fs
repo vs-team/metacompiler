@@ -47,6 +47,16 @@ let cleanupWithoutDot (s:string) =
 
 let (!) (s:string) = (cleanupWithoutDot s).Replace(".", "_opDot")
 
+let (|Native|Defined|Generic|) kw =
+    match kw with
+    | Application(Generic, _, _, _) -> Generic(Keyword.Name kw)
+    | _ ->
+        match Keyword.IsNative kw with
+        | true -> Native(Keyword.Name kw)
+        | false -> Defined(Keyword.Name kw)
+
+
+
 let inline (++) (s:#seq<string>) (d:int) = 
   let bs = [ for i in [1..d] -> " " ] |> Seq.fold (+) ""
   s |> Seq.map (fun x -> bs + x + "\n") |> Seq.fold (+) ""
@@ -79,7 +89,7 @@ type Instruction =
   | Yield of expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>
 
 let rec create_element (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) = 
-  let rec create_element' (expectedType:KeywordArgument) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) = 
+  let rec create_element' (expectedType:BasicExpression<Keyword, Var, Literal, Position, unit>) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) = 
     match e with
     | Keyword(Custom k, _, ti) 
     | Application(Regular,(Keyword(Custom k, _, ti)) :: [], _, _)
@@ -88,18 +98,18 @@ let rec create_element (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keywo
     | Application(Regular,(Keyword(Custom k, _, ti)) :: es, pos, _)
     | Application(Implicit,(Keyword(Custom k, _, ti)) :: es, pos, _) ->
       let actualKeyword = ctxt.CustomKeywordsMap.[k]
-      if es.Length = actualKeyword.Arguments.Length then
-        let args,cargs = es |> Seq.mapi (fun i e -> create_element' actualKeyword.Arguments.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
+      if es.Length = (Keyword.Arguments actualKeyword).Length then
+        let args,cargs = es |> Seq.mapi (fun i e -> create_element' (Keyword.Arguments actualKeyword).[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
         //do printfn "Inner creation of %A with expectedType %A" (k, args) expectedType
         sprintf "%s.Create(%s)" !k args, cargs
       else
         failwithf "Invalid number of keyword arguments @ %A" pos
     | Extension(v:Var, _, ti) ->
       match expectedType with
-      | Native t ->
+      | Native(t) ->
         sprintf "%s" !v.Name, []
       | _ ->
-        let t = expectedType.BaseName
+        let t = Keyword.Name expectedType
         sprintf "%s as %s" !v.Name t, [sprintf "%s is %s" !v.Name t]
     | Application(Angle,e::[],pos, _) ->
       let res = generate_inline e
@@ -125,7 +135,7 @@ let rec create_element (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keywo
   | Application(Regular,(Keyword(Custom k, _,ti)) :: es,pos,_)
   | Application(Implicit,(Keyword(Custom k, _,ti)) :: es,pos,_) ->
     let actualKeyword = ctxt.CustomKeywordsMap.[k]
-    let args,cargs = es |> Seq.mapi (fun i e -> create_element' actualKeyword.Arguments.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
+    let args,cargs = es |> Seq.mapi (fun i e -> create_element' (Keyword.Arguments actualKeyword).[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
     let trimmedArgs = 
       if es |> List.length = 1 && args.[0] = '(' && args.[args.Length - 1] = ')' then
         args.Substring(1, args.Length - 2)
@@ -155,9 +165,9 @@ and generate_inline =
     ""
   | Application(Regular,(Keyword(Custom k,_,_)) :: [],_,_) -> 
     sprintf "(%s)" k
-  | Application(Square,(Keyword(Custom k, _,_)) :: l :: r :: [],pos,_) when ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k].LeftAriety = 1 ->
+  | Application(Square,(Keyword(Custom k, _,_)) :: l :: r :: [],pos,_) when (Keyword.Ariety LeftArguments ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k]) = 1 ->
     sprintf "<%s%s%s>" (l |> generate_inline) k (r |> generate_inline)
-  | Application(Regular,(Keyword(Custom k,_,_)) :: l :: r :: [],pos,_) when ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k].LeftAriety = 1 ->
+  | Application(Regular,(Keyword(Custom k,_,_)) :: l :: r :: [],pos,_) when (Keyword.Ariety LeftArguments ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k]) = 1 ->
     sprintf "(%s%s%s)" (l |> generate_inline) k (r |> generate_inline)
   | Extension(v:Var,_,_) ->
     sprintf "%s" !v.Name
@@ -174,7 +184,7 @@ and generate_inline =
     res
   | Application(Implicit,(Keyword(Custom k, _, _)) :: [],_,_) -> 
     sprintf "%s" k
-  | Application(Implicit,(Keyword(Custom k, _, _)) :: l :: r :: [], pos, _) when ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k].LeftAriety = 1 ->
+  | Application(Implicit,(Keyword(Custom k, _, _)) :: l :: r :: [], pos, _) when (Keyword.Ariety LeftArguments ConcreteExpressionContext.CSharp.CustomKeywordsMap.[k]) = 1 ->
     sprintf "%s%s%s" (l |> generate_inline) k (r |> generate_inline)
   | Application(Implicit, arg :: [], _, _) ->
     arg |> generate_inline
@@ -244,7 +254,7 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
         sprintf "%svar result = %s;%syield return result; %s" newLine newElement newLine (generate_instructions debugPosition originalFilePath ctxt xs)
 
 let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) (self:string) (prefix:List<Instruction>) 
-                  (ctxt:ConcreteExpressionContext) (typeConstraint:Option<KeywordArgument>) =
+                  (ctxt:ConcreteExpressionContext) (typeConstraint) =
   match e with
   | Keyword(Custom k, _, ti) -> 
     if self <> "this" then
@@ -289,7 +299,7 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
     let mutable output = output
     let mutable tmp_id = tmp_id
     let actualKeyword = ctxt.CustomKeywordsMap.[k]
-    let keywordArgumentConstraints = actualKeyword.Arguments
+    let keywordArgumentConstraints = Keyword.Arguments actualKeyword
     for e_constraint,(e,i) in es |> List.mapi (fun i e -> e,(i+1)) |> Seq.zip keywordArgumentConstraints do
       let newOutput, newTempId = matchCast tmp_id e (sprintf "%s.P%d" self i) output ctxt (Some e_constraint)
       output <- newOutput
@@ -371,20 +381,20 @@ type Parameter =
   {
     Name    : string
     IsLeft  : bool
-    Type    : KeywordArgument
+    Type    : BasicExpression<Keyword, Var, Literal, Position, unit>
   }
 
 type GeneratedClass = 
   {
     BasicName           : string
     Interface           : string
-    GenericArguments    : List<KeywordArgument>
+    GenericArguments    : List<BasicExpression<Keyword, Var, Literal, Position, unit>>
     Parameters          : ResizeArray<Parameter>
     mutable Methods     : Map<Path, Method>
   } with
       member c.Name = 
         if c.GenericArguments.IsEmpty |> not then  
-          let args = c.GenericArguments |> Seq.map (fun x -> x.ArgumentCSharpStyle (!)) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
+          let args = c.GenericArguments |> Seq.map (fun x -> Keyword.ArgumentCSharpStyle x (!)) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
           sprintf "%s<%s>" !c.BasicName args
         else
           !c.BasicName
@@ -392,27 +402,27 @@ type GeneratedClass =
       member c.ToString(all_method_paths:Set<Path>, ctxt:ConcreteExpressionContext, originalFilePath) =
         let genericConstraints = 
           if c.GenericArguments.IsEmpty |> not then  
-            let args = c.GenericArguments |> Seq.map (fun x -> sprintf "where %s : class" (x.ArgumentCSharpStyle (!))) |> Seq.reduce (fun s x -> sprintf "%s %s" s x)
+            let args = c.GenericArguments |> Seq.map (fun x -> sprintf "where %s : class" (Keyword.ArgumentCSharpStyle x (!))) |> Seq.reduce (fun s x -> sprintf "%s %s" s x)
             args
           else
             ""
         let cons =
           if c.Parameters.Count <> 0 then
-            let pars = c.Parameters |> Seq.map (fun x -> sprintf "%s %s" (x.Type.ArgumentCSharpStyle cleanupWithoutDot) x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
+            let pars = c.Parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
             let args = c.Parameters |> Seq.map (fun x -> sprintf "this.%s = %s;" x.Name x.Name) |> Seq.reduce (fun s x -> sprintf "%s %s" s x)
             sprintf "public %s(%s) {%s}\n" !c.BasicName pars args
           else
             sprintf "public %s() {}\n" !c.BasicName
         let staticCons =
           if c.Parameters.Count <> 0 then
-            let pars = c.Parameters |> Seq.map (fun x -> sprintf "%s %s" (x.Type.ArgumentCSharpStyle cleanupWithoutDot) x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
+            let pars = c.Parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
             let args = c.Parameters |> Seq.map (fun x -> sprintf "%s" x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
             sprintf "public static %s Create(%s) { return new %s(%s); }\n" c.Name pars c.Name args
           else
             sprintf "public static %s Create() { return new %s(); }\n" c.Name c.Name
         let cons = cons + staticCons
         let parameters =
-          let res = c.Parameters |> Seq.map (fun p -> sprintf "public %s %s;\n" (p.Type.ArgumentCSharpStyle cleanupWithoutDot) p.Name) |> Seq.fold (+) ""
+          let res = c.Parameters |> Seq.map (fun p -> sprintf "public %s %s;\n" (Keyword.ArgumentCSharpStyle p.Type cleanupWithoutDot) p.Name) |> Seq.fold (+) ""
           res
         let missing_methods =
           let missing_paths = all_method_paths - c.MethodPaths
@@ -430,8 +440,8 @@ type GeneratedClass =
           if c.Parameters.Count > 0 then
             let printParameter (p:Parameter) = 
               match p.Type with
-              | Generic(t,_)
-              | Native t when t <> "int" && t <> "float" && t <> "double" && t <> "bool" ->
+              | Generic(t)
+              | Native(t) when t <> "int" && t <> "float" && t <> "double" && t <> "bool" ->
                 sprintf "if (%s is System.Collections.IEnumerable) { res += \"{\"; foreach(var x in %s as System.Collections.IEnumerable) res += x.ToString(); res += \"}\";  } else { res += %s.ToString(); } \n" p.Name p.Name p.Name
               | _ -> 
                 sprintf "res += %s.ToString(); \n" p.Name
@@ -521,16 +531,16 @@ let generateCode (originalFilePath:string) (program_name:string)
       | Some i -> i.BaseInterfaces.Add a
       | None -> inheritanceRelationships <- inheritanceRelationships |> Map.add c { Name = c; BaseInterfaces = ResizeArray([a]) }
     for keyword in ctxt.CustomKeywords do
-      let newClass = { GeneratedClass.BasicName = keyword.Name
-                       GeneratedClass.GenericArguments = keyword.GenericArguments
-                       GeneratedClass.Interface = keyword.Class.ArgumentCSharpStyle (!)
+      let newClass = { GeneratedClass.BasicName = Keyword.Name keyword
+                       GeneratedClass.GenericArguments = Keyword.GenericArguments keyword
+                       GeneratedClass.Interface = Keyword.Class keyword
                        GeneratedClass.Parameters = ResizeArray()
                        GeneratedClass.Methods = Map.empty }
-      for t,i in keyword.LeftArguments |> Seq.mapi (fun i p -> p,i+1) do
+      for t,i in Keyword.LeftArguments keyword |> Seq.mapi (fun i p -> p,i+1) do
         newClass.Parameters.Add({ Name = sprintf "P%d" i; IsLeft = true; Type = t })
-      for t,i in keyword.RightArguments |> Seq.mapi (fun i p -> p,i+1) do
-        newClass.Parameters.Add({ Name = sprintf "P%d" (i + keyword.LeftAriety); IsLeft = false; Type = t })
-      classes <- classes.Add(keyword.Name,newClass)
+      for t,i in Keyword.RightArguments keyword |> Seq.mapi (fun i p -> p,i+1) do
+        newClass.Parameters.Add({ Name = sprintf "P%d" (i + Keyword.Ariety LeftArguments keyword); IsLeft = false; Type = t })
+      classes <- classes.Add(Keyword.Name keyword,newClass)
 
     do process_rules classes [] rules ctxt
 
@@ -538,17 +548,17 @@ let generateCode (originalFilePath:string) (program_name:string)
 
     let classes = classes
     let extensions = @"public static class Extensions { public static V GetKey<T, V>(this System.Collections.Immutable.ImmutableDictionary<T, V> self, T key) { return self[key]; } }"
-    let interfaces = [ for k in ctxt.CustomKeywords -> k.Class ] |> Set.ofSeq
+    let interfaces = [ for k in ctxt.CustomKeywords -> Keyword.Class k ] |> Set.ofSeq
     let inheritanceRelationships = inheritanceRelationships
     let interfacesCode = 
       [
         for i in interfaces do
-          match inheritanceRelationships |> Map.tryFind (i.BaseName) with
+          match inheritanceRelationships |> Map.tryFind (i) with
           | Some ir ->
             let explicitInterfaces = ir.BaseInterfaces
-            yield sprintf "public interface %s : %s {}\n" (i.ArgumentCSharpStyle (!)) (explicitInterfaces |> Seq.reduce (fun s x -> s + ", " + x))
+            yield sprintf "public interface %s : %s {}\n" ((!) i) (explicitInterfaces |> Seq.reduce (fun s x -> s + ", " + x))
           | _ ->
-            yield sprintf "public interface %s : IRunnable {}\n" (i.ArgumentCSharpStyle (!))
+            yield sprintf "public interface %s : IRunnable {}\n" ((!) i)
       ] |> Seq.fold (+) ""
     let all_method_paths =
       seq{

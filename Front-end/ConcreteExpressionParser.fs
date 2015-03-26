@@ -21,8 +21,8 @@ let rec program() =
           {
             PredefinedKeywords        = Keyword.Parse
             CustomKeywords            = ks
-            CustomKeywordsByPrefix    = ks |> List.sortBy (fun k -> k.Name) |> List.rev
-            CustomKeywordsMap         = ks |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
+            CustomKeywordsByPrefix    = ks |> List.sortBy (fun k -> Keyword.Name k) |> List.rev
+            CustomKeywordsMap         = ks |> Seq.map (fun x -> Keyword.Name x, x) |> Map.ofSeq
             InheritanceRelationships  = Map.empty
             ImportedModules           = imps
           }
@@ -68,7 +68,7 @@ and keywords =
       return []
   }
 
-and keyword : Parser<CustomKeyword,ConcreteExpressionContext> = 
+and keyword = 
   let equals = 
     p{
       let! bs = blank_space()
@@ -81,41 +81,77 @@ and keyword : Parser<CustomKeyword,ConcreteExpressionContext> =
       let! bs = blank_space()
       let! l = word l
       let! bs = blank_space()
-      return ()
+      return l
     }
   p{
-    do! label "Keyword"
-    let! k = expr()
-    match k with
-    | Application(Implicit, // no generic arguments
-                  [
-                    leftArgs
-                    name
-                    rightArgs
-                    Extension(_, _, _) // Priority
-                    Imported(IntLiteral priority, _, _)
-                    Extension(_, _, _) // Class
-                    className
-                  ], _, _) ->
-      let rec removeOuterSquares args =
-        match args with
-        | Application(Square, [arg], _, _) -> arg |> removeOuterSquares
-        | Application(Square, args, _, _) -> args
-        | arg -> [arg]
-      let leftArguments = leftArgs |> removeOuterSquares 
-      let rightArguments = rightArgs |> removeOuterSquares
-      let name,genericArguments =
-        match name with
-        | Imported(StringLiteral(name), _, _) -> name, []
-        | _ -> failwithf "Malformed keyword name %A" name
-      let className = 
-        match className with
-        | Extension(className:Var, _, _) -> className
-        | _ -> failwithf "Malformed keyword class name %A" className
-      return { Name = name; GenericArguments = genericArguments; LeftArguments = leftArguments |> List.map KeywordArgument.Create; RightArguments = rightArguments |> List.map KeywordArgument.Create; Priority = priority; Class = Defined className.Name }
-    | _ -> 
-      return failwithf "Malformed keyword expression %A" k
+    let! a = ((label "Data") + label "Keyword") + (label "Function")
+    match a with
+    | First(First(_)) ->
+        let! kw = expr()
+        match kw with
+        | Application(Implicit,
+                      [
+                        genericArgs
+                        leftArgs
+                        name
+                        rightArgs
+                        Extension({ Name = "Priority" }, _, _)
+                        priority
+                        Extension({ Name = "Type" }, _, _)
+                        typeName
+                      ], _, _) -> 
+            return Keyword.Fold Data genericArgs leftArgs name rightArgs priority typeName 
+        | _ -> 
+            return failwithf "malformed expression %A" kw
+    | First(Second(_)) ->
+        let! kw = expr()
+        match kw with
+        | Application(Implicit,
+                      [
+                        leftArgs
+                        name
+                        rightArgs
+                        Extension({ Name = "Priority" }, _, _)
+                        priority
+                        Extension({ Name = "Class" }, _, _)
+                        typeName
+                      ], _, _) -> 
+            return Keyword.Fold Data (Application(Square, [], Position.Zero, ())) leftArgs name rightArgs priority typeName 
+        | _ -> 
+            return failwithf "malformed expression %A" kw
+    | Second _ ->
+        let! kw = expr()
+        match kw with
+        | Application(Implicit,
+                        [
+                            genericArgs
+                            name
+                            rightArgs
+                            Extension({ Name = "Priority" }, _, _)
+                            priority
+                            Extension({ Name = "Type" }, _, _)
+                            leftHand
+                        ], _, _) ->  
+            let! l = label "=>"
+            let! rightHand = expr()
+            return Application(Function, genericArgs :: Application(Square, [], Position.Zero, ()) :: name :: rightArgs :: priority :: Application(Implicit, leftHand :: rightHand :: [], Position.Zero, ()) :: [], Position.Zero, ())
+        | _ -> 
+            return failwithf "malformed expression %A" kw
   }
+
+  (*
+        | Application(Implicit, // no generic arguments
+                      [
+                        leftArgs
+                        name
+                        rightArgs
+                        Extension({ Name = "Priority" }, _, _)
+                        priority
+                        Extension({ Name = "Type" }, _, _)
+                        typeName
+                      ], _, _) -> 
+            return Application(Data, Application(Square, [], Position.Zero, ()) :: leftArgs :: name :: rightArgs :: priority :: typeName :: [], Position.Zero, ())
+  *)
 
 and rules depth = 
   p{
@@ -217,9 +253,9 @@ and customKeyword() =
   let rec customKeyword = 
     function 
     | [] -> fail "Expected keyword"
-    | (k : CustomKeyword) :: ks ->
+    | k :: ks ->
       p{
-        let! r = word k.Name + customKeyword ks
+        let! r = word (Keyword.Name k) + customKeyword ks
         match r with 
         | First w -> return w
         | Second w' -> return w'
@@ -252,8 +288,8 @@ and expr() =
       match b with
       | Keyword(Custom(k),pos, ()) ->
         if customKeywordsMap |> Map.containsKey k then
-          let (kw:CustomKeyword) = customKeywordsMap.[k]
-          kw.LeftAriety, kw.RightAriety
+          let kw = customKeywordsMap.[k]
+          Keyword.Ariety LeftArguments kw, Keyword.Ariety RightArguments kw
         else
           0,0
       | _ -> 0,0
@@ -262,7 +298,7 @@ and expr() =
       | Keyword(Custom(k),pos, ()) ->
         if customKeywordsMap |> Map.containsKey k then
           let kw = customKeywordsMap.[k]
-          kw.Priority,-index
+          Keyword.Priority kw ,-index
         else
           -1,-index
       | _ -> -1,-index
