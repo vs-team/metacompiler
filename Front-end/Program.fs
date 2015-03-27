@@ -23,7 +23,7 @@ let runDeduction path =
   let timer = System.Diagnostics.Stopwatch()
   let output = ref ""
   let addOutput s = output := sprintf "%s\n%s" (output.Value) s
-  match (program()).Parse (rules |> Seq.toList) ConcreteExpressionContext.Empty Position.Zero with
+  match (program()).Parse (rules |> Seq.toList) ConcreteExpressionContext.Empty (Position.Create path) with
   | (x,_,ctxt,pos)::xs,[] -> 
     fun (input:string) ->
       let input = input.Trim([|'\r'; '\n'|]) + "\n"
