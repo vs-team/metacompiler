@@ -23,17 +23,17 @@ public static _opAddition Create(Num P1, Num P2) { return new _opAddition(P1, P2
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 14 ""
+ #line 23 "Content\Binary numbers"
 var tmp_0 = this; var a = tmp_0.P1; var b = tmp_0.P2; 
- #line 14 ""
+ #line 23 "Content\Binary numbers"
 if(a is Num && b is Num) { 
- #line 14 ""
+ #line 23 "Content\Binary numbers"
 var tmp_2 = addCarry.Create(a as Num, b as Num, d0.Create());
- #line 14 ""
+ #line 23 "Content\Binary numbers"
 foreach (var tmp_1 in tmp_2.Run0_()) { var c = tmp_1; 
- #line 14 ""
+ #line 23 "Content\Binary numbers"
 var result = c;
- #line 14 ""
+ #line 23 "Content\Binary numbers"
 yield return result;  } }
  } 
 
@@ -106,67 +106,67 @@ public static addCarry Create(Num P1, Num P2, Digit P3) { return new addCarry(P1
 
   public IEnumerable<IRunnable> Run0_() {   
  { 
- #line 18 ""
+ #line 30 "Content\Binary numbers"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as nil; 
- #line 18 ""
+ #line 30 "Content\Binary numbers"
 if (tmp_1 != null) { var tmp_2 = tmp_0.P2 as nil; 
- #line 18 ""
+ #line 30 "Content\Binary numbers"
 if (tmp_2 != null) { var tmp_3 = tmp_0.P3 as d1; 
- #line 18 ""
+ #line 30 "Content\Binary numbers"
 if (tmp_3 != null) { 
- #line 18 ""
+ #line 30 "Content\Binary numbers"
 var result = overflow.Create();
- #line 18 ""
+ #line 30 "Content\Binary numbers"
 yield return result;  } } }
  } 
 
   
  { 
- #line 21 ""
+ #line 35 "Content\Binary numbers"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as nil; 
- #line 21 ""
+ #line 35 "Content\Binary numbers"
 if (tmp_1 != null) { var tmp_2 = tmp_0.P2 as nil; 
- #line 21 ""
+ #line 35 "Content\Binary numbers"
 if (tmp_2 != null) { var tmp_3 = tmp_0.P3 as d0; 
- #line 21 ""
+ #line 35 "Content\Binary numbers"
 if (tmp_3 != null) { 
- #line 21 ""
+ #line 35 "Content\Binary numbers"
 var result = nil.Create();
- #line 21 ""
+ #line 35 "Content\Binary numbers"
 yield return result;  } } }
  } 
 
   
  { 
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _Comma; 
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 if (tmp_1 != null) { var a = tmp_1.P1; var da = tmp_1.P2; var tmp_2 = tmp_0.P2 as _Comma; 
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 if (tmp_2 != null) { var b = tmp_2.P1; var db = tmp_2.P2; var dr = tmp_0.P3; 
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 if(da is Digit && db is Digit && dr is Digit) { 
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 var tmp_4 = addDigits.Create(da as Digit, db as Digit, dr as Digit);
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 foreach (var tmp_3 in tmp_4.Run0_2_()) { var tmp_5 = tmp_3 as _Comma; 
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 if (tmp_5 != null) { var tmp_6 = tmp_5.P1 as _Comma; 
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 if (tmp_6 != null) { var tmp_7 = tmp_6.P1 as nil; 
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 if (tmp_7 != null) { var dr_Prime = tmp_6.P2; var d = tmp_5.P2; 
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 if(a is Num && b is Num && dr_Prime is Digit) { 
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 var tmp_9 = addCarry.Create(a as Num, b as Num, dr_Prime as Digit);
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 foreach (var tmp_8 in tmp_9.Run0_2_()) { var res = tmp_8; 
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 if(res is Num && d is Digit) { 
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 var result = _Comma.Create(res as Num, d as Digit);
- #line 24 ""
+ #line 40 "Content\Binary numbers"
 yield return result;  } } } } } } } } } }
  } 
 
@@ -207,129 +207,129 @@ public static addDigits Create(Digit P1, Digit P2, Digit P3) { return new addDig
 
   public IEnumerable<IRunnable> Run0_2_() {   
  { 
- #line 29 ""
+ #line 49 "Content\Binary numbers"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as d0; 
- #line 29 ""
+ #line 49 "Content\Binary numbers"
 if (tmp_1 != null) { var tmp_2 = tmp_0.P2 as d0; 
- #line 29 ""
+ #line 49 "Content\Binary numbers"
 if (tmp_2 != null) { var tmp_3 = tmp_0.P3 as d0; 
- #line 29 ""
+ #line 49 "Content\Binary numbers"
 if (tmp_3 != null) { 
- #line 29 ""
+ #line 49 "Content\Binary numbers"
 var result = _Comma.Create(_Comma.Create(nil.Create(), d0.Create()), d0.Create());
- #line 29 ""
+ #line 49 "Content\Binary numbers"
 yield return result;  } } }
  } 
 
   
  { 
- #line 32 ""
+ #line 54 "Content\Binary numbers"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as d0; 
- #line 32 ""
+ #line 54 "Content\Binary numbers"
 if (tmp_1 != null) { var tmp_2 = tmp_0.P2 as d0; 
- #line 32 ""
+ #line 54 "Content\Binary numbers"
 if (tmp_2 != null) { var tmp_3 = tmp_0.P3 as d1; 
- #line 32 ""
+ #line 54 "Content\Binary numbers"
 if (tmp_3 != null) { 
- #line 32 ""
+ #line 54 "Content\Binary numbers"
 var result = _Comma.Create(_Comma.Create(nil.Create(), d0.Create()), d1.Create());
- #line 32 ""
+ #line 54 "Content\Binary numbers"
 yield return result;  } } }
  } 
 
   
  { 
- #line 35 ""
+ #line 59 "Content\Binary numbers"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as d0; 
- #line 35 ""
+ #line 59 "Content\Binary numbers"
 if (tmp_1 != null) { var tmp_2 = tmp_0.P2 as d1; 
- #line 35 ""
+ #line 59 "Content\Binary numbers"
 if (tmp_2 != null) { var tmp_3 = tmp_0.P3 as d0; 
- #line 35 ""
+ #line 59 "Content\Binary numbers"
 if (tmp_3 != null) { 
- #line 35 ""
+ #line 59 "Content\Binary numbers"
 var result = _Comma.Create(_Comma.Create(nil.Create(), d0.Create()), d1.Create());
- #line 35 ""
+ #line 59 "Content\Binary numbers"
 yield return result;  } } }
  } 
 
   
  { 
- #line 38 ""
+ #line 64 "Content\Binary numbers"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as d0; 
- #line 38 ""
+ #line 64 "Content\Binary numbers"
 if (tmp_1 != null) { var tmp_2 = tmp_0.P2 as d1; 
- #line 38 ""
+ #line 64 "Content\Binary numbers"
 if (tmp_2 != null) { var tmp_3 = tmp_0.P3 as d1; 
- #line 38 ""
+ #line 64 "Content\Binary numbers"
 if (tmp_3 != null) { 
- #line 38 ""
+ #line 64 "Content\Binary numbers"
 var result = _Comma.Create(_Comma.Create(nil.Create(), d1.Create()), d0.Create());
- #line 38 ""
+ #line 64 "Content\Binary numbers"
 yield return result;  } } }
  } 
 
   
  { 
- #line 41 ""
+ #line 69 "Content\Binary numbers"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as d1; 
- #line 41 ""
+ #line 69 "Content\Binary numbers"
 if (tmp_1 != null) { var tmp_2 = tmp_0.P2 as d0; 
- #line 41 ""
+ #line 69 "Content\Binary numbers"
 if (tmp_2 != null) { var tmp_3 = tmp_0.P3 as d0; 
- #line 41 ""
+ #line 69 "Content\Binary numbers"
 if (tmp_3 != null) { 
- #line 41 ""
+ #line 69 "Content\Binary numbers"
 var result = _Comma.Create(_Comma.Create(nil.Create(), d0.Create()), d1.Create());
- #line 41 ""
+ #line 69 "Content\Binary numbers"
 yield return result;  } } }
  } 
 
   
  { 
- #line 44 ""
+ #line 74 "Content\Binary numbers"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as d1; 
- #line 44 ""
+ #line 74 "Content\Binary numbers"
 if (tmp_1 != null) { var tmp_2 = tmp_0.P2 as d0; 
- #line 44 ""
+ #line 74 "Content\Binary numbers"
 if (tmp_2 != null) { var tmp_3 = tmp_0.P3 as d1; 
- #line 44 ""
+ #line 74 "Content\Binary numbers"
 if (tmp_3 != null) { 
- #line 44 ""
+ #line 74 "Content\Binary numbers"
 var result = _Comma.Create(_Comma.Create(nil.Create(), d1.Create()), d0.Create());
- #line 44 ""
+ #line 74 "Content\Binary numbers"
 yield return result;  } } }
  } 
 
   
  { 
- #line 47 ""
+ #line 79 "Content\Binary numbers"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as d1; 
- #line 47 ""
+ #line 79 "Content\Binary numbers"
 if (tmp_1 != null) { var tmp_2 = tmp_0.P2 as d1; 
- #line 47 ""
+ #line 79 "Content\Binary numbers"
 if (tmp_2 != null) { var tmp_3 = tmp_0.P3 as d0; 
- #line 47 ""
+ #line 79 "Content\Binary numbers"
 if (tmp_3 != null) { 
- #line 47 ""
+ #line 79 "Content\Binary numbers"
 var result = _Comma.Create(_Comma.Create(nil.Create(), d1.Create()), d0.Create());
- #line 47 ""
+ #line 79 "Content\Binary numbers"
 yield return result;  } } }
  } 
 
   
  { 
- #line 50 ""
+ #line 84 "Content\Binary numbers"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as d1; 
- #line 50 ""
+ #line 84 "Content\Binary numbers"
 if (tmp_1 != null) { var tmp_2 = tmp_0.P2 as d1; 
- #line 50 ""
+ #line 84 "Content\Binary numbers"
 if (tmp_2 != null) { var tmp_3 = tmp_0.P3 as d1; 
- #line 50 ""
+ #line 84 "Content\Binary numbers"
 if (tmp_3 != null) { 
- #line 50 ""
+ #line 84 "Content\Binary numbers"
 var result = _Comma.Create(_Comma.Create(nil.Create(), d1.Create()), d1.Create());
- #line 50 ""
+ #line 84 "Content\Binary numbers"
 yield return result;  } } }
  } 
 

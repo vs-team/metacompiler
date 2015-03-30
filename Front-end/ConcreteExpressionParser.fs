@@ -350,6 +350,7 @@ and expr() =
       | First _ -> 
         return []
       | Second _ ->
+
         let open_bracket = (character '(' + character '[') + (character '{' + word "<<")
         let closed_bracket = (character ')' + character ']') + (character '}' + word ">>")
         let! e = (open_bracket + !!closed_bracket) + (customKeyword() + (literal() + identifier()))
@@ -434,7 +435,7 @@ and included_files =
         match inc with
         | First file ->
             match file with
-            | (rules, _, ctxt, _)::ls,[] ->
+            | First ((rules), (_), (ctxt), (pos)) ->
                 let! el = empty_lines()
                 let! incs = included_files
                 return (rules, ctxt) :: incs

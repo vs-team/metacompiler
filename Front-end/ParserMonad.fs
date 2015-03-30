@@ -47,13 +47,13 @@ type Error = Error of Position * string
 *)
 
 
-type Parser<'a, 'ctxt> = { Parse : List<char> -> 'ctxt -> Position -> List<'a * List<char> * 'ctxt * Position> * List<Error>}
+type Parser<'a, 'ctxt> = { Parse : List<char> -> 'ctxt -> Position -> Either<'a * List<char> * 'ctxt * Position, Error>}
   with
     (*
         The Make function is used to construct a new Parser Monad.
         This function accepts a function in the form of p:List<char> -> 'ctxt -> Position -> List<'a * List<char> * 'ctxt * Position> * List<Error> and assigns the Parser's Parse function to this value.
     *)
-    static member Make(p:List<char> -> 'ctxt -> Position -> List<'a * List<char> * 'ctxt * Position> * List<Error>) : Parser<'a,'ctxt> = { Parse = p }
+    static member Make(p:List<char> -> 'ctxt -> Position -> Either<'a * List<char> * 'ctxt * Position, Error>) : Parser<'a,'ctxt> = { Parse = p }
     (*
         The ++ function constructs an error monad with the given two Parsers p1 and p2.
         
@@ -65,13 +65,13 @@ type Parser<'a, 'ctxt> = { Parse : List<char> -> 'ctxt -> Position -> List<'a * 
     static member (++) (p1:Parser<'a,'ctxt>, p2:Parser<'a,'ctxt>) : Parser<'a,'ctxt> = 
      (fun buf ctxt p ->
         match p1.Parse buf ctxt p with
-        | [],err1 ->
+        | Second err1 ->
           match p2.Parse buf ctxt p with
-          | [],err2 -> [],err1 @ err2
-          | p2res,err2 ->
-            [ for res,restBuf,ctxt',pos in p2res -> res, restBuf, ctxt', pos ], []
-        | p1res,err1 ->
-          [ for res,restBuf,ctxt',pos in p1res -> res, restBuf, ctxt', pos ], []) |> Parser.Make
+          | Second err2 -> Second err2
+          | p2res -> p2res
+            //[ for res,restBuf,ctxt',pos in p2res -> res, restBuf, ctxt', pos ], []
+        | p1res -> p1res) |> Parser.Make
+          //[ for res,restBuf,ctxt',pos in p1res -> res, restBuf, ctxt', pos ], []) |> Parser.Make
     (*
         The + function construct an error monad with the given two Parsers p1 and p2.
         
@@ -80,16 +80,23 @@ type Parser<'a, 'ctxt> = { Parse : List<char> -> 'ctxt -> Position -> List<'a * 
         If p1 matched, an Either Monad will be returned with it's First value as p1's match.
         if p2 matched, an Either monad will be returned with it's Second value as p2's match.
     *)
-    static member (+) (p1:Parser<'a,'ctxt>, p2:Parser<'b,'ctxt>) : Parser<Either<'a,'b>,'ctxt> = 
+    static   member (+) (p1:Parser<'a,'ctxt>, p2:Parser<'b,'ctxt>) : Parser<Either<'a,'b>,'ctxt> = 
      (fun buf ctxt p ->
         match p1.Parse buf ctxt p with
-        | [],err1 ->
+        | Second err1 ->
           match p2.Parse buf ctxt p with
-          | [],err2 -> [],err1 @ err2
-          | p2res,err2 ->
-            [ for res,restBuf,ctxt',pos in p2res -> Second res, restBuf, ctxt', pos ], []
-        | p1res,err1 ->
-          [ for res,restBuf,ctxt',pos in p1res -> First res, restBuf, ctxt', pos ], []) |> Parser.Make
+          | Second err2 -> Second(err2)
+          | First p2res -> 
+            let res,restBuf,ctxt',pos = p2res 
+            First(Second res, restBuf, ctxt', pos)
+            //[ for res,restBuf,ctxt',pos in p2res -> Second res, restBuf, ctxt', pos ], []
+        | First p1res ->
+          let res, restBuf, ctxt', pos = p1res
+          
+          First((First res), restBuf, ctxt', pos)) |> Parser.Make
+          //[ for res,restBuf,ctxt',pos in p1res -> First res, restBuf, ctxt', pos ], []) |> Parser.Make
+             //[ for res,restBuf,ctxt',pos in p1res -> First res, restBuf, ctxt', pos ], []) |> Parser.Make
+          //[ for res,restBuf,ctxt',pos in p1res -> First res, restBuf, ctxt', pos ], []) |> Parser.Make
     (*
         The !! function will execute the Parser, this function will thus advance one step in the parsing process.
         This function can be used to skip over lexemes from the input.
@@ -106,11 +113,16 @@ type Parser<'a, 'ctxt> = { Parse : List<char> -> 'ctxt -> Position -> List<'a * 
     *)
     static member (!!) (p:Parser<'a,'ctxt>) : Parser<'a,'ctxt> = 
       (fun buf ctxt pos -> 
-        let all_res,err = p.Parse buf ctxt pos
-        [
+        let all_res = p.Parse buf ctxt pos
+        match all_res with
+        | Second err -> Second err
+        | First pres -> 
+          let x, res_buf, ctxt', pos = pres
+          First (x, buf, ctxt', pos)) |> Parser.Make
+        (*[
           for x,res_buf, ctxt', pos' in all_res do
           yield x, buf, ctxt', pos
-        ], []) |> Parser.Make
+        ], []) |> Parser.Make *)
 
 (*
   Parser monad. The parser monad is responsible for the (lazy) chaining of the parsing operations.
@@ -147,13 +159,20 @@ and ParserBuilder() =
   *)
   member this.Bind(p:Parser<'a,'ctxt>, k:'a->Parser<'b,'ctxt>) : Parser<'b,'ctxt> =
    (fun buf ctxt pos ->
-      let all_res,err = p.Parse buf ctxt pos
-      let out =
+      let all_res = p.Parse buf ctxt pos
+      match all_res with
+      | First p1res ->
+        let res, restBuf, ctxt', pos' = p1res
+        //printf "%A" ctxt'
+        (k res).Parse restBuf ctxt' pos'
+      | Second err -> Second err ) |> Parser.Make
+     
+     (* let out =
         [
           for res,restBuf,ctxt',pos' in all_res do
           yield (k res).Parse restBuf ctxt' pos'
-        ]
-      out |> List.map fst |> List.concat, err @ (out |> List.map snd |> List.concat)) |> Parser.Make
+        ] *)
+      //out |> List.map fst |> List.concat, err @ (out |> List.map snd |> List.concat)) |> Parser.Make
   (*
 
   The Behaviour of the Combine function is almost identical to the Behaviour of the Bind function.
@@ -162,18 +181,26 @@ and ParserBuilder() =
   *)
   member this.Combine(p:Parser<'a,'ctxt>, k:Parser<'b,'ctxt>) : Parser<'b,'ctxt> =
    (fun buf ctxt pos ->
-      let all_res,err = p.Parse buf ctxt pos
-      let out =
+      let all_res = p.Parse buf ctxt pos
+      match all_res with
+      | First p1res -> 
+        let res, restBuf, ctxt', pos' = p1res
+        (k.Parse restBuf ctxt' pos')
+      | Second err -> Second err ) |> Parser.Make
+      
+    (*  let out =
         [
           for res,restBuf,ctxt',pos' in all_res do
           yield k.Parse restBuf ctxt' pos'
         ]
       out |> List.map fst |> List.concat, err @ (out |> List.map snd |> List.concat)) |> Parser.Make
+    *)
   (*
     The function Return creates a new Parser from any type 'a.
   *)
   member this.Return(x:'a) : Parser<'a,'ctxt> =
-    (fun buf ctxt pos -> [x,buf,ctxt,pos],[]) |> Parser.Make
+    (fun buf ctxt pos ->
+     First(x, buf, ctxt, pos)) |> Parser.Make
   member this.ReturnFrom(x:Parser<'a,'ctxt>) : Parser<'a,'ctxt> = x
   member this.Yield(x:'a) : Parser<'a,'ctxt> = this.Return x
   member this.Zero() = this.Return()
@@ -189,7 +216,7 @@ let p = parser
 *)
 
 let fail s = 
-  (fun _ _ pos -> [],[Error(pos, s)]) |> Parser.Make 
+  (fun _ _ pos -> Second(Error(pos, s))) |> Parser.Make 
 
 (*
     The function character(c) will test if the next character in a Parser's input buffer matches the given character c.
@@ -210,15 +237,16 @@ let fail s =
 *)
 let character(c:char) : Parser<char, 'ctxt> = 
  (fun buf ctxt (pos:Position) ->
-  match buf with
+  match buf : List<char> with
   | x::cs when x = c -> 
     let pos' = 
       if x = '\n' then 
         pos.NextLine 
       else 
         pos.NextCol
-    [c, cs, ctxt, pos'],[]
-  | _ -> [],[Error(pos, sprintf "Expected character %A" c)]) |> Parser.Make
+    First( c, cs, ctxt, pos')
+  | _ -> 
+    Second (Error(pos, sprintf "Expected character %A" c))) |> Parser.Make
 
 (*
     The function word(s) will test if the given string s's characters match the next characters found in a Parser's input buffer.
@@ -277,7 +305,7 @@ let rec takeWhile (s:Parser<'a,'ctxt>) : Parser<List<'a>, 'ctxt> =
     let! res = something + nothing
     match res with
     | First l -> return l
-    | Second l -> return l
+    | Second l -> return  l
   }
 
 (*
@@ -300,8 +328,10 @@ let rec takeWhile (s:Parser<'a,'ctxt>) : Parser<List<'a>, 'ctxt> =
 let rec character' (p:char -> bool) : Parser<char, 'ctxt> =
  (fun buf ctxt (pos:Position) ->
     match buf with
-    | c::cs when p c -> [c, cs, ctxt, if c = '\n' then pos.NextLine else pos.NextCol],[]
-    | buf -> [],[Error(pos, sprintf "Unexpected character")]) |> Parser.Make
+    | c::cs when p c -> 
+     First (c, cs, ctxt, if c = '\n' then pos.NextLine else pos.NextCol)
+    | buf -> 
+     Second(Error(pos, sprintf "Unexpected character"))) |> Parser.Make
 
 (*
     The function takeWhile'(p:char->bool) will consume characters from a Parser's input buffer as long as the given function p is satisfied ( p(c) will return true ).
@@ -326,9 +356,15 @@ let rec takeWhile' (p:char -> bool) : Parser<List<char>,'ctxt> =
  (fun buf ctxt pos ->
     match buf with
     | c::cs when p c ->
-      let all_res,err = (takeWhile' p).Parse cs ctxt pos
-      [ for res,resBuf,ctxt',pos' in all_res -> c::res,resBuf,ctxt',pos' ],err
-    | buf -> [[],buf,ctxt,pos],[]) |> Parser.Make
+      let all_res = (takeWhile' p).Parse cs ctxt pos
+      match all_res with
+      | First p1res ->
+      let res,resBuf,ctxt',pos' = p1res
+      First(c::res,resBuf,ctxt',pos')
+      | Second err ->
+        Second err
+      //[ for res,resBuf,ctxt',pos' in all_res -> c::res,resBuf,ctxt',pos' ],err
+    | buf -> First([],buf,ctxt,pos) )|> Parser.Make
 
 (*
     Simple helper function to determine whether the given character c is in range of the codepoints of '0' and '9'.
@@ -436,8 +472,8 @@ let tab() =
 let eof() =
   (fun buf ctxt pos ->
      match buf with
-     | [] -> [(),[],ctxt,pos],[]
-     | _ -> [],[Error(pos, "Expected end of file")]) |> Parser.Make
+     | [] -> First ((),[],ctxt,pos)
+     | _ -> Second(Error(pos, "Expected end of file"))) |> Parser.Make
 (*
     Helper function to check for a valid new line.
 *)
@@ -459,17 +495,17 @@ let rec empty_lines() =
     let! el = empty_line() + p{ return () }
     match el with
     | First el ->
-      let! els = empty_lines()
-      return ()
+       let! els = empty_lines()
+       return ()
     | Second _ ->
       return ()
   }
 
 let getContext() =
-  (fun buf ctxt pos -> [ctxt,buf,ctxt,pos],[]) |> Parser.Make
+  (fun buf ctxt pos -> First(ctxt,buf,ctxt,pos)) |> Parser.Make
 
 let setContext ctxt' =
-  (fun buf ctxt pos -> [(),buf,ctxt',pos],[]) |> Parser.Make
+  (fun buf ctxt pos -> First((),buf,ctxt',pos)) |> Parser.Make
 
 let getPosition() =
-  (fun buf ctxt pos -> [pos,buf,ctxt,pos],[]) |> Parser.Make
+  (fun buf ctxt pos -> First(pos,buf,ctxt,pos)) |> Parser.Make
