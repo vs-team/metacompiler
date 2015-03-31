@@ -1,8 +1,8 @@
-﻿Keyword [] "z" []         Priority 2  Class Num
-Keyword [] "s" [Num]      Priority 3  Class Num
-Keyword [Expr] "+" [Expr] Priority 0  Class Expr
-Keyword [Expr] "*" [Expr] Priority 1  Class Expr
-Keyword [] "!" [Expr]     Priority 1  Class Expr
+﻿Data [] [] "z" []         Priority 2  Type Num
+Func [] "s" [Num]      Priority 3  Type Expr => Num
+Data [] [Expr] "+" [Expr] Priority 0  Type Expr
+Data [] [Expr] "*" [Expr] Priority 1  Type Expr
+Func [] "!" [Expr]     Priority 1  Type Expr => Expr
 
 Num is Expr
 

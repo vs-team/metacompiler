@@ -8,8 +8,8 @@ open Utilities
     The Position is used as context for errors.
 *)
 type Position = { Line : int ; Col : int ; File : string} with
-   member this.NextLine = { this with Line = this.Line + 1 ; Col = 1 ; File = this.File }
-   member this.NextCol = { this with Line = this.Line ; Col = this.Col + 1 ; File = this.File }
+   member this.NextLine = { this with Line = this.Line + 1 ; Col = 1 }
+   member this.NextCol = { this with Line = this.Line ; Col = this.Col + 1 }
        static member Zero = { Line = 1 ; Col = 1 ; File = ""}
        static member Create file = { Line = 1 ; Col = 1 ; File = file }
 

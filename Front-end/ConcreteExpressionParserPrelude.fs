@@ -90,7 +90,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
                     | [] ->
                         Application(Generic, [next], Position.Zero, ()) :: []
                 else 
-                    prev @ next :: []
+                    prev @ [next]
             Application(Square, arguments |> List.fold merge [], Position.Zero, ())
         let genericArgs = removeOuterSquares genericArguments
         let leftArgs = mergeGenerics (removeOuterSquares leftArguments) genericArgs
@@ -130,7 +130,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
             | true -> Keyword.Name keyword
             | false -> cleanup (Keyword.Name keyword)
 
-    static member Class keyword =
+    static member Type keyword =
         match(Keyword.Extract Class keyword) with
         | Extension(cls, _, _) -> cls.Name
         | _ -> failwithf "Cannot extract class %A" keyword
@@ -172,7 +172,11 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
             | LeftArguments -> exp.[1]
             | RightArguments -> exp.[3]
             | Priority -> exp.[4]
-            | Class -> exp.[5]
+            | Class ->  
+                match exp.[5] with
+                | Application(Implicit, left :: right :: [], _, _) ->
+                    right
+                | _ -> failwithf "Unknown function format%A" keyword
             | BothArguments -> failwithf "Cannot extract both arguments from expression"
         | _ -> failwithf "Invalid keyword %A" keyword
 

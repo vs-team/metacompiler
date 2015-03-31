@@ -1,12 +1,12 @@
-﻿Keyword [] "nil" [] Priority 0 Class BinTreeInt
-Keyword [] "node" [BinTreeInt <<int>> BinTreeInt] Priority 1010 Class BinTreeInt
-Keyword [BinTreeInt] "add" [<<int>>] Priority 100 Class Expr
-Keyword [BinTreeInt] "contains" [<<int>>] Priority 100 Class Expr
+﻿Data [] [] "nil" [] Priority 0 Type BinTreeInt
+Func [] "node" [BinTreeInt <<int>> BinTreeInt] Priority 1010 Type Expr => BinTreeInt
+Data [] [BinTreeInt] "add" [<<int>>] Priority 100 Type Expr
+Data [] [BinTreeInt] "contains" [<<int>>] Priority 100 Type Expr
 
-Keyword [Expr] "," [Expr] Priority 1010 Class Expr
-Keyword [] "$" [<<bool>>] Priority 100 Class BoolExpr
+Data [] [Expr] "," [Expr] Priority 1010 Type Expr
+Func [] "$" [<<bool>>] Priority 100 Type Expr => BoolExpr
 
-Keyword [] "run" [] Priority 0 Class Expr
+Data [] [] "run" [] Priority 0 Type Expr
 
 BoolExpr is Expr
 

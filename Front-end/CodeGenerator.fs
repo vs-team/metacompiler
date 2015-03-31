@@ -535,7 +535,7 @@ let generateCode (originalFilePath:string) (program_name:string)
     for keyword in ctxt.CustomKeywords do
       let newClass = { GeneratedClass.BasicName = Keyword.Name keyword
                        GeneratedClass.GenericArguments = Keyword.GenericArguments keyword
-                       GeneratedClass.Interface = Keyword.Class keyword
+                       GeneratedClass.Interface = Keyword.Type keyword
                        GeneratedClass.Parameters = ResizeArray()
                        GeneratedClass.Methods = Map.empty }
       for t,i in Keyword.LeftArguments keyword |> Seq.mapi (fun i p -> p,i+1) do
@@ -550,7 +550,7 @@ let generateCode (originalFilePath:string) (program_name:string)
 
     let classes = classes
     let extensions = @"public static class Extensions { public static V GetKey<T, V>(this System.Collections.Immutable.ImmutableDictionary<T, V> self, T key) { return self[key]; } }"
-    let interfaces = [ for k in ctxt.CustomKeywords -> Keyword.Class k ] |> Set.ofSeq
+    let interfaces = [ for k in ctxt.CustomKeywords -> Keyword.Type k ] |> Set.ofSeq
     let inheritanceRelationships = inheritanceRelationships
     let interfacesCode = 
       [

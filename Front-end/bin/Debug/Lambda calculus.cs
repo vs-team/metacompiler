@@ -23,11 +23,11 @@ public static _opDollar Create(string P1) { return new _opDollar(P1); }
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 18 "Content\Lambda calculus"
+ #line 11 "Content\Lambda calculus"
 var tmp_0 = this; var x = tmp_0.P1; 
- #line 18 "Content\Lambda calculus"
+ #line 11 "Content\Lambda calculus"
 var result = _opDollar.Create(x);
- #line 18 "Content\Lambda calculus"
+ #line 11 "Content\Lambda calculus"
 yield return result; 
  } 
 
@@ -88,17 +88,17 @@ public static _opSlash Create(Id P1, Dot P2, Term P3) { return new _opSlash(P1, 
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 23 "Content\Lambda calculus"
+ #line 14 "Content\Lambda calculus"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollar; 
- #line 23 "Content\Lambda calculus"
+ #line 14 "Content\Lambda calculus"
 if (tmp_1 != null) { var x = tmp_1.P1; var tmp_2 = tmp_0.P2 as _Arrow; 
- #line 23 "Content\Lambda calculus"
+ #line 14 "Content\Lambda calculus"
 if (tmp_2 != null) { var t = tmp_0.P3; 
- #line 23 "Content\Lambda calculus"
+ #line 14 "Content\Lambda calculus"
 if(t is Term) { 
- #line 23 "Content\Lambda calculus"
+ #line 14 "Content\Lambda calculus"
 var result = _opSlash.Create(_opDollar.Create(x), _Arrow.Create(), t as Term);
- #line 23 "Content\Lambda calculus"
+ #line 14 "Content\Lambda calculus"
 yield return result;  } } }
  } 
 
@@ -169,121 +169,121 @@ public static _With Create(Term P1, Where P2) { return new _With(P1, P2); }
 
   public IEnumerable<IRunnable> Run4_() {   
  { 
- #line 49 "Content\Lambda calculus"
+ #line 29 "Content\Lambda calculus"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollar; 
- #line 49 "Content\Lambda calculus"
+ #line 29 "Content\Lambda calculus"
 if (tmp_1 != null) { var y = tmp_1.P1; var tmp_2 = tmp_0.P2 as _As; 
- #line 49 "Content\Lambda calculus"
+ #line 29 "Content\Lambda calculus"
 if (tmp_2 != null) { var tmp_3 = tmp_2.P1 as _opDollar; 
- #line 49 "Content\Lambda calculus"
+ #line 29 "Content\Lambda calculus"
 if (tmp_3 != null) { var x = tmp_3.P1; var u = tmp_2.P2; 
- #line 49 "Content\Lambda calculus"
+ #line 29 "Content\Lambda calculus"
 if(x.Equals(y)) { 
- #line 49 "Content\Lambda calculus"
+ #line 29 "Content\Lambda calculus"
 var result = u;
- #line 49 "Content\Lambda calculus"
+ #line 29 "Content\Lambda calculus"
 yield return result;  } } } }
  } 
 
   
  { 
- #line 56 "Content\Lambda calculus"
+ #line 33 "Content\Lambda calculus"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollar; 
- #line 56 "Content\Lambda calculus"
+ #line 33 "Content\Lambda calculus"
 if (tmp_1 != null) { var y = tmp_1.P1; var tmp_2 = tmp_0.P2 as _As; 
- #line 56 "Content\Lambda calculus"
+ #line 33 "Content\Lambda calculus"
 if (tmp_2 != null) { var tmp_3 = tmp_2.P1 as _opDollar; 
- #line 56 "Content\Lambda calculus"
+ #line 33 "Content\Lambda calculus"
 if (tmp_3 != null) { var x = tmp_3.P1; var u = tmp_2.P2; 
- #line 56 "Content\Lambda calculus"
+ #line 33 "Content\Lambda calculus"
 if(!x.Equals(y)) { 
- #line 56 "Content\Lambda calculus"
+ #line 33 "Content\Lambda calculus"
 var result = _opDollar.Create(y);
- #line 56 "Content\Lambda calculus"
+ #line 33 "Content\Lambda calculus"
 yield return result;  } } } }
  } 
 
   
  { 
- #line 63 "Content\Lambda calculus"
+ #line 37 "Content\Lambda calculus"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSlash; 
- #line 63 "Content\Lambda calculus"
+ #line 37 "Content\Lambda calculus"
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 63 "Content\Lambda calculus"
+ #line 37 "Content\Lambda calculus"
 if (tmp_2 != null) { var x = tmp_2.P1; var tmp_3 = tmp_1.P2 as _Arrow; 
- #line 63 "Content\Lambda calculus"
+ #line 37 "Content\Lambda calculus"
 if (tmp_3 != null) { var t = tmp_1.P3; var tmp_4 = tmp_0.P2 as _As; 
- #line 63 "Content\Lambda calculus"
+ #line 37 "Content\Lambda calculus"
 if (tmp_4 != null) { var tmp_5 = tmp_4.P1 as _opDollar; 
- #line 63 "Content\Lambda calculus"
+ #line 37 "Content\Lambda calculus"
 if (tmp_5 != null) { var y = tmp_5.P1; var u = tmp_4.P2; 
- #line 63 "Content\Lambda calculus"
+ #line 37 "Content\Lambda calculus"
 if(x.Equals(y)) { 
- #line 63 "Content\Lambda calculus"
+ #line 37 "Content\Lambda calculus"
 if(t is Term) { 
- #line 63 "Content\Lambda calculus"
+ #line 37 "Content\Lambda calculus"
 var result = _opSlash.Create(_opDollar.Create(x), _Arrow.Create(), t as Term);
- #line 63 "Content\Lambda calculus"
+ #line 37 "Content\Lambda calculus"
 yield return result;  } } } } } } }
  } 
 
   
  { 
- #line 70 "Content\Lambda calculus"
+ #line 41 "Content\Lambda calculus"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSlash; 
- #line 70 "Content\Lambda calculus"
+ #line 41 "Content\Lambda calculus"
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 70 "Content\Lambda calculus"
+ #line 41 "Content\Lambda calculus"
 if (tmp_2 != null) { var x = tmp_2.P1; var tmp_3 = tmp_1.P2 as _Arrow; 
- #line 70 "Content\Lambda calculus"
+ #line 41 "Content\Lambda calculus"
 if (tmp_3 != null) { var t = tmp_1.P3; var tmp_4 = tmp_0.P2 as _As; 
- #line 70 "Content\Lambda calculus"
+ #line 41 "Content\Lambda calculus"
 if (tmp_4 != null) { var tmp_5 = tmp_4.P1 as _opDollar; 
- #line 70 "Content\Lambda calculus"
+ #line 41 "Content\Lambda calculus"
 if (tmp_5 != null) { var y = tmp_5.P1; var u = tmp_4.P2; 
- #line 70 "Content\Lambda calculus"
+ #line 41 "Content\Lambda calculus"
 if(!x.Equals(y)) { 
- #line 70 "Content\Lambda calculus"
+ #line 41 "Content\Lambda calculus"
 if(t is Term && u is Term) { 
- #line 70 "Content\Lambda calculus"
+ #line 41 "Content\Lambda calculus"
 var tmp_7 = _With.Create(t as Term, _As.Create(_opDollar.Create(y), u as Term));
- #line 70 "Content\Lambda calculus"
+ #line 41 "Content\Lambda calculus"
 foreach (var tmp_6 in tmp_7.Run4_()) { var t_Prime = tmp_6; 
- #line 70 "Content\Lambda calculus"
+ #line 41 "Content\Lambda calculus"
 if(t_Prime is Term) { 
- #line 70 "Content\Lambda calculus"
+ #line 41 "Content\Lambda calculus"
 var result = _opSlash.Create(_opDollar.Create(x), _Arrow.Create(), t_Prime as Term);
- #line 70 "Content\Lambda calculus"
+ #line 41 "Content\Lambda calculus"
 yield return result;  } } } } } } } } }
  } 
 
   
  { 
- #line 79 "Content\Lambda calculus"
+ #line 46 "Content\Lambda calculus"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opVBar; 
- #line 79 "Content\Lambda calculus"
+ #line 46 "Content\Lambda calculus"
 if (tmp_1 != null) { var t = tmp_1.P1; var u = tmp_1.P2; var tmp_2 = tmp_0.P2 as _As; 
- #line 79 "Content\Lambda calculus"
+ #line 46 "Content\Lambda calculus"
 if (tmp_2 != null) { var tmp_3 = tmp_2.P1 as _opDollar; 
- #line 79 "Content\Lambda calculus"
+ #line 46 "Content\Lambda calculus"
 if (tmp_3 != null) { var x = tmp_3.P1; var v = tmp_2.P2; 
- #line 79 "Content\Lambda calculus"
+ #line 46 "Content\Lambda calculus"
 if(t is Term && v is Term) { 
- #line 79 "Content\Lambda calculus"
+ #line 46 "Content\Lambda calculus"
 var tmp_5 = _With.Create(t as Term, _As.Create(_opDollar.Create(x), v as Term));
- #line 79 "Content\Lambda calculus"
+ #line 46 "Content\Lambda calculus"
 foreach (var tmp_4 in tmp_5.Run4_()) { var t_Prime = tmp_4; 
- #line 79 "Content\Lambda calculus"
+ #line 46 "Content\Lambda calculus"
 if(u is Term && v is Term) { 
- #line 79 "Content\Lambda calculus"
+ #line 46 "Content\Lambda calculus"
 var tmp_7 = _With.Create(u as Term, _As.Create(_opDollar.Create(x), v as Term));
- #line 79 "Content\Lambda calculus"
+ #line 46 "Content\Lambda calculus"
 foreach (var tmp_6 in tmp_7.Run4_()) { var u_Prime = tmp_6; 
- #line 79 "Content\Lambda calculus"
+ #line 46 "Content\Lambda calculus"
 if(t_Prime is Term && u_Prime is Term) { 
- #line 79 "Content\Lambda calculus"
+ #line 46 "Content\Lambda calculus"
 var result = _opVBar.Create(t_Prime as Term, u_Prime as Term);
- #line 79 "Content\Lambda calculus"
+ #line 46 "Content\Lambda calculus"
 yield return result;  } } } } } } } }
  } 
 
@@ -321,61 +321,61 @@ public static _opVBar Create(Term P1, Term P2) { return new _opVBar(P1, P2); }
 
   public IEnumerable<IRunnable> Run() {   
  { 
- #line 28 "Content\Lambda calculus"
+ #line 17 "Content\Lambda calculus"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollar; 
- #line 28 "Content\Lambda calculus"
+ #line 17 "Content\Lambda calculus"
 if (tmp_1 != null) { var x = tmp_1.P1; var u = tmp_0.P2; 
- #line 28 "Content\Lambda calculus"
+ #line 17 "Content\Lambda calculus"
 if(u is Term) { 
- #line 28 "Content\Lambda calculus"
+ #line 17 "Content\Lambda calculus"
 var result = _opVBar.Create(_opDollar.Create(x), u as Term);
- #line 28 "Content\Lambda calculus"
+ #line 17 "Content\Lambda calculus"
 yield return result;  } }
  } 
 
   
  { 
- #line 33 "Content\Lambda calculus"
+ #line 20 "Content\Lambda calculus"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opVBar; 
- #line 33 "Content\Lambda calculus"
+ #line 20 "Content\Lambda calculus"
 if (tmp_1 != null) { var u = tmp_1.P1; var v = tmp_1.P2; var w = tmp_0.P2; 
- #line 33 "Content\Lambda calculus"
+ #line 20 "Content\Lambda calculus"
 if(u is Term && v is Term) { 
- #line 33 "Content\Lambda calculus"
+ #line 20 "Content\Lambda calculus"
 var tmp_3 = _opVBar.Create(u as Term, v as Term);
- #line 33 "Content\Lambda calculus"
+ #line 20 "Content\Lambda calculus"
 foreach (var tmp_2 in tmp_3.Run()) { var v_Prime = tmp_2; 
- #line 33 "Content\Lambda calculus"
+ #line 20 "Content\Lambda calculus"
 if(v_Prime is Term && w is Term) { 
- #line 33 "Content\Lambda calculus"
+ #line 20 "Content\Lambda calculus"
 var tmp_5 = _opVBar.Create(v_Prime as Term, w as Term);
- #line 33 "Content\Lambda calculus"
+ #line 20 "Content\Lambda calculus"
 foreach (var tmp_4 in tmp_5.Run()) { var res = tmp_4; 
- #line 33 "Content\Lambda calculus"
+ #line 20 "Content\Lambda calculus"
 var result = res;
- #line 33 "Content\Lambda calculus"
+ #line 20 "Content\Lambda calculus"
 yield return result;  } } } } }
  } 
 
   
  { 
- #line 42 "Content\Lambda calculus"
+ #line 25 "Content\Lambda calculus"
 var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSlash; 
- #line 42 "Content\Lambda calculus"
+ #line 25 "Content\Lambda calculus"
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 42 "Content\Lambda calculus"
+ #line 25 "Content\Lambda calculus"
 if (tmp_2 != null) { var x = tmp_2.P1; var tmp_3 = tmp_1.P2 as _Arrow; 
- #line 42 "Content\Lambda calculus"
+ #line 25 "Content\Lambda calculus"
 if (tmp_3 != null) { var t = tmp_1.P3; var u = tmp_0.P2; 
- #line 42 "Content\Lambda calculus"
+ #line 25 "Content\Lambda calculus"
 if(t is Term && u is Term) { 
- #line 42 "Content\Lambda calculus"
+ #line 25 "Content\Lambda calculus"
 var tmp_5 = _With.Create(t as Term, _As.Create(_opDollar.Create(x), u as Term));
- #line 42 "Content\Lambda calculus"
+ #line 25 "Content\Lambda calculus"
 foreach (var tmp_4 in tmp_5.Run4_()) { var t_Prime = tmp_4; 
- #line 42 "Content\Lambda calculus"
+ #line 25 "Content\Lambda calculus"
 var result = t_Prime;
- #line 42 "Content\Lambda calculus"
+ #line 25 "Content\Lambda calculus"
 yield return result;  } } } } }
  } 
 

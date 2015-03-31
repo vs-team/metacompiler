@@ -84,9 +84,9 @@ and keyword =
       return l
     }
   p{
-    let! a = ((label "Data") + label "Keyword") + (label "Function")
+    let! a = (label "Data") + (label "Func")
     match a with
-    | First(First(_)) ->
+    | First _ ->
         let! kw = expr()
         match kw with
         | Application(Implicit,
@@ -101,22 +101,6 @@ and keyword =
                         typeName
                       ], _, _) -> 
             return Keyword.Fold Data genericArgs leftArgs name rightArgs priority typeName 
-        | _ -> 
-            return failwithf "malformed expression %A" kw
-    | First(Second(_)) ->
-        let! kw = expr()
-        match kw with
-        | Application(Implicit,
-                      [
-                        leftArgs
-                        name
-                        rightArgs
-                        Extension({ Name = "Priority" }, _, _)
-                        priority
-                        Extension({ Name = "Class" }, _, _)
-                        typeName
-                      ], _, _) -> 
-            return Keyword.Fold Data (Application(Square, [], Position.Zero, ())) leftArgs name rightArgs priority typeName 
         | _ -> 
             return failwithf "malformed expression %A" kw
     | Second _ ->
@@ -134,7 +118,7 @@ and keyword =
                         ], _, _) ->  
             let! l = label "=>"
             let! rightHand = expr()
-            return Application(Function, genericArgs :: Application(Square, [], Position.Zero, ()) :: name :: rightArgs :: priority :: Application(Implicit, leftHand :: rightHand :: [], Position.Zero, ()) :: [], Position.Zero, ())
+            return Keyword.Fold Function genericArgs (Application(Square, [], Position.Zero, ())) name rightArgs priority (Application(Implicit, leftHand :: rightHand :: [], Position.Zero, ()))
         | _ -> 
             return failwithf "malformed expression %A" kw
   }

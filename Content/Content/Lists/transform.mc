@@ -1,16 +1,16 @@
 ﻿import System
 
-Keyword [] "nil" [] Priority 0 Class ListInt
-Keyword [<<int>>] ";" [ListInt] Priority 1000 Class ListInt
-Keyword [] "$" [<<int>>] Priority 10000 Class IntValue
+Data [] [] "nil" [] Priority 0 Type ListInt
+Data [] [<<int>>] ";" [ListInt] Priority 1000 Type ListInt
+Func [] "$" [<<int>>] Priority 10000 Type Expr => IntValue
 
-Keyword [ListInt] "contains" [<<int>>] Priority 100 Class Expr
-Keyword [] "removeOdd" [ListInt] Priority 100 Class Expr
+Data [] [ListInt] "contains" [<<int>>] Priority 100 Type Expr
+Data [] [] "removeOdd" [ListInt] Priority 100 Type Expr
 
-Keyword [] "add" [ListInt] Priority 100 Class Expr
+Func [] "add" [ListInt] Priority 100 Type Expr => Expr
 
-Keyword [] "yes" [] Priority 0 Class Bool
-Keyword [] "no" [] Priority 0 Class Bool
+Data [] [] "yes" [] Priority 0 Type Bool
+Data [] [] "no" [] Priority 0 Type Bool
 
 
 --------------

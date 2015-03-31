@@ -1,10 +1,10 @@
-﻿Keyword [] "$" [<<string>>] Priority 10 Class Id
-Keyword [] "\" [Id Dot Term] Priority 9 Class Term
-Keyword [Term] "|" [Term] Priority 8 Class Term
-Keyword [] "->" [] Priority 0 Class Dot
+﻿Func [] "$" [<<string>>] Priority 10 Type Expr => Id
+Func [] "\" [Id Dot Term] Priority 9 Type Expr => Term
+Data [] [Term] "|" [Term] Priority 8 Type Term
+Data [] [] "->" [] Priority 0 Type Dot
 
-Keyword [Term] "as" [Term] Priority 6 Class Where
-Keyword [Term] "with" [Where] Priority 5 Class With
+Data [] [Term] "as" [Term] Priority 6 Type Where
+Data [] [Term] "with" [Where] Priority 5 Type With
 
 Id is Term
 
