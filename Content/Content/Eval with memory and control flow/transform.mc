@@ -20,6 +20,8 @@ Keyword [Variable] "assign" [Expr] Priority 2 Class Expr
 Keyword [] "if" [Expr Then Expr Else Expr] Priority 5 Class Expr
 Keyword [] "then" [] Priority 10000 Class Then
 Keyword [] "else" [] Priority 10000 Class Else
+Keyword [] "while" [Expr Do Expr] Priority 5 Class Expr
+Keyword [] "do" [] Priority 10000 Class Do
 
 Memory is Expr
 Value is Expr
@@ -97,3 +99,14 @@ eval c m0 => ?false, m1
 eval b m1 => res,m2
 ---------------------------------------
 eval (if c then a else b) m0 => res,m2
+
+
+eval c m0 => ?true, m1
+eval b m1 => nil,m2
+eval (while c do b) m2 => res,m3
+---------------------------------------
+eval (while c do b) m0 => res,m3
+
+eval c m0 => ?false, m1
+---------------------------------------
+eval (while c do b) m0 => nil,m1

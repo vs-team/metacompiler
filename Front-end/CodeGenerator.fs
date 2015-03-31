@@ -11,6 +11,7 @@ let private generateLineDirectives = true
 
 let cleanupWithoutDot (s:string) =
   match s with
+  | "do" -> "_Do"
   | "is" -> "_Is"
   | "as" -> "_As"
   | "if" -> "_If"
@@ -25,6 +26,7 @@ let cleanupWithoutDot (s:string) =
     s
      .Replace(":=", "_DefinedAs")
      .Replace("->", "_Arrow")
+     .Replace("<-", "_LeftArrow")
      .Replace("\'", "_Prime")
      .Replace("\\", "_opSlash")
      .Replace("&&", "_opAnd")
