@@ -80,9 +80,14 @@ let main argv =
       "Trees 234", @"main"
       "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
 
-      "Lists", "0;(1;(2;(3;nil))) contains 2"
-      "Lists", "removeOdd 0;(1;(2;(3;nil)))"
-      "Lists", "add 0;(1;(2;(3;nil)))"
+//      "Lists", "0;(1;(2;(3;nil))) contains 2"
+//      "Lists", "removeOdd 0;(1;(2;(3;nil)))"
+//      "Lists", "add 0;(1;(2;(3;nil)))"
+
+//      "Eval without memory", "run"
+//      "Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
+//      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
+      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
 
       "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
       "Binary trees", "run"

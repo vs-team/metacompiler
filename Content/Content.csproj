@@ -58,6 +58,9 @@
     <Compile Include="..\Front-end\bin\Debug\Casanova semantics.cs">
       <Link>Casanova semantics.cs</Link>
     </Compile>
+    <Compile Include="..\Front-end\bin\Debug\Eval with memory.cs">
+      <Link>Eval with memory.cs</Link>
+    </Compile>
     <Compile Include="..\Front-end\bin\Debug\Generic lists.cs">
       <Link>Generic lists.cs</Link>
     </Compile>
@@ -80,6 +83,18 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Content\Cmm\transform.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\Eval with memory and control flow\transform.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\Eval without memory\transform.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\Eval with readonly memory\transform.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\Eval with memory\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Content\trees 234\transform.mc">
