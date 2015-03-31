@@ -76,9 +76,9 @@ let main argv =
     [
 //      "Generic lists", @"runTest1"
 
-      "Cmm", @"runProgram"
-      "Trees 234", @"main"
-      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
+//      "Cmm", @"runProgram"
+//      "Trees 234", @"main"
+//      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
 
 //      "Lists", "0;(1;(2;(3;nil))) contains 2"
 //      "Lists", "removeOdd 0;(1;(2;(3;nil)))"
@@ -89,12 +89,12 @@ let main argv =
 //      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
       "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
 
-      "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
-      "Binary trees", "run"
-      "Lambda calculus", @"(\$""y"" -> $""y"" | \$""y"" -> $""y"") | ($""x"" | $""z"")"
-      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
-
-      "Casanova semantics", @"runTest1"
+//      "Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
+//      "Binary trees", "run"
+//      "Lambda calculus", @"(\$""y"" -> $""y"" | \$""y"" -> $""y"") | ($""x"" | $""z"")"
+//      "Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
+//
+//      "Casanova semantics", @"runTest1"
     ]
 
   for name,input in samples 

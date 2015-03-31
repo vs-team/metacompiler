@@ -17,6 +17,9 @@ Keyword [] "?" [<<bool>>] Priority 10000 Class Value
 Keyword [] "$" [<<int>>] Priority 10000 Class Value
 Keyword [] "nil" [] Priority 10000 Class Value
 Keyword [Variable] "assign" [Expr] Priority 2 Class Expr
+Keyword [] "if" [Expr Then Expr Else Expr] Priority 5 Class Expr
+Keyword [] "then" [] Priority 10000 Class Then
+Keyword [] "else" [] Priority 10000 Class Else
 
 Memory is Expr
 Value is Expr
@@ -36,9 +39,9 @@ Variable is Expr
 M add "x" $10 => M1
 M1 add "y" $20 => M2
 M2 add "z" $-30 => M3
-eval (!"x" gt !"y") M3 => res
------------------------------
-run M => res
+eval (!"x" assign (if (!"x" gt !"y") then (!"x" assign $-1; !"x") else (!"z" assign !"y" + !"z"; !"z")); !"x" * $2) M3 => res,M4
+---------------------------------------------------------------------------------------------------------------------------------
+run M => res,M4
 
 
 ---------------------
@@ -84,3 +87,13 @@ eval b m1 => $y,m2
 x <= y
 ------------------------------
 eval (a gt b) m0 => ?false,m2
+
+eval c m0 => ?true, m1
+eval a m1 => res,m2
+---------------------------------------
+eval (if c then a else b) m0 => res,m2
+
+eval c m0 => ?false, m1
+eval b m1 => res,m2
+---------------------------------------
+eval (if c then a else b) m0 => res,m2
