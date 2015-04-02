@@ -100,9 +100,29 @@ and keyword =
                         Extension({ Name = "Type" }, _, _)
                         typeName
                       ], _, _) -> 
-            return Keyword.Fold Data genericArgs leftArgs name rightArgs priority typeName 
-        | _ -> 
-            return failwithf "malformed expression %A" kw
+            return Keyword.Fold Data genericArgs leftArgs name rightArgs priority typeName (Extension({ Name = "Right" }, Position.Zero, ()))
+        | Application(Implicit,
+                      [
+                        genericArgs
+                        leftArgs
+                        name
+                        rightArgs
+                        Extension({ Name = "Priority" }, _, _)
+                        priority
+                        Extension({ Name = "Type" }, _, _)
+                        typeName
+                        Extension({ Name = "Associativity"}, _, _)
+                        associativity
+                      ], _, _) -> 
+            match associativity with
+            | Extension(a, b, c) -> 
+              match a.Name with
+              | "Right" -> return Keyword.Fold Data genericArgs leftArgs name rightArgs priority typeName associativity
+              | "Left" ->  return Keyword.Fold Data genericArgs leftArgs name rightArgs priority typeName associativity
+              | _-> return failwithf "Incorrect Association"
+            | _ -> return failwithf "Incorrect Association"
+          //return Keyword.Fold Data genericArgs leftArgs name rightArgs priority typeName associativity
+        | _ -> return failwithf "malformed expression %A" kw
     | Second _ ->
         let! kw = expr()
         match kw with
@@ -118,7 +138,29 @@ and keyword =
                         ], _, _) ->  
             let! l = label "=>"
             let! rightHand = expr()
-            return Keyword.Fold Function genericArgs (Application(Square, [], Position.Zero, ())) name rightArgs priority (Application(Implicit, leftHand :: rightHand :: [], Position.Zero, ()))
+            return Keyword.Fold Function genericArgs (Application(Square, [], Position.Zero, ())) name rightArgs priority (Application(Implicit, leftHand :: rightHand :: [], Position.Zero, ())) (Extension({ Name = "Right" }, Position.Zero, ()))
+        | Application(Implicit,
+                        [
+                            genericArgs
+                            name
+                            rightArgs
+                            Extension({ Name = "Priority" }, _, _)
+                            priority
+                            Extension({ Name = "Type" }, _, _)
+                            leftHand
+                            Extension({ Name = "Associativity" }, _, _)
+                            associativity
+                        ], _, _) ->  
+            match associativity with
+            | Extension(a, b, c) -> 
+              match a.Name with
+              | "Right" -> ()
+              | "Left" ->  ()
+              | _-> return failwithf "Incorrect Association"
+            | _ -> return failwithf "Incorrect Association"
+            let! l = label "=>"
+            let! rightHand = expr()
+            return Keyword.Fold Function genericArgs (Application(Square, [], Position.Zero, ())) name rightArgs priority (Application(Implicit, leftHand :: rightHand :: [], Position.Zero, ())) associativity
         | _ -> 
             return failwithf "malformed expression %A" kw
   }
@@ -282,7 +324,9 @@ and expr() =
       | Keyword(Custom(k),pos, ()) ->
         if customKeywordsMap |> Map.containsKey k then
           let kw = customKeywordsMap.[k]
-          Keyword.Priority kw ,-index
+          match Keyword.Associativity kw with
+          | Right -> Keyword.Priority kw, index
+          | Left -> Keyword.Priority kw, -index
         else
           -1,-index
       | _ -> -1,-index

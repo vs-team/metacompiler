@@ -76,6 +76,9 @@
     <Compile Include="..\Front-end\bin\Debug\Peano numbers.cs">
       <Link>Peano numbers.cs</Link>
     </Compile>
+    <Compile Include="..\Front-end\bin\Debug\stsil.cs">
+      <Link>stsil.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -125,6 +128,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
+    <None Include="Content\Stsil\transform.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

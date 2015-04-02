@@ -4,7 +4,11 @@ open Utilities
 open ParserMonad
 open BasicExpression
 
-type KeywordIndex = Name | LeftArguments | RightArguments | BothArguments | GenericArguments | Class | Priority
+type Associativity = 
+  | Right
+  | Left
+
+type KeywordIndex = Name | LeftArguments | RightArguments | BothArguments | GenericArguments | Class | Priority | Associativity
 
 type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisible | Divisible | GreaterOrEqual | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of string
   with 
@@ -72,7 +76,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
       | Nesting -> ""
       | Custom m -> m
 
-    static member Fold bracket genericArguments leftArguments name rightArguments priority kwType =
+    static member Fold bracket genericArguments leftArguments name rightArguments priority kwType associativity =
         let rec removeOuterSquares args =
             match args with
             | Application(Square, [arg], _, _) -> arg |> removeOuterSquares
@@ -95,7 +99,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
         let genericArgs = removeOuterSquares genericArguments
         let leftArgs = mergeGenerics (removeOuterSquares leftArguments) genericArgs
         let rightArgs = mergeGenerics (removeOuterSquares rightArguments) genericArgs
-        Application(bracket, Application(Square, genericArgs, Position.Zero, ()) :: leftArgs :: name :: rightArgs :: priority :: kwType :: [], Position.Zero, ())
+        Application(bracket, Application(Square, genericArgs, Position.Zero, ()) :: leftArgs :: name :: rightArgs :: priority :: kwType :: associativity :: [], Position.Zero, ())
 
     static member ExtractArguments index keyword =
         let rec removeOuterSquares args =
@@ -135,6 +139,15 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
         | Extension(cls, _, _) -> cls.Name
         | _ -> failwithf "Cannot extract class %A" keyword
 
+    static member Associativity keyword =
+        match(Keyword.Extract Associativity keyword) with
+        | Extension(asc, _, _) -> 
+            match asc.Name with 
+            | "Left" -> Left 
+            | "Right" -> Right
+            | _-> failwith "incorrect Associativity" 
+        | _ -> failwith "Cannot extract class %A" keyword
+
     static member Priority keyword =
         match(Keyword.Extract Priority keyword) with
         | Imported(IntLiteral(priority),_,_) -> priority
@@ -164,6 +177,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
             | RightArguments -> exp.[3]
             | Priority -> exp.[4]
             | Class -> exp.[5]
+            | Associativity -> exp.[6]
             | BothArguments -> failwithf "Cannot extract both arguments from expression"
         | Application(Function, exp, _, _) ->
             match index with
@@ -177,6 +191,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
                 | Application(Implicit, left :: right :: [], _, _) ->
                     right
                 | _ -> failwithf "Unknown function format%A" keyword
+            | Associativity -> exp.[6]
             | BothArguments -> failwithf "Cannot extract both arguments from expression"
         | _ -> failwithf "Invalid keyword %A" keyword
 

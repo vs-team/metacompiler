@@ -417,14 +417,14 @@ type GeneratedClass =
             sprintf "public %s() {}\n" !c.BasicName
         let staticCons =
           if c.Parameters.Count <> 0 then
-            let pars = c.Parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
+            let pars = c.Parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x) 
             let args = c.Parameters |> Seq.map (fun x -> sprintf "%s" x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
             sprintf "public static %s Create(%s) { return new %s(%s); }\n" c.Name pars c.Name args
           else
             sprintf "public static %s Create() { return new %s(); }\n" c.Name c.Name
         let cons = cons + staticCons
         let parameters =
-          let res = c.Parameters |> Seq.map (fun p -> sprintf "public %s %s;\n" (Keyword.ArgumentCSharpStyle p.Type cleanupWithoutDot) p.Name) |> Seq.fold (+) ""
+          let res = c.Parameters |> Seq.map (fun p -> sprintf "public %s %s;\n" (Keyword.ArgumentCSharpStyle p.Type cleanupWithoutDot) p.Name) |> Seq.fold (+) "" 
           res
         let missing_methods =
           let missing_paths = all_method_paths - c.MethodPaths

@@ -133,5 +133,6 @@ let prioritize (l:List<'a>) ariety priority merge =
       if (leftCount > 0 || rightCount > 0) && x_node.Collapsed |> not then
         let newNode = x_node.Collapse leftCount rightCount merge
         x_node.Element <- newNode
+      //[ for x in l_nodes do if x.Collapsed |> not then yield x.Element |> fst ] |> printfn "%A"
     let res = [ for x in l_nodes do if x.Collapsed |> not then yield x.Element |> fst ]
     res
