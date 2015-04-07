@@ -55,6 +55,9 @@
     <Compile Include="..\Front-end\bin\Debug\Binary trees.cs">
       <Link>Binary trees.cs</Link>
     </Compile>
+    <Compile Include="..\Front-end\bin\Debug\Boolean expressions.cs">
+      <Link>Boolean expressions.cs</Link>
+    </Compile>
     <Compile Include="..\Front-end\bin\Debug\Casanova semantics.cs">
       <Link>Casanova semantics.cs</Link>
     </Compile>
@@ -89,6 +92,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Content\Eval with memory and control flow\transform.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\Boolean expressions\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Content\Eval without memory\transform.mc">

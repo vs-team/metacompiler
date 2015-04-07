@@ -31,6 +31,8 @@ let cleanupWithoutDot (s:string) =
      .Replace("\\", "_opSlash")
      .Replace("&&", "_opAnd")
      .Replace("||", "_opOr")
+     .Replace("&", "_opBitwiseAnd")
+     .Replace("|", "_opBitwiseOr")
      .Replace("$", "_opDollar")
      .Replace("!", "_opBang")
      .Replace("?", "_opQuestion")   

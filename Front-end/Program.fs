@@ -78,21 +78,23 @@ let main argv =
 
       //"Cmm", @"runProgram"
       //"Trees 234", @"main"
-      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
+//      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
+      "Boolean expressions", "run"
 
       //"Lists", "0;(1;(2;(3;nil) contains 2"
-      "Lists", "removeOdd 0;1;2;3;nil"
-      "stsil", "dda lin snoc 3 snoc 2 snoc 1"
-      "Lists", "add 3;2;1;nil"
+//      "Lists", "removeOdd 0;1;2;3;nil"
+//      "stsil", "dda lin snoc 3 snoc 2 snoc 1"
+//      "Lists", "add 3;2;1;nil"
+
       //"Eval without memory", "run"
       //"Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
       //"Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
       //"Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
 
-      //"Binary numbers", "((((nil,d0),d1),d1),d1) + ((((nil,d0),d0),d0),d1)"
-      "Binary trees", "run"
-      "Lambda calculus", @"(\$""y"" -> $""y"" | \$""y"" -> $""y"") | ($""x"" | $""z"")"
-      //"Maps test", "run $<<System.Collections.Immutable.ImmutableDictionary<int, string>.Empty>>"
+//      "Eval without memory", "run"
+//      "Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
+//      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
+//      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
 
       //"Casanova semantics", @"runTest1"
     ]
