@@ -9,4 +9,25 @@
 - GUI should save delayed compiler to not recompile rules unnecessarily
 - samples
   - import directive for multiple files
-- Scoping for keywords.
+- Scoping for keywords
+- Runnable wrapper for primitive types to remove need for $ operator
+- Textual debugger for terms
+  
+  *) 
+     s z + s z
+
+  *) s z + z => res
+     ------------------
+     s z + s z => s res
+
+  *) --------------
+     s z + z => s z
+     ------------------
+     s z + s z => s res
+
+  *) --------------
+     s z + z => s z
+     --------------------
+     s z + s z => s (s z)
+
+  *) s z + s z => s (s z)
