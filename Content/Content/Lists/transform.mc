@@ -2,15 +2,25 @@
 
 Data [] [] "nil" [] Priority 0 Type ListInt
 Data [] [<<int>>] ";" [ListInt] Priority 1000 Type ListInt
-Func [] "$" [<<int>>] Priority 10000 Type Expr => IntValue
+Data [] [] "$" [<<int>>] Priority 10000 Type IntValue
 
-Data [] [ListInt] "contains" [<<int>>] Priority 100 Type Expr
-Data [] [] "removeOdd" [ListInt] Priority 100 Type Expr
+Func [] "contains" [ListInt <<int>>] Priority 100 Type Expr => Bool
+Func [] "removeOdd" [ListInt] Priority 100 Type Expr => ListInt
 
-Func [] "add" [ListInt] Priority 100 Type Expr => Expr
+Func [] "add" [ListInt] Priority 100 Type Expr => IntValue
+Func [] "plus" [ListInt <<int>>] Priority 100 Type Expr => ListInt
+Func [] "length" [ListInt] Priority 100 Type Expr => IntValue
 
 Data [] [] "yes" [] Priority 0 Type Bool
 Data [] [] "no" [] Priority 0 Type Bool
+
+
+----------------
+length nil => $0
+
+length xs => $y
+--------------------------
+length x;xs => $<<1 + y>>
 
 
 --------------
@@ -21,17 +31,26 @@ add xs => $res
 add x;xs => $<<x + res>>
 
 
+-------------------
+plus nil k => nil
+
+plus xs k => xs'
+<<x+k>> => x'
+----------------------
+plus x;xs k => x';xs'
+
+
 ---------------------
-nil contains k => no
+contains nil k => no
 
 x == k
 ------------------------
-x;xs contains k => yes
+contains x;xs k => yes
 
 x != k
-xs contains k => res
+contains xs k => res
 ------------------------
-x;xs contains k => res
+contains x;xs k => res
 
 
 ---------------------

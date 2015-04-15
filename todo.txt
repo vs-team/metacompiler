@@ -10,6 +10,10 @@
 - samples
   - import directive for multiple files
 - Scoping for keywords
+- Fix Func and Data (also in samples)
+- left of => no call to new; use a function instead
+- Default (empty) values for keyword definitions
+- Refactor "clause" to "premise"
 - Runnable wrapper for primitive types to remove need for $ operator
 - Textual debugger for terms
   

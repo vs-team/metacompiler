@@ -13,7 +13,7 @@ open System.Xml.Serialization
 
 do System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.GetCultureInfo("EN-US")
 
-let flushCSFileOnError = false
+let flushCSFileOnError = true
 let numSteps = 0
 
 let runDeduction path =
@@ -79,10 +79,14 @@ let main argv =
       //"Cmm", @"runProgram"
       //"Trees 234", @"main"
 //      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
-      "Boolean expressions", "run"
+//      "Boolean expressions", "run"
 
-      //"Lists", "0;(1;(2;(3;nil) contains 2"
-//      "Lists", "removeOdd 0;1;2;3;nil"
+      "Lists", "plus 0;1;2;3;nil 10"
+      "Lists", "length 0;1;2;3;nil"
+      "Lists", "contains 0;1;2;3;nil 2"
+      "Lists", "removeOdd 0;1;2;3;nil"
+      "Lists", "add 0;1;2;3;nil"
+
 //      "stsil", "dda lin snoc 3 snoc 2 snoc 1"
 //      "Lists", "add 3;2;1;nil"
 
