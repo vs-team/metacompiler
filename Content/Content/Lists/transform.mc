@@ -11,8 +11,57 @@ Func [] "add" [ListInt] Priority 100 Type Expr => IntValue
 Func [] "plus" [ListInt <<int>>] Priority 100 Type Expr => ListInt
 Func [] "length" [ListInt] Priority 100 Type Expr => IntValue
 
+Data [] [ListInt] "," [ListInt] Priority 900 Type ListIntPair
+Func [] "split" [ListInt] Priority 100 Type Expr => ListIntPair
+Func [] "merge" [ListInt ListInt] Priority 100 Type Expr => ListInt
+Func [] "mergeSort" [ListInt] Priority 100 Type Expr => ListInt
+
 Data [] [] "yes" [] Priority 0 Type Bool
 Data [] [] "no" [] Priority 0 Type Bool
+
+
+---------------------
+split nil => nil,nil
+
+-------------------------
+split x;nil => x;nil,nil
+
+split xs => l,r
+----------------------------
+split x;y;xs => (x;l),(y;r)
+
+
+---------------------
+merge nil nil => nil
+
+-----------------------
+merge x;xs nil => x;xs
+
+-----------------------
+merge nil y;ys => y;ys
+
+x <= y
+merge xs y;ys => res
+-------------------------
+merge x;xs y;ys => x;res
+
+x > y
+merge x;xs ys => res
+-----------------------
+merge x;xs y;ys => y;res
+
+---------------------
+mergeSort nil => nil
+
+-------------------------
+mergeSort x;nil => x;nil
+
+split x;y;xs => l,r
+mergeSort l => l'
+mergeSort r => r'
+merge l' r' => res
+----------------------
+mergeSort x;y;xs => res
 
 
 ----------------

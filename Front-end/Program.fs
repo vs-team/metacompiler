@@ -81,11 +81,13 @@ let main argv =
 //      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
 //      "Boolean expressions", "run"
 
-      "Lists", "plus 0;1;2;3;nil 10"
-      "Lists", "length 0;1;2;3;nil"
-      "Lists", "contains 0;1;2;3;nil 2"
-      "Lists", "removeOdd 0;1;2;3;nil"
-      "Lists", "add 0;1;2;3;nil"
+      "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
+
+//      "Lists", "plus 0;1;2;3;nil 10"
+//      "Lists", "length 0;1;2;3;nil"
+//      "Lists", "contains 0;1;2;3;nil 2"
+//      "Lists", "removeOdd 0;1;2;3;nil"
+//      "Lists", "add 0;1;2;3;nil"
 
 //      "stsil", "dda lin snoc 3 snoc 2 snoc 1"
 //      "Lists", "add 3;2;1;nil"
