@@ -35,3 +35,25 @@
      s z + s z => s (s z)
 
   *) s z + s z => s (s z)
+
+
+  - 234 trees recursive contains
+      -----------------------
+      contains empty k => no
+
+      containsIterate l k => res
+      ---------------------------
+      contains node l k => res
+
+      contains r k => res
+      -------------------------
+      containsIterate r;nil k => res
+
+      k = x
+      --------------------------------
+      containsIterate l;x;xs k => yes
+
+      k < x
+      contains l k => res
+      --------------------------------
+      containsIterate l;x;xs k => res
