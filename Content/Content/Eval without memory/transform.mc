@@ -1,9 +1,9 @@
-﻿Keyword [] "run" [] Priority 0 Class Expr
+﻿Func [] "run" [] Priority 0 Type Expr => Value
 
-Keyword [] "eval" [Expr] Priority 1 Class Expr
-Keyword [Expr] "+" [Expr] Priority 10 Class Expr
-Keyword [Expr] "*" [Expr] Priority 20 Class Expr
-Keyword [] "$" [<<int>>] Priority 10000 Class Value
+Func [] "eval" [Expr] Priority 1 Type Expr => Value
+Data [] [Expr] "+" [Expr] Priority 10 Type Expr
+Data [] [Expr] "*" [Expr] Priority 20 Type Expr
+Data [] [] "$" [<<int>>] Priority 10000 Type Value
 
 Value is Expr
 

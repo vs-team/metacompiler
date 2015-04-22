@@ -77,7 +77,8 @@ let main argv =
 //      "Generic lists", @"runTest1"
 
       //"Cmm", @"runProgram"
-      //"Trees 234", @"main"
+//      "Trees 234", @"main"
+
 //      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
 //      "Boolean expressions", "run"
 
@@ -88,16 +89,11 @@ let main argv =
 //      "Lists", "contains 0;1;2;3;nil 2"
 //      "Lists", "removeOdd 0;1;2;3;nil"
 //      "Lists", "add 0;1;2;3;nil"
-
+//
 //      "stsil", "dda lin snoc 3 snoc 2 snoc 1"
 //      "Lists", "add 3;2;1;nil"
 
-      //"Eval without memory", "run"
-      //"Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
-      //"Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
-      //"Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
-
-//      "Eval without memory", "run"
+      "Eval without memory", "run"
 //      "Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
 //      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
 //      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"

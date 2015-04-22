@@ -1,22 +1,22 @@
 ﻿import System
 
-Keyword [] "yes" [] Priority 0 Class BoolExpr
-Keyword [] "no" [] Priority 0 Class BoolExpr
+Data [] "yes" [] Priority 0 Class BoolExpr
+Data [] "no" [] Priority 0 Class BoolExpr
 
-Keyword [] "$i" [<<int>>] Priority 300 Class Value
-Keyword [] "$s" [<<string>>] Priority 300 Class Key
-Keyword [] "entry" [Key Value] Priority 200 Class ListElem
-Keyword [] "nothing" [] Priority 300 Class ListElem
+Data [] "$i" [<<int>>] Priority 300 Class Value
+Data [] "$s" [<<string>>] Priority 300 Class Key
+Data [] "entry" [Key Value] Priority 200 Class ListElem
+Data [] "nothing" [] Priority 300 Class ListElem
 
 
-Keyword [] "nil" [] Priority 0 Class List
-Keyword [ListElem] ";" [List] Priority 100 Class List
+Data [] "nil" [] Priority 0 Class List
+Data [ListElem] ";" [List] Priority 100 Class List
 
-Keyword [] "empty" [] Priority 0 Class BTree
-Keyword [] "node" [List] Priority 0 Class BTree
+Data [] "empty" [] Priority 0 Class BTree
+Data [] "node" [List] Priority 0 Class BTree
 
-Keyword [] "isLeaf" [List] Priority 0 Class Expr
-Keyword [] "split" [List] Priority 0 Class Expr
+Func [] "isLeaf" [List] Priority 0 Type Expr => BoolExpr
+Func [] "split" [List] Priority 0 Type Expr => Expr
 Keyword [List] "insertSort" [ListElem BTree] Priority 0 Class Expr
 Keyword [ListElem] "insertInto" [List] Priority 0 Class Expr
 Keyword [] "merge" [BTree List] Priority 0 Class Expr
