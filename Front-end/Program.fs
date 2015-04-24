@@ -81,7 +81,7 @@ let main argv =
 //      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
 //      "Boolean expressions", "run"
 
-        "Binary trees", "run"
+      "Binary trees", "run"
 
 //      "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
 
