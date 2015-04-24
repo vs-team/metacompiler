@@ -7,7 +7,7 @@ open BasicExpression
 open ConcreteExpressionParserPrelude
 open ConcreteExpressionParser
 
-let private generateLineDirectives = true
+let private generateLineDirectives = false
 
 let cleanupWithoutDot (s:string) =
   match s with
@@ -80,7 +80,10 @@ type Path = Path of List<int>
       match this with
       | Path([]) -> ""
       | Path(p::ps) -> sprintf "foreach(var p in Run%s()) yield return p;" (Path(ps).ToString())
-
+    member this.DirectParentCall =
+      match this with
+      | Path([]) -> ""
+      | Path(p::ps) -> sprintf "return Run%s();" (Path(ps).ToString())
 
 type Instruction = 
     Var of name : string * expr : string
@@ -432,7 +435,7 @@ type GeneratedClass =
           let missing_paths = all_method_paths - c.MethodPaths
           [
             for p in missing_paths do
-            let parent_call = p.ParentCall
+            let parent_call = if CompilerSwitches.OptimizeDirectParentCall then p.DirectParentCall else p.ParentCall
             let parent_or_empty_call =
               if parent_call <> "" then
                 parent_call

@@ -13,7 +13,6 @@ open System.Xml.Serialization
 
 do System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.GetCultureInfo("EN-US")
 
-let flushCSFileOnError = true
 let numSteps = 0
 
 let runDeduction path =
@@ -43,7 +42,7 @@ let runDeduction path =
             for error in results.Errors do
               if error.IsWarning |> not then
                 do sprintf "%s at %d: %s" error.FileName error.Line error.ErrorText |> addOutput 
-            if flushCSFileOnError then
+            if CompilerSwitches.flushCSFileOnError then
               do System.IO.File.WriteAllText(generatedPath, "")
           else
             let types = results.CompiledAssembly.GetTypes()
@@ -82,7 +81,9 @@ let main argv =
 //      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
 //      "Boolean expressions", "run"
 
-      "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
+        "Binary trees", "run"
+
+//      "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
 
 //      "Lists", "plus 0;1;2;3;nil 10"
 //      "Lists", "length 0;1;2;3;nil"
@@ -98,7 +99,7 @@ let main argv =
 //      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
 //      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
 
-      //"Casanova semantics", @"runTest1"
+//      "Casanova semantics", @"runTest1"
     ]
 
   for name,input in samples 
