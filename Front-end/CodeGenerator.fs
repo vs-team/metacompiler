@@ -7,7 +7,6 @@ open BasicExpression
 open ConcreteExpressionParserPrelude
 open ConcreteExpressionParser
 
-let private generateLineDirectives = false
 
 let cleanupWithoutDot (s:string) =
   match s with
@@ -68,6 +67,15 @@ let inline (++) (s:#seq<string>) (d:int) =
 let escape (s:string) = 
   s.Replace("\\", "\\\\")
 
+
+type Parameter = 
+  {
+    Name    : string
+    IsLeft  : bool
+    Type    : BasicExpression<Keyword, Var, Literal, Position, unit>
+  }
+
+
 type Path = Path of List<int>
   with
     override this.ToString() = 
@@ -84,6 +92,18 @@ type Path = Path of List<int>
       match this with
       | Path([]) -> ""
       | Path(p::ps) -> sprintf "return Run%s();" (Path(ps).ToString())
+    member this.StaticParentCall parameters=
+      match this with
+      | Path([]) -> ""
+      | Path(p::ps) -> 
+        let paramsWithoutType = String.concat ", " (parameters |> Seq.map (fun x -> x.Name))
+        sprintf "foreach(var p in StaticRun%s(%s)) yield return p;" (Path(ps).ToString()) paramsWithoutType
+    member this.DirectStaticParentCall parameters =
+      match this with
+      | Path([]) -> ""
+      | Path(p::ps) -> 
+        let paramsWithoutType = String.concat ", " (parameters |> Seq.map (fun x -> x.Name))
+        sprintf "return StaticRun%s(%s);" (Path(ps).ToString()) paramsWithoutType
 
 type Instruction = 
     Var of name : string * expr : string
@@ -209,7 +229,7 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
   | [] -> ""
   | x :: xs ->
     let newLine = 
-      if generateLineDirectives then sprintf "\n #line %d \"%s\"\n" debugPosition.Line debugPosition.File
+      if CompilerSwitches.generateLineDirectives then sprintf "\n #line %d \"%s\"\n" debugPosition.Line debugPosition.File
       else "\n"
     match x with
     | Var(name, expr) -> 
@@ -271,10 +291,15 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
         CheckNull(sprintf "tmp_%d" tmp_id)
       ], tmp_id+1
     else
-      prefix @
-      [
-        VarAs(sprintf "tmp_%d" tmp_id, self, !k)
-      ], tmp_id+1
+      if CompilerSwitches.generateStaticRun || CompilerSwitches.optimizeStaticRunUsage
+      then
+        prefix @ [], tmp_id
+      else
+        prefix @
+        [
+          VarAs(sprintf "tmp_%d" tmp_id, self, !k)
+        ], tmp_id+1
+        
   | Extension(v:Var, _, _) ->
       prefix @
       [
@@ -292,12 +317,16 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
   | Application(b,(Keyword(Custom k, _, k_ti)) :: es,pos,e_ti) ->
     let output,self,tmp_id = 
       if self <> "this" then
-          prefix @
-          [
-            VarAs(sprintf "tmp_%d" tmp_id, self, !k)
-            CheckNull(sprintf "tmp_%d" tmp_id)
-          ], sprintf "tmp_%d" tmp_id, tmp_id+1
+        prefix @
+        [
+          VarAs(sprintf "tmp_%d" tmp_id, self, !k)
+          CheckNull(sprintf "tmp_%d" tmp_id)
+        ], sprintf "tmp_%d" tmp_id, tmp_id+1
       else
+        if CompilerSwitches.generateStaticRun || CompilerSwitches.optimizeStaticRunUsage
+        then
+          prefix @ [], "this", tmp_id
+        else
           prefix @
           [
             Var(sprintf "tmp_%d" tmp_id, self)
@@ -308,7 +337,11 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
     let actualKeyword = ctxt.CustomKeywordsMap.[k]
     let keywordArgumentConstraints = Keyword.Arguments actualKeyword
     for e_constraint,(e,i) in es |> List.mapi (fun i e -> e,(i+1)) |> Seq.zip keywordArgumentConstraints do
-      let newOutput, newTempId = matchCast tmp_id e (sprintf "%s.P%d" self i) output ctxt (Some e_constraint)
+      let varAccess = 
+        if self="this" && (CompilerSwitches.generateStaticRun || CompilerSwitches.optimizeStaticRunUsage)
+        then sprintf "P%d" i
+        else sprintf "%s.P%d" self i
+      let newOutput, newTempId = matchCast tmp_id e varAccess output ctxt (Some e_constraint)
       output <- newOutput
       tmp_id <- newTempId
     output, tmp_id
@@ -372,7 +405,7 @@ type Rule = {
             o <- o @ [Inline(c_i)]
         | _ -> failwithf "Unexpected operator %A @ %A" k c_i.DebugInformation
       o <- i @ o @ [Yield r.Output]
-      if generateLineDirectives then
+      if CompilerSwitches.generateLineDirectives then
         sprintf "\n { \n #line %d \"%s\"\n%s\n } \n" r.Position.Line r.Position.File (generate_instructions r.Position originalFilePath ctxt o)
       else
         sprintf "\n { \n %s\n } \n" (generate_instructions r.Position originalFilePath ctxt o)
@@ -381,15 +414,17 @@ type Method = {
   Rules      : ResizeArray<Rule>
   Path       : Path
 } with
+    member m.ToString(ctxt:ConcreteExpressionContext,originalFilePath,parameters) =
+      let path = m.Path.ToString()
+      let paramsWithType    = String.concat ", " (parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name))
+      let paramsWithoutType = String.concat ", " (parameters |> Seq.map (fun x -> x.Name))
+      let body = ((m.Rules |> Seq.map (fun r -> r.ToString(ctxt,originalFilePath))) ++ 2)
+      let parent_call = if CompilerSwitches.optimizeStaticRunUsage||CompilerSwitches.generateStaticRun then m.Path.StaticParentCall parameters else m.Path.ParentCall
+      sprintf "public static IEnumerable<IRunnable> StaticRun%s(%s) { %s %s }\npublic IEnumerable<IRunnable> Run%s() { return StaticRun%s(%s); }" path paramsWithType body parent_call path path paramsWithoutType
     member m.ToString(ctxt:ConcreteExpressionContext,originalFilePath) =
-      sprintf "public IEnumerable<IRunnable> Run%s() { %s %s }" (m.Path.ToString()) ((m.Rules |> Seq.map (fun r -> r.ToString(ctxt,originalFilePath))) ++ 2) m.Path.ParentCall
-
-type Parameter = 
-  {
-    Name    : string
-    IsLeft  : bool
-    Type    : BasicExpression<Keyword, Var, Literal, Position, unit>
-  }
+      let path = m.Path.ToString()
+      let body = ((m.Rules |> Seq.map (fun r -> r.ToString(ctxt,originalFilePath))) ++ 2)
+      sprintf "public IEnumerable<IRunnable> Run%s() { %s %s }" path body m.Path.ParentCall
 
 type GeneratedClass = 
   {
@@ -435,13 +470,25 @@ type GeneratedClass =
           let missing_paths = all_method_paths - c.MethodPaths
           [
             for p in missing_paths do
-            let parent_call = if CompilerSwitches.OptimizeDirectParentCall then p.DirectParentCall else p.ParentCall
+            let parent_call = 
+              match (CompilerSwitches.generateStaticRun||CompilerSwitches.optimizeStaticRunUsage),CompilerSwitches.optimizeDirectParentCall with
+              | false,false -> p.ParentCall
+              | false,true  -> p.DirectParentCall
+              | true, false -> p.StaticParentCall c.Parameters
+              | true, true  -> p.DirectStaticParentCall c.Parameters
             let parent_or_empty_call =
               if parent_call <> "" then
                 parent_call
               else
                 "foreach (var p in Enumerable.Range(0,0)) yield return null;"
-            yield sprintf "public IEnumerable<IRunnable> Run%s() { %s }\n" (p.ToString()) parent_or_empty_call
+            let path = p.ToString()
+            if CompilerSwitches.generateStaticRun || CompilerSwitches.optimizeStaticRunUsage
+            then
+              let paramsWithoutType = String.concat ", " (c.Parameters |> Seq.map (fun x -> x.Name))
+              let paramsWithType    = String.concat ", " (c.Parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name))
+              yield sprintf "public static IEnumerable<IRunnable> StaticRun%s(%s) { %s }\npublic IEnumerable<IRunnable> Run%s(){ return StaticRun%s(%s); }\n" path paramsWithType parent_or_empty_call  path path paramsWithoutType
+            else
+              yield sprintf "public IEnumerable<IRunnable> Run%s(){ %s }\n" path parent_or_empty_call
           ] |> Seq.fold (+) ""
         let to_string =
           if c.Parameters.Count > 0 then
@@ -465,7 +512,11 @@ type GeneratedClass =
             sprintf "public override bool Equals(object other) {\n return other is %s; \n}\n" c.Name
         let hash =
           sprintf "public override int GetHashCode() {\n return 0; \n}\n"
-        sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n}\n\n" c.Name c.Interface genericConstraints parameters cons ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath))) ++ 2) missing_methods to_string equals hash
+        let runImplementation =
+          if CompilerSwitches.optimizeStaticRunUsage || CompilerSwitches.generateStaticRun
+          then ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath,c.Parameters))) ++ 2)
+          else ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath))) ++ 2)
+        sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n}\n\n" c.Name c.Interface genericConstraints parameters cons runImplementation missing_methods to_string equals hash
 
 let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position, Unit>) (rule_path:Path) (hasScope:bool) ctxt =
   let method_path = rule_path.Tail
