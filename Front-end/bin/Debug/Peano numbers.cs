@@ -17,93 +17,59 @@ public Expr P1;
 public _opBang(Expr P1) {this.P1 = P1;}
 public static _opBang Create(Expr P1) { return new _opBang(P1); }
 
-  public IEnumerable<IRunnable> Run() {   
+  public static IEnumerable<IRunnable> StaticRun(Expr P1) {   
  { 
- #line 43 "Content\Peano numbers"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as z; 
- #line 43 "Content\Peano numbers"
-if (tmp_1 != null) { 
- #line 43 "Content\Peano numbers"
+ var tmp_0 = P1 as z; 
+if (tmp_0 != null) { 
 var result = z.Create();
- #line 43 "Content\Peano numbers"
 yield return result;  }
  } 
 
   
  { 
- #line 48 "Content\Peano numbers"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as s; 
- #line 48 "Content\Peano numbers"
-if (tmp_1 != null) { var a = tmp_1.P1; 
- #line 48 "Content\Peano numbers"
+ var tmp_0 = P1 as s; 
+if (tmp_0 != null) { var a = tmp_0.P1; 
 if(a is Num) { 
- #line 48 "Content\Peano numbers"
 var result = s.Create(a as Num);
- #line 48 "Content\Peano numbers"
 yield return result;  } }
  } 
 
   
  { 
- #line 53 "Content\Peano numbers"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opAddition; 
- #line 53 "Content\Peano numbers"
-if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_1.P2; 
- #line 53 "Content\Peano numbers"
+ var tmp_0 = P1 as _opAddition; 
+if (tmp_0 != null) { var a = tmp_0.P1; var b = tmp_0.P2; 
 if(a is Expr) { 
- #line 53 "Content\Peano numbers"
-var tmp_3 = _opBang.Create(a as Expr);
- #line 53 "Content\Peano numbers"
-foreach (var tmp_2 in tmp_3.Run()) { var a_Prime = tmp_2; 
- #line 53 "Content\Peano numbers"
+var tmp_2 = _opBang.Create(a as Expr);
+foreach (var tmp_1 in tmp_2.Run()) { var a_Prime = tmp_1; 
 if(b is Expr) { 
- #line 53 "Content\Peano numbers"
-var tmp_5 = _opBang.Create(b as Expr);
- #line 53 "Content\Peano numbers"
-foreach (var tmp_4 in tmp_5.Run()) { var b_Prime = tmp_4; 
- #line 53 "Content\Peano numbers"
+var tmp_4 = _opBang.Create(b as Expr);
+foreach (var tmp_3 in tmp_4.Run()) { var b_Prime = tmp_3; 
 if(a_Prime is Expr && b_Prime is Expr) { 
- #line 53 "Content\Peano numbers"
-var tmp_7 = _opAddition.Create(a_Prime as Expr, b_Prime as Expr);
- #line 53 "Content\Peano numbers"
-foreach (var tmp_6 in tmp_7.Run()) { var c = tmp_6; 
- #line 53 "Content\Peano numbers"
+var tmp_6 = _opAddition.Create(a_Prime as Expr, b_Prime as Expr);
+foreach (var tmp_5 in tmp_6.Run()) { var c = tmp_5; 
 var result = c;
- #line 53 "Content\Peano numbers"
 yield return result;  } } } } } } }
  } 
 
   
  { 
- #line 64 "Content\Peano numbers"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opMultiplication; 
- #line 64 "Content\Peano numbers"
-if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_1.P2; 
- #line 64 "Content\Peano numbers"
+ var tmp_0 = P1 as _opMultiplication; 
+if (tmp_0 != null) { var a = tmp_0.P1; var b = tmp_0.P2; 
 if(a is Expr) { 
- #line 64 "Content\Peano numbers"
-var tmp_3 = _opBang.Create(a as Expr);
- #line 64 "Content\Peano numbers"
-foreach (var tmp_2 in tmp_3.Run()) { var a_Prime = tmp_2; 
- #line 64 "Content\Peano numbers"
+var tmp_2 = _opBang.Create(a as Expr);
+foreach (var tmp_1 in tmp_2.Run()) { var a_Prime = tmp_1; 
 if(b is Expr) { 
- #line 64 "Content\Peano numbers"
-var tmp_5 = _opBang.Create(b as Expr);
- #line 64 "Content\Peano numbers"
-foreach (var tmp_4 in tmp_5.Run()) { var b_Prime = tmp_4; 
- #line 64 "Content\Peano numbers"
+var tmp_4 = _opBang.Create(b as Expr);
+foreach (var tmp_3 in tmp_4.Run()) { var b_Prime = tmp_3; 
 if(a_Prime is Expr && b_Prime is Expr) { 
- #line 64 "Content\Peano numbers"
-var tmp_7 = _opMultiplication.Create(a_Prime as Expr, b_Prime as Expr);
- #line 64 "Content\Peano numbers"
-foreach (var tmp_6 in tmp_7.Run()) { var c = tmp_6; 
- #line 64 "Content\Peano numbers"
+var tmp_6 = _opMultiplication.Create(a_Prime as Expr, b_Prime as Expr);
+foreach (var tmp_5 in tmp_6.Run()) { var c = tmp_5; 
 var result = c;
- #line 64 "Content\Peano numbers"
 yield return result;  } } } } } } }
  } 
 
   }
+public IEnumerable<IRunnable> Run() { return StaticRun(P1); }
 
 
 public override string ToString() {
@@ -133,43 +99,30 @@ public Expr P2;
 public _opMultiplication(Expr P1, Expr P2) {this.P1 = P1; this.P2 = P2;}
 public static _opMultiplication Create(Expr P1, Expr P2) { return new _opMultiplication(P1, P2); }
 
-  public IEnumerable<IRunnable> Run() {   
+  public static IEnumerable<IRunnable> StaticRun(Expr P1, Expr P2) {   
  { 
- #line 28 "Content\Peano numbers"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as z; 
- #line 28 "Content\Peano numbers"
-if (tmp_1 != null) { var a = tmp_0.P2; 
- #line 28 "Content\Peano numbers"
+ var tmp_0 = P1 as z; 
+if (tmp_0 != null) { var a = P2; 
 var result = z.Create();
- #line 28 "Content\Peano numbers"
 yield return result;  }
  } 
 
   
  { 
- #line 33 "Content\Peano numbers"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as s; 
- #line 33 "Content\Peano numbers"
-if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_0.P2; 
- #line 33 "Content\Peano numbers"
+ var tmp_0 = P1 as s; 
+if (tmp_0 != null) { var a = tmp_0.P1; var b = P2; 
 if(a is Expr && b is Expr) { 
- #line 33 "Content\Peano numbers"
-var tmp_3 = _opMultiplication.Create(a as Expr, b as Expr);
- #line 33 "Content\Peano numbers"
-foreach (var tmp_2 in tmp_3.Run()) { var c = tmp_2; 
- #line 33 "Content\Peano numbers"
+var tmp_2 = _opMultiplication.Create(a as Expr, b as Expr);
+foreach (var tmp_1 in tmp_2.Run()) { var c = tmp_1; 
 if(c is Expr && b is Expr) { 
- #line 33 "Content\Peano numbers"
-var tmp_5 = _opAddition.Create(c as Expr, b as Expr);
- #line 33 "Content\Peano numbers"
-foreach (var tmp_4 in tmp_5.Run()) { var d = tmp_4; 
- #line 33 "Content\Peano numbers"
+var tmp_4 = _opAddition.Create(c as Expr, b as Expr);
+foreach (var tmp_3 in tmp_4.Run()) { var d = tmp_3; 
 var result = d;
- #line 33 "Content\Peano numbers"
 yield return result;  } } } } }
  } 
 
   }
+public IEnumerable<IRunnable> Run() { return StaticRun(P1, P2); }
 
 
 public override string ToString() {
@@ -200,39 +153,28 @@ public Expr P2;
 public _opAddition(Expr P1, Expr P2) {this.P1 = P1; this.P2 = P2;}
 public static _opAddition Create(Expr P1, Expr P2) { return new _opAddition(P1, P2); }
 
-  public IEnumerable<IRunnable> Run() {   
+  public static IEnumerable<IRunnable> StaticRun(Expr P1, Expr P2) {   
  { 
- #line 16 "Content\Peano numbers"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as z; 
- #line 16 "Content\Peano numbers"
-if (tmp_1 != null) { var a = tmp_0.P2; 
- #line 16 "Content\Peano numbers"
+ var tmp_0 = P1 as z; 
+if (tmp_0 != null) { var a = P2; 
 var result = a;
- #line 16 "Content\Peano numbers"
 yield return result;  }
  } 
 
   
  { 
- #line 21 "Content\Peano numbers"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as s; 
- #line 21 "Content\Peano numbers"
-if (tmp_1 != null) { var a = tmp_1.P1; var b = tmp_0.P2; 
- #line 21 "Content\Peano numbers"
+ var tmp_0 = P1 as s; 
+if (tmp_0 != null) { var a = tmp_0.P1; var b = P2; 
 if(a is Expr && b is Expr) { 
- #line 21 "Content\Peano numbers"
-var tmp_3 = _opAddition.Create(a as Expr, b as Expr);
- #line 21 "Content\Peano numbers"
-foreach (var tmp_2 in tmp_3.Run()) { var c = tmp_2; 
- #line 21 "Content\Peano numbers"
+var tmp_2 = _opAddition.Create(a as Expr, b as Expr);
+foreach (var tmp_1 in tmp_2.Run()) { var c = tmp_1; 
 if(c is Num) { 
- #line 21 "Content\Peano numbers"
 var result = s.Create(c as Num);
- #line 21 "Content\Peano numbers"
 yield return result;  } } } }
  } 
 
   }
+public IEnumerable<IRunnable> Run() { return StaticRun(P1, P2); }
 
 
 public override string ToString() {
@@ -263,7 +205,8 @@ public s(Num P1) {this.P1 = P1;}
 public static s Create(Num P1) { return new s(P1); }
 
 
-public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public static IEnumerable<IRunnable> StaticRun(Num P1) { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run(){ return StaticRun(P1); }
 
 public override string ToString() {
  var res = "("; 
@@ -291,7 +234,8 @@ public z() {}
 public static z Create() { return new z(); }
 
 
-public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public static IEnumerable<IRunnable> StaticRun() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run(){ return StaticRun(); }
 
 public override string ToString() {
 return "z";

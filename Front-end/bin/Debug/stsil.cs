@@ -20,7 +20,8 @@ public _opDollar(int P1) {this.P1 = P1;}
 public static _opDollar Create(int P1) { return new _opDollar(P1); }
 
 
-public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public static IEnumerable<IRunnable> StaticRun(int P1) { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run(){ return StaticRun(P1); }
 
 public override string ToString() {
  var res = "("; 
@@ -48,39 +49,28 @@ public ListInt P1;
 public dda(ListInt P1) {this.P1 = P1;}
 public static dda Create(ListInt P1) { return new dda(P1); }
 
-  public IEnumerable<IRunnable> Run() {   
+  public static IEnumerable<IRunnable> StaticRun(ListInt P1) {   
  { 
- #line 14 "Content\stsil"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as lin; 
- #line 14 "Content\stsil"
-if (tmp_1 != null) { 
- #line 14 "Content\stsil"
+ var tmp_0 = P1 as lin; 
+if (tmp_0 != null) { 
 var result = _opDollar.Create(0);
- #line 14 "Content\stsil"
 yield return result;  }
  } 
 
   
  { 
- #line 19 "Content\stsil"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as snoc; 
- #line 19 "Content\stsil"
-if (tmp_1 != null) { var xs = tmp_1.P1; var x = tmp_1.P2; 
- #line 19 "Content\stsil"
+ var tmp_0 = P1 as snoc; 
+if (tmp_0 != null) { var xs = tmp_0.P1; var x = tmp_0.P2; 
 if(xs is ListInt) { 
- #line 19 "Content\stsil"
-var tmp_3 = dda.Create(xs as ListInt);
- #line 19 "Content\stsil"
-foreach (var tmp_2 in tmp_3.Run()) { var tmp_4 = tmp_2 as _opDollar; 
- #line 19 "Content\stsil"
-if (tmp_4 != null) { var res = tmp_4.P1; 
- #line 19 "Content\stsil"
+var tmp_2 = dda.Create(xs as ListInt);
+foreach (var tmp_1 in tmp_2.Run()) { var tmp_3 = tmp_1 as _opDollar; 
+if (tmp_3 != null) { var res = tmp_3.P1; 
 var result = _opDollar.Create(x+res);
- #line 19 "Content\stsil"
 yield return result;  } } } }
  } 
 
   }
+public IEnumerable<IRunnable> Run() { return StaticRun(P1); }
 
 
 public override string ToString() {
@@ -109,7 +99,8 @@ public lin() {}
 public static lin Create() { return new lin(); }
 
 
-public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public static IEnumerable<IRunnable> StaticRun() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run(){ return StaticRun(); }
 
 public override string ToString() {
 return "lin";
@@ -133,7 +124,8 @@ public snoc(ListInt P1, int P2) {this.P1 = P1; this.P2 = P2;}
 public static snoc Create(ListInt P1, int P2) { return new snoc(P1, P2); }
 
 
-public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public static IEnumerable<IRunnable> StaticRun(ListInt P1, int P2) { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run(){ return StaticRun(P1, P2); }
 
 public override string ToString() {
  var res = "("; 

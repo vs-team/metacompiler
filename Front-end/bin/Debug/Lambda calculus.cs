@@ -21,19 +21,18 @@ public string P1;
 public _opDollar(string P1) {this.P1 = P1;}
 public static _opDollar Create(string P1) { return new _opDollar(P1); }
 
-  public IEnumerable<IRunnable> Run() {   
+  public static IEnumerable<IRunnable> StaticRun(string P1) {   
  { 
- #line 28 "Content\Lambda calculus"
-var tmp_0 = this; var x = tmp_0.P1; 
- #line 28 "Content\Lambda calculus"
+ var x = P1; 
 var result = _opDollar.Create(x);
- #line 28 "Content\Lambda calculus"
 yield return result; 
  } 
 
   }
+public IEnumerable<IRunnable> Run() { return StaticRun(P1); }
 
-public IEnumerable<IRunnable> Run5_() { foreach(var p in Run()) yield return p; }
+public static IEnumerable<IRunnable> StaticRun5_(string P1) { return StaticRun(P1); }
+public IEnumerable<IRunnable> Run5_(){ return StaticRun5_(P1); }
 
 public override string ToString() {
  var res = "("; 
@@ -61,8 +60,10 @@ public _Arrow() {}
 public static _Arrow Create() { return new _Arrow(); }
 
 
-public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
-public IEnumerable<IRunnable> Run5_() { foreach(var p in Run()) yield return p; }
+public static IEnumerable<IRunnable> StaticRun() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run(){ return StaticRun(); }
+public static IEnumerable<IRunnable> StaticRun5_() { return StaticRun(); }
+public IEnumerable<IRunnable> Run5_(){ return StaticRun5_(); }
 
 public override string ToString() {
 return "->";
@@ -86,25 +87,21 @@ public Term P3;
 public _opSlash(Id P1, Dot P2, Term P3) {this.P1 = P1; this.P2 = P2; this.P3 = P3;}
 public static _opSlash Create(Id P1, Dot P2, Term P3) { return new _opSlash(P1, P2, P3); }
 
-  public IEnumerable<IRunnable> Run() {   
+  public static IEnumerable<IRunnable> StaticRun(Id P1, Dot P2, Term P3) {   
  { 
- #line 33 "Content\Lambda calculus"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollar; 
- #line 33 "Content\Lambda calculus"
-if (tmp_1 != null) { var x = tmp_1.P1; var tmp_2 = tmp_0.P2 as _Arrow; 
- #line 33 "Content\Lambda calculus"
-if (tmp_2 != null) { var t = tmp_0.P3; 
- #line 33 "Content\Lambda calculus"
+ var tmp_0 = P1 as _opDollar; 
+if (tmp_0 != null) { var x = tmp_0.P1; var tmp_1 = P2 as _Arrow; 
+if (tmp_1 != null) { var t = P3; 
 if(t is Term) { 
- #line 33 "Content\Lambda calculus"
 var result = _opSlash.Create(_opDollar.Create(x), _Arrow.Create(), t as Term);
- #line 33 "Content\Lambda calculus"
 yield return result;  } } }
  } 
 
   }
+public IEnumerable<IRunnable> Run() { return StaticRun(P1, P2, P3); }
 
-public IEnumerable<IRunnable> Run5_() { foreach(var p in Run()) yield return p; }
+public static IEnumerable<IRunnable> StaticRun5_(Id P1, Dot P2, Term P3) { return StaticRun(P1, P2, P3); }
+public IEnumerable<IRunnable> Run5_(){ return StaticRun5_(P1, P2, P3); }
 
 public override string ToString() {
  var res = "("; 
@@ -136,8 +133,10 @@ public _As(Term P1, Term P2) {this.P1 = P1; this.P2 = P2;}
 public static _As Create(Term P1, Term P2) { return new _As(P1, P2); }
 
 
-public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
-public IEnumerable<IRunnable> Run5_() { foreach(var p in Run()) yield return p; }
+public static IEnumerable<IRunnable> StaticRun(Term P1, Term P2) { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run(){ return StaticRun(P1, P2); }
+public static IEnumerable<IRunnable> StaticRun5_(Term P1, Term P2) { return StaticRun(P1, P2); }
+public IEnumerable<IRunnable> Run5_(){ return StaticRun5_(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
@@ -165,23 +164,20 @@ public class run : Term  {
 public run() {}
 public static run Create() { return new run(); }
 
-  public IEnumerable<IRunnable> Run() {   
+  public static IEnumerable<IRunnable> StaticRun() {   
  { 
- #line 21 "Content\Lambda calculus"
-var tmp_0 = this as run; 
- #line 21 "Content\Lambda calculus"
-var tmp_2 = _opBitwiseOr.Create(_opSlash.Create(_opDollar.Create("x"), _Arrow.Create(), _opDollar.Create("x")), _opDollar.Create("y"));
- #line 21 "Content\Lambda calculus"
-foreach (var tmp_1 in tmp_2.Run()) { var res = tmp_1; 
- #line 21 "Content\Lambda calculus"
+ 
+var tmp_1 = _opBitwiseOr.Create(_opSlash.Create(_opDollar.Create("x"), _Arrow.Create(), _opDollar.Create("x")), _opDollar.Create("y"));
+foreach (var tmp_0 in tmp_1.Run()) { var res = tmp_0; 
 var result = res;
- #line 21 "Content\Lambda calculus"
 yield return result;  }
  } 
 
   }
+public IEnumerable<IRunnable> Run() { return StaticRun(); }
 
-public IEnumerable<IRunnable> Run5_() { foreach(var p in Run()) yield return p; }
+public static IEnumerable<IRunnable> StaticRun5_() { return StaticRun(); }
+public IEnumerable<IRunnable> Run5_(){ return StaticRun5_(); }
 
 public override string ToString() {
 return "run";
@@ -204,129 +200,81 @@ public Where P2;
 public _With(Term P1, Where P2) {this.P1 = P1; this.P2 = P2;}
 public static _With Create(Term P1, Where P2) { return new _With(P1, P2); }
 
-  public IEnumerable<IRunnable> Run5_() {   
+  public static IEnumerable<IRunnable> StaticRun5_(Term P1, Where P2) {   
  { 
- #line 59 "Content\Lambda calculus"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollar; 
- #line 59 "Content\Lambda calculus"
-if (tmp_1 != null) { var y = tmp_1.P1; var tmp_2 = tmp_0.P2 as _As; 
- #line 59 "Content\Lambda calculus"
-if (tmp_2 != null) { var tmp_3 = tmp_2.P1 as _opDollar; 
- #line 59 "Content\Lambda calculus"
-if (tmp_3 != null) { var x = tmp_3.P1; var u = tmp_2.P2; 
- #line 59 "Content\Lambda calculus"
-if(x.Equals(y)) { 
- #line 59 "Content\Lambda calculus"
-var result = u;
- #line 59 "Content\Lambda calculus"
-yield return result;  } } } }
- } 
-
-  
- { 
- #line 66 "Content\Lambda calculus"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollar; 
- #line 66 "Content\Lambda calculus"
-if (tmp_1 != null) { var y = tmp_1.P1; var tmp_2 = tmp_0.P2 as _As; 
- #line 66 "Content\Lambda calculus"
-if (tmp_2 != null) { var tmp_3 = tmp_2.P1 as _opDollar; 
- #line 66 "Content\Lambda calculus"
-if (tmp_3 != null) { var x = tmp_3.P1; var u = tmp_2.P2; 
- #line 66 "Content\Lambda calculus"
-if(!x.Equals(y)) { 
- #line 66 "Content\Lambda calculus"
-var result = _opDollar.Create(y);
- #line 66 "Content\Lambda calculus"
-yield return result;  } } } }
- } 
-
-  
- { 
- #line 73 "Content\Lambda calculus"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSlash; 
- #line 73 "Content\Lambda calculus"
+ var tmp_0 = P1 as _opDollar; 
+if (tmp_0 != null) { var y = tmp_0.P1; var tmp_1 = P2 as _As; 
 if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 73 "Content\Lambda calculus"
-if (tmp_2 != null) { var x = tmp_2.P1; var tmp_3 = tmp_1.P2 as _Arrow; 
- #line 73 "Content\Lambda calculus"
-if (tmp_3 != null) { var t = tmp_1.P3; var tmp_4 = tmp_0.P2 as _As; 
- #line 73 "Content\Lambda calculus"
-if (tmp_4 != null) { var tmp_5 = tmp_4.P1 as _opDollar; 
- #line 73 "Content\Lambda calculus"
-if (tmp_5 != null) { var y = tmp_5.P1; var u = tmp_4.P2; 
- #line 73 "Content\Lambda calculus"
+if (tmp_2 != null) { var x = tmp_2.P1; var u = tmp_1.P2; 
 if(x.Equals(y)) { 
- #line 73 "Content\Lambda calculus"
+var result = u;
+yield return result;  } } } }
+ } 
+
+  
+ { 
+ var tmp_0 = P1 as _opDollar; 
+if (tmp_0 != null) { var y = tmp_0.P1; var tmp_1 = P2 as _As; 
+if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
+if (tmp_2 != null) { var x = tmp_2.P1; var u = tmp_1.P2; 
+if(!x.Equals(y)) { 
+var result = _opDollar.Create(y);
+yield return result;  } } } }
+ } 
+
+  
+ { 
+ var tmp_0 = P1 as _opSlash; 
+if (tmp_0 != null) { var tmp_1 = tmp_0.P1 as _opDollar; 
+if (tmp_1 != null) { var x = tmp_1.P1; var tmp_2 = tmp_0.P2 as _Arrow; 
+if (tmp_2 != null) { var t = tmp_0.P3; var tmp_3 = P2 as _As; 
+if (tmp_3 != null) { var tmp_4 = tmp_3.P1 as _opDollar; 
+if (tmp_4 != null) { var y = tmp_4.P1; var u = tmp_3.P2; 
+if(x.Equals(y)) { 
 if(t is Term) { 
- #line 73 "Content\Lambda calculus"
 var result = _opSlash.Create(_opDollar.Create(x), _Arrow.Create(), t as Term);
- #line 73 "Content\Lambda calculus"
 yield return result;  } } } } } } }
  } 
 
   
  { 
- #line 80 "Content\Lambda calculus"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSlash; 
- #line 80 "Content\Lambda calculus"
-if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 80 "Content\Lambda calculus"
-if (tmp_2 != null) { var x = tmp_2.P1; var tmp_3 = tmp_1.P2 as _Arrow; 
- #line 80 "Content\Lambda calculus"
-if (tmp_3 != null) { var t = tmp_1.P3; var tmp_4 = tmp_0.P2 as _As; 
- #line 80 "Content\Lambda calculus"
-if (tmp_4 != null) { var tmp_5 = tmp_4.P1 as _opDollar; 
- #line 80 "Content\Lambda calculus"
-if (tmp_5 != null) { var y = tmp_5.P1; var u = tmp_4.P2; 
- #line 80 "Content\Lambda calculus"
+ var tmp_0 = P1 as _opSlash; 
+if (tmp_0 != null) { var tmp_1 = tmp_0.P1 as _opDollar; 
+if (tmp_1 != null) { var x = tmp_1.P1; var tmp_2 = tmp_0.P2 as _Arrow; 
+if (tmp_2 != null) { var t = tmp_0.P3; var tmp_3 = P2 as _As; 
+if (tmp_3 != null) { var tmp_4 = tmp_3.P1 as _opDollar; 
+if (tmp_4 != null) { var y = tmp_4.P1; var u = tmp_3.P2; 
 if(!x.Equals(y)) { 
- #line 80 "Content\Lambda calculus"
 if(t is Term && u is Term) { 
- #line 80 "Content\Lambda calculus"
-var tmp_7 = _With.Create(t as Term, _As.Create(_opDollar.Create(y), u as Term));
- #line 80 "Content\Lambda calculus"
-foreach (var tmp_6 in tmp_7.Run5_()) { var t_Prime = tmp_6; 
- #line 80 "Content\Lambda calculus"
+var tmp_6 = _With.Create(t as Term, _As.Create(_opDollar.Create(y), u as Term));
+foreach (var tmp_5 in tmp_6.Run5_()) { var t_Prime = tmp_5; 
 if(t_Prime is Term) { 
- #line 80 "Content\Lambda calculus"
 var result = _opSlash.Create(_opDollar.Create(x), _Arrow.Create(), t_Prime as Term);
- #line 80 "Content\Lambda calculus"
 yield return result;  } } } } } } } } }
  } 
 
   
  { 
- #line 89 "Content\Lambda calculus"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opBitwiseOr; 
- #line 89 "Content\Lambda calculus"
-if (tmp_1 != null) { var t = tmp_1.P1; var u = tmp_1.P2; var tmp_2 = tmp_0.P2 as _As; 
- #line 89 "Content\Lambda calculus"
-if (tmp_2 != null) { var tmp_3 = tmp_2.P1 as _opDollar; 
- #line 89 "Content\Lambda calculus"
-if (tmp_3 != null) { var x = tmp_3.P1; var v = tmp_2.P2; 
- #line 89 "Content\Lambda calculus"
+ var tmp_0 = P1 as _opBitwiseOr; 
+if (tmp_0 != null) { var t = tmp_0.P1; var u = tmp_0.P2; var tmp_1 = P2 as _As; 
+if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
+if (tmp_2 != null) { var x = tmp_2.P1; var v = tmp_1.P2; 
 if(t is Term && v is Term) { 
- #line 89 "Content\Lambda calculus"
-var tmp_5 = _With.Create(t as Term, _As.Create(_opDollar.Create(x), v as Term));
- #line 89 "Content\Lambda calculus"
-foreach (var tmp_4 in tmp_5.Run5_()) { var t_Prime = tmp_4; 
- #line 89 "Content\Lambda calculus"
+var tmp_4 = _With.Create(t as Term, _As.Create(_opDollar.Create(x), v as Term));
+foreach (var tmp_3 in tmp_4.Run5_()) { var t_Prime = tmp_3; 
 if(u is Term && v is Term) { 
- #line 89 "Content\Lambda calculus"
-var tmp_7 = _With.Create(u as Term, _As.Create(_opDollar.Create(x), v as Term));
- #line 89 "Content\Lambda calculus"
-foreach (var tmp_6 in tmp_7.Run5_()) { var u_Prime = tmp_6; 
- #line 89 "Content\Lambda calculus"
+var tmp_6 = _With.Create(u as Term, _As.Create(_opDollar.Create(x), v as Term));
+foreach (var tmp_5 in tmp_6.Run5_()) { var u_Prime = tmp_5; 
 if(t_Prime is Term && u_Prime is Term) { 
- #line 89 "Content\Lambda calculus"
 var result = _opBitwiseOr.Create(t_Prime as Term, u_Prime as Term);
- #line 89 "Content\Lambda calculus"
 yield return result;  } } } } } } } }
  } 
 
- foreach(var p in Run()) yield return p; }
+ foreach(var p in StaticRun(P1, P2)) yield return p; }
+public IEnumerable<IRunnable> Run5_() { return StaticRun5_(P1, P2); }
 
-public IEnumerable<IRunnable> Run() { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public static IEnumerable<IRunnable> StaticRun(Term P1, Where P2) { foreach (var p in Enumerable.Range(0,0)) yield return null; }
+public IEnumerable<IRunnable> Run(){ return StaticRun(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
@@ -356,69 +304,47 @@ public Term P2;
 public _opBitwiseOr(Term P1, Term P2) {this.P1 = P1; this.P2 = P2;}
 public static _opBitwiseOr Create(Term P1, Term P2) { return new _opBitwiseOr(P1, P2); }
 
-  public IEnumerable<IRunnable> Run() {   
+  public static IEnumerable<IRunnable> StaticRun(Term P1, Term P2) {   
  { 
- #line 38 "Content\Lambda calculus"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opDollar; 
- #line 38 "Content\Lambda calculus"
-if (tmp_1 != null) { var x = tmp_1.P1; var u = tmp_0.P2; 
- #line 38 "Content\Lambda calculus"
+ var tmp_0 = P1 as _opDollar; 
+if (tmp_0 != null) { var x = tmp_0.P1; var u = P2; 
 if(u is Term) { 
- #line 38 "Content\Lambda calculus"
 var result = _opBitwiseOr.Create(_opDollar.Create(x), u as Term);
- #line 38 "Content\Lambda calculus"
 yield return result;  } }
  } 
 
   
  { 
- #line 43 "Content\Lambda calculus"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opBitwiseOr; 
- #line 43 "Content\Lambda calculus"
-if (tmp_1 != null) { var u = tmp_1.P1; var v = tmp_1.P2; var w = tmp_0.P2; 
- #line 43 "Content\Lambda calculus"
+ var tmp_0 = P1 as _opBitwiseOr; 
+if (tmp_0 != null) { var u = tmp_0.P1; var v = tmp_0.P2; var w = P2; 
 if(u is Term && v is Term) { 
- #line 43 "Content\Lambda calculus"
-var tmp_3 = _opBitwiseOr.Create(u as Term, v as Term);
- #line 43 "Content\Lambda calculus"
-foreach (var tmp_2 in tmp_3.Run()) { var v_Prime = tmp_2; 
- #line 43 "Content\Lambda calculus"
+var tmp_2 = _opBitwiseOr.Create(u as Term, v as Term);
+foreach (var tmp_1 in tmp_2.Run()) { var v_Prime = tmp_1; 
 if(v_Prime is Term && w is Term) { 
- #line 43 "Content\Lambda calculus"
-var tmp_5 = _opBitwiseOr.Create(v_Prime as Term, w as Term);
- #line 43 "Content\Lambda calculus"
-foreach (var tmp_4 in tmp_5.Run()) { var res = tmp_4; 
- #line 43 "Content\Lambda calculus"
+var tmp_4 = _opBitwiseOr.Create(v_Prime as Term, w as Term);
+foreach (var tmp_3 in tmp_4.Run()) { var res = tmp_3; 
 var result = res;
- #line 43 "Content\Lambda calculus"
 yield return result;  } } } } }
  } 
 
   
  { 
- #line 52 "Content\Lambda calculus"
-var tmp_0 = this; var tmp_1 = tmp_0.P1 as _opSlash; 
- #line 52 "Content\Lambda calculus"
-if (tmp_1 != null) { var tmp_2 = tmp_1.P1 as _opDollar; 
- #line 52 "Content\Lambda calculus"
-if (tmp_2 != null) { var x = tmp_2.P1; var tmp_3 = tmp_1.P2 as _Arrow; 
- #line 52 "Content\Lambda calculus"
-if (tmp_3 != null) { var t = tmp_1.P3; var u = tmp_0.P2; 
- #line 52 "Content\Lambda calculus"
+ var tmp_0 = P1 as _opSlash; 
+if (tmp_0 != null) { var tmp_1 = tmp_0.P1 as _opDollar; 
+if (tmp_1 != null) { var x = tmp_1.P1; var tmp_2 = tmp_0.P2 as _Arrow; 
+if (tmp_2 != null) { var t = tmp_0.P3; var u = P2; 
 if(t is Term && u is Term) { 
- #line 52 "Content\Lambda calculus"
-var tmp_5 = _With.Create(t as Term, _As.Create(_opDollar.Create(x), u as Term));
- #line 52 "Content\Lambda calculus"
-foreach (var tmp_4 in tmp_5.Run5_()) { var t_Prime = tmp_4; 
- #line 52 "Content\Lambda calculus"
+var tmp_4 = _With.Create(t as Term, _As.Create(_opDollar.Create(x), u as Term));
+foreach (var tmp_3 in tmp_4.Run5_()) { var t_Prime = tmp_3; 
 var result = t_Prime;
- #line 52 "Content\Lambda calculus"
 yield return result;  } } } } }
  } 
 
   }
+public IEnumerable<IRunnable> Run() { return StaticRun(P1, P2); }
 
-public IEnumerable<IRunnable> Run5_() { foreach(var p in Run()) yield return p; }
+public static IEnumerable<IRunnable> StaticRun5_(Term P1, Term P2) { return StaticRun(P1, P2); }
+public IEnumerable<IRunnable> Run5_(){ return StaticRun5_(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
