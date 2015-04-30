@@ -75,7 +75,13 @@ type Parameter =
     Type    : BasicExpression<Keyword, Var, Literal, Position, unit>
   }
 
+(*
+    Since different scopes can have different implementations of Run(), Path is
+    necessary to keep track of the scope.
 
+    Path provides the ParentCall member functions, which calls the Run() of
+    the parent.
+*)
 type Path = Path of List<int>
   with
     override this.ToString() = 
@@ -105,6 +111,10 @@ type Path = Path of List<int>
         let paramsWithoutType = String.concat ", " (parameters |> Seq.map (fun x -> x.Name))
         sprintf "return StaticRun%s(%s);" (Path(ps).ToString()) paramsWithoutType
 
+(*
+    Instruction represents the different code-snippets that can be generated in
+    the Run functions by generateInstruction.
+*)
 type Instruction = 
     Var of name : string * expr : string
   | VarAs of name : string * expr : string * as_type : string
@@ -115,76 +125,10 @@ type Instruction =
   | Inline of e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>
   | Yield of expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>
 
-let rec create_element (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) = 
-  let rec create_element' (expectedType:BasicExpression<Keyword, Var, Literal, Position, unit>) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) = 
-    match e with
-    | Keyword(Custom k, _, ti) 
-    | Application(Regular,(Keyword(Custom k, _, ti)) :: [], _, _)
-    | Application(Implicit,(Keyword(Custom k, _, ti)) :: [], _, _) -> 
-      sprintf "%s.Create()" !k, []
-    | Application(Regular,(Keyword(Custom k, _, ti)) :: es, pos, _)
-    | Application(Implicit,(Keyword(Custom k, _, ti)) :: es, pos, _) ->
-      let actualKeyword = ctxt.CustomKeywordsMap.[k]
-      if es.Length = (Keyword.Arguments actualKeyword).Length then
-        let args,cargs = es |> Seq.mapi (fun i e -> create_element' (Keyword.Arguments actualKeyword).[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
-        //do printfn "Inner creation of %A with expectedType %A" (k, args) expectedType
-        sprintf "%s.Create(%s)" !k args, cargs
-      else
-        failwithf "Invalid number of keyword arguments @ %A" pos
-    | Extension(v:Var, _, ti) ->
-      match expectedType with
-      | Native(t) ->
-        sprintf "%s" !v.Name, []
-      | _ ->
-        let t = Keyword.Name expectedType
-        sprintf "%s as %s" !v.Name t, [sprintf "%s is %s" !v.Name t]
-    | Application(Angle,e::[],pos, _) ->
-      let res = generate_inline e
-      sprintf "%s" res, []
-    | Application(Angle,e::es,pos,typeInfo) ->
-      let res = generate_inline (Application(Implicit,e::es,pos,typeInfo))
-      sprintf "%s" res, []
-    | Application(Regular,e::[],pos,typeInfo) ->
-      let res, conds = create_element' expectedType e
-      sprintf "(%s)" res, conds
-    | Application(b,e::es,pos,typeInfo) ->
-      failwithf "Code generation error @ %A" pos
-    | Application(b,[],pos,typeInfo) ->
-      failwithf "Code generation error @ %A" pos
-    | Imported(l,pos,typeInfo) -> l.ToString(), []
-    | Keyword(k, pos, typeInfo) -> 
-      failwithf "Unexpected keyword %A @ %A cannot be matched" k pos
-  match e with
-  | Keyword(Custom k, _,ti) 
-  | Application(Regular,(Keyword(Custom k, _,ti)) :: [],_,_)
-  | Application(Implicit,(Keyword(Custom k, _,ti)) :: [],_,_) -> 
-    sprintf "%s.Create()" !k, []
-  | Application(Regular,(Keyword(Custom k, _,ti)) :: es,pos,_)
-  | Application(Implicit,(Keyword(Custom k, _,ti)) :: es,pos,_) ->
-    let actualKeyword = ctxt.CustomKeywordsMap.[k]
-    let args,cargs = es |> Seq.mapi (fun i e -> create_element' (Keyword.Arguments actualKeyword).[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
-    let trimmedArgs = 
-      if es |> List.length = 1 && args.[0] = '(' && args.[args.Length - 1] = ')' then
-        args.Substring(1, args.Length - 2)
-      else
-        args
-    //do printfn "Outer creation of %A" (k, args)
-    let res = sprintf "%s.Create(%s)" !k trimmedArgs, cargs
-    res
-  | Application(Angle,e::es,pos,ti) ->
-    let res = generate_inline (Application(Regular,e::es,pos,ti))
-    sprintf "%s" res, []
-  | Extension(v:Var,_,_) ->
-    sprintf "%s" !v.Name, []
-  | Application(b,e::es,pos,ti) ->
-    failwithf "Code generation error @ %A" pos
-  | Application(b,[],pos,_) ->
-    failwithf "Code generation error @ %A" pos
-  | Imported(l,pos,_) -> l.ToString(), []
-  | Keyword(k,pos,_) -> 
-    failwithf "Non-custom keyword %A @ %A cannot be matched" k pos
-
-and generate_inline =
+(*
+    createElement is responsible for generating the Create() functions.
+*)
+let rec generate_inline =
   function
   | Keyword(Custom k,_,_) ->
     sprintf "%s" k
@@ -223,8 +167,108 @@ and generate_inline =
   | i -> 
     failwithf "Code generation error @ %A" i.DebugInformation
   
+let rec createElementInner (ctxt:ConcreteExpressionContext) (expectedType:BasicExpression<Keyword, Var, Literal, Position, unit>) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) = 
+    match e with
+    | Keyword(Custom k, _, ti) 
+    | Application(Regular,(Keyword(Custom k, _, ti)) :: [], _, _)
+    | Application(Implicit,(Keyword(Custom k, _, ti)) :: [], _, _) -> 
+      sprintf "%s.Create()" !k, []
+    | Application(Regular,(Keyword(Custom k, _, ti)) :: es, pos, _)
+    | Application(Implicit,(Keyword(Custom k, _, ti)) :: es, pos, _) ->
+      let actualKeyword = ctxt.CustomKeywordsMap.[k]
+      if es.Length = (Keyword.Arguments actualKeyword).Length then
+        let args,cargs = es |> Seq.mapi (fun i e -> createElementInner ctxt (Keyword.Arguments actualKeyword).[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
+        //do printfn "Inner creation of %A with expectedType %A" (k, args) expectedType
+        sprintf "%s.Create(%s)" !k args, cargs
+      else
+        failwithf "Invalid number of keyword arguments @ %A" pos
+    | Extension(v:Var, _, ti) ->
+      match expectedType with
+      | Native(t) ->
+        sprintf "%s" !v.Name, []
+      | _ ->
+        let t = Keyword.Name expectedType
+        sprintf "%s as %s" !v.Name t, [sprintf "%s is %s" !v.Name t]
+    | Application(Angle,e::[],pos, _) ->
+      let res = generate_inline e
+      sprintf "%s" res, []
+    | Application(Angle,e::es,pos,typeInfo) ->
+      let res = generate_inline (Application(Implicit,e::es,pos,typeInfo))
+      sprintf "%s" res, []
+    | Application(Regular,e::[],pos,typeInfo) ->
+      let res, conds = createElementInner ctxt expectedType e
+      sprintf "(%s)" res, conds
+    | Application(b,e::es,pos,typeInfo) ->
+      failwithf "Code generation error @ %A" pos
+    | Application(b,[],pos,typeInfo) ->
+      failwithf "Code generation error @ %A" pos
+    | Imported(l,pos,typeInfo) -> l.ToString(), []
+    | Keyword(k, pos, typeInfo) -> 
+      failwithf "Unexpected keyword %A @ %A cannot be matched" k pos
 
-let rec generate_instructions (debugPosition:Position) (originalFilePath:string) (ctxt:ConcreteExpressionContext) = 
+let createElement (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) = 
+  match e with
+  | Keyword(Custom k, _,ti) 
+  | Application(Regular,(Keyword(Custom k, _,ti)) :: [],_,_)
+  | Application(Implicit,(Keyword(Custom k, _,ti)) :: [],_,_) -> 
+    sprintf "%s.Create()" !k, []
+  | Application(Regular,(Keyword(Custom k, _,ti)) :: es,pos,_)
+  | Application(Implicit,(Keyword(Custom k, _,ti)) :: es,pos,_) ->
+    let actualKeyword = ctxt.CustomKeywordsMap.[k]
+    let args,cargs = es |> Seq.mapi (fun i e -> createElementInner ctxt (Keyword.Arguments actualKeyword).[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
+    let trimmedArgs = 
+      if es |> List.length = 1 && args.[0] = '(' && args.[args.Length - 1] = ')' then
+        args.Substring(1, args.Length - 2)
+      else
+        args
+    //do printfn "Outer creation of %A" (k, args)
+    let res = sprintf "%s.Create(%s)" !k trimmedArgs, cargs
+    res
+  | Application(Angle,e::es,pos,ti) ->
+    let res = generate_inline (Application(Regular,e::es,pos,ti))
+    sprintf "%s" res, []
+  | Extension(v:Var,_,_) ->
+    sprintf "%s" !v.Name, []
+  | Application(b,e::es,pos,ti) ->
+    failwithf "Code generation error @ %A" pos
+  | Application(b,[],pos,_) ->
+    failwithf "Code generation error @ %A" pos
+  | Imported(l,pos,_) -> l.ToString(), []
+  | Keyword(k,pos,_) -> 
+    failwithf "Non-custom keyword %A @ %A cannot be matched" k pos
+  
+let createStaticRun (ctxt:ConcreteExpressionContext) (path:Path) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) = 
+  match e with
+  | Keyword(Custom k, _,ti) 
+  | Application(Regular,(Keyword(Custom k, _,ti)) :: [],_,_)
+  | Application(Implicit,(Keyword(Custom k, _,ti)) :: [],_,_) -> 
+    sprintf "%s.StaticRun%s()" !k (path.ToString()), []
+  | Application(Regular,(Keyword(Custom k, _,ti)) :: es,pos,_)
+  | Application(Implicit,(Keyword(Custom k, _,ti)) :: es,pos,_) ->
+    let actualKeyword = ctxt.CustomKeywordsMap.[k]
+    let args,cargs = es |> Seq.mapi (fun i e -> createElementInner ctxt (Keyword.Arguments actualKeyword).[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
+    let trimmedArgs = 
+      if es |> List.length = 1 && args.[0] = '(' && args.[args.Length - 1] = ')' then
+        args.Substring(1, args.Length - 2)
+      else
+        args
+    //do printfn "Outer creation of %A" (k, args)
+    let res = sprintf "%s.StaticRun%s(%s)" !k (path.ToString()) trimmedArgs, cargs
+    res
+  | Application(b,e::es,pos,ti) ->
+    failwithf "Code generation error @ %A" pos
+  | Application(b,[],pos,_) ->
+    failwithf "Code generation error @ %A" pos
+  | Imported(l,pos,_) -> l.ToString(), []
+  | Keyword(k,pos,_) -> 
+    failwithf "Non-custom keyword %A @ %A cannot be matched" k pos
+  | _ -> failwithf "AAAAAAAAAAAAAAAAAAAAAAH!"
+
+(*/
+    generateInstructions generates the body of a Run function from a list of
+    'Instruction's.
+*)
+let rec generateInstructions (debugPosition:Position) (originalFilePath:string) (ctxt:ConcreteExpressionContext) = 
   function 
   | [] -> ""
   | x :: xs ->
@@ -233,15 +277,15 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
       else "\n"
     match x with
     | Var(name, expr) -> 
-      let res = sprintf "var %s = %s; %s" !name expr (generate_instructions debugPosition originalFilePath ctxt xs)
+      let res = sprintf "var %s = %s; %s" !name expr (generateInstructions debugPosition originalFilePath ctxt xs)
       res
     | VarAs(name, expr, as_type) ->
-      sprintf "var %s = %s as %s; %s" !name expr as_type (generate_instructions debugPosition originalFilePath  ctxt xs)
+      sprintf "var %s = %s as %s; %s" !name expr as_type (generateInstructions debugPosition originalFilePath  ctxt xs)
     | CheckNull(var_name) ->
-      sprintf "%sif (%s != null) { %s }" newLine !var_name (generate_instructions debugPosition originalFilePath  ctxt xs)
+      sprintf "%sif (%s != null) { %s }" newLine !var_name (generateInstructions debugPosition originalFilePath  ctxt xs)
     | Compare(comparison, expr1, expr2) ->
-      let newElement1, creationConstraints1 = create_element ctxt expr1
-      let newElement2, creationConstraints2 = create_element ctxt expr2
+      let newElement1, creationConstraints1 = createElement ctxt expr1
+      let newElement2, creationConstraints2 = createElement ctxt expr2
       let creationConstraints = creationConstraints1 @ creationConstraints2
       let preComparison, inlineComparison, postComparison = 
         match comparison with 
@@ -257,29 +301,40 @@ let rec generate_instructions (debugPosition:Position) (originalFilePath:string)
       let res =
         if creationConstraints.IsEmpty |> not then
           let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
-          sprintf "%sif(%s) { %sif(%s%s%s%s%s) { %s } }" newLine creationConstraints newLine preComparison newElement1 inlineComparison newElement2 postComparison (generate_instructions debugPosition originalFilePath  ctxt xs)
+          sprintf "%sif(%s) { %sif(%s%s%s%s%s) { %s } }" newLine creationConstraints newLine preComparison newElement1 inlineComparison newElement2 postComparison (generateInstructions debugPosition originalFilePath  ctxt xs)
         else 
-          sprintf "%sif(%s%s%s%s%s) { %s }" newLine preComparison newElement1 inlineComparison newElement2 postComparison (generate_instructions debugPosition originalFilePath  ctxt xs)
+          sprintf "%sif(%s%s%s%s%s) { %s }" newLine preComparison newElement1 inlineComparison newElement2 postComparison (generateInstructions debugPosition originalFilePath  ctxt xs)
       res
     | Iterate(var_name, tmp_var_name, expr, path) ->
-      let newElement, creationConstraints = create_element ctxt expr
-      if creationConstraints.IsEmpty |> not then
-        let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
-        sprintf "%sif(%s) { %svar %s = %s;%sforeach (var %s in %s.Run%s()) { %s } }" newLine creationConstraints newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generate_instructions debugPosition originalFilePath  ctxt xs)
-      else 
-        sprintf "%svar %s = %s;%sforeach (var %s in %s.Run%s()) { %s }" newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generate_instructions debugPosition originalFilePath ctxt xs)
-    | CustomCheck(condition) ->
-      sprintf "%sif (%s) { %s }" newLine condition (generate_instructions debugPosition originalFilePath  ctxt xs)
-    | Inline(c) -> 
-      sprintf "%s%s;%s%s" newLine (generate_inline c) newLine (generate_instructions debugPosition originalFilePath  ctxt xs)
-    | Yield(expr) ->
-      let newElement, creationConstraints = create_element ctxt expr
-      if creationConstraints.IsEmpty |> not then
-        let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
-        sprintf "%sif(%s) { %svar result = %s;%syield return result; %s }" newLine creationConstraints newLine newElement newLine (generate_instructions debugPosition originalFilePath ctxt xs)
+      if CompilerSwitches.combineCreateFor && CompilerSwitches.generateStaticRun then
+        let newElement, creationConstraints = createStaticRun ctxt path expr
+        if creationConstraints.IsEmpty |> not then
+          let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
+          sprintf "%sif(%s) { %svar %s = %s;%sforeach (var %s in %s) { %s } }" newLine creationConstraints newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (generateInstructions debugPosition originalFilePath  ctxt xs)
+        else 
+          sprintf "%svar %s = %s;%sforeach (var %s in %s) { %s }" newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (generateInstructions debugPosition originalFilePath ctxt xs) 
       else
-        sprintf "%svar result = %s;%syield return result; %s" newLine newElement newLine (generate_instructions debugPosition originalFilePath ctxt xs)
+        let newElement, creationConstraints = createElement ctxt expr
+        if creationConstraints.IsEmpty |> not then
+          let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
+          sprintf "%sif(%s) { %svar %s = %s;%sforeach (var %s in %s.Run%s()) { %s } }" newLine creationConstraints newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generateInstructions debugPosition originalFilePath  ctxt xs)
+        else 
+          sprintf "%svar %s = %s;%sforeach (var %s in %s.Run%s()) { %s }" newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generateInstructions debugPosition originalFilePath ctxt xs)
+    | CustomCheck(condition) ->
+      sprintf "%sif (%s) { %s }" newLine condition (generateInstructions debugPosition originalFilePath  ctxt xs)
+    | Inline(c) -> 
+      sprintf "%s%s;%s%s" newLine (generate_inline c) newLine (generateInstructions debugPosition originalFilePath  ctxt xs)
+    | Yield(expr) ->
+      let newElement, creationConstraints = createElement ctxt expr
+      if creationConstraints.IsEmpty |> not then
+        let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
+        sprintf "%sif(%s) { %svar result = %s;%syield return result; %s }" newLine creationConstraints newLine newElement newLine (generateInstructions debugPosition originalFilePath ctxt xs)
+      else
+        sprintf "%svar result = %s;%syield return result; %s" newLine newElement newLine (generateInstructions debugPosition originalFilePath ctxt xs)
 
+(*
+    matchCast is responsible for matching expressions
+*)
 let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) (self:string) (prefix:List<Instruction>) 
                   (ctxt:ConcreteExpressionContext) (typeConstraint) =
   match e with
@@ -291,7 +346,7 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
         CheckNull(sprintf "tmp_%d" tmp_id)
       ], tmp_id+1
     else
-      if CompilerSwitches.generateStaticRun || CompilerSwitches.optimizeStaticRunUsage
+      if CompilerSwitches.generateStaticRun
       then
         prefix @ [], tmp_id
       else
@@ -323,8 +378,7 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
           CheckNull(sprintf "tmp_%d" tmp_id)
         ], sprintf "tmp_%d" tmp_id, tmp_id+1
       else
-        if CompilerSwitches.generateStaticRun || CompilerSwitches.optimizeStaticRunUsage
-        then
+        if CompilerSwitches.generateStaticRun then
           prefix @ [], "this", tmp_id
         else
           prefix @
@@ -338,7 +392,7 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
     let keywordArgumentConstraints = Keyword.Arguments actualKeyword
     for e_constraint,(e,i) in es |> List.mapi (fun i e -> e,(i+1)) |> Seq.zip keywordArgumentConstraints do
       let varAccess = 
-        if self="this" && (CompilerSwitches.generateStaticRun || CompilerSwitches.optimizeStaticRunUsage)
+        if self="this" && CompilerSwitches.generateStaticRun
         then sprintf "P%d" i
         else sprintf "%s.P%d" self i
       let newOutput, newTempId = matchCast tmp_id e varAccess output ctxt (Some e_constraint)
@@ -362,6 +416,9 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
   | Keyword(k,pos,ti) -> 
     failwithf "Unexpected keyword %A @ %A" k pos
 
+(*
+    a Rule is a line division (-------------) and it's inputs, outputs and clauses
+*)
 type Rule = {
   Position   : Position
   Input      : BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>
@@ -391,13 +448,13 @@ type Rule = {
         | DefinedAs -> 
           match c_i with
           | Extension(iVar, _, _) ->
-            let oExpr,constraints = create_element ctxt c_o
+            let oExpr,constraints = createElement ctxt c_o
             if constraints.IsEmpty |> not then
               o <- o @ [CustomCheck(constraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x))]
             o <- o @ [Var(iVar.Name, oExpr)]
           | _ -> 
             let iVar = c_i.ToStringCompact
-            let oExpr,constraints = create_element ctxt c_o
+            let oExpr,constraints = createElement ctxt c_o
             if constraints.IsEmpty |> not then
               o <- o @ [CustomCheck(constraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x))]
             o <- o @ [Var(iVar, oExpr)]
@@ -406,9 +463,9 @@ type Rule = {
         | _ -> failwithf "Unexpected operator %A @ %A" k c_i.DebugInformation
       o <- i @ o @ [Yield r.Output]
       if CompilerSwitches.generateLineDirectives then
-        sprintf "\n { \n #line %d \"%s\"\n%s\n } \n" r.Position.Line r.Position.File (generate_instructions r.Position originalFilePath ctxt o)
+        sprintf "\n { \n #line %d \"%s\"\n%s\n } \n" r.Position.Line r.Position.File (generateInstructions r.Position originalFilePath ctxt o)
       else
-        sprintf "\n { \n %s\n } \n" (generate_instructions r.Position originalFilePath ctxt o)
+        sprintf "\n { \n %s\n } \n" (generateInstructions r.Position originalFilePath ctxt o)
 
 type Method = {
   Rules      : ResizeArray<Rule>
@@ -419,7 +476,7 @@ type Method = {
       let paramsWithType    = String.concat ", " (parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name))
       let paramsWithoutType = String.concat ", " (parameters |> Seq.map (fun x -> x.Name))
       let body = ((m.Rules |> Seq.map (fun r -> r.ToString(ctxt,originalFilePath))) ++ 2)
-      let parent_call = if CompilerSwitches.optimizeStaticRunUsage||CompilerSwitches.generateStaticRun then m.Path.StaticParentCall parameters else m.Path.ParentCall
+      let parent_call = if CompilerSwitches.generateStaticRun then m.Path.StaticParentCall parameters else m.Path.ParentCall
       sprintf "public static IEnumerable<IRunnable> StaticRun%s(%s) { %s %s }\npublic IEnumerable<IRunnable> Run%s() { return StaticRun%s(%s); }" path paramsWithType body parent_call path path paramsWithoutType
     member m.ToString(ctxt:ConcreteExpressionContext,originalFilePath) =
       let path = m.Path.ToString()
@@ -471,7 +528,7 @@ type GeneratedClass =
           [
             for p in missing_paths do
             let parent_call = 
-              match (CompilerSwitches.generateStaticRun||CompilerSwitches.optimizeStaticRunUsage),CompilerSwitches.optimizeDirectParentCall with
+              match CompilerSwitches.generateStaticRun,CompilerSwitches.optimizeDirectParentCall with
               | false,false -> p.ParentCall
               | false,true  -> p.DirectParentCall
               | true, false -> p.StaticParentCall c.Parameters
@@ -482,7 +539,7 @@ type GeneratedClass =
               else
                 "foreach (var p in Enumerable.Range(0,0)) yield return null;"
             let path = p.ToString()
-            if CompilerSwitches.generateStaticRun || CompilerSwitches.optimizeStaticRunUsage
+            if CompilerSwitches.generateStaticRun 
             then
               let paramsWithoutType = String.concat ", " (c.Parameters |> Seq.map (fun x -> x.Name))
               let paramsWithType    = String.concat ", " (c.Parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name))
@@ -513,7 +570,7 @@ type GeneratedClass =
         let hash =
           sprintf "public override int GetHashCode() {\n return 0; \n}\n"
         let runImplementation =
-          if CompilerSwitches.optimizeStaticRunUsage || CompilerSwitches.generateStaticRun
+          if CompilerSwitches.generateStaticRun
           then ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath,c.Parameters))) ++ 2)
           else ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath))) ++ 2)
         sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n}\n\n" c.Name c.Interface genericConstraints parameters cons runImplementation missing_methods to_string equals hash
@@ -632,7 +689,7 @@ let generateCode (originalFilePath:string) (program_name:string)
         else
             ""
     let prelude = sprintf "using System.Collections.Generic;\nusing System.Linq;\nnamespace %s {\n %s\n public interface IRunnable { %s }" (program_name.Replace(" ", "_")) extensions run_methods
-    let main = sprintf "public class EntryPoint {\n static public int Sleep(float s) { int t = (int)(s * 1000.0f); ; return 0; } \nstatic public IEnumerable<IRunnable> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" (create_element ctxt programTyped |> fst)
+    let main = sprintf "public class EntryPoint {\n static public int Sleep(float s) { int t = (int)(s * 1000.0f); ; return 0; } \nstatic public IEnumerable<IRunnable> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" (createElement ctxt programTyped |> fst)
     [
       yield imports
       yield prelude

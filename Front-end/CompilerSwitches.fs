@@ -1,8 +1,8 @@
 ﻿module CompilerSwitches
 
-let flushCSFileOnError = true;
+let flushCSFileOnError = false;
 let generateLineDirectives = false;
 
 let optimizeDirectParentCall = true;
 let generateStaticRun = true;
-let optimizeStaticRunUsage = false;
+let combineCreateFor  = false;
