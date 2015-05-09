@@ -17,7 +17,7 @@ Data [] [] "function" [] Priority 10 Type Function
 Data [] [] "generic" [] Priority 10 Type Generic
 Data [] [] "_null" [] Priority 10 Type Null
 Func [] "identity" [BasicExpression] Priority 0 Type Identity => BasicExpression
-Data [] [] "test" [] Priority 0 Type DebugProgram
+Data [] [] "main" [] Priority 0 Type Main
 
 Keyword is BasicExpression
 Application is BasicExpression
@@ -42,5 +42,5 @@ identity x => x
 x := application _implicit nilExpr
 identity x => res
 -------------------------
-test => res
+main => res
 

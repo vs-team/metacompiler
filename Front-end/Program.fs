@@ -98,7 +98,7 @@ let main argv =
 //      "Lists", "add 3;2;1;nil"
 //
 //      "Eval without memory", "run"
-      "Analyser", "test"
+      "Analyser", "main"
 //      "Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
 //      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
 //      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
