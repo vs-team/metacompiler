@@ -65,6 +65,7 @@
     <Compile Include="TypeInference.fs" />
     <Compile Include="CodeGenerator.fs" />
     <Compile Include="GUI.fs" />
+    <Compile Include="AnalyserAST.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <None Include="packages.config" />
