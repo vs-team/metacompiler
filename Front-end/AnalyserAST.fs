@@ -91,7 +91,7 @@ let private convertExtension e di ti =
   let extensionOp = Keyword(Custom "extension",Position.Zero,Position.Zero)
   let debugInfo = convertDebugInfo di
   let typeInfo = convertTypeInfo ti
-  let varOp = Keyword(Custom "var",Position.Zero,Position.Zero)
+  let varOp = Keyword(Custom "_var",Position.Zero,Position.Zero)
   let varOpArg = Imported(StringLiteral e.Name,Position.Zero,Position.Zero)
   let varApp = Application(Regular,[varOp;varOpArg],Position.Zero,Position.Zero)
   Application(Regular,[extensionOp;varApp;debugInfo;typeInfo],Position.Zero,Position.Zero)
