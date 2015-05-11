@@ -7,6 +7,8 @@ Data [] [] "imported" [Imported DebugInfo TypeInfo] Priority 0 Type BasicExpress
 Data [] [] "extension" [Var DebugInfo TypeInfo] Priority 10 Type BasicExpression
 Data [] [] "di" [<<int>> <<int>> <<string>>] Priority 10 Type DebugInfo
 Data [] [] "ti" [<<string>>] Priority 10 Type TypeInfo
+
+
 Data [] [] "_implicit" [] Priority 10 Type Bracket
 Data [] [] "square" [] Priority 10 Type Bracket
 Data [] [] "curly" [] Priority 10 Type Bracket
@@ -15,9 +17,6 @@ Data [] [] "regular" [] Priority 10 Type Bracket
 Data [] [] "data" [] Priority 10 Type Bracket
 Data [] [] "function" [] Priority 10 Type Bracket
 Data [] [] "generic" [] Priority 10 Type Bracket
-Data [] [] "_null" [] Priority 10 Type Null
-Func [] "identity" [BasicExpression] Priority 0 Type Identity => BasicExpression
-Data [] [] "main" [] Priority 0 Type Main
 
 Data [] [] "sequence" [] Priority 10 Type Keyword
 Data [] [] "smallerThan" [] Priority 10 Type Keyword
@@ -43,14 +42,22 @@ Data [] [] "DoubleLiteral" [<<double>>] Priority 10 Type Literal
 
 Data [] [] "var" [<<string>>] Priority 10 Type Var
 
+Data [] [] "none" [] Priority 10 Type None
+Func [] "identity" [BasicExpression] Priority 0 Type Identity => BasicExpression
+Data [] [] "main" [] Priority 0 Type Main
+
 
 Literal is Imported
-Null is TypeInfo
-Null is DebugInfo
+None is TypeInfo
+None is DebugInfo
 
 
 test := <<3 + 5>>
-res := keyword (custom "myKeyword") (di 3 5 "testFile") _null
+debugInfo := di 3 5 "testFile"
+expr1 := keyword (custom "keyword1") debugInfo debugInfo
+expr2 := application regular ((keyword (custom "operator1") debugInfo debugInfo) nextExpr (imported (intLiteral 1) debugInfo debugInfo) nextExpr (imported (intLiteral 5) debugInfo debugInfo) nextExpr nilExpr)
+expr3 := application regular expr1 nextExpr expr2 nextExpr nilExpr
+res := keyword expr3 debugInfo debugInfo
 ----------------------------------------------------------------------
 main => res
 

@@ -4,10 +4,10 @@ open BasicExpression
 open ConcreteExpressionParserPrelude
 open ParserMonad
 
-let convertTypeInfo ti = 
-  Keyword(Custom "_null",Position.Zero,Position.Zero)
+let private convertTypeInfo ti = 
+  Keyword(Custom "none",Position.Zero,Position.Zero)
 
-let convertDebugInfo (di : ParserMonad.Position) =
+let private convertDebugInfo (di : ParserMonad.Position) =
   let debugOp = Keyword(Custom "di",Position.Zero,Position.Zero)
   let arg1 = Imported(IntLiteral di.Line,Position.Zero,Position.Zero)
   let arg2 = Imported(IntLiteral di.Col,Position.Zero,Position.Zero)
@@ -15,7 +15,7 @@ let convertDebugInfo (di : ParserMonad.Position) =
   Application(Regular,[debugOp;arg1;arg2;arg3],Position.Zero,Position.Zero)
 
 
-let convertKeyword k di ti =
+let private convertKeyword k di ti =
   let keywordOp = Keyword(Custom "keyword",Position.Zero,Position.Zero)
   let debugInfo = convertDebugInfo di
   let typeInfo = convertTypeInfo ti
@@ -68,7 +68,7 @@ let convertKeyword k di ti =
     let keywordApp = Application(Regular,[customOp;customOpArg],Position.Zero,Position.Zero)
     Application(Regular,[keywordOp;keywordApp;debugInfo;typeInfo],Position.Zero,Position.Zero)
 
-let convertImported i di ti =
+let private convertImported i di ti =
   let importedOp = Keyword(Custom "imported",Position.Zero,Position.Zero)
   let debugInfo = convertDebugInfo di
   let typeInfo = convertTypeInfo ti
@@ -87,7 +87,7 @@ let convertImported i di ti =
   | DoubleLiteral d -> createLiteralApp "doubleLiteral" d (fun content -> DoubleLiteral content)
 
 
-let convertExtension e di ti =
+let private convertExtension e di ti =
   let extensionOp = Keyword(Custom "extension",Position.Zero,Position.Zero)
   let debugInfo = convertDebugInfo di
   let typeInfo = convertTypeInfo ti
@@ -96,11 +96,36 @@ let convertExtension e di ti =
   let varApp = Application(Regular,[varOp;varOpArg],Position.Zero,Position.Zero)
   Application(Regular,[extensionOp;varApp;debugInfo;typeInfo],Position.Zero,Position.Zero)
 
+let rec private convertExpressions exprs =
+  match exprs with
+  | [] -> Keyword(Custom "nilExpr",Position.Zero,Position.Zero)
+  | expr :: exprs ->
+      let listOp = Keyword(Custom "nextExpr",Position.Zero,Position.Zero)
+      let basicExpr = convert expr
+      let otherExprs = convertExpressions exprs
+      Application(Regular,[listOp;basicExpr;otherExprs],Position.Zero,Position.Zero)
 
+and private convertApplication b exprs di ti =
+  let applicationOp = Keyword(Custom "application",Position.Zero,Position.Zero)
+  let debugInfo = convertDebugInfo di
+  let typeInfo = convertTypeInfo ti
+  let bracket =
+    match b with
+    | Implicit -> Keyword(Custom "_implicit",Position.Zero,Position.Zero)
+    | Square -> Keyword(Custom "square",Position.Zero,Position.Zero)
+    | Curly -> Keyword(Custom "curly",Position.Zero,Position.Zero)
+    | Angle -> Keyword(Custom "angle",Position.Zero,Position.Zero)
+    | Regular -> Keyword(Custom "regular",Position.Zero,Position.Zero)
+    | Data -> Keyword(Custom "data",Position.Zero,Position.Zero)
+    | Function -> Keyword(Custom "function",Position.Zero,Position.Zero)
+    | Generic -> Keyword(Custom "generic",Position.Zero,Position.Zero)
+  let arguments = convertExpressions exprs
+  Application(Regular,[applicationOp;bracket;arguments;debugInfo;typeInfo],Position.Zero,Position.Zero)
 
-let rec convert (expr : BasicExpression<'k, 'e, 'i, 'di, 'ti>) : BasicExpression<'k, 'e, 'i, 'di, 'ti> =
+and convert (expr : BasicExpression<'k, 'e, 'i, 'di, 'ti>) : BasicExpression<'k, 'e, 'i, 'di, 'ti> =
   match expr with
   | Keyword(k,di,ti) -> convertKeyword k di ti
+  | Application(b,exprs,di,ti) -> convertApplication b exprs di ti
   | Imported(i,di,ti) -> convertImported i di ti
   | Extension(e,di,ti) -> convertExtension e di ti
   | _ -> failwith "Unsupported basic expression"
