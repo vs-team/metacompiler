@@ -3,8 +3,8 @@ Data [] [] "keyword" [Keyword DebugInfo TypeInfo] Priority 0 Type BasicExpressio
 Data [] [] "application" [Bracket BasicExpressionList] Priority 0 Type BasicExpression
 Data [] [] "nilExpr" [] Priority 300 Type BasicExpressionList
 Data [] [BasicExpression] "nextExpr" [BasicExpressionList] Priority 100 Type BasicExpressionList
-Data [] [] "imported" [Imported DebugInfo TypeInfo] Priority 0 Type Imported
-Data [] [] "extension" [BasicExpression DebugInfo TypeInfo] Priority 10 Type BasicExpression
+Data [] [] "imported" [Imported DebugInfo TypeInfo] Priority 0 Type BasicExpression
+Data [] [] "extension" [Var DebugInfo TypeInfo] Priority 10 Type BasicExpression
 Data [] [] "di" [<<int>> <<int>> <<string>>] Priority 10 Type DebugInfo
 Data [] [] "ti" [<<string>>] Priority 10 Type TypeInfo
 Data [] [] "_implicit" [] Priority 10 Type Bracket
@@ -35,13 +35,22 @@ Data [] [] "definedAs" [] Priority 10 Type Keyword
 Data [] [] "inlined" [] Priority 10 Type Keyword
 Data [] [] "custom" [<<string>>] Priority 10 Type Keyword
 
+Data [] [] "stringLiteral" [<<string>>] Priority 10 Type Literal
+Data [] [] "intLiteral" [<<int>>] Priority 10 Type Literal
+Data [] [] "boolLiteral" [<<bool>>] Priority 10 Type Literal
+Data [] [] "SingleLiteral" [<<float>>] Priority 10 Type Literal
+Data [] [] "DoubleLiteral" [<<double>>] Priority 10 Type Literal
 
-Imported is BasicExpression
+Data [] [] "var" [<<string>>] Priority 10 Type Var
+
+
+Literal is Imported
 Null is TypeInfo
 Null is DebugInfo
 
 
-res := keyword (custom "myKeyword")  (di 3 5 "testFile") _null
+test := <<3 + 5>>
+res := keyword (custom "myKeyword") (di 3 5 "testFile") _null
 ----------------------------------------------------------------------
 main => res
 
