@@ -109,6 +109,7 @@
     <None Include="Content\Eval with memory\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Content\Test\transform.mc" />
     <None Include="Content\trees 234\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
