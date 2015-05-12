@@ -1,5 +1,6 @@
 ﻿module CodeGenerator
 
+open TypeInference
 open System
 open Utilities
 open ParserMonad
@@ -120,10 +121,10 @@ type Instruction =
   | VarAs of name : string * expr : string * as_type : string
   | CheckNull of var_name : string
   | CustomCheck of condition : string
-  | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation> * path : Path
-  | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation> * expr2:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>
-  | Inline of e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>
-  | Yield of expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>
+  | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type> * path : Path
+  | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type> * expr2:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
+  | Inline of e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
+  | Yield of expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
 
 (*
     createElement is responsible for generating the Create() functions.
@@ -167,7 +168,7 @@ let rec generate_inline =
   | i -> 
     failwithf "Code generation error @ %A" i.DebugInformation
   
-let rec createElementInner (ctxt:ConcreteExpressionContext) (expectedType:BasicExpression<Keyword, Var, Literal, Position, unit>) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) = 
+let rec createElementInner (ctxt:ConcreteExpressionContext) (expectedType:BasicExpression<Keyword, Var, Literal, Position, unit>) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>) = 
     match e with
     | Keyword(Custom k, _, ti) 
     | Application(Regular,(Keyword(Custom k, _, ti)) :: [], _, _)
@@ -206,7 +207,7 @@ let rec createElementInner (ctxt:ConcreteExpressionContext) (expectedType:BasicE
     | Keyword(k, pos, typeInfo) -> 
       failwithf "Unexpected keyword %A @ %A cannot be matched" k pos
 
-let createElement (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) = 
+let createElement (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>) = 
   match e with
   | Keyword(Custom k, _,ti) 
   | Application(Regular,(Keyword(Custom k, _,ti)) :: [],_,_)
@@ -237,7 +238,7 @@ let createElement (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, V
   | Keyword(k,pos,_) -> 
     failwithf "Non-custom keyword %A @ %A cannot be matched" k pos
   
-let createStaticRun (ctxt:ConcreteExpressionContext) (path:Path) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) = 
+let createStaticRun (ctxt:ConcreteExpressionContext) (path:Path) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>) = 
   match e with
   | Keyword(Custom k, _,ti) 
   | Application(Regular,(Keyword(Custom k, _,ti)) :: [],_,_)
@@ -335,7 +336,7 @@ let rec generateInstructions (debugPosition:Position) (originalFilePath:string) 
 (*
     matchCast is responsible for matching expressions
 *)
-let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>) (self:string) (prefix:List<Instruction>) 
+let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>) (self:string) (prefix:List<Instruction>) 
                   (ctxt:ConcreteExpressionContext) (typeConstraint) =
   match e with
   | Keyword(Custom k, _, ti) -> 
@@ -421,9 +422,9 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
 *)
 type Rule = {
   Position   : Position
-  Input      : BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>
-  Output     : BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>
-  Clauses    : List<Keyword * BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation> * BasicExpression<Keyword, Var, Literal, Position, TypeInference.TypeAnnotation>>
+  Input      : BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
+  Output     : BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
+  Clauses    : List<Keyword * BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type> * BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>>
   Path       : Path
   HasScope   : bool
 } with
@@ -581,7 +582,7 @@ let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position, Unit>) (rul
     inputClass.Methods <- inputClass.Methods |> Map.add method_path { Rules = ResizeArray(); Path = method_path }
   match rule with
   | Application(Implicit, Keyword(FractionLine, _, _) :: (Application(Implicit, Keyword(DoubleArrow, _, _) :: input :: output :: [], innerPos, _)) :: clauses, pos, _) ->
-    let input, output, clauses = TypeInference.inferTypeAnnotations input output clauses ctxt
+    let input, output, clauses = TypeInference.inferTypes input output clauses ctxt
     inputClass.Methods.[method_path].Rules.Add(
       { Position = pos
         Input = input
@@ -659,7 +660,7 @@ let generateCode (originalFilePath:string) (program_name:string)
 
     do process_rules classes [] rules ctxt
 
-    let programTyped,_,_ = TypeInference.inferTypeAnnotations program (Extension({ Name = "___tmp" }, Position.Zero, ())) [] ctxt
+    let programTyped,_,_ = TypeInference.inferTypes program (Extension({ Name = "___tmp" }, Position.Zero, ())) [] ctxt
 
     let classes = classes
     let extensions = @"public static class Extensions { public static V GetKey<T, V>(this System.Collections.Immutable.ImmutableDictionary<T, V> self, T key) { return self[key]; } }"
