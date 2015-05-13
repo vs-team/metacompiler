@@ -315,6 +315,14 @@ and Literal = StringLiteral of string | IntLiteral of int | BoolLiteral of bool 
       | SingleLiteral s -> sprintf "%ff" s
       | DoubleLiteral d -> sprintf "%ff" d
 
+    member this.typeString =
+        match this with
+        | StringLiteral l -> "string"
+        | IntLiteral i -> "int"
+        | BoolLiteral b -> "bool"
+        | SingleLiteral s -> "float32"
+        | DoubleLiteral d -> "float"
+
 let getPredefinedKeywords() =
   p{
     let! ctxt = getContext()
