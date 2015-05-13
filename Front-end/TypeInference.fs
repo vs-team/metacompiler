@@ -4,16 +4,16 @@ open BasicExpression
 open ParserMonad
 open ConcreteExpressionParserPrelude
 
-let (|ExtractedKeyword|) kw =
-    (Keyword.Arguments kw), (Keyword.Type kw)
+let (|ExtractedKeyword|) parsedKeyword =
+      (parsedKeyword.LeftArguments @ parsedKeyword.RightArguments), (Keyword.typeToString parsedKeyword.Type).Head
 
 let (|Native|Defined|Generic|) kw =
     match kw with
-    | Application(Generic, _, _, _) -> Generic(Keyword.Name kw)
+    | Application(Generic, _, _, _) -> Generic(Keyword.decodeName kw)
     | _ ->
-        match Keyword.IsNative kw with
-        | true -> Native(Keyword.Name kw)
-        | false -> Defined(Keyword.Name kw)
+        match Keyword.isNative kw with
+        | true -> Native(Keyword.decodeName kw)
+        | false -> Defined(Keyword.decodeName kw)
 
 
 type Type =
@@ -116,8 +116,8 @@ let keywordType kw ctxt =
     match kw with
     | Custom(name) ->
         match ctxt.CustomKeywordsMap |> Map.tryFind name with
-        | Some(ExtractedKeyword(arguments, definedType)) ->
-            definedType
+        | Some(parsedKeyword) ->
+            (Keyword.typeToString parsedKeyword.Type).Head
         | None -> failwithf "Undefined keyword %s\n" name
     | _ -> failwithf "keyword %A" kw
         
@@ -149,6 +149,7 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
     | Application(_, Keyword(SmallerThan, _, _)::left::right::[], pos, _)      
     | Application(_, Keyword(Equals, _, _)::left::right::[], pos, _)        
     | Application(_, Keyword(NotEquals, _, _)::left::right::[], pos, _)        
+    | Application(_, Keyword(SmallerOrEqual, _, _)::left::right::[], pos, _)    
     | Application(_, Keyword(DoubleArrow,_,_)::left::right::[], pos, _)
     | Application(_, Keyword(DefinedAs,_,_)::left::right::[], pos, _) ->
         let leftConstraints, firstModifiedScheme = traverse ctxt left Unknown scheme
@@ -228,5 +229,7 @@ let inferTypes i o c ctxt =
     let annotatedOut = annotate populatedScheme ctxt o
     let annotatedIn = annotate populatedScheme ctxt i
     let annotatedClauses = annotateAll populatedScheme ctxt c
+
+    //printf "%A\n" populatedScheme
     
     annotatedIn, annotatedOut, annotatedClauses

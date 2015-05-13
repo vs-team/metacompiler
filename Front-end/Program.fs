@@ -33,7 +33,7 @@ let runDeduction path =
         try
           let generatedPath = generateCode originalFilePath title x y ctxt
           let programToAnalyser = convert x
-          let customKeywordsToAnalyser = ctxt.CustomKeywords |> List.map(fun keyword -> convert keyword)
+          //let customKeywordsToAnalyser = ctxt.CustomKeywords |> List.map(fun keyword -> convert keyword)
           let args = new System.Collections.Generic.Dictionary<string, string>()
           do args.Add("CompilerVersion", "v4.5")
           let csc = new CSharpCodeProvider()
@@ -91,8 +91,8 @@ let main argv =
 //
 //      "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
 //
-//      "Lists", "plus 0;1;2;3;nil 10"
-//      "Lists", "length 0;1;2;3;nil"
+      "Lists", "plus 0;1;2;3;nil 10"
+      "Lists", "length 0;1;2;3;nil"
 //      "Lists", "contains 0;1;2;3;nil 2"
 //      "Lists", "removeOdd 0;1;2;3;nil"
 //      "Lists", "add 0;1;2;3;nil"
@@ -102,7 +102,7 @@ let main argv =
 //
 //      "Eval without memory", "run"
 
-      "Test", "main"
+//      "Test", "main"
 //      "Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
 //      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
 //      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
