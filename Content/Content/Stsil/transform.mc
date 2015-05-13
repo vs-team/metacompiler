@@ -1,10 +1,10 @@
 ﻿import System
 
-Data [] [] "lin" [] Priority 0 Type ListInt
-Data [] [ListInt] "snoc" [<<int>>] Priority 1000 Type ListInt Associativity Left 
-Func [] "$" [<<int>>] Priority 10000 Type Expr => IntValue 
+Data "lin" : ListInt Priority 0 
+Data ListInt -> "snoc" -> <<int>> : ListInt         Priority 1000 Associativity Left 
+Func "$" -> <<int>> : Expr => IntValue              Priority 10000 
 
-Func [] "dda" [ListInt] Priority 100 Type Expr => Expr 
+Func "dda" -> ListInt : Expr => Expr                Priority 100 
 
 
 --------------

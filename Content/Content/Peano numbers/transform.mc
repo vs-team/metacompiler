@@ -1,10 +1,14 @@
-﻿Data [] [] "z" []         Priority 2  Type Num
-Func [] "s" [Num]      Priority 3  Type Expr => Num
-Data [] [Expr] "+" [Expr] Priority 0  Type Expr
-Data [] [Expr] "*" [Expr] Priority 1  Type Expr
-Func [] "!" [Expr]     Priority 1  Type Expr => Expr
+﻿Data "$" -> <<int>> : IntValue          Priority 9
+Data  "z" : Num                         Priority 3
+Data "s" -> Num : Num                   Priority 4  
+Func Expr -> "+" -> Expr : Expr => Num  Priority 1 
+Func Expr -> "*" -> Expr : Expr => Num  Priority 2  
+Func "eval" -> Expr : Expr => Num        
+Func "toNum" -> Num : IntValue          
+Func "run" : Expr                       
 
 Num is Expr
+IntValue is Expr
 
 
 -----------
@@ -24,19 +28,32 @@ s(a) * b => d
 
 
 --------
-!z => z
+eval z => z
 
 ---------------
-!(s a) => s a
+eval(s a) => s a
 
-!a => a'
-!b => b'
+eval a => a'
+eval b => b'
 a' + b' => c
 --------------
-!(a + b) => c
+eval (a + b) => c
 
-!a => a'
-!b => b'
+eval a => a'
+eval b => b'
 a' * b' => c
 --------------
-!(a * b) => c
+eval (a * b) => c
+
+toNum a => $res
+---------------
+toNum (s(a)) => $<<res + 1>>
+
+----------------
+toNum z => $0
+
+eval(ssz * ssz * ssz + sz) => n
+toNum n => res
+--------------------------------
+run => res
+

@@ -117,7 +117,7 @@ type Parser<'a, 'ctxt> = { Parse : List<char> -> 'ctxt -> Position -> Either<'a 
         match all_res with
         | Second err -> Second err
         | First pres -> 
-          let x, res_buf, ctxt', pos = pres
+          let x, res_buf, ctxt', pos' = pres
           First (x, buf, ctxt', pos)) |> Parser.Make
         (*[
           for x,res_buf, ctxt', pos' in all_res do

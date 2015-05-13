@@ -8,10 +8,204 @@ type Associativity =
   | Right
   | Left
 
-type KeywordIndex = Name | LeftArguments | RightArguments | BothArguments | GenericArguments | Class | Priority | Associativity
+type State<'a, 's> = 's -> 'a*'s
 
+    
+type StateBuilder() =
+     member this.Bind (p: State<'a,'s>, k : 'a -> State<'b,'s>) : State<'b, 's> =  
+          (fun s -> 
+            let a', s0 = p s
+            k a' s0)
+     member this.Return (x : 'a) = fun s -> x,s
+     member this.ReturnFrom s = s 
+     member this.Zero () = ()
+
+let st = StateBuilder()
+
+type ParsedKeyword<'k, 'e, 'i, 'di, 'ti> =
+  {
+  GenericArguments : List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
+  LeftArguments: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
+  RightArguments: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
+  Name: string
+  Type: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
+  Associativity: Associativity
+  Priority: int
+  }
+  
 type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisible | Divisible | GreaterOrEqual | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of string
   with 
+  
+  static member getName (l:List<BasicExpression<Keyword,Var,_,_,_>>) = 
+            let rec findExtensionImported k =
+              match k with
+              | [] -> "", []
+              | x::xs ->
+                match x with
+                | Imported(StringLiteral a, _, _) ->
+                  a.ToString(), xs
+                | _-> findExtensionImported xs
+            findExtensionImported l
+
+  static member getHeader (l:List<BasicExpression<Keyword,Var,_,_,_>>) : List<BasicExpression<Keyword,Var,_,_,_>>*List<BasicExpression<Keyword,Var,_,_,_>> =
+      match l with
+      | [] -> [], []
+      | x::xs ->
+        match x with
+        | Application(Angle, b, _, _) -> 
+             match b with
+              | [Application(Angle, k, _, _)] ->
+                  match k with 
+                  | [Keyword(_, _, _)] ->
+                      k, xs
+        | Keyword(Custom a, _, _)       ->
+          [x], xs
+        | _ -> failwith "malformed expression"
+  
+  static member getGenerics (l:List<BasicExpression<Keyword,Var,_,_,_>>) : List<BasicExpression<Keyword,_,_,_,_>> * List<BasicExpression<Keyword,_,_,_,_>> = 
+    match l with
+      | [] -> [], []
+      | x::xs ->
+        match x with
+        | Application(Square, ext, _, _) ->
+          ext, xs
+        | _ -> [], l
+
+    static member getArguments k =
+              let rec findArguments l =
+                  match l with
+                    | [] -> [], []
+                    | x::xs -> 
+                      match x with
+                        | Imported(StringLiteral a, _, _) -> [], l
+                        | Keyword(Custom ":", _, _) -> [], l
+                        | Keyword(Custom "->", _, _) ->
+                          let a,b = findArguments xs
+                          a, b
+                        | a -> 
+                          let x,y = findArguments xs
+                          a :: x, y
+              findArguments k      
+   
+   static member removeCScharpName k = 
+          let rec removeCS l =
+            match l with
+            | [] -> "", []
+            | x::xs ->
+              match x with
+              | Application(Angle, args, _, _) ->
+                match args with
+                | [Extension(name, _, _)] ->
+                  name.Name, []
+                | _-> removeCS xs
+          removeCS k
+
+   static member getKeywordType k =
+              let rec removeType l =
+                  match l with
+                    | [] -> [], []
+                    | x::xs -> 
+                      match x with
+                        | Keyword(Custom ":", _, _) -> 
+                          removeType xs
+                        | Keyword(Custom "=>", _, _) ->
+                          removeType xs
+                        | Keyword(Custom "Priority", _,_)
+                        | Keyword(Custom "Associativity", _, _) -> [], x::xs
+                        | a -> 
+                          let x,y = removeType xs
+                          a :: x, y
+              removeType k  
+                  
+    static member getKeywordPriority k  =
+              let rec removePriority l =
+                    match l with
+                    | [] -> 0, []
+                    | x::xs -> 
+                      match x with
+                        | Keyword(Custom "Priority", _, _) ->
+                          match xs with
+                          | [] -> 0, []
+                          | Imported(IntLiteral a, _,_)::ks ->
+                            (int)a, ks
+                        | _-> 0, xs
+              removePriority k
+
+    static member getKeywordAssociativity k  =
+              let rec removeAssociativity l =
+                    match l with
+                    | [] -> Right, []
+                    | x::xs -> 
+                      match x with
+                        | Keyword(Custom "Associativity", _, _) ->
+                          match xs with
+                          | [] -> Right, []
+                          | Extension(a, _, _)::ks ->
+                            match a with
+                            | {Name = "Right"} -> Right, ks
+                            | {Name = "Left"} -> Left, ks
+                            | _ -> Right, xs
+                        | _-> Right, xs
+              removeAssociativity k
+
+    static member decode (k:BasicExpression<Keyword,Var,_,_,_>) = 
+      match k with
+      | Application(Implicit, args, pos, ()) ->
+        let x =
+          (st{
+             let! header = Keyword.getHeader
+             match header with 
+             | [Keyword(Custom a, _, _)] ->
+                let! genericArguments = Keyword.getGenerics
+                let! leftArguments = Keyword.getArguments
+                let! name = Keyword.getName
+                let! rightArguments = Keyword.getArguments
+                let! keywordtype = Keyword.getKeywordType
+                let! priority = Keyword.getKeywordPriority
+                let! associativity = Keyword.getKeywordAssociativity
+                return {GenericArguments = genericArguments; LeftArguments = leftArguments; RightArguments = rightArguments; Name = name; Type = keywordtype ; Associativity = associativity; Priority = priority}
+             | _ ->
+                return failwith "malformed expression"
+           }) args |> fst
+        x 
+      | Application(Angle, args, pos, ()) ->
+        let x =
+          (st{
+             let! name = Keyword.removeCScharpName
+             return {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = name; Type = []; Associativity = Right; Priority = 0}
+           }) args |> fst
+        x 
+      | _ -> 
+        failwithf "Malformed keyword root syntax %A" k 
+     
+    
+    static member typeToString keyword =
+        let rec dec k =
+          match k with
+          | [] -> []
+          | x::xs ->
+            match x with 
+            | Extension(n, _, _) ->
+              [n.Name] @ dec xs
+            | _ -> dec xs
+        dec keyword
+
+    static member isNative keyword = 
+        match keyword with
+        | Extension(arg,_,_) -> false
+        | Application(Angle, [Extension(arg,_,_)], _, _) -> true
+        | Application(Angle, [arg], _, _) -> Keyword.isNative arg
+        | Application(Angle, args, _, _) -> true
+        | _ -> failwithf "Cannot match argument %A when checking for native keyword" keyword
+
+    static member decodeName (keyword:BasicExpression<Keyword,_,_,_,_>) = 
+      match keyword with
+      | Extension(a, _, _) ->
+        a.Name
+      | _ -> (Keyword.decode keyword).Name     
+                
+
+    
     static member ParseWithoutComparison = 
       p{
         let! br = !!(word "<<" + word ">>") + p{ return () }
@@ -57,7 +251,8 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
               | Second(Second(Second _)) -> return SmallerThan
             | Second _ -> 
               return DefinedAs
-      }
+      }      
+
     override this.ToString() =
       match this with
       | Inlined -> "<<>>"
@@ -75,160 +270,30 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
       | FractionLine -> "\n-------------------\n"
       | Nesting -> ""
       | Custom m -> m
-
-    static member Fold bracket genericArguments leftArguments name rightArguments priority kwType associativity =
-        let rec removeOuterSquares args =
-            match args with
-            | Application(Square, [arg], _, _) -> arg |> removeOuterSquares
-            | Application(Square, args, _, _) -> args
-            | arg -> [arg]
-        let mergeGenerics arguments generics =
-            let genericNames = generics |> List.map Keyword.Name
-            let rec merge prev next = 
-                if genericNames |> List.exists (fun x -> x = Keyword.Name next) then
-                    match prev with
-                    | [last] -> 
-                        Application(Generic, last :: next :: [], Position.Zero, ()) :: []
-                    | last :: list -> 
-                        list @ Application(Generic, last :: next :: [], Position.Zero, ()) :: []
-                    | [] ->
-                        Application(Generic, [next], Position.Zero, ()) :: []
-                else 
-                    prev @ [next]
-            Application(Square, arguments |> List.fold merge [], Position.Zero, ())
-        let genericArgs = removeOuterSquares genericArguments
-        let leftArgs = mergeGenerics (removeOuterSquares leftArguments) genericArgs
-        let rightArgs = mergeGenerics (removeOuterSquares rightArguments) genericArgs
-        Application(bracket, Application(Square, genericArgs, Position.Zero, ()) :: leftArgs :: name :: rightArgs :: priority :: kwType :: associativity :: [], Position.Zero, ())
-
-    static member ExtractArguments index keyword =
-        let rec removeOuterSquares args =
-            match args with
-            | Application(Square, args, _, _) -> args
-            | _ -> failwithf "Cannot extract arguments %A" keyword
-        match index with
-        | LeftArguments -> removeOuterSquares (Keyword.Extract LeftArguments keyword)
-        | RightArguments -> removeOuterSquares (Keyword.Extract RightArguments keyword)
-        | GenericArguments -> removeOuterSquares (Keyword.Extract GenericArguments keyword)
-        | BothArguments -> (Keyword.ExtractArguments LeftArguments keyword) @ (Keyword.ExtractArguments RightArguments keyword)
-        | _ -> failwithf "%A is not a argument index" index
-
-    static member Arguments keyword =
-        Keyword.ExtractArguments BothArguments keyword
-
-    static member LeftArguments keyword =
-        Keyword.ExtractArguments LeftArguments keyword
-
-    static member RightArguments keyword =
-        Keyword.ExtractArguments RightArguments keyword
-
-    static member GenericArguments keyword =
-        Keyword.ExtractArguments GenericArguments keyword
+           
 
     static member ArgumentCSharpStyle keyword cleanup =
         match keyword with
         | Application(Generic, arg::args, _ ,_) -> 
-            sprintf "%s<%s>" (cleanup (Keyword.Name arg)) (args |> Seq.map (fun a -> Keyword.ArgumentCSharpStyle a cleanup) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
+            sprintf "%s<%s>" (cleanup (Keyword.decodeName arg)) (args |> Seq.map (fun a -> Keyword.ArgumentCSharpStyle a cleanup) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
         | _ ->
-            match Keyword.IsNative keyword with
-            | true -> Keyword.Name keyword
-            | false -> cleanup (Keyword.Name keyword)
-
-    static member Type keyword =
-        match(Keyword.Extract Class keyword) with
-        | Extension(cls, _, _) -> cls.Name
-        | _ -> failwithf "Cannot extract class %A" keyword
-
-    static member Associativity keyword =
-        match(Keyword.Extract Associativity keyword) with
-        | Extension(asc, _, _) -> 
-            match asc.Name with 
-            | "Left" -> Left 
-            | "Right" -> Right
-            | _-> failwith "incorrect Associativity" 
-        | _ -> failwith "Cannot extract class %A" keyword
-
-    static member Priority keyword =
-        match(Keyword.Extract Priority keyword) with
-        | Imported(IntLiteral(priority),_,_) -> priority
-        | _ -> failwith "Cannot find priority %A when looking up keyword priority" keyword
-
-    static member Ariety index keyword =
-        match index with
-        | LeftArguments -> (Keyword.LeftArguments keyword).Length
-        | RightArguments -> (Keyword.RightArguments keyword).Length
-        | _ -> failwithf "%A is not a valid ariety... " index
+            match Keyword.isNative keyword with
+            | true -> Keyword.decodeName keyword
+            | false -> cleanup (Keyword.decodeName keyword)
       
-    static member IsNative keyword = 
-        match keyword with
-        | Extension(arg,_,_) -> false
-        | Application(Angle, [Extension(arg,_,_)], _, _) -> true
-        | Application(Angle, [arg], _, _) -> Keyword.IsNative arg
-        | Application(Angle, args, _, _) -> true
-        | _ -> failwithf "Cannot match argument %A when checking for native keyword" keyword
-
-    static member Extract index keyword:BasicExpression<Keyword, Var, Literal, Position, unit> =
-        match keyword with 
-        | Application(Data, exp, _, _) ->
-            match index with
-            | GenericArguments -> exp.[0]
-            | Name -> exp.[2]
-            | LeftArguments -> exp.[1]
-            | RightArguments -> exp.[3]
-            | Priority -> exp.[4]
-            | Class -> exp.[5]
-            | Associativity -> exp.[6]
-            | BothArguments -> failwithf "Cannot extract both arguments from expression"
-        | Application(Function, exp, _, _) ->
-            match index with
-            | GenericArguments -> exp.[0]
-            | Name -> exp.[2]
-            | LeftArguments -> exp.[1]
-            | RightArguments -> exp.[3]
-            | Priority -> exp.[4]
-            | Class ->  
-                match exp.[5] with
-                | Application(Implicit, left :: right :: [], _, _) ->
-                    right
-                | _ -> failwithf "Unknown function format%A" keyword
-            | Associativity -> exp.[6]
-            | BothArguments -> failwithf "Cannot extract both arguments from expression"
-        | _ -> failwithf "Invalid keyword %A" keyword
-
-    static member Name keyword =
-        match keyword with
-        | Application(Generic, arg::args, _, _) -> Keyword.Name arg
-        | Extension(name,_,_) -> name.Name
-        | Application(Angle, [Extension(arg,_,_)], _, _) -> arg.Name
-        | Application(Angle, [arg], _, _) -> arg |> Keyword.Name
-        | Application(Angle, args, _, _) -> 
-          let rec printSequence =
-            function
-            | Keyword(Custom k,_,_) :: es -> k + printSequence es
-            | Extension(arg,_,_) :: es -> arg.Name + printSequence es
-            | [] -> ""
-            | es -> failwithf "Cannot match argument %A" es
-          args |> printSequence
-        | _ ->
-            match Keyword.Extract Name keyword with
-            | Imported(StringLiteral(name), _, _) -> name
-            | _ -> failwithf "Cannot extract keyword name %A" keyword
-        
-    static member CreateCSharpKeyword (name, genericArguments, leftArguments, rightArguments, priority, className) =
-        let transformIntLiteral lit =
-            Imported(IntLiteral(lit), Position.Zero, ())
-        let transformIdentifier ident =
-            Extension({Var.Name = ident}, Position.Zero, ())
-        let transformArguments args = 
-            Application(Square, args |> List.map transformIdentifier, Position.Zero, ())
-        Application(Data, transformArguments genericArguments :: transformArguments leftArguments :: Imported(StringLiteral(name), Position.Zero, ()) :: transformArguments rightArguments :: transformIntLiteral priority :: transformIdentifier className :: [], Position.Zero, ())
+    static member createExt l = l |> List.map (fun x -> Extension({Name = x}, Position.Zero, ()))                              
+                                    
+    static member CreateCSharpKeyword (kw : string*List<string>*List<string>*List<string>*int*string)= 
+          let (!) l = l |> List.map (fun x -> Extension({Name = x}, Position.Zero, ()))
+          let name, generic, left, right, priority, kwtype = kw
+          {GenericArguments = !generic; LeftArguments = !left; RightArguments = !right; Name = name; Type = ![kwtype]; Associativity = Right; Priority = priority}
 
 and ConcreteExpressionContext = 
   {
     PredefinedKeywords : Parser<Keyword, ConcreteExpressionContext>
-    CustomKeywords : List<BasicExpression<Keyword, Var, Literal, Position, unit>>
-    CustomKeywordsByPrefix : List<BasicExpression<Keyword, Var, Literal, Position, unit>>
-    CustomKeywordsMap : Map<string, BasicExpression<Keyword, Var, Literal, Position, unit>>    
+    CustomKeywords : List<ParsedKeyword<Keyword, Var, Literal, Position, unit>>
+    CustomKeywordsByPrefix : List<ParsedKeyword<Keyword, Var, Literal, Position, unit>>
+    CustomKeywordsMap : Map<string, ParsedKeyword<Keyword, Var, Literal, Position, unit>>    
     InheritanceRelationships : Map<string, Set<string>>
     ImportedModules : List<string>
   } with
@@ -246,7 +311,7 @@ and ConcreteExpressionContext =
       member ctxt.CustomClasses =
         seq{
           for k in ctxt.CustomKeywords do
-          yield Keyword.Name k
+          yield k.Name
         } |> Set.ofSeq
       static member Empty =
         {
@@ -294,8 +359,8 @@ and ConcreteExpressionContext =
         {
           PredefinedKeywords = Keyword.ParseWithoutComparison
           CustomKeywords = ks
-          CustomKeywordsByPrefix = ks |> List.sortBy (fun k -> Keyword.Extract Name k) |> List.rev
-          CustomKeywordsMap = ks |> Seq.map (fun x -> (Keyword.Name x), x) |> Map.ofSeq
+          CustomKeywordsByPrefix = ks |> List.sortBy (fun k -> k.Name) |> List.rev
+          CustomKeywordsMap = ks |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
           InheritanceRelationships = Map.empty
           ImportedModules          = []
         }

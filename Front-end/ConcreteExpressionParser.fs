@@ -10,19 +10,47 @@ open ConcreteExpressionParserPrelude
 let mutable debug_expr = false
 let mutable debug_rules = false
 
+
+              
+             
+
+
 let rec program() = 
   p{
     let! incs = merge_included_files
     let inc_rules = fst incs
     let inc_ctxt = snd incs
     let! imps = import_stmts
+    let! initialContext = getContext()
+    let keywordParsingKS = 
+      [
+        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "->"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0}
+        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = ":"; Type = (Keyword.createExt ["KeywordFiller"]);Associativity = Right; Priority = 0}
+        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "=>"; Type = (Keyword.createExt ["KeywordFiller"]);Associativity = Right; Priority = 0}
+        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Data"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0}
+        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Func"; Type = (Keyword.createExt ["KeywordFiller"]);Associativity = Right; Priority = 0}
+        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Priority"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0}
+        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Associativity"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0}
+      ]
+
+    do! setContext 
+          { initialContext
+              with
+                PredefinedKeywords        = fail ""
+                CustomKeywords            = keywordParsingKS
+                CustomKeywordsByPrefix    = keywordParsingKS |> List.sortBy (fun k -> k.Name) |> List.rev
+                CustomKeywordsMap         = keywordParsingKS |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
+                InheritanceRelationships  = Map.empty
+                ImportedModules           = imps
+              }
     let! ks = keywords
+    let ksDecoded = ks |> List.map Keyword.decode
     let ctxt = 
           {
             PredefinedKeywords        = Keyword.Parse
-            CustomKeywords            = ks
-            CustomKeywordsByPrefix    = ks |> List.sortBy (fun k -> Keyword.Name k) |> List.rev
-            CustomKeywordsMap         = ks |> Seq.map (fun x -> Keyword.Name x, x) |> Map.ofSeq
+            CustomKeywords            = ksDecoded
+            CustomKeywordsByPrefix    = ksDecoded |> List.sortBy (fun k -> k.Name) |> List.rev
+            CustomKeywordsMap         = ksDecoded |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
             InheritanceRelationships  = Map.empty
             ImportedModules           = imps
           }
@@ -84,100 +112,12 @@ and keyword =
       return l
     }
   p{
-    let! a = (label "Data") + (label "Func")
-    match a with
-    | First _ ->
-        let! kw = expr()
-        match kw with
-        | Application(Implicit,
-                      [
-                        genericArgs
-                        leftArgs
-                        name
-                        rightArgs
-                        Extension({ Name = "Priority" }, _, _)
-                        priority
-                        Extension({ Name = "Type" }, _, _)
-                        typeName
-                      ], _, _) -> 
-            return Keyword.Fold Data genericArgs leftArgs name rightArgs priority typeName (Extension({ Name = "Right" }, Position.Zero, ()))
-        | Application(Implicit,
-                      [
-                        genericArgs
-                        leftArgs
-                        name
-                        rightArgs
-                        Extension({ Name = "Priority" }, _, _)
-                        priority
-                        Extension({ Name = "Type" }, _, _)
-                        typeName
-                        Extension({ Name = "Associativity"}, _, _)
-                        associativity
-                      ], _, _) -> 
-            match associativity with
-            | Extension(a, b, c) -> 
-              match a.Name with
-              | "Right" -> return Keyword.Fold Data genericArgs leftArgs name rightArgs priority typeName associativity
-              | "Left" ->  return Keyword.Fold Data genericArgs leftArgs name rightArgs priority typeName associativity
-              | _-> return failwithf "Incorrect Association"
-            | _ -> return failwithf "Incorrect Association"
-          //return Keyword.Fold Data genericArgs leftArgs name rightArgs priority typeName associativity
-        | _ -> return failwithf "malformed expression %A" kw
-    | Second _ ->
-        let! kw = expr()
-        match kw with
-        | Application(Implicit,
-                        [
-                            genericArgs
-                            name
-                            rightArgs
-                            Extension({ Name = "Priority" }, _, _)
-                            priority
-                            Extension({ Name = "Type" }, _, _)
-                            leftHand
-                        ], _, _) ->  
-            let! l = label "=>"
-            let! rightHand = expr()
-            return Keyword.Fold Function genericArgs (Application(Square, [], Position.Zero, ())) name rightArgs priority (Application(Implicit, leftHand :: rightHand :: [], Position.Zero, ())) (Extension({ Name = "Right" }, Position.Zero, ()))
-        | Application(Implicit,
-                        [
-                            genericArgs
-                            name
-                            rightArgs
-                            Extension({ Name = "Priority" }, _, _)
-                            priority
-                            Extension({ Name = "Type" }, _, _)
-                            leftHand
-                            Extension({ Name = "Associativity" }, _, _)
-                            associativity
-                        ], _, _) ->  
-            match associativity with
-            | Extension(a, b, c) -> 
-              match a.Name with
-              | "Right" -> ()
-              | "Left" ->  ()
-              | _-> return failwithf "Incorrect Association"
-            | _ -> return failwithf "Incorrect Association"
-            let! l = label "=>"
-            let! rightHand = expr()
-            return Keyword.Fold Function genericArgs (Application(Square, [], Position.Zero, ())) name rightArgs priority (Application(Implicit, leftHand :: rightHand :: [], Position.Zero, ())) associativity
-        | _ -> 
-            return failwithf "malformed expression %A" kw
-  }
-
-  (*
-        | Application(Implicit, // no generic arguments
-                      [
-                        leftArgs
-                        name
-                        rightArgs
-                        Extension({ Name = "Priority" }, _, _)
-                        priority
-                        Extension({ Name = "Type" }, _, _)
-                        typeName
-                      ], _, _) -> 
-            return Application(Data, Application(Square, [], Position.Zero, ()) :: leftArgs :: name :: rightArgs :: priority :: typeName :: [], Position.Zero, ())
-  *)
+      let! l = empty_lines()
+      let! hd = !!(word "Func" + word "Data")
+      let! kw = expr()
+      //let decoded = Keyword.decode kw
+      return kw
+    }
 
 and rules depth = 
   p{
@@ -217,7 +157,7 @@ and deindentation depth =
 
 and end_rules() = 
   p{
-    let! el = empty_lines() + eof()
+    let! el = eof()
     return! eof()
   }
 
@@ -279,9 +219,9 @@ and customKeyword() =
   let rec customKeyword = 
     function 
     | [] -> fail "Expected keyword"
-    | k :: ks ->
+    | (k: ParsedKeyword<Keyword, Var, Literal, Position, Unit>) :: ks ->
       p{
-        let! r = word (Keyword.Name k) + customKeyword ks
+        let! r = word (k.Name) + customKeyword ks
         match r with 
         | First w -> return w
         | Second w' -> return w'
@@ -309,13 +249,13 @@ and literal() =
   }
 
 and expr() = 
-  let rec shrink bracket_type pos (es:List<BasicExpression<_,_,_,_,_>>) customKeywordsMap : BasicExpression<_,_,_,_,_> =
+  let rec shrink bracket_type pos (es:List<BasicExpression<_,_,_,_,_>>) (customKeywordsMap:Map<string,ParsedKeyword<_,_,_,_,_>>) : BasicExpression<_,_,_,_,_> =
     let ariety (b:BasicExpression<_,_,_,_,_>) = 
       match b with
       | Keyword(Custom(k),pos, ()) ->
         if customKeywordsMap |> Map.containsKey k then
           let kw = customKeywordsMap.[k]
-          Keyword.Ariety LeftArguments kw, Keyword.Ariety RightArguments kw
+          kw.LeftArguments.Length, kw.RightArguments.Length
         else
           0,0
       | _ -> 0,0
@@ -324,9 +264,9 @@ and expr() =
       | Keyword(Custom(k),pos, ()) ->
         if customKeywordsMap |> Map.containsKey k then
           let kw = customKeywordsMap.[k]
-          match Keyword.Associativity kw with
-          | Right -> Keyword.Priority kw, index
-          | Left -> Keyword.Priority kw, -index
+          match kw.Associativity with
+          | Right -> kw.Priority, index
+          | Left -> kw.Priority, -index
         else
           -1,-index
       | _ -> -1,-index
@@ -349,13 +289,12 @@ and expr() =
       match prioritize_es with
       | [x] -> x
       | l -> Application(bracket_type, l, pos, ())
-
   and base_expr bracket_type = 
     p{
       let! pos = getPosition()
       let! e = inner_expr
-      match e with
-      | e::es ->
+      match (e:List<BasicExpression<_,_,_,_,_>>) with
+      | e::es ->    
         let! customKeywordsMap = getCustomKeywordsMap()
         match shrink bracket_type pos (e :: es) customKeywordsMap with
         | Application(Implicit, args, di, ()) -> return Application(bracket_type, args, di, ())
@@ -373,7 +312,7 @@ and expr() =
     p{
       let! pos = getPosition()
       let! parseKeyword = getPredefinedKeywords()
-      let! end_line = !!(word "--" + parseKeyword + newline()) + p{ return () }
+      let! end_line = !!(word("--") + parseKeyword + newline()) + p{ return () }
       match end_line with
       | First _ -> 
         return []
