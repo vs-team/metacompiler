@@ -32,7 +32,8 @@ let runDeduction path =
       | First(y,_,ctxt',pos') ->
         try
           let generatedPath = generateCode originalFilePath title x y ctxt
-          let analyserCustomKeywords = ctxt.CustomKeywords |> List.map(fun keyword -> convert keyword)
+          let programToAnalyser = convert x
+          let customKeywordsToAnalyser = ctxt.CustomKeywords |> List.map(fun keyword -> convert keyword)
           let args = new System.Collections.Generic.Dictionary<string, string>()
           do args.Add("CompilerVersion", "v4.5")
           let csc = new CSharpCodeProvider()
@@ -80,8 +81,8 @@ let main argv =
       //"Cmm", @"runProgram"
 //      "Trees 234", @"main"
 //
-      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
-      "Boolean expressions", "run"
+//      "Peano numbers", "!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))"
+//      "Boolean expressions", "run"
 //
 //      "Lambda calculus", "run"
 //      "Binary trees", "run"
@@ -100,7 +101,8 @@ let main argv =
 //      "Lists", "add 3;2;1;nil"
 //
 //      "Eval without memory", "run"
-//      "Analyser", "main"
+
+      "Test", "main"
 //      "Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
 //      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
 //      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
