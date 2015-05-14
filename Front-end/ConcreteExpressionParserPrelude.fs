@@ -8,6 +8,16 @@ type Associativity =
   | Right
   | Left
 
+type KeywordKind =
+    | Data
+    | Func
+
+    with static member fromString str =
+        match str with
+        | "Func" -> Func
+        | "Data" -> Data
+        | _ -> failwithf "Invalid keyword kind %s, only Data or Func are allowed" str
+
 type State<'a, 's> = 's -> 'a*'s
 
     
@@ -31,12 +41,13 @@ type ParsedKeyword<'k, 'e, 'i, 'di, 'ti> =
   Type: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
   Associativity: Associativity
   Priority: int
+  Kind : KeywordKind
   }
   
 type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisible | Divisible | GreaterOrEqual | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of string
   with 
   
-  static member getName (l:List<BasicExpression<Keyword,Var,_,_,_>>) = 
+  static member getName (l:List<BasicExpression<Keyword,Var,Literal,_,_>>) = 
             let rec findExtensionImported k =
               match k with
               | [] -> "", []
@@ -47,7 +58,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
                 | _-> findExtensionImported xs
             findExtensionImported l
 
-  static member getHeader (l:List<BasicExpression<Keyword,Var,_,_,_>>) : List<BasicExpression<Keyword,Var,_,_,_>>*List<BasicExpression<Keyword,Var,_,_,_>> =
+  static member getHeader (l:List<BasicExpression<Keyword,Var,Literal,_,_>>) : List<BasicExpression<Keyword,Var,Literal,_,_>>*List<BasicExpression<Keyword,Var,Literal,_,_>> =
       match l with
       | [] -> [], []
       | x::xs ->
@@ -62,7 +73,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
           [x], xs
         | _ -> failwith "malformed expression"
   
-  static member getGenerics (l:List<BasicExpression<Keyword,Var,_,_,_>>) : List<BasicExpression<Keyword,_,_,_,_>> * List<BasicExpression<Keyword,_,_,_,_>> = 
+  static member getGenerics (l:List<BasicExpression<Keyword,Var,Literal,_,_>>) : List<BasicExpression<Keyword,Var,Literal,_,_>> * List<BasicExpression<Keyword,Var,Literal,_,_>> = 
     match l with
       | [] -> [], []
       | x::xs ->
@@ -156,6 +167,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
              let! header = Keyword.getHeader
              match header with 
              | [Keyword(Custom a, _, _)] ->
+                let kind = KeywordKind.fromString a
                 let! genericArguments = Keyword.getGenerics
                 let! leftArguments = Keyword.getArguments
                 let! name = Keyword.getName
@@ -163,7 +175,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
                 let! keywordtype = Keyword.getKeywordType
                 let! priority = Keyword.getKeywordPriority
                 let! associativity = Keyword.getKeywordAssociativity
-                return {GenericArguments = genericArguments; LeftArguments = leftArguments; RightArguments = rightArguments; Name = name; Type = keywordtype ; Associativity = associativity; Priority = priority}
+                return {GenericArguments = genericArguments; LeftArguments = leftArguments; RightArguments = rightArguments; Name = name; Type = keywordtype ; Associativity = associativity; Priority = priority ; Kind = kind}
              | _ ->
                 return failwith "malformed expression"
            }) args |> fst
@@ -172,22 +184,23 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
         let x =
           (st{
              let! name = Keyword.removeCScharpName
-             return {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = name; Type = []; Associativity = Right; Priority = 0}
+             return {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = name; Type = []; Associativity = Right; Priority = 0; Kind = Data}
            }) args |> fst
         x 
       | _ -> 
         failwithf "Malformed keyword root syntax %A" k 
      
     
-    static member typeToString keyword =
+    static member typeToString (keyword:List<BasicExpression<Keyword,Var,Literal,_,_>>) : string list =
         let rec dec k =
           match k with
-          | [] -> []
-          | x::xs ->
-            match x with 
-            | Extension(n, _, _) ->
-              [n.Name] @ dec xs
-            | _ -> dec xs
+            | x::xs ->
+                match x with 
+                | Application(Angle, Application(Angle, Extension(n, _, _)::[], _, _)::[], _, _)
+                | Extension(n, _, _) ->
+                  n.Name :: (dec xs)
+                | _ -> dec xs
+              | [] -> []
         dec keyword
 
     static member isNative keyword = 
@@ -286,7 +299,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
     static member CreateCSharpKeyword (kw : string*List<string>*List<string>*List<string>*int*string)= 
           let (!) l = l |> List.map (fun x -> Extension({Name = x}, Position.Zero, ()))
           let name, generic, left, right, priority, kwtype = kw
-          {GenericArguments = !generic; LeftArguments = !left; RightArguments = !right; Name = name; Type = ![kwtype]; Associativity = Right; Priority = priority}
+          {GenericArguments = !generic; LeftArguments = !left; RightArguments = !right; Name = name; Type = ![kwtype]; Associativity = Right; Priority = priority; Kind = Data}
 
 and ConcreteExpressionContext = 
   {

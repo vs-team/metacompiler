@@ -24,13 +24,13 @@ let rec program() =
     let! initialContext = getContext()
     let keywordParsingKS = 
       [
-        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "->"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0}
-        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = ":"; Type = (Keyword.createExt ["KeywordFiller"]);Associativity = Right; Priority = 0}
-        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "=>"; Type = (Keyword.createExt ["KeywordFiller"]);Associativity = Right; Priority = 0}
-        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Data"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0}
-        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Func"; Type = (Keyword.createExt ["KeywordFiller"]);Associativity = Right; Priority = 0}
-        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Priority"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0}
-        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Associativity"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0}
+        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "->"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0; Kind = Data}
+        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = ":"; Type = (Keyword.createExt ["KeywordFiller"]);Associativity = Right; Priority = 0; Kind = Data}
+        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "=>"; Type = (Keyword.createExt ["KeywordFiller"]);Associativity = Right; Priority = 0; Kind = Data}
+        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Data"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0; Kind = Data}
+        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Func"; Type = (Keyword.createExt ["KeywordFiller"]);Associativity = Right; Priority = 0; Kind = Data}
+        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Priority"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0; Kind = Data}
+        {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Associativity"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0; Kind = Data}
       ]
 
     do! setContext 

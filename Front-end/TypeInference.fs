@@ -4,8 +4,6 @@ open BasicExpression
 open ParserMonad
 open ConcreteExpressionParserPrelude
 
-let (|ExtractedKeyword|) parsedKeyword =
-      (parsedKeyword.LeftArguments @ parsedKeyword.RightArguments), (Keyword.typeToString parsedKeyword.Type).Head
 
 let (|Native|Defined|Generic|) kw =
     match kw with
@@ -33,6 +31,17 @@ type Type =
             | TypeVariable(t) -> sprintf "%s" t
             | Unknown -> sprintf "Unkown"
 
+
+let (|ExtractedKeyword|) (parsedKeyword) : Type * Type =
+        let rec fold args =
+            match args with
+            | arg::[] ->
+                TypeConstant(arg)
+            | arg::args ->
+                TypeApplication(TypeConstant(arg), fold args)
+            | [] ->
+                Unknown
+        fold ((parsedKeyword.LeftArguments @ parsedKeyword.RightArguments) |> Keyword.typeToString), fold (Keyword.typeToString parsedKeyword.Type)
 
 type TypeScheme = { BoundVariables : Map<string, Type>
                     VariableCount : int
@@ -116,8 +125,8 @@ let keywordType kw ctxt =
     match kw with
     | Custom(name) ->
         match ctxt.CustomKeywordsMap |> Map.tryFind name with
-        | Some(parsedKeyword) ->
-            (Keyword.typeToString parsedKeyword.Type).Head
+        | Some(ExtractedKeyword(args, tp)) ->
+            tp
         | None -> failwithf "Undefined keyword %s\n" name
     | _ -> failwithf "keyword %A" kw
         
@@ -126,17 +135,7 @@ let expandKeyword kw ctxt =
     | Custom(name) ->
         match ctxt.CustomKeywordsMap |> Map.tryFind name with
         | Some(ExtractedKeyword(arguments, definedType)) ->
-            let extract arg = 
-                match arg with
-                | Generic(name) -> failwith "Unsupported"
-                | Defined(name) | Native(name) -> TypeConstant(name)
-            let rec foldArguments args =
-                match args with
-                | [] -> failwithf "undefined keyword %A" kw
-                | arg::[] -> extract arg
-                | arg::args ->
-                    TypeApplication(extract arg, foldArguments args)
-            foldArguments arguments
+            arguments
         | None -> failwithf "Undefined keyword %s\n" name
     | _ -> failwithf "keyword %A" kw
 
@@ -149,9 +148,9 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
     | Application(_, Keyword(SmallerThan, _, _)::left::right::[], pos, _)      
     | Application(_, Keyword(Equals, _, _)::left::right::[], pos, _)        
     | Application(_, Keyword(NotEquals, _, _)::left::right::[], pos, _)        
-    | Application(_, Keyword(SmallerOrEqual, _, _)::left::right::[], pos, _)    
-    | Application(_, Keyword(DoubleArrow,_,_)::left::right::[], pos, _)
-    | Application(_, Keyword(DefinedAs,_,_)::left::right::[], pos, _) ->
+    | Application(_, Keyword(SmallerOrEqual, _, _)::left::right::[], pos, _)
+    | Application(_, Keyword(DefinedAs,_,_)::left::right::[], pos, _)
+    | Application(_, Keyword(DoubleArrow,_,_)::left::right::[], pos, _) ->
         let leftConstraints, firstModifiedScheme = traverse ctxt left Unknown scheme
         let rightConstraints, secondModifiedScheme = traverse ctxt right Unknown firstModifiedScheme
         unify leftConstraints rightConstraints secondModifiedScheme ctxt
@@ -171,10 +170,14 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
                     unify localConstraints parameter newScheme ctxt
                 | _, _ -> failwithf "undefined behaviour"
             let ignoredConstraints, populatedScheme = iterateOverArguments keywordParameters keywordArguments scheme
-            (TypeConstant(keywordType kw ctxt)), populatedScheme
+            let rec returnType t =
+                match t with
+                | TypeApplication(t, z) -> returnType z
+                | t -> t
+            returnType (keywordType kw ctxt), populatedScheme
         | _ -> failwithf "Malformed application of %A" expr
     | Keyword(kw, _, _) ->
-        unify constraints (TypeConstant(keywordType kw ctxt)) scheme ctxt
+        unify constraints (keywordType kw ctxt) scheme ctxt
     | Imported(importedType, _, _) ->
         unify constraints (TypeConstant(importedType.typeString)) scheme ctxt
     | Extension({Name = var}, _, _) ->
@@ -209,7 +212,6 @@ let rec annotate (scheme:TypeScheme) (ctxt:ConcreteExpressionContext) (expr:Basi
         Keyword(kw, pos, Unknown)
     | Imported(t, pos, _) ->
         Imported(t, pos, TypeConstant(t.typeString))
-    | _ -> failwithf "Undefined state, given %A" expr
         
 
 let rec annotateAll (scheme:TypeScheme) (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword, Var, Literal, Position, Unit> list) =
@@ -226,10 +228,10 @@ let inferTypes i o c ctxt =
     let inType, scheme2 = traverse ctxt i Unknown scheme1
     let outType, populatedScheme = traverse ctxt o Unknown scheme2
     
+    //printf "%A\n" populatedScheme
+
     let annotatedOut = annotate populatedScheme ctxt o
     let annotatedIn = annotate populatedScheme ctxt i
     let annotatedClauses = annotateAll populatedScheme ctxt c
-
-    //printf "%A\n" populatedScheme
-    
+        
     annotatedIn, annotatedOut, annotatedClauses
