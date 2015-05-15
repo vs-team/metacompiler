@@ -4,20 +4,12 @@ open BasicExpression
 open ParserMonad
 open ConcreteExpressionParserPrelude
 
-
-let (|Native|Defined|Generic|) kw =
-    match kw with
-    | Application(Generic, _, _, _) -> Generic(Keyword.decodeName kw)
-    | _ ->
-        match Keyword.isNative kw with
-        | true -> Native(Keyword.decodeName kw)
-        | false -> Defined(Keyword.decodeName kw)
-
+type TypeVar = string
 
 type Type =
-    | TypeVariable of string // 'a
+    | TypeVariable of TypeVar // 'a
     | TypeConstant of string // int
-    | TypeApplication of Type * Type // s -> 's
+    | TypeAbstraction of Type * Type // s -> 's
     | ConstructedType of Type * Type list  // List 'a
     | Unknown
 
@@ -25,12 +17,11 @@ type Type =
 
         override this.ToString() =
             match this with
-            | TypeApplication(p, v) -> sprintf "%s -> %s" (p.ToString()) (v.ToString())
+            | TypeAbstraction(p, v) -> sprintf "%s -> %s" (p.ToString()) (v.ToString())
             | TypeConstant(t) -> sprintf "%s" (t.ToString())
             | ConstructedType(t, fs) -> sprintf "%A<%A>" (t) fs
             | TypeVariable(t) -> sprintf "%s" t
             | Unknown -> sprintf "Unkown"
-
 
 let (|ExtractedKeyword|) (parsedKeyword) : Type * Type =
         let rec fold args =
@@ -38,14 +29,23 @@ let (|ExtractedKeyword|) (parsedKeyword) : Type * Type =
             | arg::[] ->
                 TypeConstant(arg)
             | arg::args ->
-                TypeApplication(TypeConstant(arg), fold args)
+                TypeAbstraction(TypeConstant(arg), fold args)
             | [] ->
                 Unknown
         fold ((parsedKeyword.LeftArguments @ parsedKeyword.RightArguments) |> Keyword.typeToString), fold (Keyword.typeToString parsedKeyword.Type)
 
-type TypeScheme = { BoundVariables : Map<string, Type>
+let (|DefinedKeyword|) ctxt kw : Type * Type =
+    match kw with
+    | Custom(name) ->
+        match ctxt.CustomKeywordsMap |> Map.tryFind name with
+        | Some(ExtractedKeyword(arguments, definedType)) ->
+            arguments, definedType
+        | None -> failwithf "Undefined keyword %s\n" name
+    | _ -> failwithf "keyword %A" kw
+
+type TypeContext ={ BoundVariables : Map<string, TypeVar>
                     VariableCount : int
-                    Substitutions : Map<Type, Type> }
+                    Substitutions : Map<TypeVar, Type> }
 
     with 
         
@@ -54,30 +54,28 @@ type TypeScheme = { BoundVariables : Map<string, Type>
               VariableCount = 0 ;
               Substitutions = Map.empty }
 
-        member this.introduceVariable (var:string) (varType:Type) : Type * TypeScheme =
+        member this.introduceVariable (var:string) (varType:Type) : Type * TypeContext =
             if not (this.BoundVariables |> Map.containsKey var) then
-                let constructedType = (TypeVariable("a" + this.VariableCount.ToString()))
-                let varType = if varType = Unknown then constructedType else varType
+                let constructedType = "a" + this.VariableCount.ToString()
+                let varType = if varType = Unknown then TypeVariable(constructedType) else varType
                 let newScheme = { BoundVariables= this.BoundVariables.Add(var, constructedType);
                                     VariableCount = this.VariableCount + 1 ;
                                     Substitutions = this.Substitutions.Add(constructedType, varType) }
-                constructedType, newScheme
+                TypeVariable(constructedType), newScheme
             else
                 failwithf "cannot introduce an already known variable %s." var
 
-        member this.lookupSubstituion (variable:Type) : Type * TypeScheme =
+        member this.lookupSubstitution (variable:TypeVar) : Type * TypeContext =
             match this.Substitutions |> Map.tryFind variable with
             | Some(substition) ->
                 substition, this
             | None -> failwithf "unknown substituion for type %A" variable
 
-        member this.substitute (variable:Type) (substitution:Type)  =
+        member this.substitute (variable:TypeVar) (substitution:Type)  =
             match this.Substitutions |> Map.tryFind variable with
             | Some(variableType) ->
                 let newScheme =
-                    {   BoundVariables= this.BoundVariables ;
-                        VariableCount = this.VariableCount ;
-                        Substitutions = this.Substitutions.Add(variable, substitution) }
+                    {   this with Substitutions = this.Substitutions.Add(variable, substitution) }
                 substitution, newScheme
             | None -> failwithf "Undefined substituion %A" variable 
 
@@ -85,12 +83,12 @@ type TypeScheme = { BoundVariables : Map<string, Type>
             match this.BoundVariables |> Map.tryFind variable with
             | Some(variableType) ->
                 let rec lookup var =
-                    match this.Substitutions |> Map.tryFind var, var with
-                    | Some(TypeVariable(sub)), TypeVariable(var) when sub = var -> Unknown
-                    | Some(substituion), _ when this.Substitutions |> Map.containsKey substituion -> 
-                        lookup substituion
-                    | Some(substituion), _ -> substituion
-                    | _, _ -> failwithf "Undefined substituion for %s" variable
+                    match this.Substitutions |> Map.tryFind var with
+                    | Some(TypeVariable(sub)) when sub = var -> Unknown
+                    | Some(TypeVariable(substitution)) when this.Substitutions |> Map.containsKey substitution -> 
+                        lookup substitution
+                    | Some(substituion) -> substituion
+                    | _ -> failwithf "Undefined substituion for %s" variable
                 lookup variableType
             | None -> failwithf "Undefined variable %s" variable
 
@@ -100,46 +98,28 @@ let isSuperType t1 t2 (ctxt:ConcreteExpressionContext) =
         inherritedClasses |> Set.contains t1
     | None -> false
 
-let rec unify (expected:Type) (given:Type) (scheme:TypeScheme) (ctxt:ConcreteExpressionContext) =
+let rec unify (expected:Type) (given:Type) (scheme:TypeContext) (ctxt:ConcreteExpressionContext) =
     match expected, given with
     | TypeConstant(e1), TypeConstant(g1) when e1 = g1 || (isSuperType e1 g1 ctxt) || (isSuperType g1 e1 ctxt) -> given, scheme
-    | TypeApplication(e1, e2), TypeApplication(g1, g2) ->
+    | TypeAbstraction(e1, e2), TypeAbstraction(g1, g2) ->
         let firstUnifiedParameter, firstModifiedScheme = (unify e1 g1 scheme ctxt)
         let secondUnifiedParameter, secondModifiedScheme = (unify e2 g2 firstModifiedScheme ctxt)
-        TypeApplication(firstUnifiedParameter, secondUnifiedParameter), secondModifiedScheme
+        TypeAbstraction(firstUnifiedParameter, secondUnifiedParameter), secondModifiedScheme
     | TypeVariable(v1), TypeVariable(v2) ->
-        let ignoredResult, firstModifiedScheme = scheme.substitute expected given
-        let ignoredResult, secondModifiedScheme = firstModifiedScheme.substitute given expected
+        let ignoredResult, firstModifiedScheme = scheme.substitute v1 given
+        let ignoredResult, secondModifiedScheme = firstModifiedScheme.substitute v2 expected
         expected, secondModifiedScheme
-    | TypeVariable(_), _ ->
-        scheme.substitute expected given
-    | _, TypeVariable(_) ->
-        scheme.substitute given expected
+    | TypeVariable(v), _ ->
+        scheme.substitute v given
+    | _, TypeVariable(v) ->
+        scheme.substitute v expected
     | expected, Unknown -> expected, scheme
     | Unknown, given -> given, scheme
     | _ ->
         failwithf "cannot unify %s = %s\n" (expected.ToString()) (given.ToString())
         given, scheme
-
-let keywordType kw ctxt =
-    match kw with
-    | Custom(name) ->
-        match ctxt.CustomKeywordsMap |> Map.tryFind name with
-        | Some(ExtractedKeyword(args, tp)) ->
-            tp
-        | None -> failwithf "Undefined keyword %s\n" name
-    | _ -> failwithf "keyword %A" kw
         
-let expandKeyword kw ctxt =
-    match kw with
-    | Custom(name) ->
-        match ctxt.CustomKeywordsMap |> Map.tryFind name with
-        | Some(ExtractedKeyword(arguments, definedType)) ->
-            arguments
-        | None -> failwithf "Undefined keyword %s\n" name
-    | _ -> failwithf "keyword %A" kw
-
-let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword, Var, Literal, Position, Unit>) (constraints:Type) (scheme:TypeScheme) : Type * TypeScheme =
+let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword, Var, Literal, Position, Unit>) (constraints:Type) (scheme:TypeContext) : Type * TypeContext =
     match expr with
     | Application(Regular, expr::[], _, _) -> traverse ctxt expr constraints scheme
     | Application(Angle, _, pos, _) ->
@@ -156,11 +136,10 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
         unify leftConstraints rightConstraints secondModifiedScheme ctxt
     | Application(_, func::keywordArguments, _, _) ->
         match func with
-        | Keyword(kw, _, _) ->
-            let keywordParameters = expandKeyword kw ctxt
+        | Keyword(DefinedKeyword ctxt (keywordParameters, keywordType), _, _) ->
             let rec iterateOverArguments parameter argument scheme =
                 match parameter, argument with
-                | TypeApplication(t1, t2), argument::arguments ->
+                | TypeAbstraction(t1, t2), argument::arguments ->
                     let localConstraints, newScheme = traverse ctxt argument t1 scheme
                     iterateOverArguments t2 arguments newScheme
                 | parameter, argument::[] ->
@@ -172,26 +151,26 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
             let ignoredConstraints, populatedScheme = iterateOverArguments keywordParameters keywordArguments scheme
             let rec returnType t =
                 match t with
-                | TypeApplication(t, z) -> returnType z
+                | TypeAbstraction(t, z) -> returnType z
                 | t -> t
-            returnType (keywordType kw ctxt), populatedScheme
+            returnType keywordType, populatedScheme
         | _ -> failwithf "Malformed application of %A" expr
-    | Keyword(kw, _, _) ->
-        unify constraints (keywordType kw ctxt) scheme ctxt
+    | Keyword(DefinedKeyword ctxt (_, keywordType), _, _) ->
+        unify constraints keywordType scheme ctxt
     | Imported(importedType, _, _) ->
         unify constraints (TypeConstant(importedType.typeString)) scheme ctxt
     | Extension({Name = var}, _, _) ->
         match scheme.BoundVariables |> Map.tryFind var, constraints with
         | Some(variableType), Unknown ->
-            scheme.lookupSubstituion variableType
+            scheme.lookupSubstitution variableType
         | Some(variableType), _ ->
-            let substitution, ignoredScheme = scheme.lookupSubstituion variableType
+            let substitution, ignoredScheme = scheme.lookupSubstitution variableType
             unify constraints substitution scheme ctxt
         | _, _ ->
             scheme.introduceVariable var constraints
     | _ -> failwithf "Unexpected expression %A" expr
 
-let rec traverseFully (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword, Var, Literal, Position, Unit> list) : TypeScheme =
+let rec traverseFully (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword, Var, Literal, Position, Unit> list) : TypeContext =
     let rec traverseList expr scheme =
         match expr with
         | expr::exprs ->
@@ -199,9 +178,9 @@ let rec traverseFully (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Key
             traverseList exprs scheme
         | [] ->
             scheme
-    traverseList expr TypeScheme.Empty
+    traverseList expr TypeContext.Empty
 
-let rec annotate (scheme:TypeScheme) (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword, Var, Literal, Position, Unit>) =
+let rec annotate (scheme:TypeContext) (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword, Var, Literal, Position, Unit>) =
     match expr with
     | Application(bracket, exprs, pos, _) ->
         Application(bracket, exprs |> List.map (annotate scheme ctxt), pos, Unknown)
@@ -214,7 +193,7 @@ let rec annotate (scheme:TypeScheme) (ctxt:ConcreteExpressionContext) (expr:Basi
         Imported(t, pos, TypeConstant(t.typeString))
         
 
-let rec annotateAll (scheme:TypeScheme) (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword, Var, Literal, Position, Unit> list) =
+let rec annotateAll (scheme:TypeContext) (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword, Var, Literal, Position, Unit> list) =
     let rec annotateOne expr =
         match expr with
         | expr::exprs ->
