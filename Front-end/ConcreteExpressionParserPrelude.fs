@@ -11,12 +11,11 @@ type Associativity =
 type KeywordKind =
     | Data
     | Func
-
-    with static member fromString str =
-        match str with
-        | "Func" -> Func
-        | "Data" -> Data
-        | _ -> failwithf "Invalid keyword kind %s, only Data or Func are allowed" str
+  with static member fromString str =
+         match str with
+         | "Func" -> Func
+         | "Data" -> Data
+         | _ -> failwithf "Invalid keyword kind %s, only Data or Func are allowed" str
 
 type State<'a, 's> = 's -> 'a*'s
 
@@ -153,9 +152,10 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
                           | [] -> Right, []
                           | Extension(a, _, _)::ks ->
                             match a with
-                            | {Name = "Right"} -> Right, ks
-                            | {Name = "Left"} -> Left, ks
+                            | { Var.Name = "Right"} -> Right, ks
+                            | { Var.Name = "Left"} -> Left, ks
                             | _ -> Right, xs
+                          | _ -> failwith "Unexpected keyword shape encountered when finding associativity."
                         | _-> Right, xs
               removeAssociativity k
 

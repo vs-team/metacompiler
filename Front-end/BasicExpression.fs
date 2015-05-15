@@ -4,7 +4,7 @@
     Different Bracket types are used to give context to an expression.
     If an expression does not have a bracket then the type Implicit is used.
 *)
-type Bracket = Implicit | Square | Curly | Angle | Regular | Data | Function | Generic
+type Bracket = Implicit | Square | Curly | Angle | Regular | Generic
   with 
     static member FromChar = 
       function
@@ -54,7 +54,6 @@ type BasicExpression<'k, 'e, 'i, 'di, 'ti> =
       | Application(b,l,di,ti) -> 
         let ls = l |> Seq.fold (fun s x -> s + " " + x.ToString()) ""
         match b with
-        | Data | Function -> sprintf "%s" ls
         | Generic -> sprintf "<%s>" ls
         | Implicit -> sprintf "%s @ %s :: %s" ls (di.ToString()) (ti.ToString())
         | Regular -> sprintf "(%s) @ %s :: %s" ls (di.ToString()) (ti.ToString())
@@ -69,7 +68,6 @@ type BasicExpression<'k, 'e, 'i, 'di, 'ti> =
       | Application(b,l,di,ti) -> 
         let ls = l |> Seq.fold (fun s x -> s + x.ToStringCompact) ""
         match b with
-        | Data | Function -> sprintf "%s" ls
         | Generic -> sprintf "<%s>" ls
         | Implicit -> sprintf "%s" ls
         | Regular -> sprintf "(%s)" ls

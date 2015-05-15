@@ -9,6 +9,7 @@ namespace Lists {
 
 public interface ListInt : IRunnable {}
 public interface IntValue : IRunnable {}
+public interface Expr : IRunnable {}
 public interface Bool : IRunnable {}
 public interface ListIntPair : IRunnable {}
 
@@ -108,7 +109,7 @@ public override int GetHashCode() {
 
 }
 
-public class add : IntValue  {
+public class add : Expr,IntValue  {
 public ListInt P1;
 
 public add(ListInt P1) {this.P1 = P1;}
@@ -158,7 +159,7 @@ public override int GetHashCode() {
 
 }
 
-public class contains : Bool  {
+public class contains : Expr,Bool  {
 public ListInt P1;
 public int P2;
 
@@ -219,7 +220,7 @@ public override int GetHashCode() {
 
 }
 
-public class length : IntValue  {
+public class length : Expr,IntValue  {
 public ListInt P1;
 
 public length(ListInt P1) {this.P1 = P1;}
@@ -269,7 +270,7 @@ public override int GetHashCode() {
 
 }
 
-public class merge : ListInt  {
+public class merge : Expr,ListInt  {
 public ListInt P1;
 public ListInt P2;
 
@@ -358,7 +359,7 @@ public override int GetHashCode() {
 
 }
 
-public class mergeSort : ListInt  {
+public class mergeSort : Expr,ListInt  {
 public ListInt P1;
 
 public mergeSort(ListInt P1) {this.P1 = P1;}
@@ -473,7 +474,7 @@ public override int GetHashCode() {
 
 }
 
-public class plus : ListInt  {
+public class plus : Expr,ListInt  {
 public ListInt P1;
 public int P2;
 
@@ -525,7 +526,7 @@ public override int GetHashCode() {
 
 }
 
-public class removeOdd : ListInt  {
+public class removeOdd : Expr,ListInt  {
 public ListInt P1;
 
 public removeOdd(ListInt P1) {this.P1 = P1;}
@@ -588,7 +589,7 @@ public override int GetHashCode() {
 
 }
 
-public class split : ListIntPair  {
+public class split : Expr,ListIntPair  {
 public ListInt P1;
 
 public split(ListInt P1) {this.P1 = P1;}

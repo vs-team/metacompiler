@@ -12,9 +12,7 @@ type Type =
     | TypeAbstraction of Type * Type // s -> 's
     | ConstructedType of Type * Type list  // List 'a
     | Unknown
-
     with
-
         override this.ToString() =
             match this with
             | TypeAbstraction(p, v) -> sprintf "%s -> %s" (p.ToString()) (v.ToString())
