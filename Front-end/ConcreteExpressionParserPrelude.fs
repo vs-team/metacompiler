@@ -33,15 +33,17 @@ let st = StateBuilder()
 
 type ParsedKeyword<'k, 'e, 'i, 'di, 'ti> =
   {
-  GenericArguments : List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
-  LeftArguments: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
-  RightArguments: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
-  Name: string
-  Type: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
-  Associativity: Associativity
-  Priority: int
-  Kind : KeywordKind
+    GenericArguments : List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
+    LeftArguments: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
+    RightArguments: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
+    Name: string
+    Type: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
+    Associativity: Associativity
+    Priority: int
+    Kind : KeywordKind
   }
+  with 
+    member this.Arguments = this.LeftArguments @ this.RightArguments
   
 type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisible | Divisible | GreaterOrEqual | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of string
   with 
@@ -192,16 +194,16 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
      
     
     static member typeToString (keyword:List<BasicExpression<Keyword,Var,Literal,_,_>>) : string list =
-        let rec dec k =
-          match k with
-            | x::xs ->
-                match x with 
-                | Application(Angle, Application(Angle, Extension(n, _, _)::[], _, _)::[], _, _)
-                | Extension(n, _, _) ->
-                  n.Name :: (dec xs)
-                | _ -> dec xs
-              | [] -> []
-        dec keyword
+      let rec dec k =
+        match k with
+          | x::xs ->
+            match x with 
+            | Application(Angle, Application(Angle, Extension(n, _, _)::[], _, _)::[], _, _)
+            | Extension(n, _, _) ->
+              n.Name :: (dec xs)
+            | _ -> dec xs
+          | [] -> []
+      dec keyword
 
     static member isNative keyword = 
         match keyword with

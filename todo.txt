@@ -1,20 +1,17 @@
 - type inference
-  - first stage should create generic types
-  - second stage should unify the variables
-  - type checker
-    - verify arieties
-    - resolution of < and > for generic types
-    - higher order terms
-    - equality with == on primitive types
+  - most specific unifiers
 - GUI should save delayed compiler to not recompile rules unnecessarily
 - samples
   - import directive for multiple files
-- Scoping for keywords
-- Fix Func and Data (also in samples)
-- left of => no call to new; use a function instead
-- Default (empty) values for keyword definitions
 - Refactor "clause" to "premise"
 - Runnable wrapper for primitive types to remove need for $ operator
+- Scoping for keyword declarations
+- Func and Data
+  - ParsedKeyword should be a richer definition
+  - Fix in all samples
+- Higher order terms
+- Higher kinded generics
+- Type classes/modules
 - Textual debugger for terms
   
   *) 
@@ -37,23 +34,23 @@
   *) s z + s z => s (s z)
 
 
-  - 234 trees recursive contains
-      -----------------------
-      contains empty k => no
+- 234 trees recursive contains
+    -----------------------
+    contains empty k => no
 
-      containsIterate l k => res
-      ---------------------------
-      contains node l k => res
+    containsIterate l k => res
+    ---------------------------
+    contains node l k => res
 
-      contains r k => res
-      -------------------------
-      containsIterate r;nil k => res
+    contains r k => res
+    -------------------------
+    containsIterate r;nil k => res
 
-      k = x
-      --------------------------------
-      containsIterate l;x;xs k => yes
+    k = x
+    --------------------------------
+    containsIterate l;x;xs k => yes
 
-      k < x
-      contains l k => res
-      --------------------------------
-      containsIterate l;x;xs k => res
+    k < x
+    contains l k => res
+    --------------------------------
+    containsIterate l;x;xs k => res

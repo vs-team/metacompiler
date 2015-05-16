@@ -14,7 +14,7 @@ open AnalyserAST
 
 do System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.GetCultureInfo("EN-US")
 
-let numSteps = 1000
+let numSteps = 1
 
 let runDeduction path =
   let originalFilePath = System.IO.Path.Combine(path, "transform.mc")
@@ -87,10 +87,7 @@ let main argv =
 //      "Lambda calculus", "run"
 //      "Binary trees", "run"
 //
-//      "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
-//
-//      "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
-//
+      "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
       "Lists", "plus 0;1;2;3;nil 10"
       "Lists", "length 0;1;2;3;nil"
 //      "Lists", "contains 0;1;2;3;nil 2"
