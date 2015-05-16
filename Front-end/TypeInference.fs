@@ -20,11 +20,22 @@ type Type =
             | ConstructedType(t, fs) -> sprintf "%A<%A>" (t) fs
             | TypeVariable(t) -> sprintf "%s" t
             | Unknown -> sprintf "Unkown"
+        static member compatible (t1:Type) (t2:Type) =
+          if t1 = t2 then true
+          else
+            match t1,t2 with 
+            | TypeVariable _, _ 
+            | _, TypeVariable _ -> true
+            | TypeAbstraction(a1,b1), TypeAbstraction(a2,b2) ->
+              Type.compatible a1 a2 && Type.compatible b1 b2
+            | ConstructedType(a1,b1), ConstructedType(a2,b2) ->
+              Type.compatible a1 a2 && Seq.forall2 Type.compatible b1 b2
+            | _ -> false
 
 type TypeEquivalence = 
   {
     Variables   : Set<TypeVar>
-    Types       : List<Type>
+    Types       : Set<Type>
   }
   with 
     static member Create(v : TypeVar, t : Type) =
@@ -32,35 +43,19 @@ type TypeEquivalence =
         failwith "Cannot create binding to Unknown"
       {
         Variables = Set.singleton v
-        Types     = [t]
+        Types     = Set.singleton t
       }
     static member (+) (equiv:TypeEquivalence, (v:TypeVar,t:Type)) =
       equiv + TypeEquivalence.Create(v,t)
     static member (+) (t1:TypeEquivalence, t2:TypeEquivalence) =
-      let rec variables (t:Type) = 
-          seq{
-            match t with
-            | TypeVariable v -> yield v
-            | TypeConstant s -> ()
-            | TypeAbstraction(a, b) -> 
-              yield! variables a
-              yield! variables b
-            | ConstructedType(t,args) ->
-              yield! variables t
-              for a in args do
-                yield! variables a
-            | Unknown -> ()
-          }
-      let fv1 = t1.Types |> Seq.map variables |> Seq.concat |> Set.ofSeq
-      let fv2 = t2.Types |> Seq.map variables |> Seq.concat |> Set.ofSeq
-      let spurious = (fv1 |> Set.intersect t2.Variables) + (fv2 |> Set.intersect t1.Variables)
-      if spurious |> Set.isEmpty |> not then
-        {
-          Variables = t1.Variables + t2.Variables
-          Types     = t1.Types @ t2.Types
-        }
-      else
-        failwithf "Error when merging %A with %A: variables %A would generate infinite types." t1 t2 spurious
+      for x in t1.Types do
+        for y in t2.Types do
+          if Type.compatible x y |> not then
+            failwith "Cannot unify %A and %A because types %A and %A are incompatible" t1 t2 x y
+      {
+        Variables = t1.Variables + t2.Variables
+        Types     = t1.Types + t2.Types
+      }
 
 and TypeContext =
   { BoundVariables  : Map<string, Type>
@@ -198,6 +193,32 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
       let varType, scheme1 = scheme.introduceVariable var constraints
       Extension({Name = var}, pos, varType), scheme1
   | _ -> failwithf "Unexpected expression %A" expr
+
+let normalize (substitutions:Map<TypeVar, TypeEquivalence>) =
+  let rec visit (visited:Set<TypeVar>) (v:TypeVar) (substitutions:Map<TypeVar, TypeEquivalence>) =
+    if visited |> Set.contains v then
+      failwithf "Circular reference to variable %A in %A" v visited
+    let equivalence = 
+      match substitutions |> Map.tryFind v with
+      | Some x -> x
+      | _ -> failwithf "Cannot find variable %A" v
+    let otherVars = equivalence.Variables
+    let vType = equivalence.Types
+//    for t in equivalence.Types do
+//      match t with
+//      | TypeConstant
+    visited + otherVars, substitutions |> Map.add v { equivalence with Types = vType }
+  and normalize (visited:Set<TypeVar>) (unexplored:List<TypeVar>) (substitutions:Map<TypeVar, TypeEquivalence>) =
+    match unexplored with
+    | [] -> substitutions
+    | v::vs ->
+      if visited |> Set.contains v |> not then
+        let visited1,substitutions1 = visit visited v substitutions
+        normalize (visited1 |> Set.add v) vs substitutions1
+      else // just skip v, as it might have been visited within a previous visit to an equivalent variable
+        normalize visited vs substitutions
+  normalize Set.empty [ for kv in substitutions -> kv.Key]
+    
 
 let inferTypes input output clauses ctxt =
   let rec traverseMap (ctxt:ConcreteExpressionContext) (exprs:List<BasicExpression<Keyword, Var, Literal, Position, Unit>>) 
