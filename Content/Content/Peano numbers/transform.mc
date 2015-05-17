@@ -1,14 +1,13 @@
-﻿Data "$" -> <<int>> : IntValue          Priority 9
-Data  "z" : Num                         Priority 3
+﻿Data  "z" : Num                         Priority 3
 Data "s" -> Num : Num                   Priority 4  
 Func Expr -> "+" -> Expr : Expr => Num  Priority 1 
 Func Expr -> "*" -> Expr : Expr => Num  Priority 2  
 Func "eval" -> Expr : Expr => Num        
-Func "toNum" -> Num : Expr => IntValue
-Func "run" : Expr => IntValue
+Func "toNum" -> Num : Expr => <<int>>
+Func "run" : Expr => <<int>>
 
 Num is Expr
-IntValue is Expr
+
 
 eval a => res
 --------------
@@ -45,12 +44,12 @@ a' * b' => c
 --------------
 eval (a * b) => c
 
-toNum a => $res
+toNum a => res
 ---------------
-toNum (s(a)) => $<<res + 1>>
+toNum (s(a)) => <<res + 1>>
 
 ----------------
-toNum z => $0
+toNum z => 0
 
 eval(ssz * ssz * ssz + sz) => n
 toNum n => res

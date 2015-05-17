@@ -1,6 +1,5 @@
 - type inference
   - test/adapt all samples
-- Runnable wrapper for primitive types to remove need for $ operator
 - GUI should save delayed compiler to not recompile rules unnecessarily
 - samples
   - import directive for multiple files

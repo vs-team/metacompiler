@@ -14,7 +14,7 @@ open AnalyserAST
 
 do System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.GetCultureInfo("EN-US")
 
-let numSteps = 1000
+let numSteps = 1
 
 let runDeduction path =
   let originalFilePath = System.IO.Path.Combine(path, "transform.mc")

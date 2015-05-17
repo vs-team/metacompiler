@@ -43,6 +43,12 @@ type ParsedKeyword<'k, 'e, 'i, 'di, 'ti> =
     Kind : KeywordKind
   }
   with 
+    member this.FilledType = 
+      match this.Kind with
+      | KeywordKind.Data -> this.Type
+      | KeywordKind.Func ->
+        let res = this.Type |> List.rev |> List.tail |> List.rev
+        res
     member this.Arguments = this.LeftArguments @ this.RightArguments
   
 type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisible | Divisible | GreaterOrEqual | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of string
@@ -199,6 +205,18 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
           | x::xs ->
             match x with 
             | Application(Angle, Application(Angle, Extension(n, _, _)::[], _, _)::[], _, _)
+            | Extension(n, _, _) ->
+              n.Name :: (dec xs)
+            | _ -> dec xs
+          | [] -> []
+      dec keyword
+
+    static member nonNativeTypeToString (keyword:List<BasicExpression<Keyword,Var,Literal,_,_>>) : string list =
+      let rec dec k =
+        match k with
+          | x::xs ->
+            match x with 
+            | Application(Angle, Application(Angle, Extension(n, _, _)::[], _, _)::[], _, _) -> []
             | Extension(n, _, _) ->
               n.Name :: (dec xs)
             | _ -> dec xs

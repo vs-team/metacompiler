@@ -4,22 +4,18 @@
 
 Data "nil" : ListInt
 Data <<int>> -> ";" -> ListInt : ListInt                                Priority 1000
-Data "$" -> <<int>> : IntValue                                          Priority 10000
 
-Func "contains" -> ListInt -> <<int>> : Expr => Bool                    Priority 100 
+Func "contains" -> ListInt -> <<int>> : Expr => <<bool>>                Priority 100 
 Func "removeOdd" -> ListInt : Expr => ListInt                           Priority 100  
 
-Func "add" -> ListInt : Expr => IntValue                                Priority 100 
+Func "add" -> ListInt : Expr => <<int>>                                 Priority 100 
 Func "plus" -> ListInt -> <<int>> : Expr => ListInt                     Priority 100
-Func "length" -> ListInt : Expr => IntValue                             Priority 100 
+Func "length" -> ListInt : Expr => <<int>>                              Priority 100 
 
 Data ListInt -> "," -> ListInt : ListIntPair                            Priority 900
 Func "split" -> ListInt : Expr => ListIntPair                           Priority 100 
 Func "merge" -> ListInt -> ListInt : Expr => ListInt                    Priority 100
 Func "mergeSort" -> ListInt : Expr => ListInt                           Priority 100 
-
-Data "yes" : Bool                                                        
-Data "no" :   Bool                                                      
 
 
 ---------------------
@@ -67,19 +63,19 @@ mergeSort x;y;xs => res
 
 
 ----------------
-length nil => $0
+length nil => 0
 
-length xs => $y
+length xs => y
 --------------------------
-length x;xs => $<<1 + y>>
+length x;xs => <<1 + y>>
 
 
 --------------
-add nil => $0
+add nil => 0
 
-add xs => $res
+add xs => res
 --------------------------
-add x;xs => $<<x + res>>
+add x;xs => <<x + res>>
 
 
 -------------------
@@ -92,11 +88,11 @@ plus x;xs k => x';xs'
 
 
 ---------------------
-contains nil k => no
+contains nil k => false
 
 x == k
 ------------------------
-contains x;xs k => yes
+contains x;xs k => true
 
 x != k
 contains xs k => res

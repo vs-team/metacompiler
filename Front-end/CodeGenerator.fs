@@ -563,6 +563,13 @@ type GeneratedClass =
           let returnType = 
             match c.Keyword.Type with
             | t::(Extension({Name=ret},_,_))::[] -> ret
+            | t::Application(Angle, inner::[], _, _)::[] -> 
+              let rec removeApplication e =
+                match e with
+                | Application(_, inner::[], _, _) -> removeApplication inner
+                | Extension({Var.Name=ret},_,_) -> ret
+                | _ -> failwithf "Unsupported keyword type %A" c.Keyword.Type
+              removeApplication inner
             | t::ret::[] -> failwithf "Unsupported keyword type %A" c.Keyword.Type
             | _ -> failwithf "Malformed keyword type %A" c.Keyword.Type
           let runImplementation =
@@ -673,7 +680,7 @@ let generateCode (originalFilePath:string) (program_name:string)
       let newClass = { GeneratedClass.Keyword   = keyword
                        GeneratedClass.BasicName = keyword.Name
                        GeneratedClass.GenericArguments = keyword.GenericArguments
-                       GeneratedClass.Interface = Keyword.typeToString( keyword.Type )
+                       GeneratedClass.Interface = Keyword.nonNativeTypeToString( keyword.FilledType )
                        GeneratedClass.Parameters = ResizeArray()
                        GeneratedClass.Methods = Map.empty }
       for t,i in keyword.LeftArguments |> Seq.mapi (fun i p -> p,i+1) do
@@ -688,7 +695,7 @@ let generateCode (originalFilePath:string) (program_name:string)
 
     let classes = classes
     let extensions = @"public static class Extensions { public static V GetKey<T, V>(this System.Collections.Immutable.ImmutableDictionary<T, V> self, T key) { return self[key]; } }"
-    let interfaces = [ for k in ctxt.CustomKeywords -> Keyword.typeToString k.Type ] |> List.concat|> Seq.distinct |> Seq.toList 
+    let interfaces = [ for k in ctxt.CustomKeywords -> Keyword.nonNativeTypeToString k.Type ] |> List.concat|> Seq.distinct |> Seq.toList 
     let inheritanceRelationships = inheritanceRelationships
     let interfacesCode = 
       [
