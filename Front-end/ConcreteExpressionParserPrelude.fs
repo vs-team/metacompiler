@@ -8,6 +8,10 @@ type Associativity =
   | Right
   | Left
 
+type KeywordMulteplicity =
+    | Single
+    | Multiple
+
 type KeywordKind =
     | Data
     | Func
@@ -41,6 +45,7 @@ type ParsedKeyword<'k, 'e, 'i, 'di, 'ti> =
     Associativity: Associativity
     Priority: int
     Kind : KeywordKind
+    Multeplicity : KeywordMulteplicity
   }
   with 
     member this.FilledType = 
@@ -119,21 +124,25 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
           removeCS k
 
    static member getKeywordType k =
-              let rec removeType l =
-                  match l with
-                    | [] -> [], []
-                    | x::xs -> 
-                      match x with
-                        | Keyword(Custom ":", _, _) -> 
-                          removeType xs
-                        | Keyword(Custom "=>", _, _) ->
-                          removeType xs
-                        | Keyword(Custom "Priority", _,_)
-                        | Keyword(Custom "Associativity", _, _) -> [], x::xs
-                        | a -> 
-                          let x,y = removeType xs
-                          a :: x, y
-              removeType k  
+    let rec removeType l =
+      match l with
+      | [] -> (KeywordMulteplicity.Multiple, []), []
+      | x::xs -> 
+        match x with
+        | Keyword(Custom ":", _, _) -> 
+          removeType xs
+        | Keyword(Custom "=>", _, _) ->
+          let (_, x),y = removeType xs
+          (KeywordMulteplicity.Single, x), y
+        | Keyword(Custom "==>", _, _) ->
+          let (_, x), y = removeType xs
+          (KeywordMulteplicity.Multiple, x), y
+        | Keyword(Custom "Priority", _,_)
+        | Keyword(Custom "Associativity", _, _) -> (KeywordMulteplicity.Multiple, []), x::xs
+        | a -> 
+          let (m, x), y = removeType xs
+          (m, a :: x), y
+    removeType k  
                   
     static member getKeywordPriority k  =
               let rec removePriority l =
@@ -180,10 +189,13 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
                 let! leftArguments = Keyword.getArguments
                 let! name = Keyword.getName
                 let! rightArguments = Keyword.getArguments
-                let! keywordtype = Keyword.getKeywordType
+                let! keywordMulteplicity, keywordtype = Keyword.getKeywordType
                 let! priority = Keyword.getKeywordPriority
                 let! associativity = Keyword.getKeywordAssociativity
-                return {GenericArguments = genericArguments; LeftArguments = leftArguments; RightArguments = rightArguments; Name = name; Type = keywordtype ; Associativity = associativity; Priority = priority ; Kind = kind}
+                return { GenericArguments = genericArguments; LeftArguments = leftArguments; 
+                         RightArguments = rightArguments; Name = name; Type = keywordtype; 
+                         Associativity = associativity; Priority = priority ; Kind = kind;
+                         Multeplicity = keywordMulteplicity }
              | _ ->
                 return failwith "malformed expression"
            }) args |> fst
@@ -192,7 +204,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
         let x =
           (st{
              let! name = Keyword.removeCScharpName
-             return {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = name; Type = []; Associativity = Right; Priority = 0; Kind = Data}
+             return {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = name; Type = []; Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single }
            }) args |> fst
         x 
       | _ -> 
@@ -319,7 +331,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
     static member CreateCSharpKeyword (kw : string*List<string>*List<string>*List<string>*int*string)= 
           let (!) l = l |> List.map (fun x -> Extension({Name = x}, Position.Zero, ()))
           let name, generic, left, right, priority, kwtype = kw
-          {GenericArguments = !generic; LeftArguments = !left; RightArguments = !right; Name = name; Type = ![kwtype]; Associativity = Right; Priority = priority; Kind = Data}
+          { GenericArguments = !generic; LeftArguments = !left; RightArguments = !right; Name = name; Type = ![kwtype]; Associativity = Right; Priority = priority; Kind = Data; Multeplicity = KeywordMulteplicity.Single }
 
 and ConcreteExpressionContext = 
   {

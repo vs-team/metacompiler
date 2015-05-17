@@ -51,6 +51,13 @@ let cleanupWithoutDot (s:string) =
 
 let (!) (s:string) = (cleanupWithoutDot s).Replace(".", "_opDot")
 
+let rec extractLeadingKeyword e =
+  match e with
+  | Keyword(Custom k, _, _) -> k
+  | Application(Implicit, (Keyword(Custom k, _, _)) :: _, pos, _) -> k
+  | _ -> failwithf "Cannot extract leading keyword from %A" e.DebugInformation
+
+
 let (|Native|Defined|Generic|) kw =
     match kw with
     | Application(Generic, _, _, _) -> Generic(Keyword.decodeName kw)
@@ -121,10 +128,12 @@ type Instruction =
   | VarAs of name : string * expr : string * as_type : string
   | CheckNull of var_name : string
   | CustomCheck of condition : string
+  | Call of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type> * path : Path
   | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type> * path : Path
   | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type> * expr2:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
   | Inline of e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
   | Yield of expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
+  | Return of expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
 
 (*
     createElement is responsible for generating the Create() functions.
@@ -330,6 +339,22 @@ let rec generateInstructions (debugPosition:Position) (originalFilePath:string) 
           sprintf "%sif(%s) { %svar %s = %s;%sforeach (var %s in %s.Run%s()) { %s } }" newLine creationConstraints newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generateInstructions debugPosition originalFilePath  ctxt xs)
         else 
           sprintf "%svar %s = %s;%sforeach (var %s in %s.Run%s()) { %s }" newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generateInstructions debugPosition originalFilePath ctxt xs)
+    | Call(var_name, tmp_var_name, expr, path) ->
+      if CompilerSwitches.combineCreateFor && CompilerSwitches.generateStaticRun then
+        let newElement, creationConstraints = createStaticRun ctxt path expr
+        if creationConstraints.IsEmpty |> not then
+          let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
+          sprintf "%sif(%s) { %svar %s = %s;%s\nvar %s = %s;\n%s }" newLine creationConstraints newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (generateInstructions debugPosition originalFilePath  ctxt xs)
+        else 
+          sprintf "%svar %s = %s;%s\nvar %s = %s;\n%s" newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (generateInstructions debugPosition originalFilePath ctxt xs) 
+      else
+        let newElement, creationConstraints = createElement ctxt expr
+        if creationConstraints.IsEmpty |> not then
+          let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
+          sprintf "%sif(%s) { %svar %s = %s;%s\nvar %s = %s.Run%s();\n%s }" newLine creationConstraints newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generateInstructions debugPosition originalFilePath  ctxt xs)
+        else 
+          sprintf "%svar %s = %s;%s\nvar %s = %s.Run%s();\n%s" newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generateInstructions debugPosition originalFilePath ctxt xs)
+
     | CustomCheck(condition) ->
       sprintf "%sif (%s) { %s }" newLine condition (generateInstructions debugPosition originalFilePath  ctxt xs)
     | Inline(c) -> 
@@ -341,6 +366,13 @@ let rec generateInstructions (debugPosition:Position) (originalFilePath:string) 
         sprintf "%sif(%s) { %svar result = %s;%syield return result; %s }" newLine creationConstraints newLine newElement newLine (generateInstructions debugPosition originalFilePath ctxt xs)
       else
         sprintf "%svar result = %s;%syield return result; %s" newLine newElement newLine (generateInstructions debugPosition originalFilePath ctxt xs)
+    | Return(expr) ->
+      let newElement, creationConstraints = createElement ctxt expr
+      if creationConstraints.IsEmpty |> not then
+        let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
+        sprintf "%sif(%s) { %svar result = %s;%s return result; %s }" newLine creationConstraints newLine newElement newLine (generateInstructions debugPosition originalFilePath ctxt xs)
+      else
+        sprintf "%svar result = %s;%s return result; %s" newLine newElement newLine (generateInstructions debugPosition originalFilePath ctxt xs)
 
 (*
     matchCast is responsible for matching expressions
@@ -449,7 +481,13 @@ type Rule = {
       for k,c_i,c_o in r.Clauses do
         match k with
         | DoubleArrow ->
-          o <- o @ [Iterate(sprintf "tmp_%d" tmp_id, sprintf "tmp_%d" (tmp_id+1), c_i, path)]
+          let c_i_keyword_name = extractLeadingKeyword c_i
+          let c_i_keyword = ctxt.CustomKeywordsMap.[c_i_keyword_name]
+          match c_i_keyword.Multeplicity with
+          | KeywordMulteplicity.Single ->
+            o <- o @ [Call(sprintf "tmp_%d" tmp_id, sprintf "tmp_%d" (tmp_id+1), c_i, path)]
+          | KeywordMulteplicity.Multiple ->
+            o <- o @ [Iterate(sprintf "tmp_%d" tmp_id, sprintf "tmp_%d" (tmp_id+1), c_i, path)]
           let o',tmp_id' = matchCast (tmp_id+2) c_o (sprintf "tmp_%d" tmp_id) [] ctxt None
           o <- o @ o'
           tmp_id <- tmp_id'
@@ -471,13 +509,21 @@ type Rule = {
         | Inlined ->
             o <- o @ [Inline(c_i)]
         | _ -> failwithf "Unexpected operator %A @ %A" k c_i.DebugInformation
-      o <- i @ o @ [Yield r.Output]
+
+      let i_keyword_name = extractLeadingKeyword r.Input
+      let i_keyword = ctxt.CustomKeywordsMap.[i_keyword_name]
+      match i_keyword.Multeplicity with
+      | KeywordMulteplicity.Single ->
+        o <- i @ o @ [Return r.Output]
+      | KeywordMulteplicity.Multiple ->
+        o <- i @ o @ [Yield r.Output]
       if CompilerSwitches.generateLineDirectives then
         sprintf "\n { \n #line %d \"%s\"\n%s\n } \n" r.Position.Line r.Position.File (generateInstructions r.Position originalFilePath ctxt o)
       else
         sprintf "\n { \n %s\n } \n" (generateInstructions r.Position originalFilePath ctxt o)
 
 type Method = {
+  Keyword    : ParsedKeyword<Keyword, Var, Literal, Position, unit>
   Rules      : ResizeArray<Rule>
   Path       : Path
 } with
@@ -486,8 +532,15 @@ type Method = {
       let paramsWithType    = String.concat ", " (parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name))
       let paramsWithoutType = String.concat ", " (parameters |> Seq.map (fun x -> x.Name))
       let body = ((m.Rules |> Seq.map (fun r -> r.ToString(ctxt,originalFilePath))) ++ 2)
+      let body =
+        match m.Keyword.Multeplicity with
+        | KeywordMulteplicity.Single ->
+          let self_constructor = sprintf "new %s(%s)" !m.Keyword.Name paramsWithoutType
+          sprintf "%s\n throw new System.Exception(\"Error evaluating: \" + %s.ToString() + \" no result returned.\");" body self_constructor
+        | KeywordMulteplicity.Multiple -> 
+          body
       let parent_call = if CompilerSwitches.generateStaticRun then m.Path.StaticParentCall parameters else m.Path.ParentCall
-      sprintf "public static IEnumerable<%s> StaticRun%s(%s) { %s %s }\npublic IEnumerable<%s> Run%s() { return StaticRun%s(%s); }" 
+      sprintf "public static %s StaticRun%s(%s) { %s %s }\npublic %s Run%s() { return StaticRun%s(%s); }" 
                 returnType path paramsWithType body parent_call returnType path path paramsWithoutType
     member m.ToString(ctxt:ConcreteExpressionContext,originalFilePath,returnType) =
       let path = m.Path.ToString()
@@ -560,9 +613,9 @@ type GeneratedClass =
         let (!) l = l |> List.reduce (fun p n -> p + "," + n)
         match c.Keyword.Kind with
         | KeywordKind.Func ->
-          let returnType = 
-            match c.Keyword.Type with
-            | t::(Extension({Name=ret},_,_))::[] -> ret
+          let rec getReturnType (ts:List<BasicExpression<_,_,_,_,_>>) : string = 
+            match ts with
+            | t::(Extension({Var.Name=ret},_,_))::[] -> ret
             | t::Application(Angle, inner::[], _, _)::[] -> 
               let rec removeApplication e =
                 match e with
@@ -570,8 +623,15 @@ type GeneratedClass =
                 | Extension({Var.Name=ret},_,_) -> ret
                 | _ -> failwithf "Unsupported keyword type %A" c.Keyword.Type
               removeApplication inner
-            | t::ret::[] -> failwithf "Unsupported keyword type %A" c.Keyword.Type
+            | t::ret::[] -> failwithf "Unsupported keyword type %A" ts
             | _ -> failwithf "Malformed keyword type %A" c.Keyword.Type
+          let returnType = c.Keyword.Type |> getReturnType
+          let returnType = 
+            match c.Keyword.Multeplicity with
+            | KeywordMulteplicity.Single ->
+              returnType
+            | KeywordMulteplicity.Multiple ->
+              sprintf "IEnumerable<%s>" returnType
           let runImplementation =
             if CompilerSwitches.generateStaticRun
             then ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath,c.Parameters,returnType))) ++ 2)
@@ -596,12 +656,13 @@ type GeneratedClass =
               then
                 let paramsWithoutType = String.concat ", " (c.Parameters |> Seq.map (fun x -> x.Name))
                 let paramsWithType    = String.concat ", " (c.Parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name))
-                yield sprintf "public static IEnumerable<%s> StaticRun%s(%s) { %s }\npublic IEnumerable<%s> Run%s(){ return StaticRun%s(%s); }\n" 
+                yield sprintf "public static %s StaticRun%s(%s) { %s }\npublic %s Run%s(){ return StaticRun%s(%s); }\n" 
                                 returnType path paramsWithType parent_or_empty_call returnType path path paramsWithoutType
               else
-                yield sprintf "public IEnumerable<%s> Run%s(){ %s }\n" returnType path parent_or_empty_call
+                yield sprintf "public %s Run%s(){ %s }\n" returnType path parent_or_empty_call
             ] |> Seq.fold (+) ""
-          sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n}\n\n" c.Name !c.Interface genericConstraints parameters cons runImplementation missing_methods to_string equals hash
+          sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n}\n\n" 
+            c.Name !c.Interface genericConstraints parameters cons runImplementation missing_methods to_string equals hash
         | KeywordKind.Data ->
           sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n}\n\n" c.Name !c.Interface genericConstraints parameters cons to_string equals hash
 
@@ -609,7 +670,7 @@ type GeneratedClass =
 let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position, Unit>) (rule_path:Path) (hasScope:bool) ctxt =
   let method_path = rule_path.Tail
   if inputClass.Methods |> Map.containsKey method_path |> not then
-    inputClass.Methods <- inputClass.Methods |> Map.add method_path { Rules = ResizeArray(); Path = method_path }
+    inputClass.Methods <- inputClass.Methods |> Map.add method_path { Keyword = inputClass.Keyword; Rules = ResizeArray(); Path = method_path }
   match rule with
   | Application(Implicit, Keyword(FractionLine, _, _) :: (Application(Implicit, Keyword(DoubleArrow, _, _) :: input :: output :: [], innerPos, _)) :: clauses, pos, _) ->
     let input, output, clauses = TypeInference.inferTypes input output clauses ctxt
@@ -650,11 +711,7 @@ let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rul
       | self -> self,false
     match self with
     | Application(Implicit, Keyword(FractionLine, _, _) :: (Application(Implicit, Keyword(DoubleArrow, _, _) :: input :: output, clausesPos, _)) :: clauses, pos, _) ->
-      let inputKeyword = 
-        match input with
-        | Keyword(Custom k, _, _) -> k
-        | Application(Implicit, (Keyword(Custom k, _, _)) :: _, pos, _) -> k
-        | _ -> failwithf "Cannot extract input keyword @ %A" input.DebugInformation
+      let inputKeyword = extractLeadingKeyword input
       let inputClass = classes.[inputKeyword]
       do add_rule inputClass self (Path path') hasScope ctxt
     | _ -> failwithf "Malformed rule @ %A" self.DebugInformation
@@ -719,7 +776,15 @@ let generateCode (originalFilePath:string) (program_name:string)
         else
             ""
     let prelude = sprintf "using System.Collections.Generic;\nusing System.Linq;\nnamespace %s {\n %s\n" (program_name.Replace(" ", "_")) extensions
-    let main = sprintf "public class EntryPoint {\n static public int Sleep(float s) { int t = (int)(s * 1000.0f); ; return 0; } \nstatic public IEnumerable<object> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" (createElement ctxt programTyped |> fst)
+    let programKeyword = ctxt.CustomKeywordsMap.[programTyped |> extractLeadingKeyword]
+    let main = 
+      match programKeyword.Multeplicity with
+      | KeywordMulteplicity.Single ->
+        sprintf "public class EntryPoint {\nstatic public object Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nvar result = p.Run();\nreturn result;\n}\n}\n" 
+                (createElement ctxt programTyped |> fst)
+      | KeywordMulteplicity.Multiple ->
+        sprintf "public class EntryPoint {\nstatic public IEnumerable<object> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" 
+                (createElement ctxt programTyped |> fst)
     [
       yield imports
       yield prelude

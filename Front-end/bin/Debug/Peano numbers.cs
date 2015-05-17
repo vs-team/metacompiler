@@ -17,40 +17,33 @@ public Expr P2;
 public _opMultiplication(Expr P1, Expr P2) {this.P1 = P1; this.P2 = P2;}
 public static _opMultiplication Create(Expr P1, Expr P2) { return new _opMultiplication(P1, P2); }
 
-  public static IEnumerable<Num> StaticRun(Expr P1, Expr P2) {   
+  public static Num StaticRun(Expr P1, Expr P2) {   
  { 
- #line 20 "Content\Peano numbers"
-var tmp_0 = P1 as z; 
- #line 20 "Content\Peano numbers"
+ var tmp_0 = P1 as z; 
 if (tmp_0 != null) { var a = P2; 
- #line 20 "Content\Peano numbers"
 var result = z.Create();
- #line 20 "Content\Peano numbers"
-yield return result;  }
+ return result;  }
  } 
 
   
  { 
- #line 23 "Content\Peano numbers"
-var tmp_0 = P1 as s; 
- #line 23 "Content\Peano numbers"
+ var tmp_0 = P1 as s; 
 if (tmp_0 != null) { var a = tmp_0.P1; var b = P2; 
- #line 23 "Content\Peano numbers"
 var tmp_2 = _opMultiplication.Create(a, b);
- #line 23 "Content\Peano numbers"
-foreach (var tmp_1 in tmp_2.Run()) { var c = tmp_1; 
- #line 23 "Content\Peano numbers"
+
+var tmp_1 = tmp_2.Run();
+var c = tmp_1; 
 var tmp_4 = _opAddition.Create(c, b);
- #line 23 "Content\Peano numbers"
-foreach (var tmp_3 in tmp_4.Run()) { var d = tmp_3; 
- #line 23 "Content\Peano numbers"
+
+var tmp_3 = tmp_4.Run();
+var d = tmp_3; 
 var result = d;
- #line 23 "Content\Peano numbers"
-yield return result;  } } }
+ return result;  }
  } 
 
-  }
-public IEnumerable<Num> Run() { return StaticRun(P1, P2); }
+
+ throw new System.Exception("Error evaluating: " + new _opMultiplication(P1, P2).ToString() + " no result returned.");  }
+public Num Run() { return StaticRun(P1, P2); }
 
 
 public override string ToString() {
@@ -81,40 +74,33 @@ public Expr P2;
 public _opAddition(Expr P1, Expr P2) {this.P1 = P1; this.P2 = P2;}
 public static _opAddition Create(Expr P1, Expr P2) { return new _opAddition(P1, P2); }
 
-  public static IEnumerable<Num> StaticRun(Expr P1, Expr P2) {   
+  public static Num StaticRun(Expr P1, Expr P2) {   
  { 
- #line 12 "Content\Peano numbers"
-var tmp_0 = P1 as z; 
- #line 12 "Content\Peano numbers"
+ var tmp_0 = P1 as z; 
 if (tmp_0 != null) { var a = P2; 
- #line 12 "Content\Peano numbers"
 var tmp_2 = eval.Create(a);
- #line 12 "Content\Peano numbers"
-foreach (var tmp_1 in tmp_2.Run()) { var res = tmp_1; 
- #line 12 "Content\Peano numbers"
+
+var tmp_1 = tmp_2.Run();
+var res = tmp_1; 
 var result = res;
- #line 12 "Content\Peano numbers"
-yield return result;  } }
+ return result;  }
  } 
 
   
  { 
- #line 16 "Content\Peano numbers"
-var tmp_0 = P1 as s; 
- #line 16 "Content\Peano numbers"
+ var tmp_0 = P1 as s; 
 if (tmp_0 != null) { var a = tmp_0.P1; var b = P2; 
- #line 16 "Content\Peano numbers"
 var tmp_2 = _opAddition.Create(a, b);
- #line 16 "Content\Peano numbers"
-foreach (var tmp_1 in tmp_2.Run()) { var c = tmp_1; 
- #line 16 "Content\Peano numbers"
+
+var tmp_1 = tmp_2.Run();
+var c = tmp_1; 
 var result = s.Create(c);
- #line 16 "Content\Peano numbers"
-yield return result;  } }
+ return result;  }
  } 
 
-  }
-public IEnumerable<Num> Run() { return StaticRun(P1, P2); }
+
+ throw new System.Exception("Error evaluating: " + new _opAddition(P1, P2).ToString() + " no result returned.");  }
+public Num Run() { return StaticRun(P1, P2); }
 
 
 public override string ToString() {
@@ -144,80 +130,65 @@ public Expr P1;
 public eval(Expr P1) {this.P1 = P1;}
 public static eval Create(Expr P1) { return new eval(P1); }
 
-  public static IEnumerable<Num> StaticRun(Expr P1) {   
+  public static Num StaticRun(Expr P1) {   
  { 
- #line 29 "Content\Peano numbers"
-var tmp_0 = P1 as z; 
- #line 29 "Content\Peano numbers"
+ var tmp_0 = P1 as z; 
 if (tmp_0 != null) { 
- #line 29 "Content\Peano numbers"
 var result = z.Create();
- #line 29 "Content\Peano numbers"
-yield return result;  }
+ return result;  }
  } 
 
   
  { 
- #line 32 "Content\Peano numbers"
-var tmp_0 = P1 as s; 
- #line 32 "Content\Peano numbers"
+ var tmp_0 = P1 as s; 
 if (tmp_0 != null) { var a = tmp_0.P1; 
- #line 32 "Content\Peano numbers"
 var result = s.Create(a);
- #line 32 "Content\Peano numbers"
-yield return result;  }
+ return result;  }
  } 
 
   
  { 
- #line 35 "Content\Peano numbers"
-var tmp_0 = P1 as _opAddition; 
- #line 35 "Content\Peano numbers"
+ var tmp_0 = P1 as _opAddition; 
 if (tmp_0 != null) { var a = tmp_0.P1; var b = tmp_0.P2; 
- #line 35 "Content\Peano numbers"
 var tmp_2 = eval.Create(a);
- #line 35 "Content\Peano numbers"
-foreach (var tmp_1 in tmp_2.Run()) { var a_Prime = tmp_1; 
- #line 35 "Content\Peano numbers"
+
+var tmp_1 = tmp_2.Run();
+var a_Prime = tmp_1; 
 var tmp_4 = eval.Create(b);
- #line 35 "Content\Peano numbers"
-foreach (var tmp_3 in tmp_4.Run()) { var b_Prime = tmp_3; 
- #line 35 "Content\Peano numbers"
+
+var tmp_3 = tmp_4.Run();
+var b_Prime = tmp_3; 
 var tmp_6 = _opAddition.Create(a_Prime, b_Prime);
- #line 35 "Content\Peano numbers"
-foreach (var tmp_5 in tmp_6.Run()) { var c = tmp_5; 
- #line 35 "Content\Peano numbers"
+
+var tmp_5 = tmp_6.Run();
+var c = tmp_5; 
 var result = c;
- #line 35 "Content\Peano numbers"
-yield return result;  } } } }
+ return result;  }
  } 
 
   
  { 
- #line 41 "Content\Peano numbers"
-var tmp_0 = P1 as _opMultiplication; 
- #line 41 "Content\Peano numbers"
+ var tmp_0 = P1 as _opMultiplication; 
 if (tmp_0 != null) { var a = tmp_0.P1; var b = tmp_0.P2; 
- #line 41 "Content\Peano numbers"
 var tmp_2 = eval.Create(a);
- #line 41 "Content\Peano numbers"
-foreach (var tmp_1 in tmp_2.Run()) { var a_Prime = tmp_1; 
- #line 41 "Content\Peano numbers"
+
+var tmp_1 = tmp_2.Run();
+var a_Prime = tmp_1; 
 var tmp_4 = eval.Create(b);
- #line 41 "Content\Peano numbers"
-foreach (var tmp_3 in tmp_4.Run()) { var b_Prime = tmp_3; 
- #line 41 "Content\Peano numbers"
+
+var tmp_3 = tmp_4.Run();
+var b_Prime = tmp_3; 
 var tmp_6 = _opMultiplication.Create(a_Prime, b_Prime);
- #line 41 "Content\Peano numbers"
-foreach (var tmp_5 in tmp_6.Run()) { var c = tmp_5; 
- #line 41 "Content\Peano numbers"
+
+var tmp_5 = tmp_6.Run();
+var c = tmp_5; 
 var result = c;
- #line 41 "Content\Peano numbers"
-yield return result;  } } } }
+ return result;  }
  } 
 
-  }
-public IEnumerable<Num> Run() { return StaticRun(P1); }
+
+ throw new System.Exception("Error evaluating: " + new eval(P1).ToString() + " no result returned.");  }
+public Num Run() { return StaticRun(P1); }
 
 
 public override string ToString() {
@@ -247,20 +218,17 @@ public static run Create() { return new run(); }
 
   public static IEnumerable<int> StaticRun() {   
  { 
- #line 54 "Content\Peano numbers"
-
- #line 54 "Content\Peano numbers"
+ 
 var tmp_1 = eval.Create(_opAddition.Create(_opMultiplication.Create(s.Create(s.Create(z.Create())), _opMultiplication.Create(s.Create(s.Create(z.Create())), s.Create(s.Create(z.Create())))), s.Create(z.Create())));
- #line 54 "Content\Peano numbers"
-foreach (var tmp_0 in tmp_1.Run()) { var n = tmp_0; 
- #line 54 "Content\Peano numbers"
+
+var tmp_0 = tmp_1.Run();
+var n = tmp_0; 
 var tmp_3 = toNum.Create(n);
- #line 54 "Content\Peano numbers"
-foreach (var tmp_2 in tmp_3.Run()) { var res = tmp_2; 
- #line 54 "Content\Peano numbers"
+
+var tmp_2 = tmp_3.Run();
+var res = tmp_2; 
 var result = res;
- #line 54 "Content\Peano numbers"
-yield return result;  } }
+yield return result; 
  } 
 
   }
@@ -313,36 +281,29 @@ public Num P1;
 public toNum(Num P1) {this.P1 = P1;}
 public static toNum Create(Num P1) { return new toNum(P1); }
 
-  public static IEnumerable<int> StaticRun(Num P1) {   
+  public static int StaticRun(Num P1) {   
  { 
- #line 47 "Content\Peano numbers"
-var tmp_0 = P1 as s; 
- #line 47 "Content\Peano numbers"
+ var tmp_0 = P1 as s; 
 if (tmp_0 != null) { var a = tmp_0.P1; 
- #line 47 "Content\Peano numbers"
 var tmp_2 = toNum.Create(a);
- #line 47 "Content\Peano numbers"
-foreach (var tmp_1 in tmp_2.Run()) { var res = tmp_1; 
- #line 47 "Content\Peano numbers"
+
+var tmp_1 = tmp_2.Run();
+var res = tmp_1; 
 var result = (res+1);
- #line 47 "Content\Peano numbers"
-yield return result;  } }
+ return result;  }
  } 
 
   
  { 
- #line 51 "Content\Peano numbers"
-var tmp_0 = P1 as z; 
- #line 51 "Content\Peano numbers"
+ var tmp_0 = P1 as z; 
 if (tmp_0 != null) { 
- #line 51 "Content\Peano numbers"
 var result = 0;
- #line 51 "Content\Peano numbers"
-yield return result;  }
+ return result;  }
  } 
 
-  }
-public IEnumerable<int> Run() { return StaticRun(P1); }
+
+ throw new System.Exception("Error evaluating: " + new toNum(P1).ToString() + " no result returned.");  }
+public int Run() { return StaticRun(P1); }
 
 
 public override string ToString() {
@@ -388,7 +349,6 @@ public override int GetHashCode() {
 
 
 public class EntryPoint {
- static public int Sleep(float s) { int t = (int)(s * 1000.0f); ; return 0; } 
 static public IEnumerable<object> Run(bool printInput)
 {
  #line 1 "input"

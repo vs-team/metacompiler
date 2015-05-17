@@ -14,7 +14,7 @@ open AnalyserAST
 
 do System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.GetCultureInfo("EN-US")
 
-let numSteps = 1
+let numSteps = 10000
 
 let runDeduction path =
   let originalFilePath = System.IO.Path.Combine(path, "transform.mc")
@@ -51,10 +51,15 @@ let runDeduction path =
             let types = results.CompiledAssembly.GetTypes()
             let entryPoint = types |> Seq.find (fun t -> t.Name = "EntryPoint")
             let run = entryPoint.GetMethod("Run")
-            let results = run.Invoke(null, [|false|]) :?> seq<obj> |> Seq.toList
+            let results = 
+              match run.Invoke(null, [|false|]) with
+              | :? seq<obj> as res -> res |> Seq.toList
+              | res -> [res]
             do timer.Start()
             for i = 1 to numSteps do
-              do run.Invoke(null, [|false|]) :?> seq<obj> |> Seq.toList |> ignore
+              match run.Invoke(null, [|false|]) with
+              | :? seq<obj> as res -> res |> Seq.toList |> ignore
+              | res -> ()
             do timer.Stop()
             for r in results do sprintf "%A" r  |> addOutput 
             do "\n" |> addOutput 
@@ -77,9 +82,8 @@ let main argv =
   let samples = 
     [
 //      "Generic lists", @"runTest1"
-//
-      "Peano numbers", "run"
 
+      "Peano numbers", "run"
       "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
       "Lists", "plus 0;1;2;3;nil 10"
       "Lists", "length 0;1;2;3;nil"
@@ -88,7 +92,6 @@ let main argv =
       "Lists", "add 0;1;2;3;nil"
 
 //      "stsil", "dda lin snoc 3 snoc 2 snoc 1"
-//      "Lists", "add 3;2;1;nil"
 //
 //      "Eval without memory", "run"
 
