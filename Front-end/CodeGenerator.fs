@@ -188,8 +188,16 @@ let rec createElementInner (ctxt:ConcreteExpressionContext) (expectedType:BasicE
       | Native(t) ->
         sprintf "%s" !v.Name, []
       | _ ->
-        let t = Keyword.decodeName expectedType
-        sprintf "%s as %s" !v.Name t, [sprintf "%s is %s" !v.Name t]
+        match ti, expectedType with
+        | TypeConstant found, Extension({ Name = expected }, _, _) ->
+          if found = expected || ctxt.Inherits found expected then
+            sprintf "%s" !v.Name, []
+          else
+            let t = Keyword.decodeName expectedType
+            sprintf "%s as %s" !v.Name t, [sprintf "%s is %s" !v.Name t]
+        | _ ->
+          let t = Keyword.decodeName expectedType
+          sprintf "%s as %s" !v.Name t, [sprintf "%s is %s" !v.Name t]
     | Application(Angle,e::[],pos, _) ->
       let res = generate_inline e
       sprintf "%s" res, []
@@ -216,7 +224,8 @@ let createElement (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, V
   | Application(Regular,(Keyword(Custom k, _,ti)) :: es,pos,_)
   | Application(Implicit,(Keyword(Custom k, _,ti)) :: es,pos,_) ->
     let actualKeyword = ctxt.CustomKeywordsMap.[k]
-    let args,cargs = es |> Seq.mapi (fun i e -> createElementInner ctxt (actualKeyword.LeftArguments@actualKeyword.RightArguments).[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
+    let argumentTypes = actualKeyword.LeftArguments @ actualKeyword.RightArguments
+    let args,cargs = es |> Seq.mapi (fun i e -> createElementInner ctxt argumentTypes.[i] e) |> Seq.reduce (fun (s,cs) (x,cx) -> sprintf "%s, %s" s x, cs @ cx)
     let trimmedArgs = 
       if es |> List.length = 1 && args.[0] = '(' && args.[args.Length - 1] = ')' then
         args.Substring(1, args.Length - 2)
@@ -263,9 +272,9 @@ let createStaticRun (ctxt:ConcreteExpressionContext) (path:Path) (e:BasicExpress
   | Imported(l,pos,_) -> l.ToString(), []
   | Keyword(k,pos,_) -> 
     failwithf "Non-custom keyword %A @ %A cannot be matched" k pos
-  | _ -> failwithf "AAAAAAAAAAAAAAAAAAAAAAH!"
+  | _ -> failwithf "Unexpected expression %A when creating StaticRun method" e
 
-(*/
+(*
     generateInstructions generates the body of a Run function from a list of
     'Instruction's.
 *)
@@ -472,20 +481,22 @@ type Method = {
   Rules      : ResizeArray<Rule>
   Path       : Path
 } with
-    member m.ToString(ctxt:ConcreteExpressionContext,originalFilePath,parameters) =
+    member m.ToString(ctxt:ConcreteExpressionContext,originalFilePath,parameters,returnType) =
       let path = m.Path.ToString()
       let paramsWithType    = String.concat ", " (parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name))
       let paramsWithoutType = String.concat ", " (parameters |> Seq.map (fun x -> x.Name))
       let body = ((m.Rules |> Seq.map (fun r -> r.ToString(ctxt,originalFilePath))) ++ 2)
       let parent_call = if CompilerSwitches.generateStaticRun then m.Path.StaticParentCall parameters else m.Path.ParentCall
-      sprintf "public static IEnumerable<IRunnable> StaticRun%s(%s) { %s %s }\npublic IEnumerable<IRunnable> Run%s() { return StaticRun%s(%s); }" path paramsWithType body parent_call path path paramsWithoutType
-    member m.ToString(ctxt:ConcreteExpressionContext,originalFilePath) =
+      sprintf "public static IEnumerable<%s> StaticRun%s(%s) { %s %s }\npublic IEnumerable<%s> Run%s() { return StaticRun%s(%s); }" 
+                returnType path paramsWithType body parent_call returnType path path paramsWithoutType
+    member m.ToString(ctxt:ConcreteExpressionContext,originalFilePath,returnType) =
       let path = m.Path.ToString()
       let body = ((m.Rules |> Seq.map (fun r -> r.ToString(ctxt,originalFilePath))) ++ 2)
-      sprintf "public IEnumerable<IRunnable> Run%s() { %s %s }" path body m.Path.ParentCall
+      sprintf "public IEnumerable<%s> Run%s() { %s %s }" returnType path body m.Path.ParentCall
 
 type GeneratedClass = 
   {
+    Keyword             : ParsedKeyword<Keyword, Var, Literal, Position, unit>
     BasicName           : string
     Interface           : List<string>
     GenericArguments    : List<BasicExpression<Keyword, Var, Literal, Position, unit>>
@@ -524,30 +535,6 @@ type GeneratedClass =
         let parameters =
           let res = c.Parameters |> Seq.map (fun p -> sprintf "public %s %s;\n" (Keyword.ArgumentCSharpStyle p.Type cleanupWithoutDot) p.Name) |> Seq.fold (+) "" 
           res
-        let missing_methods =
-          let missing_paths = all_method_paths - c.MethodPaths
-          [
-            for p in missing_paths do
-            let parent_call = 
-              match CompilerSwitches.generateStaticRun,CompilerSwitches.optimizeDirectParentCall with
-              | false,false -> p.ParentCall
-              | false,true  -> p.DirectParentCall
-              | true, false -> p.StaticParentCall c.Parameters
-              | true, true  -> p.DirectStaticParentCall c.Parameters
-            let parent_or_empty_call =
-              if parent_call <> "" then
-                parent_call
-              else
-                "foreach (var p in Enumerable.Range(0,0)) yield return null;"
-            let path = p.ToString()
-            if CompilerSwitches.generateStaticRun 
-            then
-              let paramsWithoutType = String.concat ", " (c.Parameters |> Seq.map (fun x -> x.Name))
-              let paramsWithType    = String.concat ", " (c.Parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name))
-              yield sprintf "public static IEnumerable<IRunnable> StaticRun%s(%s) { %s }\npublic IEnumerable<IRunnable> Run%s(){ return StaticRun%s(%s); }\n" path paramsWithType parent_or_empty_call  path path paramsWithoutType
-            else
-              yield sprintf "public IEnumerable<IRunnable> Run%s(){ %s }\n" path parent_or_empty_call
-          ] |> Seq.fold (+) ""
         let to_string =
           if c.Parameters.Count > 0 then
             let printParameter (p:Parameter) = 
@@ -570,12 +557,47 @@ type GeneratedClass =
             sprintf "public override bool Equals(object other) {\n return other is %s; \n}\n" c.Name
         let hash =
           sprintf "public override int GetHashCode() {\n return 0; \n}\n"
-        let runImplementation =
-          if CompilerSwitches.generateStaticRun
-          then ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath,c.Parameters))) ++ 2)
-          else ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath))) ++ 2)
         let (!) l = l |> List.reduce (fun p n -> p + "," + n)
-        sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n}\n\n" c.Name !c.Interface genericConstraints parameters cons runImplementation missing_methods to_string equals hash
+        match c.Keyword.Kind with
+        | KeywordKind.Func ->
+          let returnType = 
+            match c.Keyword.Type with
+            | t::(Extension({Name=ret},_,_))::[] -> ret
+            | t::ret::[] -> failwithf "Unsupported keyword type %A" c.Keyword.Type
+            | _ -> failwithf "Malformed keyword type %A" c.Keyword.Type
+          let runImplementation =
+            if CompilerSwitches.generateStaticRun
+            then ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath,c.Parameters,returnType))) ++ 2)
+            else ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath,returnType))) ++ 2)
+          let missing_methods =
+            let missing_paths = all_method_paths - c.MethodPaths
+            [
+              for p in missing_paths do
+              let parent_call = 
+                match CompilerSwitches.generateStaticRun,CompilerSwitches.optimizeDirectParentCall with
+                | false,false -> p.ParentCall
+                | false,true  -> p.DirectParentCall
+                | true, false -> p.StaticParentCall c.Parameters
+                | true, true  -> p.DirectStaticParentCall c.Parameters
+              let parent_or_empty_call =
+                if parent_call <> "" then
+                  parent_call
+                else
+                  "foreach (var p in Enumerable.Range(0,0)) yield return null;"
+              let path = p.ToString()
+              if CompilerSwitches.generateStaticRun 
+              then
+                let paramsWithoutType = String.concat ", " (c.Parameters |> Seq.map (fun x -> x.Name))
+                let paramsWithType    = String.concat ", " (c.Parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name))
+                yield sprintf "public static IEnumerable<%s> StaticRun%s(%s) { %s }\npublic IEnumerable<%s> Run%s(){ return StaticRun%s(%s); }\n" 
+                                returnType path paramsWithType parent_or_empty_call returnType path path paramsWithoutType
+              else
+                yield sprintf "public IEnumerable<%s> Run%s(){ %s }\n" returnType path parent_or_empty_call
+            ] |> Seq.fold (+) ""
+          sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n}\n\n" c.Name !c.Interface genericConstraints parameters cons runImplementation missing_methods to_string equals hash
+        | KeywordKind.Data ->
+          sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n}\n\n" c.Name !c.Interface genericConstraints parameters cons to_string equals hash
+
 
 let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position, Unit>) (rule_path:Path) (hasScope:bool) ctxt =
   let method_path = rule_path.Tail
@@ -648,7 +670,8 @@ let generateCode (originalFilePath:string) (program_name:string)
       | Some i -> i.BaseInterfaces.Add a
       | None -> inheritanceRelationships <- inheritanceRelationships |> Map.add c { Name = c; BaseInterfaces = ResizeArray([a]) }
     for keyword in ctxt.CustomKeywords do
-      let newClass = { GeneratedClass.BasicName = keyword.Name
+      let newClass = { GeneratedClass.Keyword   = keyword
+                       GeneratedClass.BasicName = keyword.Name
                        GeneratedClass.GenericArguments = keyword.GenericArguments
                        GeneratedClass.Interface = Keyword.typeToString( keyword.Type )
                        GeneratedClass.Parameters = ResizeArray()
@@ -675,14 +698,12 @@ let generateCode (originalFilePath:string) (program_name:string)
             let explicitInterfaces = ir.BaseInterfaces
             yield sprintf "public interface %s : %s {}\n" ((!) i) (explicitInterfaces |> Seq.reduce (fun s x -> s + ", " + x))
           | _ ->
-            yield sprintf "public interface %s : IRunnable {}\n" ((!) i)
+            yield sprintf "public interface %s {}\n" ((!) i)
       ] |> Seq.fold (+) ""
     let all_method_paths =
       seq{
         for c in classes -> c.Value.MethodPaths
       } |> Seq.reduce (+)
-    let run_methods =
-      all_method_paths |> Seq.map (fun p -> sprintf "IEnumerable<IRunnable> Run%s();\n" (p.ToString())) |> Seq.reduce (+)
     let imports = 
         if ctxt.ImportedModules.Length > 0 then
             (ctxt.ImportedModules
@@ -690,8 +711,8 @@ let generateCode (originalFilePath:string) (program_name:string)
                     |> List.reduce (fun x y -> x + y))
         else
             ""
-    let prelude = sprintf "using System.Collections.Generic;\nusing System.Linq;\nnamespace %s {\n %s\n public interface IRunnable { %s }" (program_name.Replace(" ", "_")) extensions run_methods
-    let main = sprintf "public class EntryPoint {\n static public int Sleep(float s) { int t = (int)(s * 1000.0f); ; return 0; } \nstatic public IEnumerable<IRunnable> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" (createElement ctxt programTyped |> fst)
+    let prelude = sprintf "using System.Collections.Generic;\nusing System.Linq;\nnamespace %s {\n %s\n" (program_name.Replace(" ", "_")) extensions
+    let main = sprintf "public class EntryPoint {\n static public int Sleep(float s) { int t = (int)(s * 1000.0f); ; return 0; } \nstatic public IEnumerable<object> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" (createElement ctxt programTyped |> fst)
     [
       yield imports
       yield prelude

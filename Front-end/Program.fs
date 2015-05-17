@@ -14,7 +14,7 @@ open AnalyserAST
 
 do System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.GetCultureInfo("EN-US")
 
-let numSteps = 1
+let numSteps = 1000
 
 let runDeduction path =
   let originalFilePath = System.IO.Path.Combine(path, "transform.mc")
@@ -77,23 +77,16 @@ let main argv =
   let samples = 
     [
 //      "Generic lists", @"runTest1"
-
-      //"Cmm", @"runProgram"
-//      "Trees 234", @"main"
 //
       "Peano numbers", "run"
-//      "Boolean expressions", "run"
-//
-//      "Lambda calculus", "run"
-//      "Binary trees", "run"
-//
+
       "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
       "Lists", "plus 0;1;2;3;nil 10"
       "Lists", "length 0;1;2;3;nil"
-//      "Lists", "contains 0;1;2;3;nil 2"
-//      "Lists", "removeOdd 0;1;2;3;nil"
-//      "Lists", "add 0;1;2;3;nil"
-//
+      "Lists", "contains 0;1;2;3;nil 2"
+      "Lists", "removeOdd 0;1;2;3;nil"
+      "Lists", "add 0;1;2;3;nil"
+
 //      "stsil", "dda lin snoc 3 snoc 2 snoc 1"
 //      "Lists", "add 3;2;1;nil"
 //
@@ -103,6 +96,13 @@ let main argv =
 //      "Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
 //      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
 //      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
+
+      //"Cmm", @"runProgram"
+//      "Trees 234", @"main"
+//      "Boolean expressions", "run"
+//
+//      "Lambda calculus", "run"
+//      "Binary trees", "run"
 
 //      "Casanova semantics", @"runTest1"
     ]

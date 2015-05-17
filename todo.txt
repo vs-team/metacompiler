@@ -1,17 +1,15 @@
 - type inference
-  - normalisation
   - test/adapt all samples
-  - integrate into code generator
-  - generic tuples, generic lists
+- Runnable wrapper for primitive types to remove need for $ operator
 - GUI should save delayed compiler to not recompile rules unnecessarily
 - samples
   - import directive for multiple files
 - Refactor "clause" to "premise"
-- Runnable wrapper for primitive types to remove need for $ operator
 - Scoping for keyword declarations
 - Func and Data
   - ParsedKeyword should be a richer definition
   - Fix in all samples
+- Generic types
 - Higher order terms
 - Higher kinded generics
 - Type classes/modules

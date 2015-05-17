@@ -195,29 +195,48 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
   | _ -> failwithf "Unexpected expression %A" expr
 
 let normalize (substitutions:Map<TypeVar, TypeEquivalence>) =
-  let rec visit (visited:Set<TypeVar>) (v:TypeVar) (substitutions:Map<TypeVar, TypeEquivalence>) =
-    if visited |> Set.contains v then
-      failwithf "Circular reference to variable %A in %A" v visited
+  let rec visit (v:TypeVar) (closed:Set<TypeVar>) (opened:Set<TypeVar>) (substitutions:Map<TypeVar, TypeEquivalence>) =
+    if opened |> Set.contains v then
+      failwithf "Circular reference to variable %A while processing %A" v opened
+    let opened = opened |> Set.add v
     let equivalence = 
       match substitutions |> Map.tryFind v with
       | Some x -> x
       | _ -> failwithf "Cannot find variable %A" v
     let otherVars = equivalence.Variables
-    let vType = equivalence.Types
-//    for t in equivalence.Types do
-//      match t with
-//      | TypeConstant
-    visited + otherVars, substitutions |> Map.add v { equivalence with Types = vType }
-  and normalize (visited:Set<TypeVar>) (unexplored:List<TypeVar>) (substitutions:Map<TypeVar, TypeEquivalence>) =
+    let mutable vTypeCandidates = equivalence.Types |> Set.toList
+
+    let rec mergeTypes (t1:Type) (t2:Type) (closed:Set<TypeVar>) (opened:Set<TypeVar>) (substitutions:Map<TypeVar, TypeEquivalence>) =
+      match t1,t2 with 
+      | Unknown, Unknown -> failwith "Cannot merge Unknown and Unknown types."
+      | Unknown, (TypeConstant _ as t)
+      | (TypeConstant _ as t), Unknown
+      | TypeVariable _, (TypeConstant _ as t)
+      | (TypeConstant _ as t), TypeVariable _ ->
+        t, closed, opened, substitutions
+      | _ -> failwithf "Not implemented type merging between %A and %A" t1 t2
+
+    let rec collapseTypes (ts:List<Type>) (closed:Set<TypeVar>) (opened:Set<TypeVar>) (substitutions:Map<TypeVar, TypeEquivalence>) =
+      match ts with
+      | [] -> failwith "Cannot collapse empty list!"
+      | t::[] -> t, closed, opened, substitutions
+      | t1::t2::ts ->
+        let t12, closed1, opened1, substitutions1 = mergeTypes t1 t2 closed opened substitutions
+        collapseTypes (t12::ts) closed1 opened1 substitutions1
+    
+    let vType, closed1, opened1, substitutions1 = collapseTypes vTypeCandidates closed opened substitutions
+    closed1 |> Set.add v, opened1 |> Set.remove v, substitutions1 |> Map.add v { equivalence with Types = Set.singleton vType }
+  and normalize (closed:Set<TypeVar>) (opened:Set<TypeVar>) (unexplored:List<TypeVar>) (substitutions:Map<TypeVar, TypeEquivalence>) =
     match unexplored with
     | [] -> substitutions
     | v::vs ->
-      if visited |> Set.contains v |> not then
-        let visited1,substitutions1 = visit visited v substitutions
-        normalize (visited1 |> Set.add v) vs substitutions1
+      if closed |> Set.contains v |> not then
+        let closed1,opened1,substitutions1 = visit v closed opened substitutions
+        normalize closed1 opened1 vs substitutions1
       else // just skip v, as it might have been visited within a previous visit to an equivalent variable
-        normalize visited vs substitutions
-  normalize Set.empty [ for kv in substitutions -> kv.Key]
+        normalize closed opened vs substitutions
+  let allVariables = [ for kv in substitutions -> kv.Key]
+  normalize Set.empty Set.empty allVariables substitutions
     
 
 let inferTypes input output clauses ctxt =
@@ -232,9 +251,36 @@ let inferTypes input output clauses ctxt =
 
   let inputTyped, scheme1 = traverse ctxt input Unknown TypeContext.Empty
   let clausesTyped, scheme2 = traverseMap ctxt clauses scheme1
-  let outputTyped, finalScheme = traverse ctxt output Unknown scheme2
+  let outputTyped, scheme3 = traverse ctxt output Unknown scheme2
 
-  do printfn "%A" finalScheme
-  do System.Console.ReadLine() |> ignore
+  let finalSubstitutions = normalize scheme3.Substitutions
+
+  let rec lookup ti =
+    match ti with
+    | Unknown -> Unknown
+    | TypeVariable v ->
+      match finalSubstitutions |> Map.tryFind v with
+      | Some t when t.Types |> Set.isEmpty |> not -> 
+        t.Types.MinimumElement
+      | _ -> ti
+    | TypeConstant _ -> ti
+    | _ -> failwith "Unsupported lookup on type %A" ti
+
+  let rec annotate (expr:BasicExpression<Keyword, Var, Literal, Position, Type>) = 
+    match expr with
+    | Application(br, args, di, ti) -> 
+      Application(br, [ for a in args -> annotate a ], di, ti)
+    | Keyword(k,pos,ti) ->
+      Keyword(k,pos,ti)
+    | Imported(importedType, pos, ti) ->
+      Imported(importedType, pos, ti)
+    | Extension(e, pos, ti) ->
+      Extension(e, pos, lookup ti)
+
+  let inputTypedNormalized, outputTypedNormalized, clausesTypedNormalized = 
+    inputTyped |> annotate, outputTyped |> annotate, [ for c in clausesTyped -> c |> annotate ]
+
+//  do printfn "%A\n%A\n\n%A,%A,%A" scheme3 finalSubstitutions inputTypedNormalized outputTypedNormalized clausesTypedNormalized
+//  do System.Console.ReadLine() |> ignore
     
-  inputTyped, outputTyped, clausesTyped
+  inputTypedNormalized, outputTypedNormalized, clausesTypedNormalized

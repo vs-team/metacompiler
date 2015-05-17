@@ -11,7 +11,7 @@ Func "removeOdd" -> ListInt : Expr => ListInt                           Priority
 
 Func "add" -> ListInt : Expr => IntValue                                Priority 100 
 Func "plus" -> ListInt -> <<int>> : Expr => ListInt                     Priority 100
-Func "length" -> ListInt : Expr -> IntValue                             Priority 100 
+Func "length" -> ListInt : Expr => IntValue                             Priority 100 
 
 Data ListInt -> "," -> ListInt : ListIntPair                            Priority 900
 Func "split" -> ListInt : Expr => ListIntPair                           Priority 100 

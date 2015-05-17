@@ -4,15 +4,15 @@ Data "s" -> Num : Num                   Priority 4
 Func Expr -> "+" -> Expr : Expr => Num  Priority 1 
 Func Expr -> "*" -> Expr : Expr => Num  Priority 2  
 Func "eval" -> Expr : Expr => Num        
-Func "toNum" -> Num : IntValue          
-Func "run" : Expr                       
+Func "toNum" -> Num : Expr => IntValue
+Func "run" : Expr => IntValue
 
 Num is Expr
 IntValue is Expr
 
-
------------
-z + a => a
+eval a => res
+--------------
+z + a => res
 
 a + b => c
 -----------------
@@ -27,7 +27,7 @@ c + b => d
 s(a) * b => d
 
 
---------
+------------
 eval z => z
 
 ---------------
