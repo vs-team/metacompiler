@@ -8,6 +8,8 @@ open BasicExpression
 open ConcreteExpressionParserPrelude
 open ConcreteExpressionParser
 
+type TypedExpression   = BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
+type UntypedExpression = BasicExpression<Keyword, Var, Literal, Position, unit>
 
 let cleanupWithoutDot (s:string) =
   match s with
@@ -80,7 +82,7 @@ type Parameter =
   {
     Name    : string
     IsLeft  : bool
-    Type    : BasicExpression<Keyword, Var, Literal, Position, unit>
+    Type    : UntypedExpression
   }
 
 (*
@@ -128,12 +130,12 @@ type Instruction =
   | VarAs of name : string * expr : string * as_type : string
   | CheckNull of var_name : string
   | CustomCheck of condition : string
-  | Call of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type> * path : Path
-  | Iterate of var_name : string * tmp_var_name : string * expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type> * path : Path
-  | Compare of comparison : Keyword * expr1:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type> * expr2:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
-  | Inline of e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
-  | Yield of expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
-  | Return of expr:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
+  | Call of var_name : string * tmp_var_name : string * expr:TypedExpression * path : Path
+  | Iterate of var_name : string * tmp_var_name : string * expr:TypedExpression * path : Path
+  | Compare of comparison : Keyword * expr1:TypedExpression * expr2:TypedExpression
+  | Inline of e:TypedExpression
+  | Yield of expr:TypedExpression
+  | Return of expr:TypedExpression
 
 (*
     createElement is responsible for generating the Create() functions.
@@ -177,7 +179,7 @@ let rec generate_inline =
   | i -> 
     failwithf "Code generation error @ %A" i.DebugInformation
   
-let rec createElementInner (ctxt:ConcreteExpressionContext) (expectedType:BasicExpression<Keyword, Var, Literal, Position, unit>) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>) = 
+let rec createElementInner (ctxt:ConcreteExpressionContext) (expectedType:UntypedExpression) (e:TypedExpression) = 
     match e with
     | Keyword(Custom k, _, ti) 
     | Application(Regular,(Keyword(Custom k, _, ti)) :: [], _, _)
@@ -224,7 +226,7 @@ let rec createElementInner (ctxt:ConcreteExpressionContext) (expectedType:BasicE
     | Keyword(k, pos, typeInfo) -> 
       failwithf "Unexpected keyword %A @ %A cannot be matched" k pos
 
-let createElement (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>) = 
+let createElement (ctxt:ConcreteExpressionContext) (e:TypedExpression) = 
   match e with
   | Keyword(Custom k, _,ti) 
   | Application(Regular,(Keyword(Custom k, _,ti)) :: [],_,_)
@@ -256,7 +258,7 @@ let createElement (ctxt:ConcreteExpressionContext) (e:BasicExpression<Keyword, V
   | Keyword(k,pos,_) -> 
     failwithf "Non-custom keyword %A @ %A cannot be matched" k pos
   
-let createStaticRun (ctxt:ConcreteExpressionContext) (path:Path) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>) = 
+let createStaticRun (ctxt:ConcreteExpressionContext) (path:Path) (e:TypedExpression) = 
   match e with
   | Keyword(Custom k, _,ti) 
   | Application(Regular,(Keyword(Custom k, _,ti)) :: [],_,_)
@@ -301,7 +303,8 @@ let rec generateInstructions (debugPosition:Position) (originalFilePath:string) 
     | VarAs(name, expr, as_type) ->
       sprintf "var %s = %s as %s; %s" !name expr as_type (generateInstructions debugPosition originalFilePath  ctxt xs)
     | CheckNull(var_name) ->
-      sprintf "%sif (%s != null) { %s }" newLine !var_name (generateInstructions debugPosition originalFilePath  ctxt xs)
+      let printed_string = "not null: "+(!var_name)
+      sprintf "%sif (%s != null) { \n %s }" newLine !var_name (*printed_string*) (generateInstructions debugPosition originalFilePath  ctxt xs)
     | Compare(comparison, expr1, expr2) ->
       let newElement1, creationConstraints1 = createElement ctxt expr1
       let newElement2, creationConstraints2 = createElement ctxt expr2
@@ -340,20 +343,15 @@ let rec generateInstructions (debugPosition:Position) (originalFilePath:string) 
         else 
           sprintf "%svar %s = %s;%sforeach (var %s in %s.Run%s()) { %s }" newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generateInstructions debugPosition originalFilePath ctxt xs)
     | Call(var_name, tmp_var_name, expr, path) ->
-      if CompilerSwitches.combineCreateFor && CompilerSwitches.generateStaticRun then
-        let newElement, creationConstraints = createStaticRun ctxt path expr
-        if creationConstraints.IsEmpty |> not then
-          let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
-          sprintf "%sif(%s) { %svar %s = %s;%s\nvar %s = %s;\n%s }" newLine creationConstraints newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (generateInstructions debugPosition originalFilePath  ctxt xs)
-        else 
-          sprintf "%svar %s = %s;%s\nvar %s = %s;\n%s" newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (generateInstructions debugPosition originalFilePath ctxt xs) 
-      else
-        let newElement, creationConstraints = createElement ctxt expr
-        if creationConstraints.IsEmpty |> not then
-          let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
-          sprintf "%sif(%s) { %svar %s = %s;%s\nvar %s = %s.Run%s();\n%s }" newLine creationConstraints newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generateInstructions debugPosition originalFilePath  ctxt xs)
-        else 
-          sprintf "%svar %s = %s;%s\nvar %s = %s.Run%s();\n%s" newLine !tmp_var_name newElement newLine !var_name !tmp_var_name (path.ToString()) (generateInstructions debugPosition originalFilePath ctxt xs)
+      let optionalStaticRun = if CompilerSwitches.combineCreateFor && CompilerSwitches.generateStaticRun then "" else sprintf ".Run%s()" (path.ToString())
+      let optionalTabIn  = if CompilerSwitches.printExpressionTree then "System.Console.Write(\"<ul>\");" else ""
+      let optionalTabOut = if CompilerSwitches.printExpressionTree then "System.Console.Write(\"</ul>\");" else ""
+      let newElement, creationConstraints = createElement ctxt expr
+      if creationConstraints.IsEmpty |> not then
+        let creationConstraints = creationConstraints |> Seq.reduce (fun s x -> sprintf "%s && %s" s x)
+        sprintf "%s%sif(%s) { %svar %s = %s;%s\nvar %s = %s%s;\n%s\n%s }" newLine optionalTabIn creationConstraints newLine !tmp_var_name newElement newLine !var_name !tmp_var_name optionalStaticRun optionalTabOut (generateInstructions debugPosition originalFilePath  ctxt xs) 
+      else 
+        sprintf "%s%svar %s = %s;%s\nvar %s = %s%s;\n%s\n%s" newLine optionalTabIn !tmp_var_name newElement newLine !var_name !tmp_var_name optionalStaticRun optionalTabOut (generateInstructions debugPosition originalFilePath ctxt xs) 
 
     | CustomCheck(condition) ->
       sprintf "%sif (%s) { %s }" newLine condition (generateInstructions debugPosition originalFilePath  ctxt xs)
@@ -377,7 +375,7 @@ let rec generateInstructions (debugPosition:Position) (originalFilePath:string) 
 (*
     matchCast is responsible for matching expressions
 *)
-let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>) (self:string) (prefix:List<Instruction>) 
+let rec matchCast (tmp_id:int) (e:TypedExpression) (self:string) (prefix:List<Instruction>) 
                   (ctxt:ConcreteExpressionContext) (typeConstraint) =
   match e with
   | Keyword(Custom k, _, ti) -> 
@@ -463,9 +461,9 @@ let rec matchCast (tmp_id:int) (e:BasicExpression<Keyword, Var, Literal, Positio
 *)
 type Rule = {
   Position   : Position
-  Input      : BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
-  Output     : BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
-  Clauses    : List<Keyword * BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type> * BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>>
+  Input      : TypedExpression
+  Output     : TypedExpression
+  Clauses    : List<Keyword * TypedExpression * TypedExpression>
   Path       : Path
   HasScope   : bool
 } with
@@ -531,17 +529,18 @@ type Method = {
       let path = m.Path.ToString()
       let paramsWithType    = String.concat ", " (parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name))
       let paramsWithoutType = String.concat ", " (parameters |> Seq.map (fun x -> x.Name))
+      let self_constructor = sprintf "new %s(%s)" !m.Keyword.Name paramsWithoutType
       let body = ((m.Rules |> Seq.map (fun r -> r.ToString(ctxt,originalFilePath))) ++ 2)
       let body =
         match m.Keyword.Multeplicity with
         | KeywordMulteplicity.Single ->
-          let self_constructor = sprintf "new %s(%s)" !m.Keyword.Name paramsWithoutType
           sprintf "%s\n throw new System.Exception(\"Error evaluating: \" + %s.ToString() + \" no result returned.\");" body self_constructor
         | KeywordMulteplicity.Multiple -> 
           body
       let parent_call = if CompilerSwitches.generateStaticRun then m.Path.StaticParentCall parameters else m.Path.ParentCall
-      sprintf "public static %s StaticRun%s(%s) { %s %s }\npublic %s Run%s() { return StaticRun%s(%s); }" 
-                returnType path paramsWithType body parent_call returnType path path paramsWithoutType
+      let function_trace = sprintf "System.Console.WriteLine(\"<li>\"+%s.ToString()+\"</li>\");" self_constructor
+      sprintf "public static %s StaticRun%s(%s) { %s %s %s }\npublic %s Run%s() { return StaticRun%s(%s); }" 
+                returnType path paramsWithType function_trace body parent_call returnType path path paramsWithoutType
     member m.ToString(ctxt:ConcreteExpressionContext,originalFilePath,returnType) =
       let path = m.Path.ToString()
       let body = ((m.Rules |> Seq.map (fun r -> r.ToString(ctxt,originalFilePath))) ++ 2)
@@ -552,7 +551,7 @@ type GeneratedClass =
     Keyword             : ParsedKeyword<Keyword, Var, Literal, Position, unit>
     BasicName           : string
     Interface           : List<string>
-    GenericArguments    : List<BasicExpression<Keyword, Var, Literal, Position, unit>>
+    GenericArguments    : List<UntypedExpression>
     Parameters          : ResizeArray<Parameter>
     mutable Methods     : Map<Path, Method>
   } with
@@ -721,8 +720,8 @@ let rec process_rules (classes:Map<string,GeneratedClass>) (path:List<int>) (rul
 type Interface = { Name : string; BaseInterfaces : ResizeArray<string> }
 
 let generateCode (originalFilePath:string) (program_name:string)
-                 (rules:BasicExpression<Keyword, Var, Literal, Position, Unit>)
-                 (program:BasicExpression<Keyword, Var, Literal, Position, Unit>)
+                 (rules:UntypedExpression)
+                 (program:UntypedExpression)
                  (ctxt:ConcreteExpressionContext) =
   
   match rules with
@@ -778,10 +777,15 @@ let generateCode (originalFilePath:string) (program_name:string)
     let prelude = sprintf "using System.Collections.Generic;\nusing System.Linq;\nnamespace %s {\n %s\n" (program_name.Replace(" ", "_")) extensions
     let programKeyword = ctxt.CustomKeywordsMap.[programTyped |> extractLeadingKeyword]
     let main = 
+      let printedHead = "<head><link rel=\\\"stylesheet\\\" type=\\\"text/css\\\" href=\\\"style.css\\\"></head>\\n<ul class=\\\"tree\\\">\\n"
+      let printedTail = "\\n</ul>"
+      let OptionalPrintHead = if CompilerSwitches.printExpressionTree then sprintf "System.Console.WriteLine(\"%s\");" printedHead else ""
+      let OptionalPrintTail = if CompilerSwitches.printExpressionTree then sprintf "System.Console.WriteLine(\"%s\");" printedTail else ""
+
       match programKeyword.Multeplicity with
       | KeywordMulteplicity.Single ->
-        sprintf "public class EntryPoint {\nstatic public object Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nvar result = p.Run();\nreturn result;\n}\n}\n" 
-                (createElement ctxt programTyped |> fst)
+        sprintf "public class EntryPoint {\nstatic public object Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\n %s\n var result = p.Run(); %s\n\nreturn result;\n}\n}\n" 
+                (createElement ctxt programTyped |> fst) OptionalPrintHead OptionalPrintTail
       | KeywordMulteplicity.Multiple ->
         sprintf "public class EntryPoint {\nstatic public IEnumerable<object> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" 
                 (createElement ctxt programTyped |> fst)
