@@ -17,12 +17,13 @@ public ListInt P1;
 public dda(ListInt P1) {this.P1 = P1;}
 public static dda Create(ListInt P1) { return new dda(P1); }
 
-  public static int StaticRun(ListInt P1) {   
+  public static int StaticRun(ListInt P1) { System.Console.WriteLine("<li>"+new dda(P1).ToString()+"</li>");   
  { 
  #line 9 "Content\stsil"
 var tmp_0 = P1 as lin; 
  #line 9 "Content\stsil"
 if (tmp_0 != null) { 
+ 
  #line 9 "Content\stsil"
 var result = 0;
  #line 9 "Content\stsil"
@@ -34,12 +35,14 @@ var result = 0;
  #line 12 "Content\stsil"
 var tmp_0 = P1 as snoc; 
  #line 12 "Content\stsil"
-if (tmp_0 != null) { var xs = tmp_0.P1; var x = tmp_0.P2; 
+if (tmp_0 != null) { 
+ var xs = tmp_0.P1; var x = tmp_0.P2; 
  #line 12 "Content\stsil"
 var tmp_2 = dda.Create(xs);
  #line 12 "Content\stsil"
 
 var tmp_1 = tmp_2.Run();
+
 var res = tmp_1; 
  #line 12 "Content\stsil"
 var result = (x+res);
@@ -128,7 +131,9 @@ static public object Run(bool printInput)
  #line 1 "input"
  var p = dda.Create(snoc.Create(snoc.Create(snoc.Create(lin.Create(), 3), 2), 1));
 if(printInput) System.Console.WriteLine(p.ToString());
-var result = p.Run();
+ 
+ var result = p.Run(); 
+
 return result;
 }
 }
