@@ -211,15 +211,19 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
         failwithf "Malformed keyword root syntax %A" k 
      
     
-    static member typeToString (keyword:List<BasicExpression<Keyword,Var,Literal,_,_>>) : string list =
+    static member typeToString (keyword:List<BasicExpression<Keyword,Var,Literal,_,_>>) : List<string> =
       let rec dec k =
         match k with
           | x::xs ->
             match x with 
-            | Application(Angle, Application(Angle, Extension(n, _, _)::[], _, _)::[], _, _)
-            | Extension(n, _, _) ->
-              n.Name :: (dec xs)
-            | _ -> dec xs
+            | Application(Angle, Application(Angle, Extension({ Var.Name = n }, _, _)::[], _, _)::[], _, _)
+            | Extension({ Var.Name = n }, _, _)
+            | Keyword((Keyword.Custom n), _, _) ->
+              n :: (dec xs)
+            | Application(Angle, Application(Angle, Extension({ Var.Name = consName }, _, _)::gargs, _, _)::[], _, _) ->
+              [consName + (gargs |> dec |> Seq.reduce (+))]
+            | _ -> 
+              dec xs
           | [] -> []
       dec keyword
 
@@ -318,13 +322,24 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
            
 
     static member ArgumentCSharpStyle keyword cleanup =
-        match keyword with
-        | Application(Generic, arg::args, _ ,_) -> 
-            sprintf "%s<%s>" (cleanup (Keyword.decodeName arg)) (args |> Seq.map (fun a -> Keyword.ArgumentCSharpStyle a cleanup) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
-        | _ ->
-            match Keyword.isNative keyword with
-            | true -> Keyword.decodeName keyword
-            | false -> cleanup (Keyword.decodeName keyword)
+      match keyword with
+      | Application(Angle, Application(Angle, Extension({ Var.Name = genName }, _, _)::genArgs, _, _) :: [], _, _) when genArgs.Length > 0 ->
+        let args = 
+          [
+            for a in genArgs do
+              match a with
+              | Keyword(Custom(n),_,_) -> yield n
+              | Extension({Var.Name = n},_,_) -> yield cleanup n
+              | _ -> failwithf "Unexpected generic parameter %A" a
+          ]
+        let res = sprintf "%s%s" (cleanup genName) (args |> Seq.reduce (+))
+        res
+      | Application(Generic, arg::args, _ ,_) -> 
+          sprintf "%s<%s>" (cleanup (Keyword.decodeName arg)) (args |> Seq.map (fun a -> Keyword.ArgumentCSharpStyle a cleanup) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
+      | _ ->
+        match Keyword.isNative keyword with
+        | true -> Keyword.decodeName keyword
+        | false -> cleanup (Keyword.decodeName keyword)
       
     static member createExt l = l |> List.map (fun x -> Extension({Name = x}, Position.Zero, ()))                              
                                     

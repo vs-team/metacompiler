@@ -1,10 +1,10 @@
 ﻿module CompilerSwitches
 
-let flushCSFileOnError = false;
-let generateLineDirectives = false;
+let numProfilerRuns = 1
 
-let optimizeDirectParentCall = true;
-let generateStaticRun = true;
-let combineCreateFor  = false;
+let flushCSFileOnError = true
+let generateLineDirectives = true
 
-let printExpressionTree = true;
+let optimizeDirectParentCall = true
+let generateStaticRun = true
+let combineCreateFor  = false

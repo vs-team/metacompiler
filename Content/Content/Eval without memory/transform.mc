@@ -1,9 +1,9 @@
-﻿Func [] "run" [] Priority 0 Type Expr => Value
+﻿Func "run" : Expr => Value                        Priority 0 
 
-Func [] "eval" [Expr] Priority 1 Type Expr => Value
-Data [] [Expr] "+" [Expr] Priority 10 Type Expr
-Data [] [Expr] "*" [Expr] Priority 20 Type Expr
-Data [] [] "$" [<<int>>] Priority 10000 Type Value
+Func "eval" -> Expr : Expr => Value               Priority 1
+Data Expr -> "+" -> Expr : Expr                   Priority 10 
+Data Expr -> "*" -> Expr : Expr                   Priority 20 
+Data "$" -> <<int>> : Value                       Priority 10000
 
 Value is Expr
 

@@ -1,5 +1,6 @@
 - type inference
   - test/adapt all samples
+  - Generic types
 - GUI should save delayed compiler to not recompile rules unnecessarily
 - samples
   - import directive for multiple files
@@ -7,10 +8,11 @@
 - Scoping for keyword declarations
 - Func and Data
   - ParsedKeyword should be a richer definition
+  - typeToString, anything related to names should be made more readable
   - Fix in all samples
-- Generic types
+- Refactor CodeGenerator.fs
+- Higher kinded generic parameters
 - Higher order terms
-- Higher kinded generics
 - Type classes/modules
 - Textual debugger for terms
   
