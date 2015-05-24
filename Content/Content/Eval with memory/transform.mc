@@ -2,19 +2,19 @@
 import System.Collections.Immutable
 
 Data "map" -> <<ImmutableDictionary<string, int> >> : MapIntString                     Priority 10000
-Func "run" -> MapIntString : Expr => Expr                                              Priority 0
-Keyword [MapIntString] "add" [<<string>> <<int>>] Priority 1 Class Expr
-Keyword [MapIntString] "lookup" [<<string>>] Priority 1 Class Expr
+Func "run" -> MapIntString : Expr => EvalResult
+Func MapIntString -> "add" -> <<string>> -> <<int>> : Expr => MapIntString             
+Func MapIntString -> "lookup" -> <<string>> : Expr => Value
 
-Keyword [] "eval" [Expr MapIntString] Priority 1 Class Expr
-Keyword [Expr] "+" [Expr] Priority 10 Class Expr
-Keyword [Expr] "*" [Expr] Priority 20 Class Expr
-Keyword [Expr] ";" [Expr] Priority 1 Class Expr
-Keyword [Value] "," [MapIntString] Priority 1 Class Expr
-Keyword [] "!" [<<string>>] Priority 10000 Class Variable
-Keyword [] "$" [<<int>>] Priority 10000 Class Value
-Keyword [] "nil" [] Priority 10000 Class Value
-Keyword [Variable] "assign" [Expr] Priority 2 Class Expr
+Func "eval" -> Expr -> MapIntString : Expr => EvalResult
+Data Expr -> "+" -> Expr : Expr                    Priority 10
+Data Expr -> "*" -> Expr : Expr                   Priority 20
+Data Expr -> ";" -> Expr : Expr                   
+Data Value -> "," -> MapIntString : Expr => EvalResult
+Data "!" -> <<string>> : Variable             Priority 10000
+Data "$" -> <<int>> : Value                   Priority 10000
+Data "nil" : Value
+Data Variable -> "assign" -> Expr : Expr      Priority 2
 
 MapIntString is Expr
 Value is Expr
