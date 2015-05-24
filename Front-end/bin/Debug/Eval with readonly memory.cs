@@ -139,8 +139,8 @@ var result = map.Create(M2);
  return result;  }
  } 
 
-
- throw new System.Exception("Error evaluating: " + new add(P1, P2, P3).ToString() + " no result returned.");  }
+  
+throw new System.Exception("Error evaluating: " + new add(P1, P2, P3).ToString() + " no result returned."); }
 public MapIntString Run() { return StaticRun(P1, P2, P3); }
 
 
@@ -242,8 +242,8 @@ var result = _opDollar.Create(res);
  return result;  } } }
  } 
 
-
- throw new System.Exception("Error evaluating: " + new eval(P1, P2).ToString() + " no result returned.");  }
+  
+throw new System.Exception("Error evaluating: " + new eval(P1, P2).ToString() + " no result returned."); }
 public Value Run() { return StaticRun(P1, P2); }
 
 
@@ -284,8 +284,8 @@ var result = _opDollar.Create(v);
  return result;  }
  } 
 
-
- throw new System.Exception("Error evaluating: " + new lookup(P1, P2).ToString() + " no result returned.");  }
+  
+throw new System.Exception("Error evaluating: " + new lookup(P1, P2).ToString() + " no result returned."); }
 public Value Run() { return StaticRun(P1, P2); }
 
 
@@ -369,8 +369,8 @@ var result = res;
  return result; 
  } 
 
-
- throw new System.Exception("Error evaluating: " + new run(P1).ToString() + " no result returned.");  }
+  
+throw new System.Exception("Error evaluating: " + new run(P1).ToString() + " no result returned."); }
 public Value Run() { return StaticRun(P1); }
 
 

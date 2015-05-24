@@ -538,18 +538,18 @@ type Method = {
       let path = m.Path.ToString()
       let paramsWithType    = String.concat ", " (parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name))
       let paramsWithoutType = String.concat ", " (parameters |> Seq.map (fun x -> x.Name))
-      let self_constructor = sprintf "new %s(%s)" !m.Keyword.Name paramsWithoutType
       let body = ((m.Rules |> Seq.map (fun r -> r.ToString(ctxt,originalFilePath))) ++ 2)
-      let body =
+      let self_constructor = sprintf "new %s(%s)" !m.Keyword.Name paramsWithoutType
+      let final_throw =
         match m.Keyword.Multeplicity with
         | KeywordMulteplicity.Single ->
-          sprintf "%s\n throw new System.Exception(\"Error evaluating: \" + %s.ToString() + \" no result returned.\");" body self_constructor
+          sprintf "\nthrow new System.Exception(\"Error evaluating: \" + %s.ToString() + \" no result returned.\");" self_constructor
         | KeywordMulteplicity.Multiple -> 
-          body
+          ""
       let parent_call = if CompilerSwitches.generateStaticRun then m.Path.StaticParentCall m.Keyword.Multeplicity parameters else m.Path.ParentCall m.Keyword.Multeplicity
       let function_trace = "" // TODO: "add relevant compiler switches" sprintf "System.Console.WriteLine(\"<li>\"+%s.ToString()+\"</li>\");" self_constructor
-      sprintf "public static %s StaticRun%s(%s) { %s %s %s }\npublic %s Run%s() { return StaticRun%s(%s); }" 
-                returnType path paramsWithType function_trace body parent_call returnType path path paramsWithoutType
+      sprintf "public static %s StaticRun%s(%s) { %s %s %s %s }\npublic %s Run%s() { return StaticRun%s(%s); }" 
+                returnType path paramsWithType function_trace body parent_call final_throw returnType path path paramsWithoutType
     member m.ToString(ctxt:ConcreteExpressionContext,originalFilePath,returnType) =
       let path = m.Path.ToString()
       let body = ((m.Rules |> Seq.map (fun r -> r.ToString(ctxt,originalFilePath))) ++ 2)
@@ -578,18 +578,22 @@ type GeneratedClass =
             args
           else
             ""
+        let parametersWithType, parametersWithoutType = 
+          if c.Parameters.Count <> 0 then
+            (c.Parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)),
+            (c.Parameters |> Seq.map (fun x -> sprintf "%s" x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
+          else
+            "", ""
         let cons =
           if c.Parameters.Count <> 0 then
-            let pars = c.Parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
             let args = c.Parameters |> Seq.map (fun x -> sprintf "this.%s = %s;" x.Name x.Name) |> Seq.reduce (fun s x -> sprintf "%s %s" s x)
-            sprintf "public %s(%s) {%s}\n" !c.BasicName pars args
+            sprintf "public %s(%s) {%s}\n" !c.BasicName parametersWithType args
           else
             sprintf "public %s() {}\n" !c.BasicName
         let staticCons =
           if c.Parameters.Count <> 0 then
-            let pars = c.Parameters |> Seq.map (fun x -> sprintf "%s %s" (Keyword.ArgumentCSharpStyle x.Type cleanupWithoutDot) x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x) 
             let args = c.Parameters |> Seq.map (fun x -> sprintf "%s" x.Name) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
-            sprintf "public static %s Create(%s) { return new %s(%s); }\n" c.Name pars c.Name args
+            sprintf "public static %s Create(%s) { return new %s(%s); }\n" c.Name parametersWithType c.Name args
           else
             sprintf "public static %s Create() { return new %s(); }\n" c.Name c.Name
         let cons = cons + staticCons
@@ -646,6 +650,7 @@ type GeneratedClass =
             else ((c.Methods |> Seq.map (fun x -> x.Value.ToString(ctxt,originalFilePath,returnType))) ++ 2)
           let missing_methods =
             let missing_paths = all_method_paths - c.MethodPaths
+            let self_constructor = sprintf "new %s(%s)" (cleanupWithoutDot c.Keyword.Name) parametersWithoutType
             [
               for p in missing_paths do
               let parent_call = 
@@ -660,7 +665,7 @@ type GeneratedClass =
                 else
                   match c.Keyword.Multeplicity with
                   | KeywordMulteplicity.Single ->
-                    sprintf "throw new System.Exception(\"Error evaluating empty run method of %s\");" (cleanupWithoutDot c.BasicName)
+                    sprintf "\nthrow new System.Exception(\"Error evaluating: \" + %s.ToString() + \" no result returned.\");" self_constructor
                   | KeywordMulteplicity.Multiple ->
                     "foreach (var p in Enumerable.Range(0,0)) yield return null;"
               let path = p.ToString()

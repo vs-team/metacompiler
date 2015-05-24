@@ -1,13 +1,15 @@
 ﻿import System
 
-Func [] "run" [] Priority 0 Type Expr => Value
+Func "run" : Expr => Value                      Priority 0 
 
-Func [] "eval" [Expr] Priority 1 Type Expr => Value
-Data [] [Expr] "|" [Expr] Priority 10 Type Expr
-Data [] [Expr] "&" [Expr] Priority 20 Type Expr
-Data [] [] "!" [Expr] Priority 30 Type Expr
-Data [] [] "TRUE" [] Priority 10000 Type Value
-Data [] [] "FALSE" [] Priority 10000 Type Value
+Func "eval" -> Expr : Expr => Value             Priority 1
+Data Expr -> "|" -> Expr : Expr                 Priority 10
+Data Expr -> "&" -> Expr : Expr                 Priority 20
+Data "!" -> Expr : Expr                         Priority 30
+
+Data "TRUE" : Value
+Data "FALSE" : Value
+
 
 Value is Expr
 

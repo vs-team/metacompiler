@@ -45,8 +45,8 @@ var result = d;
  return result;  }
  } 
 
-
- throw new System.Exception("Error evaluating: " + new _opMultiplication(P1, P2).ToString() + " no result returned.");  }
+  
+throw new System.Exception("Error evaluating: " + new _opMultiplication(P1, P2).ToString() + " no result returned."); }
 public Num Run() { return StaticRun(P1, P2); }
 
 
@@ -106,8 +106,8 @@ var result = s.Create(c);
  return result;  }
  } 
 
-
- throw new System.Exception("Error evaluating: " + new _opAddition(P1, P2).ToString() + " no result returned.");  }
+  
+throw new System.Exception("Error evaluating: " + new _opAddition(P1, P2).ToString() + " no result returned."); }
 public Num Run() { return StaticRun(P1, P2); }
 
 
@@ -204,8 +204,8 @@ var result = c;
  return result;  }
  } 
 
-
- throw new System.Exception("Error evaluating: " + new eval(P1).ToString() + " no result returned.");  }
+  
+throw new System.Exception("Error evaluating: " + new eval(P1).ToString() + " no result returned."); }
 public Num Run() { return StaticRun(P1); }
 
 
@@ -251,7 +251,7 @@ var result = res;
 yield return result; 
  } 
 
-  }
+   }
 public IEnumerable<int> Run() { return StaticRun(); }
 
 
@@ -324,8 +324,8 @@ var result = 0;
  return result;  }
  } 
 
-
- throw new System.Exception("Error evaluating: " + new toNum(P1).ToString() + " no result returned.");  }
+  
+throw new System.Exception("Error evaluating: " + new toNum(P1).ToString() + " no result returned."); }
 public int Run() { return StaticRun(P1); }
 
 

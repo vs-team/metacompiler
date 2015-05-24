@@ -94,11 +94,12 @@ var result = node.Create(l, k, r_Prime);
  return result;  } }
  } 
 
-
- throw new System.Exception("Error evaluating: " + new add(P1, P2).ToString() + " no result returned."); var p = StaticRun(P1, P2); return p; }
+ var p = StaticRun(P1, P2); return p; 
+throw new System.Exception("Error evaluating: " + new add(P1, P2).ToString() + " no result returned."); }
 public BinTreeInt Run0_() { return StaticRun0_(P1, P2); }
 
-public static BinTreeInt StaticRun(BinTreeInt P1, int P2) { throw new System.Exception("Error evaluating empty run method of add"); }
+public static BinTreeInt StaticRun(BinTreeInt P1, int P2) { 
+throw new System.Exception("Error evaluating: " + new add(P1, P2).ToString() + " no result returned."); }
 public BinTreeInt Run(){ return StaticRun(P1, P2); }
 
 public override string ToString() {
@@ -178,11 +179,12 @@ var result = res;
  return result;  } }
  } 
 
-
- throw new System.Exception("Error evaluating: " + new contains(P1, P2).ToString() + " no result returned."); var p = StaticRun(P1, P2); return p; }
+ var p = StaticRun(P1, P2); return p; 
+throw new System.Exception("Error evaluating: " + new contains(P1, P2).ToString() + " no result returned."); }
 public bool Run0_() { return StaticRun0_(P1, P2); }
 
-public static bool StaticRun(BinTreeInt P1, int P2) { throw new System.Exception("Error evaluating empty run method of contains"); }
+public static bool StaticRun(BinTreeInt P1, int P2) { 
+throw new System.Exception("Error evaluating: " + new contains(P1, P2).ToString() + " no result returned."); }
 public bool Run(){ return StaticRun(P1, P2); }
 
 public override string ToString() {
@@ -303,8 +305,8 @@ var result = _Comma.Create(arg as Expr, res);
  return result;  }
  } 
 
-
- throw new System.Exception("Error evaluating: " + new run().ToString() + " no result returned.");  }
+  
+throw new System.Exception("Error evaluating: " + new run().ToString() + " no result returned."); }
 public Expr Run() { return StaticRun(); }
 
 public static Expr StaticRun0_() { return StaticRun(); }
