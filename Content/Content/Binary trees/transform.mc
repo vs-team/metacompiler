@@ -1,14 +1,14 @@
-﻿Data [] [] "nil" [] Priority 0 Type BinTreeInt
-Func [] "node" [BinTreeInt <<int>> BinTreeInt] Priority 1010 Type Expr => BinTreeInt
-Data [] [BinTreeInt] "add" [<<int>>] Priority 100 Type Expr
-Data [] [BinTreeInt] "contains" [<<int>>] Priority 100 Type Expr
+﻿Data "nil" : BinTreeInt                                                       Priority 0
+Data "node" -> BinTreeInt -> <<int>> -> BinTreeInt : BinTreeInt               Priority 1010
+Func BinTreeInt -> "add" -> <<int>> : Expr => BinTreeInt                      Priority 100
+Func BinTreeInt -> "contains" -> <<int>> : Expr => <<bool>>                   Priority 100
 
-Data [] [Expr] "," [Expr] Priority 1010 Type Expr
-Func [] "$" [<<bool>>] Priority 100 Type Expr => BoolExpr
+Data Expr -> "," -> <<bool>> : Expr                                           Priority 1010
 
-Data [] [] "run" [] Priority 0 Type Expr
+Func "run" : Expr => Expr                                                     Priority 0
 
-BoolExpr is Expr
+BinTreeInt is Expr
+
 
 nil add 10 => t1
 t1 add 5 => t2
@@ -17,8 +17,9 @@ t2b add 15 => t3
 t3 add 1 => t4
 t4 add 16 => t
 t contains 7 => res
+arg := t contains 7
 --------------------------
-run => (t contains 7),res
+run => arg,res
 
   -----------------------------
   nil add k => node nil k nil
@@ -39,11 +40,11 @@ run => (t contains 7),res
 
 
   -------------------------
-  nil contains k => $false
+  nil contains k => false
 
   x == k
   ----------------------------------
-  (node l k r) contains x => $true
+  (node l k r) contains x => true
 
   x < k
   l contains x => res

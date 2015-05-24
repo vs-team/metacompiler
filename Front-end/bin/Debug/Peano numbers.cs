@@ -17,43 +17,31 @@ public Expr P2;
 public _opMultiplication(Expr P1, Expr P2) {this.P1 = P1; this.P2 = P2;}
 public static _opMultiplication Create(Expr P1, Expr P2) { return new _opMultiplication(P1, P2); }
 
-  public static Num StaticRun(Expr P1, Expr P2) { System.Console.WriteLine("<li>"+new _opMultiplication(P1, P2).ToString()+"</li>");   
+  public static Num StaticRun(Expr P1, Expr P2) {    
  { 
- #line 20 "Content\Peano numbers"
-var tmp_0 = P1 as z; 
- #line 20 "Content\Peano numbers"
+ var tmp_0 = P1 as z; 
 if (tmp_0 != null) { 
  var a = P2; 
- #line 20 "Content\Peano numbers"
 var result = z.Create();
- #line 20 "Content\Peano numbers"
  return result;  }
  } 
 
   
  { 
- #line 23 "Content\Peano numbers"
-var tmp_0 = P1 as s; 
- #line 23 "Content\Peano numbers"
+ var tmp_0 = P1 as s; 
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = P2; 
- #line 23 "Content\Peano numbers"
 var tmp_2 = _opMultiplication.Create(a, b);
- #line 23 "Content\Peano numbers"
 
 var tmp_1 = tmp_2.Run();
 
 var c = tmp_1; 
- #line 23 "Content\Peano numbers"
 var tmp_4 = _opAddition.Create(c, b);
- #line 23 "Content\Peano numbers"
 
 var tmp_3 = tmp_4.Run();
 
 var d = tmp_3; 
- #line 23 "Content\Peano numbers"
 var result = d;
- #line 23 "Content\Peano numbers"
  return result;  }
  } 
 
@@ -90,43 +78,31 @@ public Expr P2;
 public _opAddition(Expr P1, Expr P2) {this.P1 = P1; this.P2 = P2;}
 public static _opAddition Create(Expr P1, Expr P2) { return new _opAddition(P1, P2); }
 
-  public static Num StaticRun(Expr P1, Expr P2) { System.Console.WriteLine("<li>"+new _opAddition(P1, P2).ToString()+"</li>");   
+  public static Num StaticRun(Expr P1, Expr P2) {    
  { 
- #line 12 "Content\Peano numbers"
-var tmp_0 = P1 as z; 
- #line 12 "Content\Peano numbers"
+ var tmp_0 = P1 as z; 
 if (tmp_0 != null) { 
  var a = P2; 
- #line 12 "Content\Peano numbers"
 var tmp_2 = eval.Create(a);
- #line 12 "Content\Peano numbers"
 
 var tmp_1 = tmp_2.Run();
 
 var res = tmp_1; 
- #line 12 "Content\Peano numbers"
 var result = res;
- #line 12 "Content\Peano numbers"
  return result;  }
  } 
 
   
  { 
- #line 16 "Content\Peano numbers"
-var tmp_0 = P1 as s; 
- #line 16 "Content\Peano numbers"
+ var tmp_0 = P1 as s; 
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = P2; 
- #line 16 "Content\Peano numbers"
 var tmp_2 = _opAddition.Create(a, b);
- #line 16 "Content\Peano numbers"
 
 var tmp_1 = tmp_2.Run();
 
 var c = tmp_1; 
- #line 16 "Content\Peano numbers"
 var result = s.Create(c);
- #line 16 "Content\Peano numbers"
  return result;  }
  } 
 
@@ -162,97 +138,69 @@ public Expr P1;
 public eval(Expr P1) {this.P1 = P1;}
 public static eval Create(Expr P1) { return new eval(P1); }
 
-  public static Num StaticRun(Expr P1) { System.Console.WriteLine("<li>"+new eval(P1).ToString()+"</li>");   
+  public static Num StaticRun(Expr P1) {    
  { 
- #line 29 "Content\Peano numbers"
-var tmp_0 = P1 as z; 
- #line 29 "Content\Peano numbers"
+ var tmp_0 = P1 as z; 
 if (tmp_0 != null) { 
  
- #line 29 "Content\Peano numbers"
 var result = z.Create();
- #line 29 "Content\Peano numbers"
  return result;  }
  } 
 
   
  { 
- #line 32 "Content\Peano numbers"
-var tmp_0 = P1 as s; 
- #line 32 "Content\Peano numbers"
+ var tmp_0 = P1 as s; 
 if (tmp_0 != null) { 
  var a = tmp_0.P1; 
- #line 32 "Content\Peano numbers"
 var result = s.Create(a);
- #line 32 "Content\Peano numbers"
  return result;  }
  } 
 
   
  { 
- #line 35 "Content\Peano numbers"
-var tmp_0 = P1 as _opAddition; 
- #line 35 "Content\Peano numbers"
+ var tmp_0 = P1 as _opAddition; 
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; 
- #line 35 "Content\Peano numbers"
 var tmp_2 = eval.Create(a);
- #line 35 "Content\Peano numbers"
 
 var tmp_1 = tmp_2.Run();
 
 var a_Prime = tmp_1; 
- #line 35 "Content\Peano numbers"
 var tmp_4 = eval.Create(b);
- #line 35 "Content\Peano numbers"
 
 var tmp_3 = tmp_4.Run();
 
 var b_Prime = tmp_3; 
- #line 35 "Content\Peano numbers"
 var tmp_6 = _opAddition.Create(a_Prime, b_Prime);
- #line 35 "Content\Peano numbers"
 
 var tmp_5 = tmp_6.Run();
 
 var c = tmp_5; 
- #line 35 "Content\Peano numbers"
 var result = c;
- #line 35 "Content\Peano numbers"
  return result;  }
  } 
 
   
  { 
- #line 41 "Content\Peano numbers"
-var tmp_0 = P1 as _opMultiplication; 
- #line 41 "Content\Peano numbers"
+ var tmp_0 = P1 as _opMultiplication; 
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; 
- #line 41 "Content\Peano numbers"
 var tmp_2 = eval.Create(a);
- #line 41 "Content\Peano numbers"
 
 var tmp_1 = tmp_2.Run();
 
 var a_Prime = tmp_1; 
- #line 41 "Content\Peano numbers"
 var tmp_4 = eval.Create(b);
- #line 41 "Content\Peano numbers"
 
 var tmp_3 = tmp_4.Run();
 
 var b_Prime = tmp_3; 
- #line 41 "Content\Peano numbers"
 var tmp_6 = _opMultiplication.Create(a_Prime, b_Prime);
- #line 41 "Content\Peano numbers"
 
 var tmp_5 = tmp_6.Run();
 
 var c = tmp_5; 
- #line 41 "Content\Peano numbers"
 var result = c;
- #line 41 "Content\Peano numbers"
  return result;  }
  } 
 
@@ -286,27 +234,20 @@ public class run : Expr  {
 public run() {}
 public static run Create() { return new run(); }
 
-  public static IEnumerable<int> StaticRun() { System.Console.WriteLine("<li>"+new run().ToString()+"</li>");   
+  public static IEnumerable<int> StaticRun() {    
  { 
- #line 54 "Content\Peano numbers"
-
- #line 54 "Content\Peano numbers"
+ 
 var tmp_1 = eval.Create(_opAddition.Create(_opMultiplication.Create(s.Create(s.Create(z.Create())), _opMultiplication.Create(s.Create(s.Create(z.Create())), s.Create(s.Create(z.Create())))), s.Create(z.Create())));
- #line 54 "Content\Peano numbers"
 
 var tmp_0 = tmp_1.Run();
 
 var n = tmp_0; 
- #line 54 "Content\Peano numbers"
 var tmp_3 = toNum.Create(n);
- #line 54 "Content\Peano numbers"
 
 var tmp_2 = tmp_3.Run();
 
 var res = tmp_2; 
- #line 54 "Content\Peano numbers"
 var result = res;
- #line 54 "Content\Peano numbers"
 yield return result; 
  } 
 
@@ -360,36 +301,26 @@ public Num P1;
 public toNum(Num P1) {this.P1 = P1;}
 public static toNum Create(Num P1) { return new toNum(P1); }
 
-  public static int StaticRun(Num P1) { System.Console.WriteLine("<li>"+new toNum(P1).ToString()+"</li>");   
+  public static int StaticRun(Num P1) {    
  { 
- #line 47 "Content\Peano numbers"
-var tmp_0 = P1 as s; 
- #line 47 "Content\Peano numbers"
+ var tmp_0 = P1 as s; 
 if (tmp_0 != null) { 
  var a = tmp_0.P1; 
- #line 47 "Content\Peano numbers"
 var tmp_2 = toNum.Create(a);
- #line 47 "Content\Peano numbers"
 
 var tmp_1 = tmp_2.Run();
 
 var res = tmp_1; 
- #line 47 "Content\Peano numbers"
 var result = (res+1);
- #line 47 "Content\Peano numbers"
  return result;  }
  } 
 
   
  { 
- #line 51 "Content\Peano numbers"
-var tmp_0 = P1 as z; 
- #line 51 "Content\Peano numbers"
+ var tmp_0 = P1 as z; 
 if (tmp_0 != null) { 
  
- #line 51 "Content\Peano numbers"
 var result = 0;
- #line 51 "Content\Peano numbers"
  return result;  }
  } 
 

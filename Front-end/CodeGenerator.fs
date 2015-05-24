@@ -100,20 +100,29 @@ type Path = Path of List<int>
       match this with 
       | Path(p::ps) -> Path ps
       | _ -> failwith "Cannot reduce empty path"
-    member this.ParentCall =
+    member this.ParentCall multeplicity =
       match this with
       | Path([]) -> ""
-      | Path(p::ps) -> sprintf "foreach(var p in Run%s()) yield return p;" (Path(ps).ToString())
+      | Path(p::ps) -> 
+        match multeplicity with
+        | KeywordMulteplicity.Single ->
+          sprintf "var p = Run%s(); return p;" (Path(ps).ToString())
+        | KeywordMulteplicity.Multiple -> 
+          sprintf "foreach(var p in Run%s()) yield return p;" (Path(ps).ToString())
     member this.DirectParentCall =
       match this with
       | Path([]) -> ""
       | Path(p::ps) -> sprintf "return Run%s();" (Path(ps).ToString())
-    member this.StaticParentCall parameters=
+    member this.StaticParentCall multeplicity parameters =
       match this with
       | Path([]) -> ""
       | Path(p::ps) -> 
         let paramsWithoutType = String.concat ", " (parameters |> Seq.map (fun x -> x.Name))
-        sprintf "foreach(var p in StaticRun%s(%s)) yield return p;" (Path(ps).ToString()) paramsWithoutType
+        match multeplicity with
+        | KeywordMulteplicity.Single ->
+          sprintf "var p = StaticRun%s(%s); return p;" (Path(ps).ToString()) paramsWithoutType
+        | KeywordMulteplicity.Multiple -> 
+          sprintf "foreach(var p in StaticRun%s(%s)) yield return p;" (Path(ps).ToString()) paramsWithoutType
     member this.DirectStaticParentCall parameters =
       match this with
       | Path([]) -> ""
@@ -537,14 +546,14 @@ type Method = {
           sprintf "%s\n throw new System.Exception(\"Error evaluating: \" + %s.ToString() + \" no result returned.\");" body self_constructor
         | KeywordMulteplicity.Multiple -> 
           body
-      let parent_call = if CompilerSwitches.generateStaticRun then m.Path.StaticParentCall parameters else m.Path.ParentCall
-      let function_trace = sprintf "System.Console.WriteLine(\"<li>\"+%s.ToString()+\"</li>\");" self_constructor
+      let parent_call = if CompilerSwitches.generateStaticRun then m.Path.StaticParentCall m.Keyword.Multeplicity parameters else m.Path.ParentCall m.Keyword.Multeplicity
+      let function_trace = "" // TODO: "add relevant compiler switches" sprintf "System.Console.WriteLine(\"<li>\"+%s.ToString()+\"</li>\");" self_constructor
       sprintf "public static %s StaticRun%s(%s) { %s %s %s }\npublic %s Run%s() { return StaticRun%s(%s); }" 
                 returnType path paramsWithType function_trace body parent_call returnType path path paramsWithoutType
     member m.ToString(ctxt:ConcreteExpressionContext,originalFilePath,returnType) =
       let path = m.Path.ToString()
       let body = ((m.Rules |> Seq.map (fun r -> r.ToString(ctxt,originalFilePath))) ++ 2)
-      sprintf "public IEnumerable<%s> Run%s() { %s %s }" returnType path body m.Path.ParentCall
+      sprintf "public IEnumerable<%s> Run%s() { %s %s }" returnType path body (m.Path.ParentCall m.Keyword.Multeplicity)
 
 type GeneratedClass = 
   {
@@ -641,15 +650,19 @@ type GeneratedClass =
               for p in missing_paths do
               let parent_call = 
                 match CompilerSwitches.generateStaticRun,CompilerSwitches.optimizeDirectParentCall with
-                | false,false -> p.ParentCall
-                | false,true  -> p.DirectParentCall
-                | true, false -> p.StaticParentCall c.Parameters
+                | false,false -> p.ParentCall c.Keyword.Multeplicity
+                | false,true  -> p.DirectParentCall 
+                | true, false -> p.StaticParentCall c.Keyword.Multeplicity c.Parameters
                 | true, true  -> p.DirectStaticParentCall c.Parameters
               let parent_or_empty_call =
                 if parent_call <> "" then
                   parent_call
                 else
-                  "foreach (var p in Enumerable.Range(0,0)) yield return null;"
+                  match c.Keyword.Multeplicity with
+                  | KeywordMulteplicity.Single ->
+                    sprintf "throw new System.Exception(\"Error evaluating empty run method of %s\");" (cleanupWithoutDot c.BasicName)
+                  | KeywordMulteplicity.Multiple ->
+                    "foreach (var p in Enumerable.Range(0,0)) yield return null;"
               let path = p.ToString()
               if CompilerSwitches.generateStaticRun 
               then
