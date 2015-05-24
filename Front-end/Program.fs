@@ -83,37 +83,35 @@ let main argv =
   let samples = 
     [
 // converted to new keyword syntax:
-//      "Peano numbers", "run"
-//      "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
-//      "Lists", "plus 0;1;2;3;nil 10"
-//      "Lists", "length 0;1;2;3;nil"
-//      "Lists", "contains 0;1;2;3;nil 2"
-//      "Lists", "removeOdd 0;1;2;3;nil"
-//      "Lists", "add 0;1;2;3;nil"
-//
-//      "stsil", "dda lin snoc 3 snoc 2 snoc 1"
-//
-//      "Eval without memory", "run"
-//      "Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
-//
-//      "Binary trees", "run"
-//      "Boolean expressions", "run"
-//
-//      "Lambda calculus", "run"
-//
-//      "Trees 234", @"main"
+      "Peano numbers", "run"
+      "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
+      "Lists", "plus 0;1;2;3;nil 10"
+      "Lists", "length 0;1;2;3;nil"
+      "Lists", "contains 0;1;2;3;nil 2"
+      "Lists", "removeOdd 0;1;2;3;nil"
+      "Lists", "add 0;1;2;3;nil"
 
+      "stsil", "dda lin snoc 3 snoc 2 snoc 1"
+
+      "Eval without memory", "run"
+      "Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
+
+      "Binary trees", "run"
+      "Boolean expressions", "run"
+
+      "Lambda calculus", "run"
+
+      "Trees 234", @"main"
+      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
+      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
+
+//      "Generic lists", @"runTest1"
       
 // not yet converted to new keyword syntax:
 
-      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
-//      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
 
       //"Cmm", @"runProgram"
-//
 //      "Casanova semantics", @"runTest1"
-
-//      "Generic lists", @"runTest1"
     ]
 
   for name,input in samples 

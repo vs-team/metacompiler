@@ -1,29 +1,30 @@
 ﻿import System
 import System.Collections.Immutable
 
-Keyword [] "map" [<<ImmutableDictionary<string, Value> >>] Priority 10000 Class Memory
-Keyword [] "run" [Memory] Priority 0 Class Expr
-Keyword [Memory] "add" [<<string>> Value] Priority 1 Class Expr
-Keyword [Memory] "lookup" [<<string>>] Priority 1 Class Expr
+Data "map" -> <<ImmutableDictionary<string, Value> >> : MapIntString                      Priority 10000
+Func "run" -> MapIntString : Expr => EvalResult
+Func MapIntString -> "add" -> <<string>> -> Value : Expr => MapIntString
+Func MapIntString -> "lookup" -> <<string>> : Expr => Value
 
-Keyword [] "eval" [Expr Memory] Priority 1 Class Expr
-Keyword [Expr] "gt" [Expr] Priority 10 Class Expr
-Keyword [Expr] "+" [Expr] Priority 20 Class Expr
-Keyword [Expr] "*" [Expr] Priority 30 Class Expr
-Keyword [Expr] ";" [Expr] Priority 1 Class Expr
-Keyword [Value] "," [Memory] Priority 1 Class Expr
-Keyword [] "!" [<<string>>] Priority 10000 Class Variable
-Keyword [] "?" [<<bool>>] Priority 10000 Class Value
-Keyword [] "$" [<<int>>] Priority 10000 Class Value
-Keyword [] "nil" [] Priority 10000 Class Value
-Keyword [Variable] "assign" [Expr] Priority 2 Class Expr
-Keyword [] "if" [Expr Then Expr Else Expr] Priority 5 Class Expr
-Keyword [] "then" [] Priority 10000 Class Then
-Keyword [] "else" [] Priority 10000 Class Else
-Keyword [] "while" [Expr Do Expr] Priority 5 Class Expr
-Keyword [] "do" [] Priority 10000 Class Do
+Func "eval" -> Expr -> MapIntString : Expr => EvalResult
+Data Expr -> "gt" -> Expr : Expr                                                        Priority 10
+Data Expr -> "+" -> Expr : Expr                                                         Priority 10
+Data Expr -> "*" -> Expr : Expr                                                         Priority 20
+Data Expr -> ";" -> Expr : Expr                   
+Data Value -> "," -> MapIntString : Expr => EvalResult
+Data "!" -> <<string>> : Variable                                                       Priority 10000
+Data "?" -> <<bool>> : Value                                                            Priority 10000
+Data "$" -> <<int>> : Value                                                             Priority 10000
+Data "nil" : Value
+Data Variable -> "assign" -> Expr : Expr                                                Priority 2
 
-Memory is Expr
+Data "if" -> Expr -> Then -> Expr -> Else -> Expr : Expr                                Priority 5
+Data "then" : Then
+Data "else" : Else
+Data "while" -> Expr -> Do -> Expr : Expr                                               Priority 5
+Data "do" : Do
+
+MapIntString is Expr
 Value is Expr
 Variable is Expr
 
