@@ -1,46 +1,40 @@
 ﻿import System
 
-Data [] "yes" [] Priority 0 Class BoolExpr
-Data [] "no" [] Priority 0 Class BoolExpr
-
-Data [] "$i" [<<int>>] Priority 300 Class Value
-Data [] "$s" [<<string>>] Priority 300 Class Key
-Data [] "entry" [Key Value] Priority 200 Class ListElem
-Data [] "nothing" [] Priority 300 Class ListElem
+Data "$i" -> <<int>> : Value                          Priority 300
+Data "$s" -> <<string>> : Key                         Priority 300
+Data "entry" -> Key -> Value : ListElem               Priority 200
+Data "nothing" : ListElem                             Priority 300
 
 
-Data [] "nil" [] Priority 0 Class List
-Data [ListElem] ";" [List] Priority 100 Class List
+Data "nil" : List
+Data ListElem -> ";" -> List : List                   Priority 190 
 
-Data [] "empty" [] Priority 0 Class BTree
-Data [] "node" [List] Priority 0 Class BTree
+Data "empty" : BTree
+Data "node" -> List : BTree                           Priority 150
 
-Func [] "isLeaf" [List] Priority 0 Type Expr => BoolExpr
-Func [] "split" [List] Priority 0 Type Expr => Expr
-Keyword [List] "insertSort" [ListElem BTree] Priority 0 Class Expr
-Keyword [ListElem] "insertInto" [List] Priority 0 Class Expr
-Keyword [] "merge" [BTree List] Priority 0 Class Expr
+Func "isLeaf" -> List : Expr => <<bool>>
+Func "split" -> List  : Expr => BTree
+Func List -> "insertSort" -> ListElem -> BTree : Expr => List
+Func ListElem -> "insertInto" -> List : Expr => List
+Func "merge" -> BTree -> List : Expr => List
 
-Keyword [] "prettyPrint" [BTree] Priority 0 Class PrintUtils
+Func BTree -> "insert" -> ListElem : Expr => BTree
+Func BTree -> "find" -> Key : Expr => ListElem
+Func "lookup" -> BTree -> Key : Expr => ListElem           Priority -10 
 
-Keyword [BTree] "insert" [ListElem] Priority 0 Class Expr
-Keyword [BTree] "find" [Key] Priority 0 Class Expr
-Keyword [] "lookup" [BTree Key] Priority -10 Class Expr
+Func "main" : Expr => ListElem
 
-Keyword [BTree] "contains" [<<string>>] Priority 0 Class Expr
-
-Keyword [] "main" [] Priority 0 Class Expr
 
 BTree is ListElem
 
 
 
 ---------------------------------
-isLeaf (empty;rest) => yes
+isLeaf (empty;rest) => <<true>>
 
 l != empty
 ---------------------------------
-isLeaf (l;rest) => no
+isLeaf (l;rest) => <<false>>
 
 ------------------------------------------
 split l;(k;(r;nil)) => node l;(k;(r;nil))
@@ -212,7 +206,7 @@ t5 insert (entry $s "z" $i 100) => t6
 t6 insert (entry $s "b" $i 3) => t7
 t7 insert (entry $s "ax" $i 1) => t8
 t8 insert (entry $s "c" $i 12) => t9
-<<Console.WriteLine(t9)>>
+//<<Console.WriteLine(t9)>>
 t9 find ($s "b") => kv
 --------------------------
 main => kv

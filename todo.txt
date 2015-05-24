@@ -1,7 +1,7 @@
 - type inference
   - test/adapt all samples
   - Generic types
-- GUI should save delayed compiler to not recompile rules unnecessarily
+- cache parsed rules and type inferenced results
 - samples
   - import directive for multiple files
 - Refactor "clause" to "premise"

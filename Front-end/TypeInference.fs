@@ -100,12 +100,12 @@ let isSuperType t1 t2 (ctxt:ConcreteExpressionContext) =
       inherritedClasses |> Set.contains t1
   | None -> false
 
-let rec unify (expected:Type) (given:Type) (scheme:TypeContext) (ctxt:ConcreteExpressionContext) : TypeContext =
+let rec unify (pos:Position) (expected:Type) (given:Type) (scheme:TypeContext) (ctxt:ConcreteExpressionContext) : TypeContext =
   match expected, given with
   | TypeConstant(e1), TypeConstant(g1) when e1 = g1 || (isSuperType e1 g1 ctxt) || (isSuperType g1 e1 ctxt) -> scheme
   | TypeAbstraction(e1, e2), TypeAbstraction(g1, g2) ->
-    let firstModifiedScheme = unify e1 g1 scheme ctxt
-    let secondModifiedScheme = unify e2 g2 firstModifiedScheme ctxt
+    let firstModifiedScheme = unify pos e1 g1 scheme ctxt
+    let secondModifiedScheme = unify pos e2 g2 firstModifiedScheme ctxt
     secondModifiedScheme
   | TypeVariable(v1), TypeVariable(v2) ->
       let t1 = scheme.Substitutions.[v1]
@@ -118,7 +118,7 @@ let rec unify (expected:Type) (given:Type) (scheme:TypeContext) (ctxt:ConcreteEx
   | t, TypeVariable(v) ->
       scheme.substitute v t
   | _ ->
-    failwithf "cannot unify %A and %A\n" expected given
+    failwithf "Error at %A: cannot unify %A and %A\n" pos expected given
         
 let rec annotateUnknown (expr:BasicExpression<Keyword, Var, Literal, Position, Unit>) = 
   match expr with
@@ -144,7 +144,7 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
     let k' = k |> annotateUnknown
     let left', scheme1 = traverse ctxt left Unknown scheme
     let right', scheme2 = traverse ctxt right Unknown scheme1
-    Application(br, k'::left'::right'::[], pos, Unknown), unify left'.TypeInformation right'.TypeInformation scheme2 ctxt
+    Application(br, k'::left'::right'::[], pos, Unknown), unify pos left'.TypeInformation right'.TypeInformation scheme2 ctxt
   | Application(br, func::args, pos, ()) ->
       let func', scheme1 = traverse ctxt func Unknown scheme
       let rec traverseMap funcType args scheme =
@@ -157,11 +157,11 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
         | _ -> 
           failwithf "Unexpected function arguments %A; expected type was %A" args funcType
       let returnType,args',scheme2 = traverseMap func'.TypeInformation args scheme1
-      let scheme3 = unify constraints returnType scheme2 ctxt
+      let scheme3 = unify pos constraints returnType scheme2 ctxt
       Application(br, func'::args', pos, returnType), scheme3
   | Imported(imported, pos, ()) ->
     let importedType = TypeConstant(imported.typeString)
-    Imported(imported, pos, importedType), unify constraints importedType scheme ctxt
+    Imported(imported, pos, importedType), unify pos constraints importedType scheme ctxt
   | Keyword(kw, pos, ()) ->
     let kwType,scheme1 = 
       match kw with
@@ -175,7 +175,7 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
           for l in kwDescription.Arguments |> List.rev do
             let lList = [l] |> Keyword.typeToString
             kwReturnType <- TypeAbstraction(lList |> List.head |> TypeConstant, kwReturnType)
-          kwReturnType, unify constraints kwReturnType scheme ctxt
+          kwReturnType, unify pos constraints kwReturnType scheme ctxt
         | _ ->
           failwithf "Unknown keyword %A" kw
       | GreaterThan | SmallerThan

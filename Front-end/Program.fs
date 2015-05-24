@@ -101,6 +101,7 @@ let main argv =
 
       "Lambda calculus", "run"
 
+      "Trees 234", @"main"
 
       
 // not yet converted to new keyword syntax:
@@ -109,7 +110,6 @@ let main argv =
 //      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
 
       //"Cmm", @"runProgram"
-//      "Trees 234", @"main"
 //
 //      "Casanova semantics", @"runTest1"
 
