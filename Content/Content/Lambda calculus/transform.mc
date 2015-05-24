@@ -1,14 +1,15 @@
-﻿Data [] [] "$" [<<string>>] Priority 10 Type Id
-Data [] [] "\" [Id Dot Term] Priority 9 Type Term
-Data [] [Term] "|" [Term] Priority 8 Type Term
-Data [] [] "->" [] Priority 0 Type Dot
+﻿Func "$" -> <<string>> : Id => Term                 Priority 10
+Func "\" -> Id -> Dot -> Term : Term => Term        Priority 9
+Func Term -> "|" -> Term : Term => Term             Priority 8 
+Data "->" : Dot
 
-Data [] [Term] "as" [Term] Priority 6 Type Where
-Data [] [Term] "with" [Where] Priority 5 Type With
+Data Term -> "as" -> Term : Where                   Priority 6
+Func Term -> "with" -> Where : With => Term         Priority 5
 
-Func [] "run" [] Priority 0 Type Expr => Term
+Func "run" : Expr => Term
 
 Id is Term
+
 
 (\$"x" -> $"x") | $"y" => res
 ------------------------------

@@ -1,8 +1,8 @@
 ﻿import System
 import System.Collections.Immutable
 
-Keyword [] "map" [<<ImmutableDictionary<string, int> >>] Priority 10000 Class MapIntString
-Keyword [] "run" [MapIntString] Priority 0 Class Expr
+Data "map" -> <<ImmutableDictionary<string, int> >> : MapIntString                     Priority 10000
+Func "run" -> MapIntString : Expr => Expr                                              Priority 0
 Keyword [MapIntString] "add" [<<string>> <<int>>] Priority 1 Class Expr
 Keyword [MapIntString] "lookup" [<<string>>] Priority 1 Class Expr
 

@@ -21,7 +21,7 @@ let runDeduction path =
   let timer = System.Diagnostics.Stopwatch()
   let output = ref ""
   let addOutput s = output := sprintf "%s\n%s" (output.Value) s
-  match (program()).Parse (rules |> Seq.toList) ConcreteExpressionContext.Empty (Position.Create path) with
+  match (program()).Parse (rules |> Seq.toList) ConcreteExpressionContext.Empty (Position.Create originalFilePath) with
   | First(x,_,ctxt,pos) -> 
     fun (input:string) ->
       let input = input.Trim([|'\r'; '\n'|]) + "\n"
@@ -99,9 +99,12 @@ let main argv =
       "Binary trees", "run"
       "Boolean expressions", "run"
 
+      "Lambda calculus", "run"
 
+
+      
 // not yet converted to new keyword syntax:
-//      "Lambda calculus", "run"
+
 //      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
 //      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
 
