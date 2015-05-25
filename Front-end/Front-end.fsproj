@@ -57,9 +57,11 @@
   <ItemGroup>
     <Compile Include="CompilerSwitches.fs" />
     <Compile Include="Utilities.fs" />
+    <Compile Include="StateMonad.fs" />
     <Compile Include="ParserMonad.fs" />
     <Compile Include="BottomUpPriorityParser.fs" />
     <Compile Include="BasicExpression.fs" />
+    <Compile Include="TypeDefinition.fs" />
     <Compile Include="ConcreteExpressionParserPrelude.fs" />
     <Compile Include="ConcreteExpressionParser.fs" />
     <Compile Include="TypeInference.fs" />

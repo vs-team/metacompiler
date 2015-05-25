@@ -105,7 +105,7 @@ let main argv =
       "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
       "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
 
-//      "Generic lists", @"runTest1"
+//      "Generic lists", @"run"
       
 // not yet converted to new keyword syntax:
 

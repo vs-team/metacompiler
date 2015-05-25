@@ -5,10 +5,11 @@ open System
 open Utilities
 open ParserMonad
 open BasicExpression
+open TypeDefinition
 open ConcreteExpressionParserPrelude
 open ConcreteExpressionParser
 
-type TypedExpression   = BasicExpression<Keyword, Var, Literal, Position, TypeInference.Type>
+type TypedExpression   = BasicExpression<Keyword, Var, Literal, Position, Type>
 type UntypedExpression = BasicExpression<Keyword, Var, Literal, Position, unit>
 
 let cleanupWithoutDot (s:string) =
@@ -560,21 +561,21 @@ type GeneratedClass =
     Keyword             : ParsedKeyword<Keyword, Var, Literal, Position, unit>
     BasicName           : string
     Interface           : List<string>
-    GenericArguments    : List<UntypedExpression>
+    GenericArguments    : List<string>
     Parameters          : ResizeArray<Parameter>
     mutable Methods     : Map<Path, Method>
   } with
-      member c.Name = 
-        if c.GenericArguments.IsEmpty |> not then  
-          let args = c.GenericArguments |> Seq.map (fun x -> Keyword.ArgumentCSharpStyle x (!)) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
+      member c.Name =
+        if c.GenericArguments.IsEmpty |> not then
+          let args = c.GenericArguments |> Seq.reduce (fun s x -> sprintf "%s, %s" s x)
           sprintf "%s<%s>" !c.BasicName args
         else
           !c.BasicName
       member this.MethodPaths = seq{ for x in this.Methods -> x.Key } |> Set.ofSeq
       member c.ToString(all_method_paths:Set<Path>, ctxt:ConcreteExpressionContext, originalFilePath) =
-        let genericConstraints = 
-          if c.GenericArguments.IsEmpty |> not then  
-            let args = c.GenericArguments |> Seq.map (fun x -> sprintf "where %s : class" (Keyword.ArgumentCSharpStyle x (!))) |> Seq.reduce (fun s x -> sprintf "%s %s" s x)
+        let genericConstraints =
+          if c.GenericArguments.IsEmpty |> not then
+            let args = c.GenericArguments |> Seq.map (fun x -> sprintf "where %s : class" x) |> Seq.reduce (fun s x -> sprintf "%s %s" s x)
             args
           else
             ""
