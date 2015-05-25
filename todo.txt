@@ -2,6 +2,7 @@
   - TypeConstantDescriptor.FromType is way too weak
 - type inference
   - Generic types
+  - DefinedAs takes the return type, not the base type of the right-hand expression
 - ParsedKeyword cleanup
   - ReturnType
   - BaseType

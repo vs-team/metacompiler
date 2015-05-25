@@ -23,7 +23,7 @@ public static _opBang Create(string P1) { return new _opBang(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " ! "; res += P1.ToString(); 
+ res += " ! "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -152,7 +152,7 @@ public override string ToString() {
  var res = "("; 
 
  res += " add "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
-res += P2.ToString(); 
+if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 res += P3.ToString(); 
 
  res += ")";
@@ -331,7 +331,7 @@ public override string ToString() {
  var res = "("; 
 
  res += " lookup "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
-res += P2.ToString(); 
+if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
