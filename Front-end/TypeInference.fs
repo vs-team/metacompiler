@@ -5,6 +5,15 @@ open ParserMonad
 open TypeDefinition
 open ConcreteExpressionParserPrelude
 
+let isSuperType (ctxt:ConcreteExpressionContext) t1 t2 =
+  match t1,t2 with
+  | TypeDefinition.TypeConstant(t1,_), TypeDefinition.TypeConstant(t2,_) ->
+    match ctxt.InheritanceRelationships |> Map.tryFind t2 with
+    | Some(inherritedClasses) ->
+        inherritedClasses |> Set.contains t1
+    | None -> false
+  | _ -> false
+
 type TypeEquivalence = 
   {
     Variables   : Set<TypeVar>
@@ -18,13 +27,15 @@ type TypeEquivalence =
         Variables = Set.singleton v
         Types     = Set.singleton t
       }
-    static member (+) (equiv:TypeEquivalence, (v:TypeVar,t:Type)) =
-      equiv + TypeEquivalence.Create(v,t)
-    static member (+) (t1:TypeEquivalence, t2:TypeEquivalence) =
+    static member add (equiv:TypeEquivalence, v:TypeVar,t:Type,ctxt) =
+      TypeEquivalence.add(equiv, TypeEquivalence.Create(v,t),ctxt)
+    static member add (t1:TypeEquivalence, t2:TypeEquivalence, ctxt) =
       for x in t1.Types do
         for y in t2.Types do
-          if Type.compatible x y |> not then
-            failwith "Cannot unify %A and %A because types %A and %A are incompatible" t1 t2 x y
+          let (==) a b =
+            a = b || isSuperType ctxt x y || isSuperType ctxt y x
+          if Type.compatible (==) x y |> not then
+            failwithf "Cannot unify %A and %A because types %A and %A are incompatible" t1 t2 x y
       {
         Variables = t1.Variables + t2.Variables
         Types     = t1.Types + t2.Types
@@ -57,25 +68,19 @@ and TypeContext =
             varType, newScheme
         else
             failwithf "cannot introduce an already known variable %s." var
-        member this.substitute (v:TypeVar) (t:Type)  =
+        member this.substitute (v:TypeVar) (t:Type) ctxt =
           match this.Substitutions |> Map.tryFind v with
           | Some(equivalence) ->
             let mutable substitutions = this.Substitutions
             for v in equivalence.Variables do
-              substitutions <- substitutions |> Map.add v (substitutions.[v] + (v,t))
+              substitutions <- substitutions |> Map.add v (TypeEquivalence.add(substitutions.[v],v,t,ctxt))
             { this with Substitutions = substitutions }
           | None -> 
             { this with Substitutions = this.Substitutions |> Map.add v (TypeEquivalence.Create(v,t)) }
 
-let isSuperType t1 t2 (ctxt:ConcreteExpressionContext) =
-  match ctxt.InheritanceRelationships |> Map.tryFind t2 with
-  | Some(inherritedClasses) ->
-      inherritedClasses |> Set.contains t1
-  | None -> false
-
 let rec unify (pos:Position) (expected:Type) (given:Type) (scheme:TypeContext) (ctxt:ConcreteExpressionContext) : TypeContext =
   match expected, given with
-  | TypeConstant(e1,_), TypeConstant(g1,_) when e1 = g1 || (isSuperType e1 g1 ctxt) || (isSuperType g1 e1 ctxt) -> scheme
+  | TypeConstant(e1,_), TypeConstant(g1,_) when e1 = g1 -> scheme
   | TypeAbstraction(e1, e2), TypeAbstraction(g1, g2) ->
     let firstModifiedScheme = unify pos e1 g1 scheme ctxt
     let secondModifiedScheme = unify pos e2 g2 firstModifiedScheme ctxt
@@ -83,13 +88,14 @@ let rec unify (pos:Position) (expected:Type) (given:Type) (scheme:TypeContext) (
   | TypeVariable(v1), TypeVariable(v2) ->
       let t1 = scheme.Substitutions.[v1]
       let t2 = scheme.Substitutions.[v2]
-      let t12 = t1 + t2
+      let t12 = TypeEquivalence.add(t1,t2,ctxt)
       { scheme with Substitutions = scheme.Substitutions |> Map.add v1 t1 |> Map.add v2 t2 }
   | _, Unknown 
   | Unknown, _ -> scheme
   | TypeVariable(v), t
   | t, TypeVariable(v) ->
-      scheme.substitute v t
+      scheme.substitute v t ctxt
+  | _, _ when (isSuperType ctxt expected given) -> scheme
   | _ ->
     failwithf "Error at %A: cannot unify %A and %A\n" pos expected given
         
@@ -112,7 +118,11 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
     Application(Regular, expr'::[], di, expr'.TypeInformation), scheme'
   | Application(Angle, args, pos, ()) ->
       Application(Angle, args |> List.map annotateUnknown, pos, Unknown), scheme
-  | Application(br, (Keyword(DefinedAs,_,()) as k)::left::right::[], pos, ())
+  | Application(br, (Keyword(DefinedAs,_,()) as k)::left::right::[], pos, ()) ->
+    let k' = k |> annotateUnknown
+    let left', scheme1 = traverse ctxt left Unknown scheme
+    let right', scheme2 = traverse ctxt right Unknown scheme1
+    Application(br, k'::left'::right'::[], pos, Unknown), scheme2
   | Application(br, (Keyword(DoubleArrow,_,()) as k)::left::right::[], pos, ()) ->
     let k' = k |> annotateUnknown
     let left', scheme1 = traverse ctxt left Unknown scheme
@@ -143,7 +153,8 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
         | Some(kwDescription) ->
           let mutable kwReturnType = 
             match kwDescription.Type |> Keyword.typeToString with
-            | t::[] | _::t::[] -> TypeConstant(t, Defined)
+            | t::[] | _::t::[] -> 
+              TypeConstant(t, TypeConstantDescriptor.FromName t)
             | _ -> failwithf "Unexpected keyword return type %A" kwDescription.Type
           for arg in kwDescription.Arguments |> List.rev do
             kwReturnType <- TypeAbstraction(arg, kwReturnType)
@@ -160,13 +171,14 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
   | Extension({Name = var}, pos, ()) ->
     match scheme.BoundVariables |> Map.tryFind var with
     | Some(varType) ->
-      Extension({Name = var}, pos, varType), scheme
+      let scheme1 = unify pos constraints varType scheme ctxt
+      Extension({Name = var}, pos, varType), scheme1
     | _ ->
       let varType, scheme1 = scheme.introduceVariable var constraints
       Extension({Name = var}, pos, varType), scheme1
   | _ -> failwithf "Unexpected expression %A" expr
 
-let normalize (substitutions:Map<TypeVar, TypeEquivalence>) =
+let normalize ctxt (substitutions:Map<TypeVar, TypeEquivalence>) =
   let rec visit (v:TypeVar) (closed:Set<TypeVar>) (opened:Set<TypeVar>) (substitutions:Map<TypeVar, TypeEquivalence>) =
     if opened |> Set.contains v then
       failwithf "Circular reference to variable %A while processing %A" v opened
@@ -178,25 +190,33 @@ let normalize (substitutions:Map<TypeVar, TypeEquivalence>) =
     let otherVars = equivalence.Variables
     let mutable vTypeCandidates = equivalence.Types |> Set.toList
 
-    let rec mergeTypes (t1:Type) (t2:Type) (closed:Set<TypeVar>) (opened:Set<TypeVar>) (substitutions:Map<TypeVar, TypeEquivalence>) =
+    let rec mergeTypes ctxt (t1:Type) (t2:Type) (closed:Set<TypeVar>) (opened:Set<TypeVar>) (substitutions:Map<TypeVar, TypeEquivalence>) =
       match t1,t2 with 
       | Unknown, Unknown -> failwith "Cannot merge Unknown and Unknown types."
       | Unknown, (TypeConstant _ as t)
       | (TypeConstant _ as t), Unknown
       | TypeVariable _, (TypeConstant _ as t)
-      | (TypeConstant _ as t), TypeVariable _ ->
+      | (TypeConstant _ as t), TypeVariable _
+      | TypeVariable _, (ConstructedType _ as t)
+      | (ConstructedType _ as t), TypeVariable _ ->
         t, closed, opened, substitutions
+      | _ ,_ when isSuperType ctxt t1 t2 ->
+        let res = t1
+        t1, closed, opened, substitutions
+      | _ ,_ when isSuperType ctxt t2 t1 ->
+        let res = t2
+        t2, closed, opened, substitutions
       | _ -> failwithf "Not implemented type merging between %A and %A" t1 t2
 
-    let rec collapseTypes (ts:List<Type>) (closed:Set<TypeVar>) (opened:Set<TypeVar>) (substitutions:Map<TypeVar, TypeEquivalence>) =
+    let rec collapseTypes ctxt (ts:List<Type>) (closed:Set<TypeVar>) (opened:Set<TypeVar>) (substitutions:Map<TypeVar, TypeEquivalence>) =
       match ts with
       | [] -> failwith "Cannot collapse empty list!"
       | t::[] -> t, closed, opened, substitutions
       | t1::t2::ts ->
-        let t12, closed1, opened1, substitutions1 = mergeTypes t1 t2 closed opened substitutions
-        collapseTypes (t12::ts) closed1 opened1 substitutions1
+        let t12, closed1, opened1, substitutions1 = mergeTypes ctxt t1 t2 closed opened substitutions
+        collapseTypes ctxt (t12::ts) closed1 opened1 substitutions1
     
-    let vType, closed1, opened1, substitutions1 = collapseTypes vTypeCandidates closed opened substitutions
+    let vType, closed1, opened1, substitutions1 = collapseTypes ctxt vTypeCandidates closed opened substitutions
     closed1 |> Set.add v, opened1 |> Set.remove v, substitutions1 |> Map.add v { equivalence with Types = Set.singleton vType }
   and normalize (closed:Set<TypeVar>) (opened:Set<TypeVar>) (unexplored:List<TypeVar>) (substitutions:Map<TypeVar, TypeEquivalence>) =
     match unexplored with
@@ -225,7 +245,7 @@ let inferTypes input output clauses ctxt =
   let clausesTyped, scheme2 = traverseMap ctxt clauses scheme1
   let outputTyped, scheme3 = traverse ctxt output Unknown scheme2
 
-  let finalSubstitutions = normalize scheme3.Substitutions
+  let finalSubstitutions = normalize ctxt scheme3.Substitutions
 
   let rec lookup ti =
     match ti with

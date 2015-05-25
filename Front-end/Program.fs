@@ -95,15 +95,16 @@ let main argv =
 
       "Eval without memory", "run"
       "Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
+      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
+      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
 
       "Binary trees", "run"
       "Boolean expressions", "run"
 
-      "Lambda calculus", "run"
 
       "Trees 234", @"main"
-      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
-      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
+
+      "Lambda calculus", "run"
 
 //      "Generic lists", @"run"
       

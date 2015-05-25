@@ -1,6 +1,4 @@
 - general cleanup
-  - Application(Angle, Application(Angle, Extension({Var.Name = name},_,_) :: [], _, _) :: [], _, _) as a -> 
-    IS NOT NECESSARILY NativeValue
   - TypeConstantDescriptor.FromType is way too weak
 - type inference
   - Generic types

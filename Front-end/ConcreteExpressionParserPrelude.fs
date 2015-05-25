@@ -129,7 +129,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
             res :: x, y
         | Application(Angle, Application(Angle, Extension({Var.Name = name},_,_) :: [], _, _) :: [], _, _) -> 
           let x,y = findArguments xs
-          TypeConstant(name, TypeConstantDescriptor.NativeValue) :: x, y
+          TypeConstant(name, TypeConstantDescriptor.FromName name) :: x, y
         | Application(Angle, Application(Angle, Extension({Var.Name = name},_,_) :: genericArgs, _, _) :: [], _, _) -> 
           let args = 
             [

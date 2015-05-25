@@ -25,14 +25,14 @@ type Type =
             | ConstructedType(t, fs) -> sprintf "%A<%A>" (t) fs
             | TypeVariable(t) -> sprintf "%s" t
             | Unknown -> sprintf "Unkown"
-        static member compatible (t1:Type) (t2:Type) =
-          if t1 = t2 then true
+        static member compatible (==) (t1:Type) (t2:Type) =
+          if t1 == t2 then true
           else
             match t1,t2 with 
             | TypeVariable _, _ 
             | _, TypeVariable _ -> true
             | TypeAbstraction(a1,b1), TypeAbstraction(a2,b2) ->
-              Type.compatible a1 a2 && Type.compatible b1 b2
+              Type.compatible (==) a1 a2 && Type.compatible (==) b1 b2
             | ConstructedType(a1,b1), ConstructedType(a2,b2) ->
-              Type.compatible a1 a2 && Seq.forall2 Type.compatible b1 b2
+              Type.compatible (==) a1 a2 && Seq.forall2 (Type.compatible (==)) b1 b2
             | _ -> false
