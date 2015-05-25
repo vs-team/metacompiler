@@ -24,7 +24,7 @@ public static _opBang Create(string P1) { return new _opBang(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " ! "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+ res += " ! "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -76,9 +76,9 @@ public static _opMultiplication Create(Expr P1, Expr P2) { return new _opMultipl
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " * "; res += P2.ToString(); 
+ res += " * "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -104,9 +104,9 @@ public static _opAddition Create(Expr P1, Expr P2) { return new _opAddition(P1, 
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " + "; res += P2.ToString(); 
+ res += " + "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -132,9 +132,9 @@ public static _Comma Create(Value P1, MapIntString P2) { return new _Comma(P1, P
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " , "; res += P2.ToString(); 
+ res += " , "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -160,9 +160,9 @@ public static _Semicolon Create(Expr P1, Expr P2) { return new _Semicolon(P1, P2
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " ; "; res += P2.ToString(); 
+ res += " ; "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -207,9 +207,9 @@ public MapIntString Run() { return StaticRun(P1, P2, P3); }
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " add "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " add "; res += P2.ToString(); 
 res += P3.ToString(); 
 
  res += ")";
@@ -236,9 +236,9 @@ public static assign Create(Variable P1, Expr P2) { return new assign(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " assign "; res += P2.ToString(); 
+ res += " assign "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -466,8 +466,8 @@ public EvalResult Run() { return StaticRun(P1, P2); }
 public override string ToString() {
  var res = "("; 
 
- res += " eval "; res += P1.ToString(); 
-res += P2.ToString(); 
+ res += " eval "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -511,9 +511,9 @@ public Value Run() { return StaticRun(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " lookup "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " lookup "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -531,10 +531,10 @@ public override int GetHashCode() {
 }
 
 public class map : MapIntString  {
-public ImmutableDictionary<string,int> P1;
+public ImmutableDictionary<string, int> P1;
 
-public map(ImmutableDictionary<string,int> P1) {this.P1 = P1;}
-public static map Create(ImmutableDictionary<string,int> P1) { return new map(P1); }
+public map(ImmutableDictionary<string, int> P1) {this.P1 = P1;}
+public static map Create(ImmutableDictionary<string, int> P1) { return new map(P1); }
 
 public override string ToString() {
  var res = "("; 
@@ -627,7 +627,7 @@ public EvalResult Run() { return StaticRun(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " run "; res += P1.ToString(); 
+ res += " run "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;

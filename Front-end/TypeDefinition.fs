@@ -2,9 +2,18 @@
 
 type TypeVar = string
 
+type TypeConstantDescriptor = NativeValue | NativeRef | Defined
+  with
+  static member FromName name =
+    match name with
+    | "int" -> NativeValue
+    | "string" -> NativeRef
+    | "bool" -> NativeValue
+    | _ -> Defined
+
 type Type =
     | TypeVariable of TypeVar // 'a
-    | TypeConstant of string // int
+    | TypeConstant of string * TypeConstantDescriptor // int
     | TypeAbstraction of Type * Type // s -> 's
     | ConstructedType of Type * Type list  // List 'a
     | Unknown
@@ -12,7 +21,7 @@ type Type =
         override this.ToString() =
             match this with
             | TypeAbstraction(p, v) -> sprintf "%s -> %s" (p.ToString()) (v.ToString())
-            | TypeConstant(t) -> sprintf "%s" (t.ToString())
+            | TypeConstant(t,_) -> sprintf "%s" (t.ToString())
             | ConstructedType(t, fs) -> sprintf "%A<%A>" (t) fs
             | TypeVariable(t) -> sprintf "%s" t
             | Unknown -> sprintf "Unkown"

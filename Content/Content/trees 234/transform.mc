@@ -76,16 +76,16 @@ merge (node l;(k;(r;nil))) xs => l;(k;(r;xs))
 merge (node l;(k1;(m;(k2;rs)))) xs => (node l;(k1;(m;(k2;rs))));xs
 
 
-l insert k => l'
+(node n) insert k => l'
 merge l' nil => l''
 ---------------------------
-k insertInto l;nil => l''
+k insertInto (node n);nil => l''
 
 << System.String.Compare(x,k,false) >> == 1
-l insert (entry $s k $i v) => l'
+(node n) insert (entry $s k $i v) => l'
 merge l' (entry $s x $i v1;xs) => l''
 ---------------------------------------------
-(entry $s k $i v) insertInto (l;(entry $s x $i v1;xs)) => l''
+(entry $s k $i v) insertInto ((node n);(entry $s x $i v1;xs)) => l''
 
 << System.String.Compare(x,k,false) >> == 0
 ------------------------------------
@@ -128,14 +128,14 @@ lookup empty key => nothing
 lookup node(l;(entry $s k $i v;(r;nil))) ($s key) => entry $s k $i v
 
 << System.String.Compare(key,k,false) >> == -1
-lookup l ($s key) => kv 
+lookup (node l) ($s key) => kv 
 --------------------------------------------------------------------
-lookup node(l;(entry $s k $i v;(r;nil))) ($s key) => kv
+lookup node((node l);(entry $s k $i v;(r;nil))) ($s key) => kv
 
 << System.String.Compare(key,k,false) >> == 1
-lookup r ($s key) => kv 
+lookup (node r) ($s key) => kv 
 --------------------------------------------------------------------
-lookup node(l;(entry $s k $i v;(r;nil))) ($s key) => kv
+lookup node(l;(entry $s k $i v;((node r);nil))) ($s key) => kv
 
 << System.String.Compare(key,k1,false) >> == 0
 --------------------------------------------------------------------
@@ -146,20 +146,20 @@ lookup node(l;(entry $s k1 $i v1;(m;(k2;(r;nil))))) ($s key) => entry $s k1 $i v
 lookup node(l;(k1;(m;(entry $s k2 $i v2;(r;nil))))) ($s key) => entry $s k2 $i v2
 
 << System.String.Compare(key,k1,false) >> == -1
-lookup l ($s key) => kv
+lookup (node l) ($s key) => kv
 --------------------------------------------------------------------
-lookup node(l;(entry $s k1 $i v1;(m;(entry $s k2 $i v2;(r;nil))))) ($s key) => kv
+lookup node((node l);(entry $s k1 $i v1;(m;(entry $s k2 $i v2;(r;nil))))) ($s key) => kv
 
 << System.String.Compare(key,k1,false) >> == 1
 << System.String.Compare(key,k2,false) >> == -1
-lookup m ($s key) => kv
+lookup (node m) ($s key) => kv
 --------------------------------------------------------------------
-lookup node(l;(entry $s k1 $i v1;(m;(entry $s k2 $i v2;(r;nil))))) ($s key) => kv
+lookup node(l;(entry $s k1 $i v1;((node m);(entry $s k2 $i v2;(r;nil))))) ($s key) => kv
 
 << System.String.Compare(key,k2,false) >> == 1
-lookup r ($s key) => kv
+lookup (node r) ($s key) => kv
 --------------------------------------------------------------------
-lookup node(l;(entry $s k1 $i v1;(m;(entry $s k2 $i v2;(r;nil))))) ($s key) => kv
+lookup node(l;(entry $s k1 $i v1;(m;(entry $s k2 $i v2;((node r);nil))))) ($s key) => kv
 
 << System.String.Compare(key,k1,false) >> == 0
 --------------------------------------------------------------------
@@ -174,26 +174,26 @@ lookup node(l;(k1;(l_m;(entry $s k2 $i v2;(r_m;(k3;(r;nil))))))) ($s key) => ent
 lookup node(l;(k1;(l_m;(k2;(r_m;(entry $s k3 $i v3;(r;nil))))))) ($s key) => entry $s k3 $i v3
 
 << System.String.Compare(key,k1,false) >> == -1
-lookup l ($s key) => kv
+lookup (node l) ($s key) => kv
 -----------------------------------------------------------------------------------------------
-lookup node(l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil))))))) ($s key) => kv
+lookup node((node l);(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil))))))) ($s key) => kv
 
 << System.String.Compare(key,k1,false) >> == 1
 << System.String.Compare(key,k2,false) >> == -1
-lookup l_m ($s key) => kv
+lookup (node l_m) ($s key) => kv
 -----------------------------------------------------------------------------------------------
-lookup node(l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil))))))) ($s key) => kv
+lookup node(l;(entry $s k1 $i v1;((node l_m);(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil))))))) ($s key) => kv
 
 << System.String.Compare(key,k2,false) >> == 1
 << System.String.Compare(key,k3,false) >> == -1
-lookup r_m ($s key) => kv
+lookup (node r_m) ($s key) => kv
 -----------------------------------------------------------------------------------------------
-lookup node(l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil))))))) ($s key) => kv
+lookup node(l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;((node r_m);(entry $s k3 $i v3;(r;nil))))))) ($s key) => kv
 
 << System.String.Compare(key,k3,false) >> == 1
-lookup r ($s key) => kv
+lookup (node r) ($s key) => kv
 -----------------------------------------------------------------------------------------------
-lookup node(l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;(r;nil))))))) ($s key) => kv
+lookup node(l;(entry $s k1 $i v1;(l_m;(entry $s k2 $i v2;(r_m;(entry $s k3 $i v3;((node r);nil))))))) ($s key) => kv
 
 
 empty insert (entry $s "aab" $i 10) => t1

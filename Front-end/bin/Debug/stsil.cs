@@ -58,7 +58,7 @@ public int Run() { return StaticRun(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " dda "; res += P1.ToString(); 
+ res += " dda "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -103,7 +103,7 @@ public static snoc Create(ListInt P1, int P2) { return new snoc(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += " snoc "; res += P2.ToString(); 
 

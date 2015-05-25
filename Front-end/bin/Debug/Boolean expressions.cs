@@ -20,7 +20,7 @@ public static _opBang Create(Expr P1) { return new _opBang(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " ! "; res += P1.ToString(); 
+ res += " ! "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -46,9 +46,9 @@ public static _opBitwiseAnd Create(Expr P1, Expr P2) { return new _opBitwiseAnd(
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " & "; res += P2.ToString(); 
+ res += " & "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -298,7 +298,7 @@ public Value Run(){ return StaticRun(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " eval "; res += P1.ToString(); 
+ res += " eval "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -367,9 +367,9 @@ public static _opBitwiseOr Create(Expr P1, Expr P2) { return new _opBitwiseOr(P1
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " | "; res += P2.ToString(); 
+ res += " | "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;

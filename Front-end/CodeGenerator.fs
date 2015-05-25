@@ -61,15 +61,6 @@ let rec extractLeadingKeyword e =
   | _ -> failwithf "Cannot extract leading keyword from %A" e.DebugInformation
 
 
-let (|Native|Defined|Generic|) kw =
-    match kw with
-    | Application(Generic, _, _, _) -> Generic(Keyword.decodeName kw)
-    | _ ->
-        match Keyword.isNative kw with
-        | true -> Native(Keyword.decodeName kw)
-        | false -> Defined(Keyword.decodeName kw)
-
-
 
 let inline (++) (s:#seq<string>) (d:int) = 
   let bs = [ for i in [1..d] -> " " ] |> Seq.fold (+) ""
@@ -83,7 +74,7 @@ type Parameter =
   {
     Name    : string
     IsLeft  : bool
-    Type    : UntypedExpression
+    Type    : TypeDefinition.Type
   }
 
 (*
@@ -189,7 +180,7 @@ let rec generate_inline =
   | i -> 
     failwithf "Code generation error @ %A" i.DebugInformation
   
-let rec createElementInner (ctxt:ConcreteExpressionContext) (expectedType:UntypedExpression) (e:TypedExpression) = 
+let rec createElementInner (ctxt:ConcreteExpressionContext) (expectedType:Type) (e:TypedExpression) = 
     match e with
     | Keyword(Custom k, _, ti) 
     | Application(Regular,(Keyword(Custom k, _, ti)) :: [], _, _)
@@ -206,19 +197,18 @@ let rec createElementInner (ctxt:ConcreteExpressionContext) (expectedType:Untype
         failwithf "Invalid number of keyword arguments @ %A" pos
     | Extension(v:Var, _, ti) ->
       match expectedType with
-      | Native(t) ->
+      | TypeConstant(t, TypeConstantDescriptor.NativeValue) ->
         sprintf "%s" !v.Name, []
       | _ ->
         match ti, expectedType with
-        | TypeConstant found, Extension({ Name = expected }, _, _) ->
+        | TypeConstant(found,_), TypeConstant(expected,_) ->
           if found = expected || ctxt.Inherits found expected then
             sprintf "%s" !v.Name, []
           else
-            let t = Keyword.decodeName expectedType
-            sprintf "%s as %s" !v.Name t, [sprintf "%s is %s" !v.Name t]
+            sprintf "%s" !v.Name, []
         | _ ->
-          let t = Keyword.decodeName expectedType
-          sprintf "%s as %s" !v.Name t, [sprintf "%s is %s" !v.Name t]
+          let t = Keyword.ArgumentCSharpStyle expectedType cleanupWithoutDot
+          sprintf "%s" !v.Name, []
     | Application(Angle,e::[],pos, _) ->
       let res = generate_inline e
       sprintf "%s" res, []
@@ -252,7 +242,6 @@ let createElement (ctxt:ConcreteExpressionContext) (e:TypedExpression) =
         args.Substring(1, args.Length - 2)
       else
         args
-    //do printfn "Outer creation of %A" (k, args)
     let res = sprintf "%s.Create(%s)" !k trimmedArgs, cargs
     res
   | Application(Angle,e::es,pos,ti) ->
@@ -283,7 +272,6 @@ let createStaticRun (ctxt:ConcreteExpressionContext) (path:Path) (e:TypedExpress
         args.Substring(1, args.Length - 2)
       else
         args
-    //do printfn "Outer creation of %A" (k, args)
     let res = sprintf "%s.StaticRun%s(%s)" !k (path.ToString()) trimmedArgs, cargs
     res
   | Application(b,e::es,pos,ti) ->
@@ -605,8 +593,9 @@ type GeneratedClass =
           if c.Parameters.Count > 0 then
             let printParameter (p:Parameter) = 
               match p.Type with
-              | Generic(t)
-              | Native(t) when t <> "int" && t <> "float" && t <> "double" && t <> "bool" ->
+              | TypeDefinition.TypeConstant(t, TypeDefinition.TypeConstantDescriptor.Defined)
+              | TypeDefinition.TypeConstant(t, TypeDefinition.TypeConstantDescriptor.NativeRef)
+              | TypeDefinition.ConstructedType(TypeDefinition.TypeConstant(t, _),_) when t <> "int" && t <> "float" && t <> "double" && t <> "bool" ->
                 sprintf "if (%s is System.Collections.IEnumerable) { res += \"{\"; foreach(var x in %s as System.Collections.IEnumerable) res += x.ToString(); res += \"}\";  } else { res += %s.ToString(); } \n" p.Name p.Name p.Name
               | _ -> 
                 sprintf "res += %s.ToString(); \n" p.Name

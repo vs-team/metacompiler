@@ -19,7 +19,7 @@ public static _Comma Create(Expr P1, bool P2) { return new _Comma(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += " , "; res += P2.ToString(); 
 
@@ -127,7 +127,7 @@ public BinTreeInt Run(){ return StaticRun(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += " add "; res += P2.ToString(); 
 
@@ -235,7 +235,7 @@ public bool Run(){ return StaticRun(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += " contains "; res += P2.ToString(); 
 
@@ -284,9 +284,9 @@ public static node Create(BinTreeInt P1, int P2, BinTreeInt P3) { return new nod
 public override string ToString() {
  var res = "("; 
 
- res += " node "; res += P1.ToString(); 
+ res += " node "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 res += P2.ToString(); 
-res += P3.ToString(); 
+if (P3 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P3 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P3.ToString(); } 
 
  res += ")";
  return res;
@@ -362,11 +362,9 @@ var tmp_12 = tmp_13.Run0_();
 
 var res = tmp_12; var arg = contains.Create(t, 7); 
  #line 13 "Content\Binary trees\transform.mc"
-if(arg is Expr) { 
+var result = _Comma.Create(arg, res);
  #line 13 "Content\Binary trees\transform.mc"
-var result = _Comma.Create(arg as Expr, res);
- #line 13 "Content\Binary trees\transform.mc"
- return result;  }
+ return result; 
  } 
 
   

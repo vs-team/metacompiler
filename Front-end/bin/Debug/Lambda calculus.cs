@@ -40,7 +40,7 @@ public Term Run5_(){ return StaticRun5_(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " $ "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+ res += " $ "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -110,9 +110,9 @@ public Term Run5_(){ return StaticRun5_(P1, P2, P3); }
 public override string ToString() {
  var res = "("; 
 
- res += " \\ "; res += P1.ToString(); 
-res += P2.ToString(); 
-res += P3.ToString(); 
+ res += " \\ "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+if (P3 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P3 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P3.ToString(); } 
 
  res += ")";
  return res;
@@ -138,9 +138,9 @@ public static _As Create(Term P1, Term P2) { return new _As(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " as "; res += P2.ToString(); 
+ res += " as "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -353,9 +353,9 @@ public Term Run(){ return StaticRun(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " with "; res += P2.ToString(); 
+ res += " with "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -454,9 +454,9 @@ public Term Run5_(){ return StaticRun5_(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " | "; res += P2.ToString(); 
+ res += " | "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;

@@ -1,6 +1,7 @@
 ﻿module ConcreteExpressionParserPrelude
 
 open Utilities
+open TypeDefinition
 open ParserMonad
 open StateMonad
 open BasicExpression
@@ -26,10 +27,12 @@ type KeywordKind =
 type ParsedKeyword<'k, 'e, 'i, 'di, 'ti> =
   {
     GenericArguments : List<string>
-    LeftArguments: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
-    RightArguments: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
+    LeftArguments: List<Type>
+    RightArguments: List<Type>
     Name: string
     Type: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
+//    ReturnType : Option<Type>
+//    BaseType : Option<Type>
     Associativity: Associativity
     Priority: int
     Kind : KeywordKind
@@ -69,6 +72,8 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
                   match k with 
                   | [Keyword(_, _, _)] ->
                       k, xs
+                  | _ -> failwith "Malformed header"
+              | _ -> failwith "Malformed header"
         | Keyword(Custom a, _, _)       ->
           [x], xs
         | _ -> failwith "malformed expression"
@@ -97,10 +102,11 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
       | x::xs -> 
         match x with
         | Application(Square, args, _, _) ->
-          args, xs
+          let args',_ = findArguments args
+          args', xs
         | _ -> 
           [], l
-    let rec findArguments l =
+    and findArguments l =
       match l with
       | [] -> [], []
       | x::xs -> 
@@ -110,17 +116,35 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
         | Keyword(Custom "->", _, _) ->
           let a,b = findArguments xs
           a, b
-        | Extension(_,_,_) as a -> 
+        | Extension({Var.Name = name},_,_) -> 
           let genericArguments, xs = findGenericParameters xs
           match genericArguments with
           | [] ->
             let x,y = findArguments xs
-            a :: x, y
+            TypeConstant(name, TypeConstantDescriptor.Defined) :: x, y
           | _ -> 
-            failwith "Unhandled case: generic arguments"
-        | Application(Angle, Application(Angle, _, _, _) :: [], _, _) as a -> 
+            let x,y = findArguments xs
+            let res = ConstructedType(TypeConstant(name, TypeConstantDescriptor.Defined), genericArguments)
+            do printfn "Found generic type %A" res
+            res :: x, y
+        | Application(Angle, Application(Angle, Extension({Var.Name = name},_,_) :: [], _, _) :: [], _, _) -> 
           let x,y = findArguments xs
-          a :: x, y
+          TypeConstant(name, TypeConstantDescriptor.NativeValue) :: x, y
+        | Application(Angle, Application(Angle, Extension({Var.Name = name},_,_) :: genericArgs, _, _) :: [], _, _) -> 
+          let args = 
+            [
+              for arg in genericArgs do
+                match arg with
+                | Extension({Var.Name = argName},_,_) -> 
+                  yield TypeConstant(argName, TypeConstantDescriptor.FromName argName)
+                | Keyword(Custom(">"),_,_)
+                | Keyword(Custom("<"),_,_)
+                | Keyword(Custom(","),_,_) -> ()
+                | _ -> 
+                  failwithf "Unsupported generic argument %A; this should probably be a recursive parser." arg
+            ]
+          let x,y = findArguments xs
+          ConstructedType(TypeConstant(name, TypeConstantDescriptor.FromName name), args) :: x, y
         | _ -> 
           failwithf "Unsupported keyword argument %A" x
     findArguments k      
@@ -136,6 +160,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
               | [Extension(name, _, _)] ->
                 name.Name, []
               | _-> removeCS xs
+            | _ -> failwith "Malformed header"
         removeCS k
 
   static member getKeywordType k =
@@ -170,6 +195,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
                         | [] -> 0, []
                         | Imported(IntLiteral a, _,_)::ks ->
                           (int)a, ks
+                        | _ -> failwith "Malformed header"
                       | _-> 0, xs
             removePriority k
 
@@ -191,7 +217,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
                       | _-> Right, xs
             removeAssociativity k
 
-  static member decode (k:BasicExpression<Keyword,Var,_,_,_>) = 
+  static member decode (k:BasicExpression<Keyword,Var,Literal,Position,Unit>) : ParsedKeyword<Keyword,Var,Literal,Position,Unit> = 
     match k with
     | Application(Implicit, args, pos, ()) ->
       let x =
@@ -336,32 +362,19 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
       | Custom m -> m
            
 
-    static member ArgumentCSharpStyle (keyword:BasicExpression<_,_,_,Position,_>) cleanup =
-      match keyword with
-      | Application(Angle, Application(Angle, Extension({ Var.Name = genName }, _, _)::genArgs, _, _) :: [], _, _) when genArgs.Length > 0 ->
-        let args = 
-          [
-            for a in genArgs do
-              match a with
-              | Keyword(Custom(n),_,_) -> yield n
-              | Extension({Var.Name = n},_,_) -> yield cleanup n
-              | _ -> failwithf "Unexpected generic parameter %A" a
-          ]
-        let res = sprintf "%s%s" (cleanup genName) (args |> Seq.reduce (+))
-        res
-      | Application(Generic, arg::args, _ ,_) -> 
-          sprintf "%s<%s>" (cleanup (Keyword.decodeName arg)) (args |> Seq.map (fun a -> Keyword.ArgumentCSharpStyle a cleanup) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
-      | _ ->
-        match Keyword.isNative keyword with
-        | true -> Keyword.decodeName keyword
-        | false -> cleanup (Keyword.decodeName keyword)
+    static member ArgumentCSharpStyle (t:Type) cleanup : string =
+      match t with
+      | TypeConstant(t,_) -> t
+      | ConstructedType(t, args) ->
+        sprintf "%s<%s>" (Keyword.ArgumentCSharpStyle t cleanup) (args |> Seq.map (fun a -> Keyword.ArgumentCSharpStyle a cleanup) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
+      | _ -> failwith "Not implemented"
       
     static member createExt l = l |> List.map (fun x -> Extension({Name = x}, Position.Zero, ()))                              
-                                    
-    static member CreateCSharpKeyword (kw : string*List<string>*List<string>*List<string>*int*string)= 
-      let (!) l = l |> List.map (fun x -> Extension({Name = x}, Position.Zero, ()))
+
+    static member CreateCSharpKeyword (kw : string*List<string>*List<TypeDefinition.Type>*List<TypeDefinition.Type>*int*string) =
+      let (!) l = l |> List.map (fun x -> Extension( { Name = x }, Position.Zero, ()))
       let name, generic, left, right, priority, kwtype = kw
-      { GenericArguments = generic; LeftArguments = !left; RightArguments = !right; Name = name; Type = ![kwtype]; Associativity = Right; Priority = priority; Kind = Data; Multeplicity = KeywordMulteplicity.Single }
+      { GenericArguments = generic; LeftArguments = left; RightArguments = right; Name = name; Type = ![kwtype]; Associativity = Right; Priority = priority; Kind = Data; Multeplicity = KeywordMulteplicity.Single }
 
 and ConcreteExpressionContext = 
   {
@@ -409,26 +422,28 @@ and ConcreteExpressionContext =
             ImportedModules = ctxt.ImportedModules |> List.append ctxt'.ImportedModules
         }
       static member CSharp =
+        let (!) x = TypeConstant(x, Defined)
+        let (!!) = List.map (!)
         let ks = 
           [
             ("true", [], [], [], 0, "CSharpExpr")
             ("false", [], [], [], 0, "CSharpExpr")
-            ("&&", [], ["CSharpExpr"], ["CSharpExpr"], 1, "CSharpExpr")
-            ("||", [], ["CSharpExpr"], ["CSharpExpr"], 1, "CSharpExpr")
-            ("!", [], [], ["CSharpExpr"], 1, "CSharpExpr")
-            (",", [], ["CSharpExpr"], ["CSharpExpr"], 1, "CSharpExpr")
-            ("<", [], ["CSharpExpr"], ["CSharpExpr"], 10, "CSharpExpr")
-            (">", [], ["CSharpExpr"], ["CSharpExpr"], 10, "CSharpExpr")
-            (">=", [], ["CSharpExpr"], ["CSharpExpr"], 10, "CSharpExpr")
-            ("<=", [], ["CSharpExpr"], ["CSharpExpr"], 10, "CSharpExpr")
-            ("==", [], ["CSharpExpr"], ["CSharpExpr"], 10, "CSharpExpr")
-            ("!=", [], ["CSharpExpr"], ["CSharpExpr"], 10, "CSharpExpr")
-            ("/", [], ["CSharpExpr"], ["CSharpExpr"], 100, "CSharpExpr")
-            ("*", [], ["CSharpExpr"], ["CSharpExpr"], 10, "CSharpExpr")
-            ("%", [], ["CSharpExpr"], ["CSharpExpr"], 100, "CSharpExpr")
-            ("+", [], ["CSharpExpr"], ["CSharpExpr"], 100, "CSharpExpr")
-            ("-", [], ["CSharpExpr"], ["CSharpExpr"], 100, "CSharpExpr")
-            (".", [], ["CSharpExpr"], ["CSharpExpr"], 1000, "CSharpExpr")
+            ("&&", [], !!["CSharpExpr"], !!["CSharpExpr"], 1, "CSharpExpr")
+            ("||", [], !!["CSharpExpr"], !!["CSharpExpr"], 1, "CSharpExpr")
+            ("!", [], [], !!["CSharpExpr"], 1, "CSharpExpr")
+            (",", [], !!["CSharpExpr"], !!["CSharpExpr"], 1, "CSharpExpr")
+            ("<", [], !!["CSharpExpr"], !!["CSharpExpr"], 10, "CSharpExpr")
+            (">", [], !!["CSharpExpr"], !!["CSharpExpr"], 10, "CSharpExpr")
+            (">=", [], !!["CSharpExpr"], !!["CSharpExpr"], 10, "CSharpExpr")
+            ("<=", [], !!["CSharpExpr"], !!["CSharpExpr"], 10, "CSharpExpr")
+            ("==", [], !!["CSharpExpr"], !!["CSharpExpr"], 10, "CSharpExpr")
+            ("!=", [], !!["CSharpExpr"], !!["CSharpExpr"], 10, "CSharpExpr")
+            ("/", [], !!["CSharpExpr"], !!["CSharpExpr"], 100, "CSharpExpr")
+            ("*", [], !!["CSharpExpr"], !!["CSharpExpr"], 10, "CSharpExpr")
+            ("%", [], !!["CSharpExpr"], !!["CSharpExpr"], 100, "CSharpExpr")
+            ("+", [], !!["CSharpExpr"], !!["CSharpExpr"], 100, "CSharpExpr")
+            ("-", [], !!["CSharpExpr"], !!["CSharpExpr"], 100, "CSharpExpr")
+            (".", [], !!["CSharpExpr"], !!["CSharpExpr"], 1000, "CSharpExpr")
           ] |> Seq.map Keyword.CreateCSharpKeyword
             |> Seq.toList
         {

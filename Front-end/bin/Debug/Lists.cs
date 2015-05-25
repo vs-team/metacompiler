@@ -21,9 +21,9 @@ public static _Comma Create(ListInt P1, ListInt P2) { return new _Comma(P1, P2);
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " , "; res += P2.ToString(); 
+ res += " , "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -51,7 +51,7 @@ public override string ToString() {
  var res = "("; 
 res += P1.ToString(); 
 
- res += " ; "; res += P2.ToString(); 
+ res += " ; "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -115,7 +115,7 @@ public int Run() { return StaticRun(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " add "; res += P1.ToString(); 
+ res += " add "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -197,7 +197,7 @@ public bool Run() { return StaticRun(P1, P2); }
 public override string ToString() {
  var res = "("; 
 
- res += " contains "; res += P1.ToString(); 
+ res += " contains "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 res += P2.ToString(); 
 
  res += ")";
@@ -262,7 +262,7 @@ public int Run() { return StaticRun(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " length "; res += P1.ToString(); 
+ res += " length "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -392,8 +392,8 @@ public ListInt Run() { return StaticRun(P1, P2); }
 public override string ToString() {
  var res = "("; 
 
- res += " merge "; res += P1.ToString(); 
-res += P2.ToString(); 
+ res += " merge "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -500,7 +500,7 @@ public ListInt Run() { return StaticRun(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " mergeSort "; res += P1.ToString(); 
+ res += " mergeSort "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -584,7 +584,7 @@ public ListInt Run() { return StaticRun(P1, P2); }
 public override string ToString() {
  var res = "("; 
 
- res += " plus "; res += P1.ToString(); 
+ res += " plus "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 res += P2.ToString(); 
 
  res += ")";
@@ -673,7 +673,7 @@ public ListInt Run() { return StaticRun(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " removeOdd "; res += P1.ToString(); 
+ res += " removeOdd "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -759,7 +759,7 @@ public ListIntPair Run() { return StaticRun(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " split "; res += P1.ToString(); 
+ res += " split "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;

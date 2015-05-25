@@ -75,7 +75,7 @@ let isSuperType t1 t2 (ctxt:ConcreteExpressionContext) =
 
 let rec unify (pos:Position) (expected:Type) (given:Type) (scheme:TypeContext) (ctxt:ConcreteExpressionContext) : TypeContext =
   match expected, given with
-  | TypeConstant(e1), TypeConstant(g1) when e1 = g1 || (isSuperType e1 g1 ctxt) || (isSuperType g1 e1 ctxt) -> scheme
+  | TypeConstant(e1,_), TypeConstant(g1,_) when e1 = g1 || (isSuperType e1 g1 ctxt) || (isSuperType g1 e1 ctxt) -> scheme
   | TypeAbstraction(e1, e2), TypeAbstraction(g1, g2) ->
     let firstModifiedScheme = unify pos e1 g1 scheme ctxt
     let secondModifiedScheme = unify pos e2 g2 firstModifiedScheme ctxt
@@ -133,7 +133,7 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
       let scheme3 = unify pos constraints returnType scheme2 ctxt
       Application(br, func'::args', pos, returnType), scheme3
   | Imported(imported, pos, ()) ->
-    let importedType = TypeConstant(imported.typeString)
+    let importedType = TypeConstant(imported.typeString, TypeConstantDescriptor.NativeValue)
     Imported(imported, pos, importedType), unify pos constraints importedType scheme ctxt
   | Keyword(kw, pos, ()) ->
     let kwType,scheme1 = 
@@ -143,11 +143,10 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
         | Some(kwDescription) ->
           let mutable kwReturnType = 
             match kwDescription.Type |> Keyword.typeToString with
-            | t::[] | _::t::[] -> t |> TypeConstant
+            | t::[] | _::t::[] -> TypeConstant(t, Defined)
             | _ -> failwithf "Unexpected keyword return type %A" kwDescription.Type
-          for l in kwDescription.Arguments |> List.rev do
-            let lList = [l] |> Keyword.typeToString
-            kwReturnType <- TypeAbstraction(lList |> List.head |> TypeConstant, kwReturnType)
+          for arg in kwDescription.Arguments |> List.rev do
+            kwReturnType <- TypeAbstraction(arg, kwReturnType)
           kwReturnType, unify pos constraints kwReturnType scheme ctxt
         | _ ->
           failwithf "Unknown keyword %A" kw
@@ -155,7 +154,7 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
       | Equals      | NotEquals
       | SmallerOrEqual ->
         let fV, fVT, scheme1 = scheme.FreshVariable
-        TypeAbstraction(fVT, TypeAbstraction(fVT, TypeConstant("bool"))), scheme1
+        TypeAbstraction(fVT, TypeAbstraction(fVT, TypeConstant("bool", NativeValue))), scheme1
       | _ -> failwithf "Not implemented keyword sort %A" kw
     Keyword(kw, pos, kwType), scheme1
   | Extension({Name = var}, pos, ()) ->
@@ -237,6 +236,8 @@ let inferTypes input output clauses ctxt =
         t.Types.MinimumElement
       | _ -> ti
     | TypeConstant _ -> ti
+    | ConstructedType(t,args) ->
+      ConstructedType(lookup t, [ for a in args -> lookup a])
     | _ -> failwith "Unsupported lookup on type %A" ti
 
   let rec annotate (expr:BasicExpression<Keyword, Var, Literal, Position, Type>) = 

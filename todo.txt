@@ -1,19 +1,25 @@
+- general cleanup
+  - Application(Angle, Application(Angle, Extension({Var.Name = name},_,_) :: [], _, _) :: [], _, _) as a -> 
+    IS NOT NECESSARILY NativeValue
+  - TypeConstantDescriptor.FromType is way too weak
 - type inference
-  - test/adapt all samples
   - Generic types
+- ParsedKeyword cleanup
+  - ReturnType
+  - BaseType
+  - remove typeToString
+  - remove decodeName
+
 - cache parsed rules and type inferenced results
 - samples
   - import directive for multiple files
 - Refactor "clause" to "premise"
-- Scoping for keyword declarations
-- Func and Data
-  - ParsedKeyword should be a richer definition
-  - typeToString, anything related to names should be made more readable
-  - Fix in all samples
+- Keyword declarations between clauses
 - Refactor CodeGenerator.fs
-- Higher kinded generic parameters
-- Higher order terms
-- Type classes/modules
+- Higher:
+  - kinded generic parameters
+  - order terms
+
 - Textual debugger for terms
   
   *) 

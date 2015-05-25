@@ -116,11 +116,10 @@ and private convertApplication b exprs di ti =
     | Curly -> Keyword(Custom "curly",Position.Zero,())
     | Angle -> Keyword(Custom "angle",Position.Zero,())
     | Regular -> Keyword(Custom "regular",Position.Zero,())
-    | Generic -> Keyword(Custom "generic",Position.Zero,())
   let arguments = convertExpressions exprs
   Application(Regular,[applicationOp;bracket;arguments;debugInfo;typeInfo],Position.Zero,())
 
-and convert (expr : BasicExpression<'k, 'e, 'i, 'di, 'ti>) : BasicExpression<'k, 'e, 'i, 'di, 'ti> =
+and convert (expr : BasicExpression<_,_,_,_,_>) : BasicExpression<_,_,_,_,_> =
   match expr with
   | Keyword(k,di,ti) -> convertKeyword k di ti
   | Application(b,exprs,di,ti) -> convertApplication b exprs di ti

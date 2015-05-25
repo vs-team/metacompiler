@@ -64,9 +64,9 @@ public Num Run() { return StaticRun(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " * "; res += P2.ToString(); 
+ res += " * "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -137,9 +137,9 @@ public Num Run() { return StaticRun(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-res += P1.ToString(); 
+if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
- res += " + "; res += P2.ToString(); 
+ res += " + "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
  res += ")";
  return res;
@@ -264,7 +264,7 @@ public Num Run() { return StaticRun(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " eval "; res += P1.ToString(); 
+ res += " eval "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -337,7 +337,7 @@ public static s Create(Num P1) { return new s(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " s "; res += P1.ToString(); 
+ res += " s "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
@@ -401,7 +401,7 @@ public int Run() { return StaticRun(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " toNum "; res += P1.ToString(); 
+ res += " toNum "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
 
  res += ")";
  return res;
