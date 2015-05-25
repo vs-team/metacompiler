@@ -548,7 +548,7 @@ type GeneratedClass =
   {
     Keyword             : ParsedKeyword<Keyword, Var, Literal, Position, unit>
     BasicName           : string
-    Interface           : List<string>
+    Interface           : string
     GenericArguments    : List<string>
     Parameters          : ResizeArray<Parameter>
     mutable Methods     : Map<Path, Method>
@@ -615,19 +615,10 @@ type GeneratedClass =
         let (!) l = l |> List.reduce (fun p n -> p + "," + n)
         match c.Keyword.Kind with
         | KeywordKind.Func ->
-          let rec getReturnType (ts:List<BasicExpression<_,_,_,_,_>>) : string = 
-            match ts with
-            | t::(Extension({Var.Name=ret},_,_))::[] -> ret
-            | t::Application(Angle, inner::[], _, _)::[] -> 
-              let rec removeApplication e =
-                match e with
-                | Application(_, inner::[], _, _) -> removeApplication inner
-                | Extension({Var.Name=ret},_,_) -> ret
-                | _ -> failwithf "Unsupported keyword type %A" c.Keyword.Type
-              removeApplication inner
-            | t::ret::[] -> failwithf "Unsupported keyword type %A" ts
-            | _ -> failwithf "Malformed keyword type %A" c.Keyword.Type
-          let returnType = c.Keyword.Type |> getReturnType
+          let returnType = 
+            match c.Keyword.ReturnType with
+            | Some returnType -> Keyword.ArgumentCSharpStyle returnType cleanupWithoutDot
+            | None -> failwithf "Error at %A: func %A has no return type." c.Keyword.Position c.Keyword
           let returnType = 
             match c.Keyword.Multeplicity with
             | KeywordMulteplicity.Single ->
@@ -669,9 +660,9 @@ type GeneratedClass =
                 yield sprintf "public %s Run%s(){ %s }\n" returnType path parent_or_empty_call
             ] |> Seq.fold (+) ""
           sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n}\n\n" 
-            c.Name !c.Interface genericConstraints parameters cons runImplementation missing_methods to_string equals hash
+            c.Name c.Interface genericConstraints parameters cons runImplementation missing_methods to_string equals hash
         | KeywordKind.Data ->
-          sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n}\n\n" c.Name !c.Interface genericConstraints parameters cons to_string equals hash
+          sprintf "public class %s : %s %s {\n%s\n%s\n%s\n%s\n%s\n}\n\n" c.Name c.Interface genericConstraints parameters cons to_string equals hash
 
 
 let add_rule inputClass (rule:BasicExpression<_,_,Literal, Position, Unit>) (rule_path:Path) (hasScope:bool) ctxt =
@@ -744,7 +735,7 @@ let generateCode (originalFilePath:string) (program_name:string)
       let newClass = { GeneratedClass.Keyword   = keyword
                        GeneratedClass.BasicName = keyword.Name
                        GeneratedClass.GenericArguments = keyword.GenericArguments
-                       GeneratedClass.Interface = Keyword.nonNativeTypeToString( keyword.FilledType )
+                       GeneratedClass.Interface = Keyword.ArgumentCSharpStyle keyword.BaseType cleanupWithoutDot
                        GeneratedClass.Parameters = ResizeArray()
                        GeneratedClass.Methods = Map.empty }
       for t,i in keyword.LeftArguments |> Seq.mapi (fun i p -> p,i+1) do
@@ -759,7 +750,7 @@ let generateCode (originalFilePath:string) (program_name:string)
 
     let classes = classes
     let extensions = @"public static class Extensions { public static V GetKey<T, V>(this System.Collections.Immutable.ImmutableDictionary<T, V> self, T key) { return self[key]; } }"
-    let interfaces = [ for k in ctxt.CustomKeywords -> Keyword.nonNativeTypeToString k.Type ] |> List.concat|> Seq.distinct |> Seq.toList 
+    let interfaces = [ for k in ctxt.CustomKeywords -> Keyword.ArgumentCSharpStyle k.BaseType cleanupWithoutDot ] |> Seq.distinct |> Seq.toList 
     let inheritanceRelationships = inheritanceRelationships
     let interfacesCode = 
       [

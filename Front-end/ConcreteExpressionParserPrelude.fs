@@ -30,21 +30,16 @@ type ParsedKeyword<'k, 'e, 'i, 'di, 'ti> =
     LeftArguments: List<Type>
     RightArguments: List<Type>
     Name: string
-    Type: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
-//    ReturnType : Option<Type>
-//    BaseType : Option<Type>
+//    Type: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
+    ReturnType : Option<Type> // Some(t) only if function
+    BaseType : Type
     Associativity: Associativity
     Priority: int
     Kind : KeywordKind
     Multeplicity : KeywordMulteplicity
+    Position : Position
   }
   with 
-    member this.FilledType = 
-      match this.Kind with
-      | KeywordKind.Data -> this.Type
-      | KeywordKind.Func ->
-        let res = this.Type |> List.rev |> List.tail |> List.rev
-        res
     member this.Arguments = this.LeftArguments @ this.RightArguments
   
 type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisible | Divisible | GreaterOrEqual | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of string
@@ -163,26 +158,31 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
             | _ -> failwith "Malformed header"
         removeCS k
 
-  static member getKeywordType k =
-    let rec removeType l =
-      match l with
-      | [] -> (KeywordMulteplicity.Multiple, []), []
-      | x::xs -> 
-        match x with
-        | Keyword(Custom ":", _, _) -> 
+  static member getKeywordType : State<KeywordMulteplicity * Type * Option<Type>,_> =
+    fun k ->
+      let (!) n = TypeConstant(n, TypeConstantDescriptor.FromName n)
+      let rec removeType l =
+        match l with
+        | Keyword(Custom ":", _, _) :: xs -> 
           removeType xs
-        | Keyword(Custom "=>", _, _) ->
-          let (_, x),y = removeType xs
-          (KeywordMulteplicity.Single, x), y
-        | Keyword(Custom "==>", _, _) ->
-          let (_, x), y = removeType xs
-          (KeywordMulteplicity.Multiple, x), y
-        | Keyword(Custom "Priority", _,_)
-        | Keyword(Custom "Associativity", _, _) -> (KeywordMulteplicity.Multiple, []), x::xs
-        | a -> 
-          let (m, x), y = removeType xs
-          (m, a :: x), y
-    removeType k  
+        | Extension({Var.Name=baseType},_,_) :: Keyword(Custom "=>", _, _) :: returnTypeExpr :: xs ->
+          let returnTypes, _ = Keyword.getArguments [returnTypeExpr]
+          match returnTypes with
+          | [returnType] ->
+            (KeywordMulteplicity.Single, !baseType, Some returnType), xs
+          | _ -> failwithf "Cannot extract return type from %A" returnTypeExpr
+        | Extension({Var.Name=baseType},_,_) :: Keyword(Custom "==>", _, _) :: returnTypeExpr :: xs ->
+          let returnTypes, _ = Keyword.getArguments [returnTypeExpr]
+          match returnTypes with
+          | [returnType] ->
+            (KeywordMulteplicity.Single, !baseType, Some returnType), xs
+          | _ -> failwithf "Cannot extract return type from %A" returnTypeExpr
+        | Extension({Var.Name=baseType},_,_) :: (Keyword(Custom "Priority",_,_)::_ as xs)
+        | Extension({Var.Name=baseType},_,_) :: (Keyword(Custom "Associativity",_,_)::_ as xs)
+        | Extension({Var.Name=baseType},_,_) :: ([] as xs) ->
+          (KeywordMulteplicity.Single, !baseType, None), xs
+        | _ -> failwithf "Cannot extract keyword type from %A" k
+      removeType k
                   
   static member getKeywordPriority k  =
             let rec removePriority l =
@@ -224,19 +224,20 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
         (st{
             let! header = Keyword.getHeader
             match header with 
-            | [Keyword(Custom a, _, _)] ->
+            | [Keyword(Custom a, pos, _)] ->
               let kind = KeywordKind.fromString a
               let! genericArguments = Keyword.getGenerics
               let! leftArguments = Keyword.getArguments
               let! name = Keyword.getName
               let! rightArguments = Keyword.getArguments
-              let! keywordMulteplicity, keywordtype = Keyword.getKeywordType
+              let! keywordMulteplicity, baseType, returnType = Keyword.getKeywordType
               let! priority = Keyword.getKeywordPriority
               let! associativity = Keyword.getKeywordAssociativity
               return { GenericArguments = genericArguments; LeftArguments = leftArguments; 
-                        RightArguments = rightArguments; Name = name; Type = keywordtype; 
+                        RightArguments = rightArguments; Name = name; 
+                        BaseType = baseType; ReturnType = returnType;
                         Associativity = associativity; Priority = priority ; Kind = kind;
-                        Multeplicity = keywordMulteplicity }
+                        Multeplicity = keywordMulteplicity; Position = pos }
             | _ ->
               return failwith "malformed expression"
           }) args |> fst
@@ -245,57 +246,13 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
       let x =
         (st{
             let! name = Keyword.removeCScharpName
-            return {GenericArguments = []; LeftArguments = []; RightArguments = []; Name = name; Type = []; Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single }
+            return { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = name; 
+                     BaseType = TypeConstant(name, Defined); ReturnType = None; Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single; Position = pos }
           }) args |> fst
       x 
     | _ -> 
       failwithf "Malformed keyword root syntax %A" k 
-     
-    
-  static member typeToString (keyword:List<BasicExpression<Keyword,Var,Literal,_,_>>) : List<string> =
-    let rec dec k =
-      match k with
-        | x::xs ->
-          match x with 
-          | Application(Angle, Application(Angle, Extension({ Var.Name = n }, _, _)::[], _, _)::[], _, _)
-          | Extension({ Var.Name = n }, _, _)
-          | Keyword((Keyword.Custom n), _, _) ->
-            n :: (dec xs)
-          | Application(Angle, Application(Angle, Extension({ Var.Name = consName }, _, _)::gargs, _, _)::[], _, _) ->
-            [consName + (gargs |> dec |> Seq.reduce (+))]
-          | _ -> 
-            dec xs
-        | [] -> []
-    dec keyword
 
-  static member nonNativeTypeToString (keyword:List<BasicExpression<Keyword,Var,Literal,_,_>>) : string list =
-    let rec dec k =
-      match k with
-        | x::xs ->
-          match x with 
-          | Application(Angle, Application(Angle, Extension(n, _, _)::[], _, _)::[], _, _) -> []
-          | Extension(n, _, _) ->
-            n.Name :: (dec xs)
-          | _ -> dec xs
-        | [] -> []
-    dec keyword
-
-  static member isNative keyword = 
-      match keyword with
-      | Extension(arg,_,_) -> false
-      | Application(Angle, [Extension(arg,_,_)], _, _) -> true
-      | Application(Angle, [arg], _, _) -> Keyword.isNative arg
-      | Application(Angle, args, _, _) -> true
-      | _ -> failwithf "Cannot match argument %A when checking for native keyword" keyword
-
-  static member decodeName (keyword:BasicExpression<Keyword,_,_,_,_>) = 
-    match keyword with
-    | Extension(a, _, _) ->
-      a.Name
-    | _ -> (Keyword.decode keyword).Name     
-                
-
-    
   static member ParseWithoutComparison = 
     p{
       let! br = !!(word "<<" + word ">>") + p{ return () }
@@ -372,9 +329,11 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
     static member createExt l = l |> List.map (fun x -> Extension({Name = x}, Position.Zero, ()))                              
 
     static member CreateCSharpKeyword (kw : string*List<string>*List<TypeDefinition.Type>*List<TypeDefinition.Type>*int*string) =
-      let (!) l = l |> List.map (fun x -> Extension( { Name = x }, Position.Zero, ()))
       let name, generic, left, right, priority, kwtype = kw
-      { GenericArguments = generic; LeftArguments = left; RightArguments = right; Name = name; Type = ![kwtype]; Associativity = Right; Priority = priority; Kind = Data; Multeplicity = KeywordMulteplicity.Single }
+      { GenericArguments = generic; LeftArguments = left; RightArguments = right; Name = name; 
+        BaseType = TypeConstant(kwtype, TypeDefinition.TypeConstantDescriptor.FromName name); 
+        ReturnType = None; Associativity = Right; Priority = priority; Kind = Data; 
+        Multeplicity = KeywordMulteplicity.Single; Position = Position.Zero }
 
 and ConcreteExpressionContext = 
   {

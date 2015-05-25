@@ -11,7 +11,7 @@ Data Expr -> "gt" -> Expr : Expr                                                
 Data Expr -> "+" -> Expr : Expr                                                         Priority 10
 Data Expr -> "*" -> Expr : Expr                                                         Priority 20
 Data Expr -> ";" -> Expr : Expr                   
-Data Value -> "," -> MapIntString : Expr => EvalResult
+Data Value -> "," -> MapIntString : EvalResult
 Data "!" -> <<string>> : Variable                                                       Priority 10000
 Data "?" -> <<bool>> : Value                                                            Priority 10000
 Data "$" -> <<int>> : Value                                                             Priority 10000

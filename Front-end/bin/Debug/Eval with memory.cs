@@ -10,8 +10,8 @@ namespace Eval_with_memory {
 public interface MapIntString : Expr {}
 public interface Expr {}
 public interface EvalResult {}
-public interface Value : Expr {}
 public interface Variable : Expr {}
+public interface Value : Expr {}
 
 
 
@@ -123,7 +123,7 @@ public override int GetHashCode() {
 
 }
 
-public class _Comma : Expr,EvalResult  {
+public class _Comma : EvalResult  {
 public Value P1;
 public MapIntString P2;
 

@@ -9,8 +9,8 @@ namespace Eval_with_readonly_memory {
 
 public interface MapIntString : Expr {}
 public interface Expr {}
-public interface Value : Expr {}
 public interface Variable : Expr {}
+public interface Value : Expr {}
 
 
 

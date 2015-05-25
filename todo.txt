@@ -2,12 +2,9 @@
   - TypeConstantDescriptor.FromType is way too weak
 - type inference
   - Generic types
-  - DefinedAs takes the return type, not the base type of the right-hand expression
+  - DefinedAs takes the base type, not the return type of the right-hand expression
 - ParsedKeyword cleanup
-  - ReturnType
-  - BaseType
-  - remove typeToString
-  - remove decodeName
+  - Kind should contain returnType
 
 - cache parsed rules and type inferenced results
 - samples

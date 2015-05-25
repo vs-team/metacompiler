@@ -6,6 +6,7 @@ open Utilities
 open ParserMonad
 open BasicExpression
 open ConcreteExpressionParserPrelude
+open TypeDefinition
 
 let mutable debug_expr = false
 let mutable debug_rules = false
@@ -24,14 +25,14 @@ let rec program() =
     let! initialContext = getContext()
     let keywordParsingKS = 
       [
-        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "->"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single }
-        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = ":"; Type = (Keyword.createExt ["KeywordFiller"]);Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single }
-        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "=>"; Type = (Keyword.createExt ["KeywordFiller"]);Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single }
-        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "==>"; Type = (Keyword.createExt ["KeywordFiller"]);Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single }
-        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Data"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single }
-        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Func"; Type = (Keyword.createExt ["KeywordFiller"]);Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single }
-        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Priority"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single }
-        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Associativity"; Type = (Keyword.createExt ["KeywordFiller"]) ;Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single }
+        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "->"; ReturnType = None; BaseType = TypeDefinition.TypeConstant("KeywordFiller", Defined) ;Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single; Position = Position.Zero }
+        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = ":"; ReturnType = None; BaseType = TypeDefinition.TypeConstant("KeywordFiller", Defined) ;Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single; Position = Position.Zero }
+        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "=>"; ReturnType = None; BaseType = TypeDefinition.TypeConstant("KeywordFiller", Defined) ;Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single; Position = Position.Zero }
+        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "==>"; ReturnType = None; BaseType = TypeDefinition.TypeConstant("KeywordFiller", Defined) ;Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single; Position = Position.Zero }
+        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Data"; ReturnType = None; BaseType = TypeDefinition.TypeConstant("KeywordFiller", Defined)  ;Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single; Position = Position.Zero }
+        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Func"; ReturnType = None; BaseType = TypeDefinition.TypeConstant("KeywordFiller", Defined) ;Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single; Position = Position.Zero }
+        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Priority"; ReturnType = None; BaseType = TypeDefinition.TypeConstant("KeywordFiller", Defined)  ;Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single; Position = Position.Zero }
+        { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = "Associativity"; ReturnType = None; BaseType = TypeDefinition.TypeConstant("KeywordFiller", Defined)  ;Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single; Position = Position.Zero }
       ]
 
     do! setContext 

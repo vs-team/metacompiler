@@ -151,14 +151,17 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
       | Custom(name) -> 
         match ctxt.CustomKeywordsMap |> Map.tryFind name with
         | Some(kwDescription) ->
-          let mutable kwReturnType = 
-            match kwDescription.Type |> Keyword.typeToString with
-            | t::[] | _::t::[] -> 
-              TypeConstant(t, TypeConstantDescriptor.FromName t)
-            | _ -> failwithf "Unexpected keyword return type %A" kwDescription.Type
-          for arg in kwDescription.Arguments |> List.rev do
-            kwReturnType <- TypeAbstraction(arg, kwReturnType)
-          kwReturnType, unify pos constraints kwReturnType scheme ctxt
+            let mutable kwReturnType = 
+              match kwDescription.Kind with
+              | KeywordKind.Data ->
+                kwDescription.BaseType
+              | KeywordKind.Func ->
+                match kwDescription.ReturnType with
+                | Some kwReturnType -> kwReturnType
+                | _ -> failwithf "Malformed func %A" kwDescription
+            for arg in kwDescription.Arguments |> List.rev do
+              kwReturnType <- TypeAbstraction(arg, kwReturnType)
+            kwReturnType, unify pos constraints kwReturnType scheme ctxt
         | _ ->
           failwithf "Unknown keyword %A" kw
       | GreaterThan | SmallerThan
