@@ -3,13 +3,31 @@
 type TypeVar = string
 
 type TypeConstantDescriptor = NativeValue | NativeRef | Defined
+
+let mutable private cachedDescriptors = Map.empty
+
+type TypeConstantDescriptor
   with
-  static member FromName name =
+  static member FromName (*defined imports*) name =
     match name with
     | "int" -> NativeValue
     | "string" -> NativeRef
     | "bool" -> NativeValue
-    | _ -> Defined
+    | _ -> 
+      match cachedDescriptors |> Map.tryFind name with
+      | Some desc -> desc
+      | None ->
+        let res = 
+          let systemType = System.Type.GetType name
+          if systemType <> null then
+            if systemType.IsValueType then
+              NativeValue
+            else
+              NativeRef
+          else
+            Defined
+        cachedDescriptors <- cachedDescriptors |> Map.add name res
+        res
 
 type Type =
     | TypeVariable of TypeVar // 'a

@@ -1,10 +1,7 @@
 - general cleanup
-  - TypeConstantDescriptor.FromType is way too weak
+  - TypeConstantDescriptor.FromType is way too weak; should use defined type names and also import statements
 - type inference
   - Generic types
-  - DefinedAs takes the base type, not the return type of the right-hand expression
-- ParsedKeyword cleanup
-  - Kind should contain returnType
 
 - cache parsed rules and type inferenced results
 - samples

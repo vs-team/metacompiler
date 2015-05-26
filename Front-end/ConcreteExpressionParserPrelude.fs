@@ -16,12 +16,7 @@ type KeywordMulteplicity =
 
 type KeywordKind =
     | Data
-    | Func
-  with static member fromString str =
-         match str with
-         | "Func" -> Func
-         | "Data" -> Data
-         | _ -> failwithf "Invalid keyword kind %s, only Data or Func are allowed" str
+    | Func of Type
 
 
 type ParsedKeyword<'k, 'e, 'i, 'di, 'ti> =
@@ -30,8 +25,6 @@ type ParsedKeyword<'k, 'e, 'i, 'di, 'ti> =
     LeftArguments: List<Type>
     RightArguments: List<Type>
     Name: string
-//    Type: List<BasicExpression<'k, 'e, 'i, 'di, 'ti>>
-    ReturnType : Option<Type> // Some(t) only if function
     BaseType : Type
     Associativity: Associativity
     Priority: int
@@ -225,7 +218,6 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
             let! header = Keyword.getHeader
             match header with 
             | [Keyword(Custom a, pos, _)] ->
-              let kind = KeywordKind.fromString a
               let! genericArguments = Keyword.getGenerics
               let! leftArguments = Keyword.getArguments
               let! name = Keyword.getName
@@ -233,10 +225,15 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
               let! keywordMulteplicity, baseType, returnType = Keyword.getKeywordType
               let! priority = Keyword.getKeywordPriority
               let! associativity = Keyword.getKeywordAssociativity
+              let kind = 
+                match a, returnType with
+                | "Data", None -> KeywordKind.Data
+                | "Func", Some returnType -> KeywordKind.Func returnType
+                | _ -> failwithf "Error at %A: invalid keyword definition with kind %A and return type %A" pos a returnType
               return { GenericArguments = genericArguments; LeftArguments = leftArguments; 
                         RightArguments = rightArguments; Name = name; 
-                        BaseType = baseType; ReturnType = returnType;
-                        Associativity = associativity; Priority = priority ; Kind = kind;
+                        BaseType = baseType; Kind = kind;
+                        Associativity = associativity; Priority = priority ;
                         Multeplicity = keywordMulteplicity; Position = pos }
             | _ ->
               return failwith "malformed expression"
@@ -247,7 +244,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
         (st{
             let! name = Keyword.removeCScharpName
             return { GenericArguments = []; LeftArguments = []; RightArguments = []; Name = name; 
-                     BaseType = TypeConstant(name, Defined); ReturnType = None; Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single; Position = pos }
+                     BaseType = TypeConstant(name, Defined); Associativity = Right; Priority = 0; Kind = Data; Multeplicity = KeywordMulteplicity.Single; Position = pos }
           }) args |> fst
       x 
     | _ -> 
@@ -332,7 +329,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
       let name, generic, left, right, priority, kwtype = kw
       { GenericArguments = generic; LeftArguments = left; RightArguments = right; Name = name; 
         BaseType = TypeConstant(kwtype, TypeDefinition.TypeConstantDescriptor.FromName name); 
-        ReturnType = None; Associativity = Right; Priority = priority; Kind = Data; 
+        Associativity = Right; Priority = priority; Kind = Data; 
         Multeplicity = KeywordMulteplicity.Single; Position = Position.Zero }
 
 and ConcreteExpressionContext = 

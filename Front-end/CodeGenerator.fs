@@ -614,11 +614,8 @@ type GeneratedClass =
           sprintf "public override int GetHashCode() {\n return 0; \n}\n"
         let (!) l = l |> List.reduce (fun p n -> p + "," + n)
         match c.Keyword.Kind with
-        | KeywordKind.Func ->
-          let returnType = 
-            match c.Keyword.ReturnType with
-            | Some returnType -> Keyword.ArgumentCSharpStyle returnType cleanupWithoutDot
-            | None -> failwithf "Error at %A: func %A has no return type." c.Keyword.Position c.Keyword
+        | KeywordKind.Func returnType ->
+          let returnType = Keyword.ArgumentCSharpStyle returnType cleanupWithoutDot
           let returnType = 
             match c.Keyword.Multeplicity with
             | KeywordMulteplicity.Single ->

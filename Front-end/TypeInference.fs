@@ -110,6 +110,22 @@ let rec annotateUnknown (expr:BasicExpression<Keyword, Var, Literal, Position, U
   | Extension(e, pos, ()) ->
     Extension(e, pos, Unknown)
 
+let rec getBaseType ctxt expr = 
+  match expr with
+  | Application(br, a::args, di, ti) -> 
+    getBaseType ctxt a
+  | Keyword((Custom kName),pos,_) ->
+    match ctxt.CustomKeywordsMap |> Map.tryFind kName with
+    | Some kwDescription ->
+      kwDescription.BaseType
+    | None -> failwithf "Invalid keyword %A" kName
+  | Imported(importedType, pos, ti) ->
+    ti
+//  | Extension(e, pos, ti) ->
+//    ti
+  | _ -> 
+    failwithf "Cannot extract base type from expression %A" expr
+
 let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword, Var, Literal, Position, Unit>) 
                  (constraints:Type) (scheme:TypeContext) : BasicExpression<Keyword, Var, Literal, Position, Type> * TypeContext =
   match expr with
@@ -122,7 +138,8 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
     let k' = k |> annotateUnknown
     let left', scheme1 = traverse ctxt left Unknown scheme
     let right', scheme2 = traverse ctxt right Unknown scheme1
-    Application(br, k'::left'::right'::[], pos, Unknown), scheme2
+    let rightBaseType = getBaseType ctxt right'
+    Application(br, k'::left'::right'::[], pos, Unknown), unify pos left'.TypeInformation rightBaseType scheme2 ctxt
   | Application(br, (Keyword(DoubleArrow,_,()) as k)::left::right::[], pos, ()) ->
     let k' = k |> annotateUnknown
     let left', scheme1 = traverse ctxt left Unknown scheme
@@ -155,10 +172,7 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
               match kwDescription.Kind with
               | KeywordKind.Data ->
                 kwDescription.BaseType
-              | KeywordKind.Func ->
-                match kwDescription.ReturnType with
-                | Some kwReturnType -> kwReturnType
-                | _ -> failwithf "Malformed func %A" kwDescription
+              | KeywordKind.Func kwReturnType -> kwReturnType
             for arg in kwDescription.Arguments |> List.rev do
               kwReturnType <- TypeAbstraction(arg, kwReturnType)
             kwReturnType, unify pos constraints kwReturnType scheme ctxt
