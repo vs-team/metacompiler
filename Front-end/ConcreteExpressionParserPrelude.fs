@@ -72,6 +72,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
         | [] -> [], []
         | x::xs ->
           match x with
+          | Application(Square, Application(Square, args, pos, _) :: [], _, _)
           | Application(Square, args, pos, _) ->
             [
               for a in args do
@@ -151,9 +152,13 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
             | _ -> failwith "Malformed header"
         removeCS k
 
-  static member getKeywordType : State<KeywordMulteplicity * Type * Option<Type>,_> =
+  static member getKeywordType (boundGenericParameters:Set<string>) : State<KeywordMulteplicity * Type * Option<Type>,_> =
     fun k ->
-      let (!) n = TypeConstant(n, TypeConstantDescriptor.FromName n)
+      let (!) n =
+        if boundGenericParameters |> Set.contains n then
+          TypeVariable(n)
+        else
+           TypeConstant(n, TypeConstantDescriptor.FromName n)
       let rec removeType l =
         match l with
         | Keyword(Custom ":", _, _) :: xs -> 
@@ -168,12 +173,30 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
           let returnTypes, _ = Keyword.getArguments [returnTypeExpr]
           match returnTypes with
           | [returnType] ->
-            (KeywordMulteplicity.Single, !baseType, Some returnType), xs
+            (KeywordMulteplicity.Multiple, !baseType, Some returnType), xs
           | _ -> failwithf "Cannot extract return type from %A" returnTypeExpr
         | Extension({Var.Name=baseType},_,_) :: (Keyword(Custom "Priority",_,_)::_ as xs)
         | Extension({Var.Name=baseType},_,_) :: (Keyword(Custom "Associativity",_,_)::_ as xs)
         | Extension({Var.Name=baseType},_,_) :: ([] as xs) ->
           (KeywordMulteplicity.Single, !baseType, None), xs
+        | Extension({Var.Name=baseType},_,_) :: args ->
+          let genericArgs,xs = Keyword.getGenerics args
+          let genericArgs = genericArgs |> List.map (!)
+          let baseType = ConstructedType(!baseType, genericArgs)
+          match xs with
+          | Keyword(Custom "==>", _, _) :: returnTypeExpr :: xs
+          | Keyword(Custom "=>", _, _) :: returnTypeExpr :: xs ->
+            let returnTypes, _ = Keyword.getArguments [returnTypeExpr]
+            match returnTypes with
+            | [returnType] ->
+              (KeywordMulteplicity.Multiple, baseType, Some returnType), xs
+            | _ -> failwithf "Cannot extract return type from %A" returnTypeExpr
+          | (Keyword(Custom "Priority",_,_)::_ as xs)
+          | (Keyword(Custom "Associativity",_,_)::_ as xs)
+          | ([] as xs) ->
+            (KeywordMulteplicity.Single, baseType, None), xs
+          | _ -> 
+            failwithf "Cannot extract keyword type from %A" k
         | _ -> failwithf "Cannot extract keyword type from %A" k
       removeType k
                   
@@ -222,7 +245,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
               let! leftArguments = Keyword.getArguments
               let! name = Keyword.getName
               let! rightArguments = Keyword.getArguments
-              let! keywordMulteplicity, baseType, returnType = Keyword.getKeywordType
+              let! keywordMulteplicity, baseType, returnType = Keyword.getKeywordType (genericArguments |> Set.ofList)
               let! priority = Keyword.getKeywordPriority
               let! associativity = Keyword.getKeywordAssociativity
               let kind = 

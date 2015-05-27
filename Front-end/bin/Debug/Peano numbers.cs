@@ -286,7 +286,7 @@ public class run : Expr  {
 public run() {}
 public static run Create() { return new run(); }
 
-  public static int StaticRun() {    
+  public static IEnumerable<int> StaticRun() {    
  { 
  #line 54 "Content\Peano numbers\transform.mc"
 
@@ -307,12 +307,11 @@ var res = tmp_2;
  #line 54 "Content\Peano numbers\transform.mc"
 var result = res;
  #line 54 "Content\Peano numbers\transform.mc"
- return result; 
+yield return result; 
  } 
 
-  
-throw new System.Exception("Error evaluating: " + new run().ToString() + " no result returned."); }
-public int Run() { return StaticRun(); }
+   }
+public IEnumerable<int> Run() { return StaticRun(); }
 
 
 public override string ToString() {
@@ -442,15 +441,13 @@ public override int GetHashCode() {
 
 
 public class EntryPoint {
-static public object Run(bool printInput)
+static public IEnumerable<object> Run(bool printInput)
 {
  #line 1 "input"
  var p = run.Create();
 if(printInput) System.Console.WriteLine(p.ToString());
- 
- var result = p.Run(); 
-
-return result;
+foreach(var x in p.Run())
+yield return x;
 }
 }
 

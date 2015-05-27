@@ -100,11 +100,10 @@ let main argv =
 
       "Binary trees", "run"
       "Boolean expressions", "run"
-//
-//
-//      "Trees 234", @"main"
-//
-//      "Lambda calculus", "run"
+
+      "Trees 234", @"main"
+
+      "Lambda calculus", "run"
 
 
 //      "Generic lists", @"run"
