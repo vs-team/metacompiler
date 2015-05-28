@@ -1,15 +1,21 @@
 ﻿import System      
 
+Data[a b] a -> "," -> b : Pair[a b]                                     Priority 900
+
 Data[a] a -> ";" -> List[a] : List[a]                                   Priority 1000
 Data[a] "nil" : List[a]
 
+Func "removeOdd" -> List[<<int>>] : Expr => List[<<int>>]
+
 Func[a] "length" -> List[a] : Expr => <<int>>
 
-Func "removeOdd" -> List[<<int>>] : Expr => List<<int>>
-
-Data[a b] a -> "," -> b : Pair[a b]                                     Priority 900
-
 Func "run" : Expr => Pair[<<int>> List[<<int>>]]
+
+
+<< x % 2 >> == 1
+removeOdd xs => xs'
+--------------------------
+removeOdd x;xs => x;xs'
 
 
 ----------------
@@ -27,11 +33,6 @@ removeOdd nil => nil
 removeOdd xs => xs'
 -----------------------
 removeOdd x;xs => xs'
-
-<< x % 2 >> == 1
-removeOdd xs => xs'
---------------------------
-removeOdd x;xs => x;xs'
 
 
 l1 := "x";"y";"z";nil

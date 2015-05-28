@@ -3,8 +3,8 @@
 let numProfilerRuns = 1
 
 let printExpressionTree = false
-let flushCSFileOnError = true
-let generateLineDirectives = true
+let flushCSFileOnError = false
+let generateLineDirectives = false
 
 let optimizeDirectParentCall = true
 let generateStaticRun = true

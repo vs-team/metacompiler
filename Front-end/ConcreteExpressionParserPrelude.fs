@@ -84,7 +84,12 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
             ], xs
           | _ -> [], l
 
-  static member getArguments k =
+  static member getArguments boundTypeVariables k =
+    let (!) n = 
+      if boundTypeVariables |> Set.contains n then
+        TypeVariable(n)
+      else
+        TypeConstant(n, TypeConstantDescriptor.FromName n)
     let rec findGenericParameters l =
       match l with
       | [] -> [], []
@@ -110,15 +115,14 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
           match genericArguments with
           | [] ->
             let x,y = findArguments xs
-            TypeConstant(name, TypeConstantDescriptor.Defined) :: x, y
+            !name :: x, y
           | _ -> 
             let x,y = findArguments xs
-            let res = ConstructedType(TypeConstant(name, TypeConstantDescriptor.Defined), genericArguments)
-            do printfn "Found generic type %A" res
+            let res = ConstructedType(!name, genericArguments)
             res :: x, y
         | Application(Angle, Application(Angle, Extension({Var.Name = name},_,_) :: [], _, _) :: [], _, _) -> 
           let x,y = findArguments xs
-          TypeConstant(name, TypeConstantDescriptor.FromName name) :: x, y
+          !name :: x, y
         | Application(Angle, Application(Angle, Extension({Var.Name = name},_,_) :: genericArgs, _, _) :: [], _, _) -> 
           let args = 
             [
@@ -133,7 +137,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
                   failwithf "Unsupported generic argument %A; this should probably be a recursive parser." arg
             ]
           let x,y = findArguments xs
-          ConstructedType(TypeConstant(name, TypeConstantDescriptor.FromName name), args) :: x, y
+          ConstructedType(!name, args) :: x, y
         | _ -> 
           failwithf "Unsupported keyword argument %A" x
     findArguments k      
@@ -164,13 +168,20 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
         | Keyword(Custom ":", _, _) :: xs -> 
           removeType xs
         | Extension({Var.Name=baseType},_,_) :: Keyword(Custom "=>", _, _) :: returnTypeExpr :: xs ->
-          let returnTypes, _ = Keyword.getArguments [returnTypeExpr]
+          let returnTypes, _ = Keyword.getArguments boundGenericParameters [returnTypeExpr]
           match returnTypes with
           | [returnType] ->
-            (KeywordMulteplicity.Single, !baseType, Some returnType), xs
+            match xs with
+            | Application(Square, Application(Square, args, _, _)::[], _, _)::xs
+            | Application(Square, args, _, _)::xs ->
+              let genericArguments, _ = Keyword.getArguments boundGenericParameters args
+              let res = ConstructedType(returnType, genericArguments)
+              (KeywordMulteplicity.Single, !baseType, Some(res)), xs
+            | _ ->
+              (KeywordMulteplicity.Single, !baseType, Some returnType), xs
           | _ -> failwithf "Cannot extract return type from %A" returnTypeExpr
         | Extension({Var.Name=baseType},_,_) :: Keyword(Custom "==>", _, _) :: returnTypeExpr :: xs ->
-          let returnTypes, _ = Keyword.getArguments [returnTypeExpr]
+          let returnTypes, _ = Keyword.getArguments boundGenericParameters [returnTypeExpr]
           match returnTypes with
           | [returnType] ->
             (KeywordMulteplicity.Multiple, !baseType, Some returnType), xs
@@ -186,7 +197,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
           match xs with
           | Keyword(Custom "==>", _, _) :: returnTypeExpr :: xs
           | Keyword(Custom "=>", _, _) :: returnTypeExpr :: xs ->
-            let returnTypes, _ = Keyword.getArguments [returnTypeExpr]
+            let returnTypes, _ = Keyword.getArguments boundGenericParameters [returnTypeExpr]
             match returnTypes with
             | [returnType] ->
               (KeywordMulteplicity.Multiple, baseType, Some returnType), xs
@@ -242,10 +253,11 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
             match header with 
             | [Keyword(Custom a, pos, _)] ->
               let! genericArguments = Keyword.getGenerics
-              let! leftArguments = Keyword.getArguments
+              let genericArgumentsSet = genericArguments |> Set.ofList
+              let! leftArguments = Keyword.getArguments genericArgumentsSet
               let! name = Keyword.getName
-              let! rightArguments = Keyword.getArguments
-              let! keywordMulteplicity, baseType, returnType = Keyword.getKeywordType (genericArguments |> Set.ofList)
+              let! rightArguments = Keyword.getArguments genericArgumentsSet
+              let! keywordMulteplicity, baseType, returnType = Keyword.getKeywordType genericArgumentsSet
               let! priority = Keyword.getKeywordPriority
               let! associativity = Keyword.getKeywordAssociativity
               let kind = 
@@ -344,7 +356,8 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
       | TypeConstant(t,_) -> t
       | ConstructedType(t, args) ->
         sprintf "%s<%s>" (Keyword.ArgumentCSharpStyle t cleanup) (args |> Seq.map (fun a -> Keyword.ArgumentCSharpStyle a cleanup) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
-      | _ -> failwith "Not implemented"
+      | TypeVariable(v) -> v |> cleanup
+      | _ -> failwithf "C# style printing of %A is not implemented" t
       
     static member createExt l = l |> List.map (fun x -> Extension({Name = x}, Position.Zero, ()))                              
 

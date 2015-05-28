@@ -755,9 +755,9 @@ let generateCode (originalFilePath:string) (program_name:string)
           match inheritanceRelationships |> Map.tryFind (i) with
           | Some ir ->
             let explicitInterfaces = ir.BaseInterfaces
-            yield sprintf "public interface %s : %s {}\n" ((!) i) (explicitInterfaces |> Seq.reduce (fun s x -> s + ", " + x))
+            yield sprintf "public interface %s : %s {}\n" i (explicitInterfaces |> Seq.reduce (fun s x -> s + ", " + x))
           | _ ->
-            yield sprintf "public interface %s {}\n" ((!) i)
+            yield sprintf "public interface %s {}\n" i
       ] |> Seq.fold (+) ""
     let all_method_paths =
       seq{

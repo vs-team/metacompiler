@@ -5,6 +5,7 @@ open ParserMonad
 open TypeDefinition
 open ConcreteExpressionParserPrelude
 
+
 let isSuperType (ctxt:ConcreteExpressionContext) t1 t2 =
   match t1,t2 with
   | TypeDefinition.TypeConstant(t1,_), TypeDefinition.TypeConstant(t2,_) ->
@@ -54,6 +55,12 @@ and TypeContext =
         let freshVariable = "a" + this.VariableCount.ToString()
         let freshVariableType = TypeVariable(freshVariable)
         freshVariable, freshVariableType, { this with VariableCount = this.VariableCount + 1 }
+      member this.introduceGenericVariable() : string * Type * TypeContext =
+        let freshVariable, freshVariableType, scheme1 = this.FreshVariable
+        let newScheme = { scheme1 with
+                            BoundVariables  = scheme1.BoundVariables.Add(freshVariable, freshVariableType)
+                            Substitutions   = scheme1.Substitutions.Add(freshVariable, TypeEquivalence.Create(freshVariable, freshVariableType)) }
+        freshVariable, freshVariableType, newScheme
       member this.introduceVariable (var:string) (varType:Type) : Type * TypeContext =
         if not (this.BoundVariables |> Map.containsKey var) then
           if varType = Unknown then 
@@ -78,6 +85,27 @@ and TypeContext =
           | None -> 
             { this with Substitutions = this.Substitutions |> Map.add v (TypeEquivalence.Create(v,t)) }
 
+let rec substituteVariables variableSubs t = 
+  match t with
+  | TypeVariable(v) ->
+    match variableSubs |> Map.tryFind v with
+    | Some fv -> TypeVariable(fv)
+    | None -> t
+  | TypeConstant(_) -> t
+  | ConstructedType(t, args) -> ConstructedType(substituteVariables variableSubs t, [for a in args -> substituteVariables variableSubs a])
+  | _ -> failwithf "Unsupported freshening of %A" t
+
+let rec instantiateFresh (scheme:TypeContext) (boundVariables:List<string>) (t:Type) =
+  let mutable scheme = scheme
+  let mutable subs = Map.empty
+  for v in boundVariables do
+    let fvName,fv,s' = scheme.introduceGenericVariable()
+    scheme <- s'
+    subs <- subs |> Map.add v fvName
+  let scheme,subs = scheme, subs
+  let res = substituteVariables subs t
+  res,subs,scheme
+
 let rec unify (pos:Position) (expected:Type) (given:Type) (scheme:TypeContext) (ctxt:ConcreteExpressionContext) : TypeContext =
   match expected, given with
   | TypeConstant(e1,_), TypeConstant(g1,_) when e1 = g1 -> scheme
@@ -94,8 +122,14 @@ let rec unify (pos:Position) (expected:Type) (given:Type) (scheme:TypeContext) (
   | Unknown, _ -> scheme
   | TypeVariable(v), t
   | t, TypeVariable(v) ->
-      scheme.substitute v t ctxt
+    scheme.substitute v t ctxt
   | _, _ when (isSuperType ctxt expected given) -> scheme
+  | ConstructedType(h1,args1), ConstructedType(h2,args2) ->
+    let scheme1 = unify pos h1 h2 scheme ctxt
+    let mutable scheme2 = scheme1
+    for a1,a2 in Seq.zip args1 args2 do
+      scheme2 <- unify pos a1 a2 scheme2 ctxt
+    scheme2
   | _ ->
     failwithf "Error at %A: cannot unify %A and %A\n" pos expected given
         
@@ -110,17 +144,18 @@ let rec annotateUnknown (expr:BasicExpression<Keyword, Var, Literal, Position, U
   | Extension(e, pos, ()) ->
     Extension(e, pos, Unknown)
 
-let rec getBaseType ctxt expr = 
+let rec getBaseType (scheme:TypeContext) ctxt expr : Type * TypeContext = 
   match expr with
   | Application(br, a::args, di, ti) -> 
-    getBaseType ctxt a
+    getBaseType scheme ctxt a
   | Keyword((Custom kName),pos,_) ->
     match ctxt.CustomKeywordsMap |> Map.tryFind kName with
     | Some kwDescription ->
-      kwDescription.BaseType
+      let t,variableSubs,scheme' = kwDescription.BaseType |> instantiateFresh scheme kwDescription.GenericArguments
+      t,scheme'
     | None -> failwithf "Invalid keyword %A" kName
   | Imported(importedType, pos, ti) ->
-    ti
+    ti, scheme
 //  | Extension(e, pos, ti) ->
 //    ti
   | _ -> 
@@ -138,8 +173,8 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
     let k' = k |> annotateUnknown
     let left', scheme1 = traverse ctxt left Unknown scheme
     let right', scheme2 = traverse ctxt right Unknown scheme1
-    let rightBaseType = getBaseType ctxt right'
-    Application(br, k'::left'::right'::[], pos, Unknown), unify pos left'.TypeInformation rightBaseType scheme2 ctxt
+    let rightBaseType,scheme3 = getBaseType scheme ctxt right'
+    Application(br, k'::left'::right'::[], pos, Unknown), unify pos left'.TypeInformation rightBaseType scheme3 ctxt
   | Application(br, (Keyword(DoubleArrow,_,()) as k)::left::right::[], pos, ()) ->
     let k' = k |> annotateUnknown
     let left', scheme1 = traverse ctxt left Unknown scheme
@@ -168,14 +203,16 @@ let rec traverse (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword,
       | Custom(name) -> 
         match ctxt.CustomKeywordsMap |> Map.tryFind name with
         | Some(kwDescription) ->
-            let mutable kwReturnType = 
+            let mutable kwReturnType, variableSubs, scheme2 = 
               match kwDescription.Kind with
               | KeywordKind.Data ->
-                kwDescription.BaseType
-              | KeywordKind.Func kwReturnType -> kwReturnType
+                kwDescription.BaseType |> instantiateFresh scheme kwDescription.GenericArguments
+              | KeywordKind.Func kwReturnType -> 
+                kwReturnType |> instantiateFresh scheme kwDescription.GenericArguments
             for arg in kwDescription.Arguments |> List.rev do
-              kwReturnType <- TypeAbstraction(arg, kwReturnType)
-            kwReturnType, unify pos constraints kwReturnType scheme ctxt
+              let arg' = substituteVariables variableSubs arg
+              kwReturnType <- TypeAbstraction(arg', kwReturnType)
+            kwReturnType, unify pos constraints kwReturnType scheme2 ctxt
         | _ ->
           failwithf "Unknown keyword %A" kw
       | GreaterThan | SmallerThan
@@ -210,6 +247,8 @@ let normalize ctxt (substitutions:Map<TypeVar, TypeEquivalence>) =
     let rec mergeTypes ctxt (t1:Type) (t2:Type) (closed:Set<TypeVar>) (opened:Set<TypeVar>) (substitutions:Map<TypeVar, TypeEquivalence>) =
       match t1,t2 with 
       | Unknown, Unknown -> failwith "Cannot merge Unknown and Unknown types."
+      | TypeConstant(a,_), TypeConstant(b,_) when a = b ->
+        t1, closed, opened, substitutions
       | Unknown, (TypeConstant _ as t)
       | (TypeConstant _ as t), Unknown
       | TypeVariable _, (TypeConstant _ as t)
@@ -223,6 +262,16 @@ let normalize ctxt (substitutions:Map<TypeVar, TypeEquivalence>) =
       | _ ,_ when isSuperType ctxt t2 t1 ->
         let res = t2
         t2, closed, opened, substitutions
+      | ConstructedType(h1,args1), ConstructedType(h2,args2) ->
+        let mutable h, closed, opened, substitutions = mergeTypes ctxt h1 h2 closed opened substitutions
+        let mutable args = []
+        for a1,a2 in Seq.zip args1 args2 do
+          let a, closed', opened', substitutions' = mergeTypes ctxt a1 a2 closed opened substitutions
+          closed <- closed'
+          opened <- opened'
+          substitutions <- substitutions'
+          args <- a :: args
+        ConstructedType(h, args |> List.rev), closed, opened, substitutions
       | _ -> failwithf "Not implemented type merging between %A and %A" t1 t2
 
     let rec collapseTypes ctxt (ts:List<Type>) (closed:Set<TypeVar>) (opened:Set<TypeVar>) (substitutions:Map<TypeVar, TypeEquivalence>) =
