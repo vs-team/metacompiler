@@ -125,75 +125,108 @@ public static eval Create(Term P1) { return new eval(P1); }
 
   public static Term StaticRun(Term P1) {    
  { 
- var tmp_0 = P1 as _opDollar; 
+ #line 20 "Content\Lambda calculus\transform.mc"
+var tmp_0 = P1 as _opDollar; 
+ #line 20 "Content\Lambda calculus\transform.mc"
 if (tmp_0 != null) { 
  var x = tmp_0.P1; 
+ #line 20 "Content\Lambda calculus\transform.mc"
 var result = _opDollar.Create(x);
+ #line 20 "Content\Lambda calculus\transform.mc"
  return result;  }
  } 
 
   
  { 
- var tmp_0 = P1 as _opSlash; 
+ #line 23 "Content\Lambda calculus\transform.mc"
+var tmp_0 = P1 as _opSlash; 
+ #line 23 "Content\Lambda calculus\transform.mc"
 if (tmp_0 != null) { 
  var tmp_1 = tmp_0.P1 as _opDollar; 
+ #line 23 "Content\Lambda calculus\transform.mc"
 if (tmp_1 != null) { 
  var x = tmp_1.P1; var tmp_2 = tmp_0.P2 as _Arrow; 
+ #line 23 "Content\Lambda calculus\transform.mc"
 if (tmp_2 != null) { 
  var t = tmp_0.P3; 
+ #line 23 "Content\Lambda calculus\transform.mc"
 var result = _opSlash.Create(_opDollar.Create(x), _Arrow.Create(), t);
+ #line 23 "Content\Lambda calculus\transform.mc"
  return result;  } } }
  } 
 
   
  { 
- var tmp_0 = P1 as _opBitwiseOr; 
+ #line 26 "Content\Lambda calculus\transform.mc"
+var tmp_0 = P1 as _opBitwiseOr; 
+ #line 26 "Content\Lambda calculus\transform.mc"
 if (tmp_0 != null) { 
  var tmp_1 = tmp_0.P1 as _opDollar; 
+ #line 26 "Content\Lambda calculus\transform.mc"
 if (tmp_1 != null) { 
  var x = tmp_1.P1; var u = tmp_0.P2; 
+ #line 26 "Content\Lambda calculus\transform.mc"
 var result = _opBitwiseOr.Create(_opDollar.Create(x), u);
+ #line 26 "Content\Lambda calculus\transform.mc"
  return result;  } }
  } 
 
   
  { 
- var tmp_0 = P1 as _opBitwiseOr; 
+ #line 29 "Content\Lambda calculus\transform.mc"
+var tmp_0 = P1 as _opBitwiseOr; 
+ #line 29 "Content\Lambda calculus\transform.mc"
 if (tmp_0 != null) { 
  var tmp_1 = tmp_0.P1 as _opBitwiseOr; 
+ #line 29 "Content\Lambda calculus\transform.mc"
 if (tmp_1 != null) { 
  var u = tmp_1.P1; var v = tmp_1.P2; var w = tmp_0.P2; 
+ #line 29 "Content\Lambda calculus\transform.mc"
 var tmp_3 = eval.Create(_opBitwiseOr.Create(u, v));
+ #line 29 "Content\Lambda calculus\transform.mc"
 
 var tmp_2 = tmp_3.Run();
 
 var v_Prime = tmp_2; 
+ #line 29 "Content\Lambda calculus\transform.mc"
 var tmp_5 = eval.Create(_opBitwiseOr.Create(v_Prime, w));
+ #line 29 "Content\Lambda calculus\transform.mc"
 
 var tmp_4 = tmp_5.Run();
 
 var res = tmp_4; 
+ #line 29 "Content\Lambda calculus\transform.mc"
 var result = res;
+ #line 29 "Content\Lambda calculus\transform.mc"
  return result;  } }
  } 
 
   
  { 
- var tmp_0 = P1 as _opBitwiseOr; 
+ #line 34 "Content\Lambda calculus\transform.mc"
+var tmp_0 = P1 as _opBitwiseOr; 
+ #line 34 "Content\Lambda calculus\transform.mc"
 if (tmp_0 != null) { 
  var tmp_1 = tmp_0.P1 as _opSlash; 
+ #line 34 "Content\Lambda calculus\transform.mc"
 if (tmp_1 != null) { 
  var tmp_2 = tmp_1.P1 as _opDollar; 
+ #line 34 "Content\Lambda calculus\transform.mc"
 if (tmp_2 != null) { 
  var x = tmp_2.P1; var tmp_3 = tmp_1.P2 as _Arrow; 
+ #line 34 "Content\Lambda calculus\transform.mc"
 if (tmp_3 != null) { 
  var t = tmp_1.P3; var u = tmp_0.P2; 
+ #line 34 "Content\Lambda calculus\transform.mc"
 var tmp_5 = _With.Create(t, _As.Create(_opDollar.Create(x), u));
+ #line 34 "Content\Lambda calculus\transform.mc"
 
 var tmp_4 = tmp_5.Run5_();
 
 var t_Prime = tmp_4; 
+ #line 34 "Content\Lambda calculus\transform.mc"
 var result = t_Prime;
+ #line 34 "Content\Lambda calculus\transform.mc"
  return result;  } } } }
  } 
 
@@ -231,13 +264,18 @@ public static run Create() { return new run(); }
 
   public static Term StaticRun() {    
  { 
- 
+ #line 16 "Content\Lambda calculus\transform.mc"
+
+ #line 16 "Content\Lambda calculus\transform.mc"
 var tmp_1 = eval.Create(_opBitwiseOr.Create(_opSlash.Create(_opDollar.Create("x"), _Arrow.Create(), _opDollar.Create("x")), _opDollar.Create("y")));
+ #line 16 "Content\Lambda calculus\transform.mc"
 
 var tmp_0 = tmp_1.Run();
 
 var res = tmp_0; 
+ #line 16 "Content\Lambda calculus\transform.mc"
 var result = res;
+ #line 16 "Content\Lambda calculus\transform.mc"
  return result; 
  } 
 
@@ -271,93 +309,137 @@ public static _With Create(Term P1, Where P2) { return new _With(P1, P2); }
 
   public static Term StaticRun5_(Term P1, Where P2) {    
  { 
- var tmp_0 = P1 as _opDollar; 
+ #line 38 "Content\Lambda calculus\transform.mc"
+var tmp_0 = P1 as _opDollar; 
+ #line 38 "Content\Lambda calculus\transform.mc"
 if (tmp_0 != null) { 
  var y = tmp_0.P1; var tmp_1 = P2 as _As; 
+ #line 38 "Content\Lambda calculus\transform.mc"
 if (tmp_1 != null) { 
  var tmp_2 = tmp_1.P1 as _opDollar; 
+ #line 38 "Content\Lambda calculus\transform.mc"
 if (tmp_2 != null) { 
  var x = tmp_2.P1; var u = tmp_1.P2; 
+ #line 38 "Content\Lambda calculus\transform.mc"
 if(x.Equals(y)) { 
+ #line 38 "Content\Lambda calculus\transform.mc"
 var result = u;
+ #line 38 "Content\Lambda calculus\transform.mc"
  return result;  } } } }
  } 
 
   
  { 
- var tmp_0 = P1 as _opDollar; 
+ #line 42 "Content\Lambda calculus\transform.mc"
+var tmp_0 = P1 as _opDollar; 
+ #line 42 "Content\Lambda calculus\transform.mc"
 if (tmp_0 != null) { 
  var y = tmp_0.P1; var tmp_1 = P2 as _As; 
+ #line 42 "Content\Lambda calculus\transform.mc"
 if (tmp_1 != null) { 
  var tmp_2 = tmp_1.P1 as _opDollar; 
+ #line 42 "Content\Lambda calculus\transform.mc"
 if (tmp_2 != null) { 
  var x = tmp_2.P1; var u = tmp_1.P2; 
+ #line 42 "Content\Lambda calculus\transform.mc"
 if(!x.Equals(y)) { 
+ #line 42 "Content\Lambda calculus\transform.mc"
 var result = _opDollar.Create(y);
+ #line 42 "Content\Lambda calculus\transform.mc"
  return result;  } } } }
  } 
 
   
  { 
- var tmp_0 = P1 as _opSlash; 
+ #line 46 "Content\Lambda calculus\transform.mc"
+var tmp_0 = P1 as _opSlash; 
+ #line 46 "Content\Lambda calculus\transform.mc"
 if (tmp_0 != null) { 
  var tmp_1 = tmp_0.P1 as _opDollar; 
+ #line 46 "Content\Lambda calculus\transform.mc"
 if (tmp_1 != null) { 
  var x = tmp_1.P1; var tmp_2 = tmp_0.P2 as _Arrow; 
+ #line 46 "Content\Lambda calculus\transform.mc"
 if (tmp_2 != null) { 
  var t = tmp_0.P3; var tmp_3 = P2 as _As; 
+ #line 46 "Content\Lambda calculus\transform.mc"
 if (tmp_3 != null) { 
  var tmp_4 = tmp_3.P1 as _opDollar; 
+ #line 46 "Content\Lambda calculus\transform.mc"
 if (tmp_4 != null) { 
  var y = tmp_4.P1; var u = tmp_3.P2; 
+ #line 46 "Content\Lambda calculus\transform.mc"
 if(x.Equals(y)) { 
+ #line 46 "Content\Lambda calculus\transform.mc"
 var result = _opSlash.Create(_opDollar.Create(x), _Arrow.Create(), t);
+ #line 46 "Content\Lambda calculus\transform.mc"
  return result;  } } } } } }
  } 
 
   
  { 
- var tmp_0 = P1 as _opSlash; 
+ #line 50 "Content\Lambda calculus\transform.mc"
+var tmp_0 = P1 as _opSlash; 
+ #line 50 "Content\Lambda calculus\transform.mc"
 if (tmp_0 != null) { 
  var tmp_1 = tmp_0.P1 as _opDollar; 
+ #line 50 "Content\Lambda calculus\transform.mc"
 if (tmp_1 != null) { 
  var x = tmp_1.P1; var tmp_2 = tmp_0.P2 as _Arrow; 
+ #line 50 "Content\Lambda calculus\transform.mc"
 if (tmp_2 != null) { 
  var t = tmp_0.P3; var tmp_3 = P2 as _As; 
+ #line 50 "Content\Lambda calculus\transform.mc"
 if (tmp_3 != null) { 
  var tmp_4 = tmp_3.P1 as _opDollar; 
+ #line 50 "Content\Lambda calculus\transform.mc"
 if (tmp_4 != null) { 
  var y = tmp_4.P1; var u = tmp_3.P2; 
+ #line 50 "Content\Lambda calculus\transform.mc"
 if(!x.Equals(y)) { 
+ #line 50 "Content\Lambda calculus\transform.mc"
 var tmp_6 = _With.Create(t, _As.Create(_opDollar.Create(y), u));
+ #line 50 "Content\Lambda calculus\transform.mc"
 
 var tmp_5 = tmp_6.Run5_();
 
 var t_Prime = tmp_5; 
+ #line 50 "Content\Lambda calculus\transform.mc"
 var result = _opSlash.Create(_opDollar.Create(x), _Arrow.Create(), t_Prime);
+ #line 50 "Content\Lambda calculus\transform.mc"
  return result;  } } } } } }
  } 
 
   
  { 
- var tmp_0 = P1 as _opBitwiseOr; 
+ #line 55 "Content\Lambda calculus\transform.mc"
+var tmp_0 = P1 as _opBitwiseOr; 
+ #line 55 "Content\Lambda calculus\transform.mc"
 if (tmp_0 != null) { 
  var t = tmp_0.P1; var u = tmp_0.P2; var tmp_1 = P2 as _As; 
+ #line 55 "Content\Lambda calculus\transform.mc"
 if (tmp_1 != null) { 
  var tmp_2 = tmp_1.P1 as _opDollar; 
+ #line 55 "Content\Lambda calculus\transform.mc"
 if (tmp_2 != null) { 
  var x = tmp_2.P1; var v = tmp_1.P2; 
+ #line 55 "Content\Lambda calculus\transform.mc"
 var tmp_4 = _With.Create(t, _As.Create(_opDollar.Create(x), v));
+ #line 55 "Content\Lambda calculus\transform.mc"
 
 var tmp_3 = tmp_4.Run5_();
 
 var t_Prime = tmp_3; 
+ #line 55 "Content\Lambda calculus\transform.mc"
 var tmp_6 = _With.Create(u, _As.Create(_opDollar.Create(x), v));
+ #line 55 "Content\Lambda calculus\transform.mc"
 
 var tmp_5 = tmp_6.Run5_();
 
 var u_Prime = tmp_5; 
+ #line 55 "Content\Lambda calculus\transform.mc"
 var result = _opBitwiseOr.Create(t_Prime, u_Prime);
+ #line 55 "Content\Lambda calculus\transform.mc"
  return result;  } } }
  } 
 

@@ -47,50 +47,73 @@ public static add Create(BinTreeInt P1, int P2) { return new add(P1, P2); }
 
   public static BinTreeInt StaticRun0_(BinTreeInt P1, int P2) {    
  { 
- var tmp_0 = P1 as nil; 
+ #line 24 "Content\Binary trees\transform.mc"
+var tmp_0 = P1 as nil; 
+ #line 24 "Content\Binary trees\transform.mc"
 if (tmp_0 != null) { 
  var k = P2; 
+ #line 24 "Content\Binary trees\transform.mc"
 var result = node.Create(nil.Create(), k, nil.Create());
+ #line 24 "Content\Binary trees\transform.mc"
  return result;  }
  } 
 
   
  { 
- var tmp_0 = P1 as node; 
+ #line 27 "Content\Binary trees\transform.mc"
+var tmp_0 = P1 as node; 
+ #line 27 "Content\Binary trees\transform.mc"
 if (tmp_0 != null) { 
  var l = tmp_0.P1; var k = tmp_0.P2; var r = tmp_0.P3; var x = P2; 
+ #line 27 "Content\Binary trees\transform.mc"
 if(x.Equals(k)) { 
+ #line 27 "Content\Binary trees\transform.mc"
 var result = node.Create(l, k, r);
+ #line 27 "Content\Binary trees\transform.mc"
  return result;  } }
  } 
 
   
  { 
- var tmp_0 = P1 as node; 
+ #line 31 "Content\Binary trees\transform.mc"
+var tmp_0 = P1 as node; 
+ #line 31 "Content\Binary trees\transform.mc"
 if (tmp_0 != null) { 
  var l = tmp_0.P1; var k = tmp_0.P2; var r = tmp_0.P3; var x = P2; 
+ #line 31 "Content\Binary trees\transform.mc"
 if(x<k) { 
+ #line 31 "Content\Binary trees\transform.mc"
 var tmp_2 = add.Create(l, x);
+ #line 31 "Content\Binary trees\transform.mc"
 
 var tmp_1 = tmp_2.Run0_();
 
 var l_Prime = tmp_1; 
+ #line 31 "Content\Binary trees\transform.mc"
 var result = node.Create(l_Prime, k, r);
+ #line 31 "Content\Binary trees\transform.mc"
  return result;  } }
  } 
 
   
  { 
- var tmp_0 = P1 as node; 
+ #line 36 "Content\Binary trees\transform.mc"
+var tmp_0 = P1 as node; 
+ #line 36 "Content\Binary trees\transform.mc"
 if (tmp_0 != null) { 
  var l = tmp_0.P1; var k = tmp_0.P2; var r = tmp_0.P3; var x = P2; 
+ #line 36 "Content\Binary trees\transform.mc"
 if(x>k) { 
+ #line 36 "Content\Binary trees\transform.mc"
 var tmp_2 = add.Create(r, x);
+ #line 36 "Content\Binary trees\transform.mc"
 
 var tmp_1 = tmp_2.Run0_();
 
 var r_Prime = tmp_1; 
+ #line 36 "Content\Binary trees\transform.mc"
 var result = node.Create(l, k, r_Prime);
+ #line 36 "Content\Binary trees\transform.mc"
  return result;  } }
  } 
 
@@ -132,50 +155,73 @@ public static contains Create(BinTreeInt P1, int P2) { return new contains(P1, P
 
   public static bool StaticRun0_(BinTreeInt P1, int P2) {    
  { 
- var tmp_0 = P1 as nil; 
+ #line 42 "Content\Binary trees\transform.mc"
+var tmp_0 = P1 as nil; 
+ #line 42 "Content\Binary trees\transform.mc"
 if (tmp_0 != null) { 
  var k = P2; 
+ #line 42 "Content\Binary trees\transform.mc"
 var result = false;
+ #line 42 "Content\Binary trees\transform.mc"
  return result;  }
  } 
 
   
  { 
- var tmp_0 = P1 as node; 
+ #line 45 "Content\Binary trees\transform.mc"
+var tmp_0 = P1 as node; 
+ #line 45 "Content\Binary trees\transform.mc"
 if (tmp_0 != null) { 
  var l = tmp_0.P1; var k = tmp_0.P2; var r = tmp_0.P3; var x = P2; 
+ #line 45 "Content\Binary trees\transform.mc"
 if(x.Equals(k)) { 
+ #line 45 "Content\Binary trees\transform.mc"
 var result = true;
+ #line 45 "Content\Binary trees\transform.mc"
  return result;  } }
  } 
 
   
  { 
- var tmp_0 = P1 as node; 
+ #line 49 "Content\Binary trees\transform.mc"
+var tmp_0 = P1 as node; 
+ #line 49 "Content\Binary trees\transform.mc"
 if (tmp_0 != null) { 
  var l = tmp_0.P1; var k = tmp_0.P2; var r = tmp_0.P3; var x = P2; 
+ #line 49 "Content\Binary trees\transform.mc"
 if(x<k) { 
+ #line 49 "Content\Binary trees\transform.mc"
 var tmp_2 = contains.Create(l, x);
+ #line 49 "Content\Binary trees\transform.mc"
 
 var tmp_1 = tmp_2.Run0_();
 
 var res = tmp_1; 
+ #line 49 "Content\Binary trees\transform.mc"
 var result = res;
+ #line 49 "Content\Binary trees\transform.mc"
  return result;  } }
  } 
 
   
  { 
- var tmp_0 = P1 as node; 
+ #line 54 "Content\Binary trees\transform.mc"
+var tmp_0 = P1 as node; 
+ #line 54 "Content\Binary trees\transform.mc"
 if (tmp_0 != null) { 
  var l = tmp_0.P1; var k = tmp_0.P2; var r = tmp_0.P3; var x = P2; 
+ #line 54 "Content\Binary trees\transform.mc"
 if(x>k) { 
+ #line 54 "Content\Binary trees\transform.mc"
 var tmp_2 = contains.Create(r, x);
+ #line 54 "Content\Binary trees\transform.mc"
 
 var tmp_1 = tmp_2.Run0_();
 
 var res = tmp_1; 
+ #line 54 "Content\Binary trees\transform.mc"
 var result = res;
+ #line 54 "Content\Binary trees\transform.mc"
  return result;  } }
  } 
 
@@ -264,43 +310,60 @@ public static run Create() { return new run(); }
 
   public static Expr StaticRun() {    
  { 
- 
+ #line 13 "Content\Binary trees\transform.mc"
+
+ #line 13 "Content\Binary trees\transform.mc"
 var tmp_1 = add.Create(nil.Create(), 10);
+ #line 13 "Content\Binary trees\transform.mc"
 
 var tmp_0 = tmp_1.Run0_();
 
 var t1 = tmp_0; 
+ #line 13 "Content\Binary trees\transform.mc"
 var tmp_3 = add.Create(t1, 5);
+ #line 13 "Content\Binary trees\transform.mc"
 
 var tmp_2 = tmp_3.Run0_();
 
 var t2 = tmp_2; 
+ #line 13 "Content\Binary trees\transform.mc"
 var tmp_5 = add.Create(t2, 7);
+ #line 13 "Content\Binary trees\transform.mc"
 
 var tmp_4 = tmp_5.Run0_();
 
 var t2b = tmp_4; 
+ #line 13 "Content\Binary trees\transform.mc"
 var tmp_7 = add.Create(t2b, 15);
+ #line 13 "Content\Binary trees\transform.mc"
 
 var tmp_6 = tmp_7.Run0_();
 
 var t3 = tmp_6; 
+ #line 13 "Content\Binary trees\transform.mc"
 var tmp_9 = add.Create(t3, 1);
+ #line 13 "Content\Binary trees\transform.mc"
 
 var tmp_8 = tmp_9.Run0_();
 
 var t4 = tmp_8; 
+ #line 13 "Content\Binary trees\transform.mc"
 var tmp_11 = add.Create(t4, 16);
+ #line 13 "Content\Binary trees\transform.mc"
 
 var tmp_10 = tmp_11.Run0_();
 
 var t = tmp_10; 
+ #line 13 "Content\Binary trees\transform.mc"
 var tmp_13 = contains.Create(t, 7);
+ #line 13 "Content\Binary trees\transform.mc"
 
 var tmp_12 = tmp_13.Run0_();
 
 var res = tmp_12; var arg = contains.Create(t, 7); 
+ #line 13 "Content\Binary trees\transform.mc"
 var result = _Comma.Create(arg, res);
+ #line 13 "Content\Binary trees\transform.mc"
  return result; 
  } 
 

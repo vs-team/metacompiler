@@ -1,7 +1,8 @@
 - general cleanup
   - TypeConstantDescriptor.FromType is way too weak; should use defined type names and also import statements
 - type inference
-  - Generic types
+  - Concretisation of generic types: all related variables should end up the same in the final declaration
+  - Code generation: generic keywords need their generic argument
 
 - cache parsed rules and type inferenced results
 - samples

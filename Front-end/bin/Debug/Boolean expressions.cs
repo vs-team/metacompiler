@@ -111,125 +111,179 @@ public static eval Create(Expr P1) { return new eval(P1); }
 
   public static Value StaticRun0_(Expr P1) {    
  { 
- var tmp_0 = P1 as TRUE; 
+ #line 21 "Content\Boolean expressions\transform.mc"
+var tmp_0 = P1 as TRUE; 
+ #line 21 "Content\Boolean expressions\transform.mc"
 if (tmp_0 != null) { 
  
+ #line 21 "Content\Boolean expressions\transform.mc"
 var result = TRUE.Create();
+ #line 21 "Content\Boolean expressions\transform.mc"
  return result;  }
  } 
 
   
  { 
- var tmp_0 = P1 as FALSE; 
+ #line 24 "Content\Boolean expressions\transform.mc"
+var tmp_0 = P1 as FALSE; 
+ #line 24 "Content\Boolean expressions\transform.mc"
 if (tmp_0 != null) { 
  
+ #line 24 "Content\Boolean expressions\transform.mc"
 var result = FALSE.Create();
+ #line 24 "Content\Boolean expressions\transform.mc"
  return result;  }
  } 
 
   
  { 
- var tmp_0 = P1 as _opBang; 
+ #line 28 "Content\Boolean expressions\transform.mc"
+var tmp_0 = P1 as _opBang; 
+ #line 28 "Content\Boolean expressions\transform.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; 
+ #line 28 "Content\Boolean expressions\transform.mc"
 var tmp_2 = eval.Create(a);
+ #line 28 "Content\Boolean expressions\transform.mc"
 
 var tmp_1 = tmp_2.Run0_();
 
 var tmp_3 = tmp_1 as TRUE; 
+ #line 28 "Content\Boolean expressions\transform.mc"
 if (tmp_3 != null) { 
  
+ #line 28 "Content\Boolean expressions\transform.mc"
 var result = FALSE.Create();
+ #line 28 "Content\Boolean expressions\transform.mc"
  return result;  } }
  } 
 
   
  { 
- var tmp_0 = P1 as _opBang; 
+ #line 32 "Content\Boolean expressions\transform.mc"
+var tmp_0 = P1 as _opBang; 
+ #line 32 "Content\Boolean expressions\transform.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; 
+ #line 32 "Content\Boolean expressions\transform.mc"
 var tmp_2 = eval.Create(a);
+ #line 32 "Content\Boolean expressions\transform.mc"
 
 var tmp_1 = tmp_2.Run0_();
 
 var tmp_3 = tmp_1 as FALSE; 
+ #line 32 "Content\Boolean expressions\transform.mc"
 if (tmp_3 != null) { 
  
+ #line 32 "Content\Boolean expressions\transform.mc"
 var result = TRUE.Create();
+ #line 32 "Content\Boolean expressions\transform.mc"
  return result;  } }
  } 
 
   
  { 
- var tmp_0 = P1 as _opBitwiseOr; 
+ #line 37 "Content\Boolean expressions\transform.mc"
+var tmp_0 = P1 as _opBitwiseOr; 
+ #line 37 "Content\Boolean expressions\transform.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; 
+ #line 37 "Content\Boolean expressions\transform.mc"
 var tmp_2 = eval.Create(a);
+ #line 37 "Content\Boolean expressions\transform.mc"
 
 var tmp_1 = tmp_2.Run0_();
 
 var tmp_3 = tmp_1 as TRUE; 
+ #line 37 "Content\Boolean expressions\transform.mc"
 if (tmp_3 != null) { 
  
+ #line 37 "Content\Boolean expressions\transform.mc"
 var result = TRUE.Create();
+ #line 37 "Content\Boolean expressions\transform.mc"
  return result;  } }
  } 
 
   
  { 
- var tmp_0 = P1 as _opBitwiseOr; 
+ #line 41 "Content\Boolean expressions\transform.mc"
+var tmp_0 = P1 as _opBitwiseOr; 
+ #line 41 "Content\Boolean expressions\transform.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; 
+ #line 41 "Content\Boolean expressions\transform.mc"
 var tmp_2 = eval.Create(a);
+ #line 41 "Content\Boolean expressions\transform.mc"
 
 var tmp_1 = tmp_2.Run0_();
 
 var tmp_3 = tmp_1 as FALSE; 
+ #line 41 "Content\Boolean expressions\transform.mc"
 if (tmp_3 != null) { 
  
+ #line 41 "Content\Boolean expressions\transform.mc"
 var tmp_5 = eval.Create(b);
+ #line 41 "Content\Boolean expressions\transform.mc"
 
 var tmp_4 = tmp_5.Run0_();
 
 var y = tmp_4; 
+ #line 41 "Content\Boolean expressions\transform.mc"
 var result = y;
+ #line 41 "Content\Boolean expressions\transform.mc"
  return result;  } }
  } 
 
   
  { 
- var tmp_0 = P1 as _opBitwiseAnd; 
+ #line 47 "Content\Boolean expressions\transform.mc"
+var tmp_0 = P1 as _opBitwiseAnd; 
+ #line 47 "Content\Boolean expressions\transform.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; 
+ #line 47 "Content\Boolean expressions\transform.mc"
 var tmp_2 = eval.Create(a);
+ #line 47 "Content\Boolean expressions\transform.mc"
 
 var tmp_1 = tmp_2.Run0_();
 
 var tmp_3 = tmp_1 as FALSE; 
+ #line 47 "Content\Boolean expressions\transform.mc"
 if (tmp_3 != null) { 
  
+ #line 47 "Content\Boolean expressions\transform.mc"
 var result = FALSE.Create();
+ #line 47 "Content\Boolean expressions\transform.mc"
  return result;  } }
  } 
 
   
  { 
- var tmp_0 = P1 as _opBitwiseAnd; 
+ #line 51 "Content\Boolean expressions\transform.mc"
+var tmp_0 = P1 as _opBitwiseAnd; 
+ #line 51 "Content\Boolean expressions\transform.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; 
+ #line 51 "Content\Boolean expressions\transform.mc"
 var tmp_2 = eval.Create(a);
+ #line 51 "Content\Boolean expressions\transform.mc"
 
 var tmp_1 = tmp_2.Run0_();
 
 var tmp_3 = tmp_1 as TRUE; 
+ #line 51 "Content\Boolean expressions\transform.mc"
 if (tmp_3 != null) { 
  
+ #line 51 "Content\Boolean expressions\transform.mc"
 var tmp_5 = eval.Create(b);
+ #line 51 "Content\Boolean expressions\transform.mc"
 
 var tmp_4 = tmp_5.Run0_();
 
 var y = tmp_4; 
+ #line 51 "Content\Boolean expressions\transform.mc"
 var result = y;
+ #line 51 "Content\Boolean expressions\transform.mc"
  return result;  } }
  } 
 
@@ -268,13 +322,18 @@ public static run Create() { return new run(); }
 
   public static Value StaticRun() {    
  { 
- 
+ #line 17 "Content\Boolean expressions\transform.mc"
+
+ #line 17 "Content\Boolean expressions\transform.mc"
 var tmp_1 = eval.Create(_opBitwiseOr.Create(FALSE.Create(), _opBitwiseAnd.Create(TRUE.Create(), _opBang.Create(FALSE.Create()))));
+ #line 17 "Content\Boolean expressions\transform.mc"
 
 var tmp_0 = tmp_1.Run0_();
 
 var res = tmp_0; 
+ #line 17 "Content\Boolean expressions\transform.mc"
 var result = res;
+ #line 17 "Content\Boolean expressions\transform.mc"
  return result; 
  } 
 
