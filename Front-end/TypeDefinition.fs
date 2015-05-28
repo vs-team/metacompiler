@@ -1,7 +1,5 @@
 ﻿module TypeDefinition
 
-type TypeVar = string
-
 type TypeConstantDescriptor = NativeValue | NativeRef | Defined
 
 let mutable private cachedDescriptors = Map.empty
@@ -29,8 +27,14 @@ type TypeConstantDescriptor
         cachedDescriptors <- cachedDescriptors |> Map.add name res
         res
 
+type TypeVariableKind =
+  | GenericParameter
+  | TemporaryVariable
+
+type TypeVariableData = string * TypeVariableKind
+
 type Type =
-    | TypeVariable of TypeVar // 'a
+    | TypeVariable of TypeVariableData // 'a
     | TypeConstant of string * TypeConstantDescriptor // int
     | TypeAbstraction of Type * Type // s -> 's
     | ConstructedType of Type * Type list  // List 'a
@@ -40,9 +44,9 @@ type Type =
             match this with
             | TypeAbstraction(p, v) -> sprintf "%s -> %s" (p.ToString()) (v.ToString())
             | TypeConstant(t,_) -> sprintf "%s" (t.ToString())
-            | ConstructedType(t, fs) -> sprintf "%A<%A>" (t) fs
-            | TypeVariable(t) -> sprintf "%s" t
-            | Unknown -> sprintf "Unkown"
+            | ConstructedType(t, fs) -> sprintf "%A<%A>" (t.ToString()) [ for f in fs -> f.ToString() ]
+            | TypeVariable(t,_) -> sprintf "%s" t
+            | Unknown -> sprintf "Unknown"
         static member compatible (==) (t1:Type) (t2:Type) =
           if t1 == t2 then true
           else

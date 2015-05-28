@@ -731,7 +731,7 @@ let generateCode (originalFilePath:string) (program_name:string)
     for keyword in ctxt.CustomKeywords do
       let newClass = { GeneratedClass.Keyword   = keyword
                        GeneratedClass.BasicName = keyword.Name
-                       GeneratedClass.GenericArguments = keyword.GenericArguments
+                       GeneratedClass.GenericArguments = keyword.GenericArguments |> List.map fst
                        GeneratedClass.Interface = Keyword.ArgumentCSharpStyle keyword.BaseType cleanupWithoutDot
                        GeneratedClass.Parameters = ResizeArray()
                        GeneratedClass.Methods = Map.empty }

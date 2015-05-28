@@ -12,6 +12,14 @@ Func[a] "length" -> List[a] : Expr => <<int>>
 Func "run" : Expr => Pair[<<int>> List[<<int>>]]
 
 
+l1 := "x";"y";"z";nil
+l2 := 1;2;3;4;5;nil
+length l1 => x
+removeOdd l2 => y
+----------------------
+run => x,y
+
+
 ----------------
 length nil => 0
 
@@ -32,11 +40,3 @@ removeOdd x;xs => xs'
 removeOdd xs => xs'
 --------------------------
 removeOdd x;xs => x;xs'
-
-
-l1 := "x";"y";"z";nil
-l2 := 1;2;3;4;5;nil
-length l1 => x
-removeOdd l2 => y
-----------------------
-run => x,y

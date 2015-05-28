@@ -21,7 +21,7 @@ type KeywordKind =
 
 type ParsedKeyword<'k, 'e, 'i, 'di, 'ti> =
   {
-    GenericArguments : List<string>
+    GenericArguments : List<TypeVariableData>
     LeftArguments: List<Type>
     RightArguments: List<Type>
     Name: string
@@ -87,7 +87,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
   static member getArguments boundTypeVariables k =
     let (!) n = 
       if boundTypeVariables |> Set.contains n then
-        TypeVariable(n)
+        TypeVariable(n, GenericParameter)
       else
         TypeConstant(n, TypeConstantDescriptor.FromName n)
     let rec findGenericParameters l =
@@ -160,7 +160,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
     fun k ->
       let (!) n =
         if boundGenericParameters |> Set.contains n then
-          TypeVariable(n)
+          TypeVariable(n, GenericParameter)
         else
            TypeConstant(n, TypeConstantDescriptor.FromName n)
       let rec removeType l =
@@ -265,8 +265,8 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
                 | "Data", None -> KeywordKind.Data
                 | "Func", Some returnType -> KeywordKind.Func returnType
                 | _ -> failwithf "Error at %A: invalid keyword definition with kind %A and return type %A" pos a returnType
-              return { GenericArguments = genericArguments; LeftArguments = leftArguments; 
-                        RightArguments = rightArguments; Name = name; 
+              return { GenericArguments = [ for a in genericArguments -> a,GenericParameter ]; 
+                        LeftArguments = leftArguments; RightArguments = rightArguments; Name = name; 
                         BaseType = baseType; Kind = kind;
                         Associativity = associativity; Priority = priority ;
                         Multeplicity = keywordMulteplicity; Position = pos }
@@ -356,14 +356,14 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
       | TypeConstant(t,_) -> t
       | ConstructedType(t, args) ->
         sprintf "%s<%s>" (Keyword.ArgumentCSharpStyle t cleanup) (args |> Seq.map (fun a -> Keyword.ArgumentCSharpStyle a cleanup) |> Seq.reduce (fun s x -> sprintf "%s, %s" s x))
-      | TypeVariable(v) -> v |> cleanup
+      | TypeVariable(v,_) -> v |> cleanup
       | _ -> failwithf "C# style printing of %A is not implemented" t
       
     static member createExt l = l |> List.map (fun x -> Extension({Name = x}, Position.Zero, ()))                              
 
     static member CreateCSharpKeyword (kw : string*List<string>*List<TypeDefinition.Type>*List<TypeDefinition.Type>*int*string) =
       let name, generic, left, right, priority, kwtype = kw
-      { GenericArguments = generic; LeftArguments = left; RightArguments = right; Name = name; 
+      { GenericArguments = [ for a in generic -> a,GenericParameter ]; LeftArguments = left; RightArguments = right; Name = name; 
         BaseType = TypeConstant(kwtype, TypeDefinition.TypeConstantDescriptor.FromName name); 
         Associativity = Right; Priority = priority; Kind = Data; 
         Multeplicity = KeywordMulteplicity.Single; Position = Position.Zero }
