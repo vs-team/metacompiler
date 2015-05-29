@@ -76,34 +76,34 @@ public static length<a> Create(List<a> P1) { return new length<a>(P1); }
 
   public static int StaticRun(List<a> P1) {    
  { 
- #line 24 "Content\Generic lists\transform.mc"
+ #line 25 "Content\Generic lists\transform.mc"
 var tmp_0 = P1 as nil<a>; 
- #line 24 "Content\Generic lists\transform.mc"
+ #line 25 "Content\Generic lists\transform.mc"
 if (tmp_0 != null) { 
  
- #line 24 "Content\Generic lists\transform.mc"
+ #line 25 "Content\Generic lists\transform.mc"
 var result = 0;
- #line 24 "Content\Generic lists\transform.mc"
+ #line 25 "Content\Generic lists\transform.mc"
  return result;  }
  } 
 
   
  { 
- #line 27 "Content\Generic lists\transform.mc"
+ #line 28 "Content\Generic lists\transform.mc"
 var tmp_0 = P1 as _Semicolon<a>; 
- #line 27 "Content\Generic lists\transform.mc"
+ #line 28 "Content\Generic lists\transform.mc"
 if (tmp_0 != null) { 
  var x = tmp_0.P1; var xs = tmp_0.P2; 
- #line 27 "Content\Generic lists\transform.mc"
+ #line 28 "Content\Generic lists\transform.mc"
 var tmp_2 = length<a>.StaticRun(xs);
- #line 27 "Content\Generic lists\transform.mc"
+ #line 28 "Content\Generic lists\transform.mc"
 
 var tmp_1 = tmp_2;
 
 var y = tmp_1; 
- #line 27 "Content\Generic lists\transform.mc"
+ #line 28 "Content\Generic lists\transform.mc"
 var result = (1+y);
- #line 27 "Content\Generic lists\transform.mc"
+ #line 28 "Content\Generic lists\transform.mc"
  return result;  }
  } 
 
@@ -159,58 +159,58 @@ public static removeOdd Create(List<int> P1) { return new removeOdd(P1); }
 
   public static List<int> StaticRun(List<int> P1) {    
  { 
- #line 32 "Content\Generic lists\transform.mc"
+ #line 33 "Content\Generic lists\transform.mc"
 var tmp_0 = P1 as nil<int>; 
- #line 32 "Content\Generic lists\transform.mc"
+ #line 33 "Content\Generic lists\transform.mc"
 if (tmp_0 != null) { 
  
- #line 32 "Content\Generic lists\transform.mc"
+ #line 33 "Content\Generic lists\transform.mc"
 var result = nil<int>.Create();
- #line 32 "Content\Generic lists\transform.mc"
+ #line 33 "Content\Generic lists\transform.mc"
  return result;  }
  } 
 
   
  { 
- #line 35 "Content\Generic lists\transform.mc"
+ #line 36 "Content\Generic lists\transform.mc"
 var tmp_0 = P1 as _Semicolon<int>; 
- #line 35 "Content\Generic lists\transform.mc"
+ #line 36 "Content\Generic lists\transform.mc"
 if (tmp_0 != null) { 
  var x = tmp_0.P1; var xs = tmp_0.P2; 
- #line 35 "Content\Generic lists\transform.mc"
+ #line 36 "Content\Generic lists\transform.mc"
 if((x%2).Equals(0)) { 
- #line 35 "Content\Generic lists\transform.mc"
+ #line 36 "Content\Generic lists\transform.mc"
 var tmp_2 = removeOdd.StaticRun(xs);
- #line 35 "Content\Generic lists\transform.mc"
+ #line 36 "Content\Generic lists\transform.mc"
 
 var tmp_1 = tmp_2;
 
 var xs_Prime = tmp_1; 
- #line 35 "Content\Generic lists\transform.mc"
+ #line 36 "Content\Generic lists\transform.mc"
 var result = xs_Prime;
- #line 35 "Content\Generic lists\transform.mc"
+ #line 36 "Content\Generic lists\transform.mc"
  return result;  } }
  } 
 
   
  { 
- #line 40 "Content\Generic lists\transform.mc"
+ #line 41 "Content\Generic lists\transform.mc"
 var tmp_0 = P1 as _Semicolon<int>; 
- #line 40 "Content\Generic lists\transform.mc"
+ #line 41 "Content\Generic lists\transform.mc"
 if (tmp_0 != null) { 
  var x = tmp_0.P1; var xs = tmp_0.P2; 
- #line 40 "Content\Generic lists\transform.mc"
+ #line 41 "Content\Generic lists\transform.mc"
 if((x%2).Equals(1)) { 
- #line 40 "Content\Generic lists\transform.mc"
+ #line 41 "Content\Generic lists\transform.mc"
 var tmp_2 = removeOdd.StaticRun(xs);
- #line 40 "Content\Generic lists\transform.mc"
+ #line 41 "Content\Generic lists\transform.mc"
 
 var tmp_1 = tmp_2;
 
 var xs_Prime = tmp_1; 
- #line 40 "Content\Generic lists\transform.mc"
+ #line 41 "Content\Generic lists\transform.mc"
 var result = _Semicolon<int>.Create(x, xs_Prime);
- #line 40 "Content\Generic lists\transform.mc"
+ #line 41 "Content\Generic lists\transform.mc"
  return result;  } }
  } 
 
@@ -247,7 +247,7 @@ public static run Create() { return new run(); }
   public static Pair<Expr, List<int>> StaticRun() {    
  { 
  #line 15 "Content\Generic lists\transform.mc"
-var l1 = _Semicolon<string>.Create("x", _Semicolon<string>.Create("y", _Semicolon<string>.Create("z", nil<string>.Create()))); var l2 = _Semicolon<int>.Create(1, _Semicolon<int>.Create(2, _Semicolon<int>.Create(3, _Semicolon<int>.Create(4, _Semicolon<int>.Create(5, nil<int>.Create()))))); 
+var l0 = nil<string>.Create(); var l1 = _Semicolon<string>.Create("x", _Semicolon<string>.Create("y", _Semicolon<string>.Create("z", l0))); var l2 = _Semicolon<int>.Create(1, _Semicolon<int>.Create(2, _Semicolon<int>.Create(3, _Semicolon<int>.Create(4, _Semicolon<int>.Create(5, nil<int>.Create()))))); 
  #line 15 "Content\Generic lists\transform.mc"
 var tmp_1 = length<string>.StaticRun(l1);
  #line 15 "Content\Generic lists\transform.mc"

@@ -180,12 +180,20 @@ let getBaseType depth (scheme:TypeContext) ctxt expr : Type * TypeContext =
     | Keyword((Custom kName),pos,ti) ->
       match ctxt.CustomKeywordsMap |> Map.tryFind kName with
       | Some kwDescription ->
-        let t,variableSubs,scheme' = 
+        let t,variableSubs,scheme1 = 
           if depth = 0 then
             kwDescription.BaseType, Map.empty, scheme.ForceBind kwDescription.GenericArguments
           else
             kwDescription.BaseType |> instantiateFresh scheme kwDescription.GenericArguments
-        t,scheme'
+        if recurseInApplication then
+          t, scheme1
+        else
+          let mutable tFun = t
+          for a in kwDescription.Arguments do
+            let a1 = substituteVariables variableSubs a
+            tFun <- TypeAbstraction(a1, tFun)
+          let scheme2 = unify pos ti tFun scheme1 ctxt
+          t, scheme2
       | None -> failwithf "Invalid keyword %A" kName
     | Imported(importedType, pos, ti) ->
       ti, scheme

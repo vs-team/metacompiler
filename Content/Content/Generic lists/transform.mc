@@ -12,7 +12,8 @@ Func[a] "length" -> List[a] : Expr => <<int>>
 Func "run" : Expr => Pair[Expr List[<<int>>]]
 
 
-l1 := "x";"y";"z";nil
+l0 := nil
+l1 := "x";"y";"z";l0
 l2 := 1;2;3;4;5;nil
 length l1 => x
 removeOdd l2 => y
