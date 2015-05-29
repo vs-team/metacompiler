@@ -103,6 +103,7 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
       | [] -> [], []
       | x::xs -> 
         match x with
+        | Application(Square, Application(Square, args, _, _) :: [], _, _)
         | Application(Square, args, _, _) ->
           let args',_ = findArguments args
           args', xs
@@ -119,13 +120,13 @@ type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisi
           let a,b = findArguments xs
           a, b
         | Extension({Var.Name = name},_,_) -> 
-          let genericArguments, xs = findGenericParameters xs
+          let genericArguments, xs1 = findGenericParameters xs
           match genericArguments with
           | [] ->
-            let x,y = findArguments xs
+            let x,y = findArguments xs1
             !name :: x, y
           | _ -> 
-            let x,y = findArguments xs
+            let x,y = findArguments xs1
             let res = ConstructedType(!name, genericArguments)
             res :: x, y
         | Application(Angle, Application(Angle, Extension({Var.Name = name},_,_) :: [], _, _) :: [], _, _) -> 
