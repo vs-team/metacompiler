@@ -182,17 +182,17 @@ if (tmp_0 != null) {
 if (tmp_1 != null) { 
  var u = tmp_1.P1; var v = tmp_1.P2; var w = tmp_0.P2; 
  #line 29 "Content\Lambda calculus\transform.mc"
-var tmp_3 = eval.Create(_opBitwiseOr.Create(u, v));
+var tmp_3 = eval.StaticRun(_opBitwiseOr.Create(u, v));
  #line 29 "Content\Lambda calculus\transform.mc"
 
-var tmp_2 = tmp_3.Run();
+var tmp_2 = tmp_3;
 
 var v_Prime = tmp_2; 
  #line 29 "Content\Lambda calculus\transform.mc"
-var tmp_5 = eval.Create(_opBitwiseOr.Create(v_Prime, w));
+var tmp_5 = eval.StaticRun(_opBitwiseOr.Create(v_Prime, w));
  #line 29 "Content\Lambda calculus\transform.mc"
 
-var tmp_4 = tmp_5.Run();
+var tmp_4 = tmp_5;
 
 var res = tmp_4; 
  #line 29 "Content\Lambda calculus\transform.mc"
@@ -218,10 +218,10 @@ if (tmp_2 != null) {
 if (tmp_3 != null) { 
  var t = tmp_1.P3; var u = tmp_0.P2; 
  #line 34 "Content\Lambda calculus\transform.mc"
-var tmp_5 = _With.Create(t, _As.Create(_opDollar.Create(x), u));
+var tmp_5 = _With.StaticRun5_(t, _As.Create(_opDollar.Create(x), u));
  #line 34 "Content\Lambda calculus\transform.mc"
 
-var tmp_4 = tmp_5.Run5_();
+var tmp_4 = tmp_5;
 
 var t_Prime = tmp_4; 
  #line 34 "Content\Lambda calculus\transform.mc"
@@ -231,7 +231,7 @@ var result = t_Prime;
  } 
 
   
-throw new System.Exception("Error evaluating: " + new eval(P1).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: eval. No result returned."); }
 public Term Run() { return StaticRun(P1); }
 
 public static Term StaticRun5_(Term P1) { return StaticRun(P1); }
@@ -267,10 +267,10 @@ public static run Create() { return new run(); }
  #line 16 "Content\Lambda calculus\transform.mc"
 
  #line 16 "Content\Lambda calculus\transform.mc"
-var tmp_1 = eval.Create(_opBitwiseOr.Create(_opSlash.Create(_opDollar.Create("x"), _Arrow.Create(), _opDollar.Create("x")), _opDollar.Create("y")));
+var tmp_1 = eval.StaticRun(_opBitwiseOr.Create(_opSlash.Create(_opDollar.Create("x"), _Arrow.Create(), _opDollar.Create("x")), _opDollar.Create("y")));
  #line 16 "Content\Lambda calculus\transform.mc"
 
-var tmp_0 = tmp_1.Run();
+var tmp_0 = tmp_1;
 
 var res = tmp_0; 
  #line 16 "Content\Lambda calculus\transform.mc"
@@ -280,7 +280,7 @@ var result = res;
  } 
 
   
-throw new System.Exception("Error evaluating: " + new run().ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: run. No result returned."); }
 public Term Run() { return StaticRun(); }
 
 public static Term StaticRun5_() { return StaticRun(); }
@@ -398,10 +398,10 @@ if (tmp_4 != null) {
  #line 50 "Content\Lambda calculus\transform.mc"
 if(!x.Equals(y)) { 
  #line 50 "Content\Lambda calculus\transform.mc"
-var tmp_6 = _With.Create(t, _As.Create(_opDollar.Create(y), u));
+var tmp_6 = _With.StaticRun5_(t, _As.Create(_opDollar.Create(y), u));
  #line 50 "Content\Lambda calculus\transform.mc"
 
-var tmp_5 = tmp_6.Run5_();
+var tmp_5 = tmp_6;
 
 var t_Prime = tmp_5; 
  #line 50 "Content\Lambda calculus\transform.mc"
@@ -424,17 +424,17 @@ if (tmp_1 != null) {
 if (tmp_2 != null) { 
  var x = tmp_2.P1; var v = tmp_1.P2; 
  #line 55 "Content\Lambda calculus\transform.mc"
-var tmp_4 = _With.Create(t, _As.Create(_opDollar.Create(x), v));
+var tmp_4 = _With.StaticRun5_(t, _As.Create(_opDollar.Create(x), v));
  #line 55 "Content\Lambda calculus\transform.mc"
 
-var tmp_3 = tmp_4.Run5_();
+var tmp_3 = tmp_4;
 
 var t_Prime = tmp_3; 
  #line 55 "Content\Lambda calculus\transform.mc"
-var tmp_6 = _With.Create(u, _As.Create(_opDollar.Create(x), v));
+var tmp_6 = _With.StaticRun5_(u, _As.Create(_opDollar.Create(x), v));
  #line 55 "Content\Lambda calculus\transform.mc"
 
-var tmp_5 = tmp_6.Run5_();
+var tmp_5 = tmp_6;
 
 var u_Prime = tmp_5; 
  #line 55 "Content\Lambda calculus\transform.mc"
@@ -444,7 +444,7 @@ var result = _opBitwiseOr.Create(t_Prime, u_Prime);
  } 
 
  var p = StaticRun(P1, P2); return p; 
-throw new System.Exception("Error evaluating: " + new _With(P1, P2).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: _With. No result returned."); }
 public Term Run5_() { return StaticRun5_(P1, P2); }
 
 public static Term StaticRun(Term P1, Where P2) { 

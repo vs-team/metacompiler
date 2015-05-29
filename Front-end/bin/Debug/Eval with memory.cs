@@ -201,7 +201,7 @@ var result = map.Create(M2);
  } 
 
   
-throw new System.Exception("Error evaluating: " + new add(P1, P2, P3).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: add. No result returned."); }
 public MapIntString Run() { return StaticRun(P1, P2, P3); }
 
 
@@ -296,10 +296,10 @@ var tmp_0 = P1 as _opBang;
 if (tmp_0 != null) { 
  var v = tmp_0.P1; var m = P2; 
  #line 48 "Content\Eval with memory\transform.mc"
-var tmp_2 = lookup.Create(m, v);
+var tmp_2 = lookup.StaticRun(m, v);
  #line 48 "Content\Eval with memory\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var res = tmp_1; 
  #line 48 "Content\Eval with memory\transform.mc"
@@ -319,10 +319,10 @@ if (tmp_0 != null) {
 if (tmp_1 != null) { 
  var v = tmp_1.P1; var e = tmp_0.P2; var m = P2; 
  #line 52 "Content\Eval with memory\transform.mc"
-var tmp_3 = eval.Create(e, m);
+var tmp_3 = eval.StaticRun(e, m);
  #line 52 "Content\Eval with memory\transform.mc"
 
-var tmp_2 = tmp_3.Run();
+var tmp_2 = tmp_3;
 
 var tmp_4 = tmp_2 as _Comma; 
  #line 52 "Content\Eval with memory\transform.mc"
@@ -332,10 +332,10 @@ if (tmp_4 != null) {
 if (tmp_5 != null) { 
  var res = tmp_5.P1; var m1 = tmp_4.P2; 
  #line 52 "Content\Eval with memory\transform.mc"
-var tmp_7 = add.Create(m1, v, res);
+var tmp_7 = add.StaticRun(m1, v, res);
  #line 52 "Content\Eval with memory\transform.mc"
 
-var tmp_6 = tmp_7.Run();
+var tmp_6 = tmp_7;
 
 var m2 = tmp_6; 
  #line 52 "Content\Eval with memory\transform.mc"
@@ -352,10 +352,10 @@ var tmp_0 = P1 as _Semicolon;
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m0 = P2; 
  #line 57 "Content\Eval with memory\transform.mc"
-var tmp_2 = eval.Create(a, m0);
+var tmp_2 = eval.StaticRun(a, m0);
  #line 57 "Content\Eval with memory\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _Comma; 
  #line 57 "Content\Eval with memory\transform.mc"
@@ -365,10 +365,10 @@ if (tmp_3 != null) {
 if (tmp_4 != null) { 
  var m1 = tmp_3.P2; 
  #line 57 "Content\Eval with memory\transform.mc"
-var tmp_6 = eval.Create(b, m1);
+var tmp_6 = eval.StaticRun(b, m1);
  #line 57 "Content\Eval with memory\transform.mc"
 
-var tmp_5 = tmp_6.Run();
+var tmp_5 = tmp_6;
 
 var tmp_7 = tmp_5 as _Comma; 
  #line 57 "Content\Eval with memory\transform.mc"
@@ -388,10 +388,10 @@ var tmp_0 = P1 as _opAddition;
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m0 = P2; 
  #line 62 "Content\Eval with memory\transform.mc"
-var tmp_2 = eval.Create(a, m0);
+var tmp_2 = eval.StaticRun(a, m0);
  #line 62 "Content\Eval with memory\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _Comma; 
  #line 62 "Content\Eval with memory\transform.mc"
@@ -401,10 +401,10 @@ if (tmp_3 != null) {
 if (tmp_4 != null) { 
  var x = tmp_4.P1; var m1 = tmp_3.P2; 
  #line 62 "Content\Eval with memory\transform.mc"
-var tmp_6 = eval.Create(b, m1);
+var tmp_6 = eval.StaticRun(b, m1);
  #line 62 "Content\Eval with memory\transform.mc"
 
-var tmp_5 = tmp_6.Run();
+var tmp_5 = tmp_6;
 
 var tmp_7 = tmp_5 as _Comma; 
  #line 62 "Content\Eval with memory\transform.mc"
@@ -427,10 +427,10 @@ var tmp_0 = P1 as _opMultiplication;
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m0 = P2; 
  #line 68 "Content\Eval with memory\transform.mc"
-var tmp_2 = eval.Create(a, m0);
+var tmp_2 = eval.StaticRun(a, m0);
  #line 68 "Content\Eval with memory\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _Comma; 
  #line 68 "Content\Eval with memory\transform.mc"
@@ -440,10 +440,10 @@ if (tmp_3 != null) {
 if (tmp_4 != null) { 
  var x = tmp_4.P1; var m1 = tmp_3.P2; 
  #line 68 "Content\Eval with memory\transform.mc"
-var tmp_6 = eval.Create(b, m1);
+var tmp_6 = eval.StaticRun(b, m1);
  #line 68 "Content\Eval with memory\transform.mc"
 
-var tmp_5 = tmp_6.Run();
+var tmp_5 = tmp_6;
 
 var tmp_7 = tmp_5 as _Comma; 
  #line 68 "Content\Eval with memory\transform.mc"
@@ -459,7 +459,7 @@ var result = _Comma.Create(_opDollar.Create(res), m2);
  } 
 
   
-throw new System.Exception("Error evaluating: " + new eval(P1, P2).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: eval. No result returned."); }
 public EvalResult Run() { return StaticRun(P1, P2); }
 
 
@@ -505,7 +505,7 @@ var result = _opDollar.Create(v);
  } 
 
   
-throw new System.Exception("Error evaluating: " + new lookup(P1, P2).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: lookup. No result returned."); }
 public Value Run() { return StaticRun(P1, P2); }
 
 
@@ -586,31 +586,31 @@ public static run Create(MapIntString P1) { return new run(P1); }
  #line 34 "Content\Eval with memory\transform.mc"
 var M = P1; 
  #line 34 "Content\Eval with memory\transform.mc"
-var tmp_1 = add.Create(M, "x", 10);
+var tmp_1 = add.StaticRun(M, "x", 10);
  #line 34 "Content\Eval with memory\transform.mc"
 
-var tmp_0 = tmp_1.Run();
+var tmp_0 = tmp_1;
 
 var M1 = tmp_0; 
  #line 34 "Content\Eval with memory\transform.mc"
-var tmp_3 = add.Create(M1, "y", 20);
+var tmp_3 = add.StaticRun(M1, "y", 20);
  #line 34 "Content\Eval with memory\transform.mc"
 
-var tmp_2 = tmp_3.Run();
+var tmp_2 = tmp_3;
 
 var M2 = tmp_2; 
  #line 34 "Content\Eval with memory\transform.mc"
-var tmp_5 = add.Create(M2, "z", -30);
+var tmp_5 = add.StaticRun(M2, "z", -30);
  #line 34 "Content\Eval with memory\transform.mc"
 
-var tmp_4 = tmp_5.Run();
+var tmp_4 = tmp_5;
 
 var M3 = tmp_4; 
  #line 34 "Content\Eval with memory\transform.mc"
-var tmp_7 = eval.Create(_Semicolon.Create(assign.Create(_opBang.Create("x"), _opAddition.Create(_opBang.Create("x"), _opMultiplication.Create(_opBang.Create("y"), _opDollar.Create(2)))), _opAddition.Create(_opBang.Create("x"), _opBang.Create("z"))), M3);
+var tmp_7 = eval.StaticRun(_Semicolon.Create(assign.Create(_opBang.Create("x"), _opAddition.Create(_opBang.Create("x"), _opMultiplication.Create(_opBang.Create("y"), _opDollar.Create(2)))), _opAddition.Create(_opBang.Create("x"), _opBang.Create("z"))), M3);
  #line 34 "Content\Eval with memory\transform.mc"
 
-var tmp_6 = tmp_7.Run();
+var tmp_6 = tmp_7;
 
 var res = tmp_6; 
  #line 34 "Content\Eval with memory\transform.mc"
@@ -620,7 +620,7 @@ var result = res;
  } 
 
   
-throw new System.Exception("Error evaluating: " + new run(P1).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: run. No result returned."); }
 public EvalResult Run() { return StaticRun(P1); }
 
 

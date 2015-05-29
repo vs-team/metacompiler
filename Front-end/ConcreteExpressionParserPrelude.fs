@@ -33,6 +33,14 @@ type ParsedKeyword<'k, 'e, 'i, 'di, 'ti> =
     Position : Position
   }
   with 
+    member this.Type = 
+      let mutable t = 
+        match this.Kind with
+        | Data -> this.BaseType
+        | Func returnType -> returnType
+      for a in this.Arguments |> List.rev do
+        t <- TypeAbstraction(a,t)
+      t
     member this.Arguments = this.LeftArguments @ this.RightArguments
   
 type Keyword = Sequence | SmallerThan | SmallerOrEqual | GreaterThan | NotDivisible | Divisible | GreaterOrEqual | Equals | NotEquals | DoubleArrow | FractionLine | Nesting | DefinedAs | Inlined | Custom of string

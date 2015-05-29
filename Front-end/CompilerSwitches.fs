@@ -8,4 +8,4 @@ let generateLineDirectives = true
 
 let optimizeDirectParentCall = true
 let generateStaticRun = true
-let combineCreateFor  = false
+let combineCreateFor  = true

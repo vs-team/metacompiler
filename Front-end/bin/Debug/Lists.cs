@@ -95,10 +95,10 @@ var tmp_0 = P1 as _Semicolon;
 if (tmp_0 != null) { 
  var x = tmp_0.P1; var xs = tmp_0.P2; 
  #line 76 "Content\Lists\transform.mc"
-var tmp_2 = add.Create(xs);
+var tmp_2 = add.StaticRun(xs);
  #line 76 "Content\Lists\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var res = tmp_1; 
  #line 76 "Content\Lists\transform.mc"
@@ -108,7 +108,7 @@ var result = (x+res);
  } 
 
   
-throw new System.Exception("Error evaluating: " + new add(P1).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: add. No result returned."); }
 public int Run() { return StaticRun(P1); }
 
 
@@ -177,10 +177,10 @@ if (tmp_0 != null) {
  #line 97 "Content\Lists\transform.mc"
 if(!x.Equals(k)) { 
  #line 97 "Content\Lists\transform.mc"
-var tmp_2 = contains.Create(xs, k);
+var tmp_2 = contains.StaticRun(xs, k);
  #line 97 "Content\Lists\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var res = tmp_1; 
  #line 97 "Content\Lists\transform.mc"
@@ -190,7 +190,7 @@ var result = res;
  } 
 
   
-throw new System.Exception("Error evaluating: " + new contains(P1, P2).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: contains. No result returned."); }
 public bool Run() { return StaticRun(P1, P2); }
 
 
@@ -242,10 +242,10 @@ var tmp_0 = P1 as _Semicolon;
 if (tmp_0 != null) { 
  var x = tmp_0.P1; var xs = tmp_0.P2; 
  #line 68 "Content\Lists\transform.mc"
-var tmp_2 = length.Create(xs);
+var tmp_2 = length.StaticRun(xs);
  #line 68 "Content\Lists\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var y = tmp_1; 
  #line 68 "Content\Lists\transform.mc"
@@ -255,7 +255,7 @@ var result = (1+y);
  } 
 
   
-throw new System.Exception("Error evaluating: " + new length(P1).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: length. No result returned."); }
 public int Run() { return StaticRun(P1); }
 
 
@@ -347,10 +347,10 @@ if (tmp_1 != null) {
  #line 41 "Content\Lists\transform.mc"
 if(x<=y) { 
  #line 41 "Content\Lists\transform.mc"
-var tmp_3 = merge.Create(xs, _Semicolon.Create(y, ys));
+var tmp_3 = merge.StaticRun(xs, _Semicolon.Create(y, ys));
  #line 41 "Content\Lists\transform.mc"
 
-var tmp_2 = tmp_3.Run();
+var tmp_2 = tmp_3;
 
 var res = tmp_2; 
  #line 41 "Content\Lists\transform.mc"
@@ -372,10 +372,10 @@ if (tmp_1 != null) {
  #line 46 "Content\Lists\transform.mc"
 if(x>y) { 
  #line 46 "Content\Lists\transform.mc"
-var tmp_3 = merge.Create(_Semicolon.Create(x, xs), ys);
+var tmp_3 = merge.StaticRun(_Semicolon.Create(x, xs), ys);
  #line 46 "Content\Lists\transform.mc"
 
-var tmp_2 = tmp_3.Run();
+var tmp_2 = tmp_3;
 
 var res = tmp_2; 
  #line 46 "Content\Lists\transform.mc"
@@ -385,7 +385,7 @@ var result = _Semicolon.Create(y, res);
  } 
 
   
-throw new System.Exception("Error evaluating: " + new merge(P1, P2).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: merge. No result returned."); }
 public ListInt Run() { return StaticRun(P1, P2); }
 
 
@@ -456,34 +456,34 @@ if (tmp_0 != null) {
 if (tmp_1 != null) { 
  var y = tmp_1.P1; var xs = tmp_1.P2; 
  #line 57 "Content\Lists\transform.mc"
-var tmp_3 = split.Create(_Semicolon.Create(x, _Semicolon.Create(y, xs)));
+var tmp_3 = split.StaticRun(_Semicolon.Create(x, _Semicolon.Create(y, xs)));
  #line 57 "Content\Lists\transform.mc"
 
-var tmp_2 = tmp_3.Run();
+var tmp_2 = tmp_3;
 
 var tmp_4 = tmp_2 as _Comma; 
  #line 57 "Content\Lists\transform.mc"
 if (tmp_4 != null) { 
  var l = tmp_4.P1; var r = tmp_4.P2; 
  #line 57 "Content\Lists\transform.mc"
-var tmp_6 = mergeSort.Create(l);
+var tmp_6 = mergeSort.StaticRun(l);
  #line 57 "Content\Lists\transform.mc"
 
-var tmp_5 = tmp_6.Run();
+var tmp_5 = tmp_6;
 
 var l_Prime = tmp_5; 
  #line 57 "Content\Lists\transform.mc"
-var tmp_8 = mergeSort.Create(r);
+var tmp_8 = mergeSort.StaticRun(r);
  #line 57 "Content\Lists\transform.mc"
 
-var tmp_7 = tmp_8.Run();
+var tmp_7 = tmp_8;
 
 var r_Prime = tmp_7; 
  #line 57 "Content\Lists\transform.mc"
-var tmp_10 = merge.Create(l_Prime, r_Prime);
+var tmp_10 = merge.StaticRun(l_Prime, r_Prime);
  #line 57 "Content\Lists\transform.mc"
 
-var tmp_9 = tmp_10.Run();
+var tmp_9 = tmp_10;
 
 var res = tmp_9; 
  #line 57 "Content\Lists\transform.mc"
@@ -493,7 +493,7 @@ var result = res;
  } 
 
   
-throw new System.Exception("Error evaluating: " + new mergeSort(P1).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: mergeSort. No result returned."); }
 public ListInt Run() { return StaticRun(P1); }
 
 
@@ -564,10 +564,10 @@ var tmp_0 = P1 as _Semicolon;
 if (tmp_0 != null) { 
  var x = tmp_0.P1; var xs = tmp_0.P2; var k = P2; 
  #line 84 "Content\Lists\transform.mc"
-var tmp_2 = plus.Create(xs, k);
+var tmp_2 = plus.StaticRun(xs, k);
  #line 84 "Content\Lists\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var xs_Prime = tmp_1; var x_Prime = (x+k); 
  #line 84 "Content\Lists\transform.mc"
@@ -577,7 +577,7 @@ var result = _Semicolon.Create(x_Prime, xs_Prime);
  } 
 
   
-throw new System.Exception("Error evaluating: " + new plus(P1, P2).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: plus. No result returned."); }
 public ListInt Run() { return StaticRun(P1, P2); }
 
 
@@ -631,10 +631,10 @@ if (tmp_0 != null) {
  #line 106 "Content\Lists\transform.mc"
 if((x%2).Equals(0)) { 
  #line 106 "Content\Lists\transform.mc"
-var tmp_2 = removeOdd.Create(xs);
+var tmp_2 = removeOdd.StaticRun(xs);
  #line 106 "Content\Lists\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var xs_Prime = tmp_1; 
  #line 106 "Content\Lists\transform.mc"
@@ -653,10 +653,10 @@ if (tmp_0 != null) {
  #line 111 "Content\Lists\transform.mc"
 if((x%2).Equals(1)) { 
  #line 111 "Content\Lists\transform.mc"
-var tmp_2 = removeOdd.Create(xs);
+var tmp_2 = removeOdd.StaticRun(xs);
  #line 111 "Content\Lists\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var xs_Prime = tmp_1; 
  #line 111 "Content\Lists\transform.mc"
@@ -666,7 +666,7 @@ var result = _Semicolon.Create(x, xs_Prime);
  } 
 
   
-throw new System.Exception("Error evaluating: " + new removeOdd(P1).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: removeOdd. No result returned."); }
 public ListInt Run() { return StaticRun(P1); }
 
 
@@ -736,10 +736,10 @@ if (tmp_0 != null) {
 if (tmp_1 != null) { 
  var y = tmp_1.P1; var xs = tmp_1.P2; 
  #line 27 "Content\Lists\transform.mc"
-var tmp_3 = split.Create(xs);
+var tmp_3 = split.StaticRun(xs);
  #line 27 "Content\Lists\transform.mc"
 
-var tmp_2 = tmp_3.Run();
+var tmp_2 = tmp_3;
 
 var tmp_4 = tmp_2 as _Comma; 
  #line 27 "Content\Lists\transform.mc"
@@ -752,7 +752,7 @@ var result = _Comma.Create(_Semicolon.Create(x, l), _Semicolon.Create(y, r));
  } 
 
   
-throw new System.Exception("Error evaluating: " + new split(P1).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: split. No result returned."); }
 public ListIntPair Run() { return StaticRun(P1); }
 
 

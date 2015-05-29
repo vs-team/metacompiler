@@ -1,15 +1,16 @@
 - general cleanup
   - TypeConstantDescriptor.FromType is way too weak; should use defined type names and also import statements
-- type inference
-  - Concretisation of generic types: all related variables should end up the same in the final declaration
-  - Code generation: generic keywords need their generic argument
-
+- type inference polishing
+  - nested generic types
+  - generic type declarations (x := nil)
+- better 
 - cache parsed rules and type inferenced results
-- samples
   - import directive for multiple files
 - Refactor "clause" to "premise"
 - Keyword declarations between clauses
 - Refactor CodeGenerator.fs
+  - Split files
+  - Use better variable names (__tmp_i)
 - Higher:
   - kinded generic parameters
   - order terms

@@ -9,15 +9,16 @@ Func "removeOdd" -> List[<<int>>] : Expr => List[<<int>>]
 
 Func[a] "length" -> List[a] : Expr => <<int>>
 
-Func "run" : Expr => Pair[<<int>> List[<<int>>]]
+Func "run" : Expr => Pair[Expr List[<<int>>]]
 
 
 l1 := "x";"y";"z";nil
 l2 := 1;2;3;4;5;nil
 length l1 => x
 removeOdd l2 => y
+len := length l1
 ----------------------
-run => x,y
+run => len,y
 
 
 ----------------

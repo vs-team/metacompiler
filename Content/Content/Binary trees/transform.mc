@@ -3,9 +3,9 @@ Data "node" -> BinTreeInt -> <<int>> -> BinTreeInt : BinTreeInt               Pr
 Func BinTreeInt -> "add" -> <<int>> : Expr => BinTreeInt                      Priority 100
 Func BinTreeInt -> "contains" -> <<int>> : Expr => <<bool>>                   Priority 100
 
-Data Expr -> "," -> <<bool>> : Expr                                           Priority 1010
+Data[a b] a -> "," -> b : Pair[a b]                                           Priority 10000
 
-Func "run" : Expr => Expr                                                     Priority 0
+Func "run" : Expr => Pair[Expr <<bool>>]                                      Priority 0
 
 BinTreeInt is Expr
 
@@ -17,9 +17,9 @@ t2b add 15 => t3
 t3 add 1 => t4
 t4 add 16 => t
 t contains 7 => res
-arg := t contains 7
+show := t contains 7
 --------------------------
-run => arg,res
+run => show,res
 
   -----------------------------
   nil add k => node nil k nil

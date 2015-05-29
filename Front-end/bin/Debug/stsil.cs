@@ -38,10 +38,10 @@ var tmp_0 = P1 as snoc;
 if (tmp_0 != null) { 
  var xs = tmp_0.P1; var x = tmp_0.P2; 
  #line 12 "Content\stsil\transform.mc"
-var tmp_2 = dda.Create(xs);
+var tmp_2 = dda.StaticRun(xs);
  #line 12 "Content\stsil\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var res = tmp_1; 
  #line 12 "Content\stsil\transform.mc"
@@ -51,7 +51,7 @@ var result = (x+res);
  } 
 
   
-throw new System.Exception("Error evaluating: " + new dda(P1).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: dda. No result returned."); }
 public int Run() { return StaticRun(P1); }
 
 

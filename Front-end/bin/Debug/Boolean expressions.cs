@@ -143,10 +143,10 @@ var tmp_0 = P1 as _opBang;
 if (tmp_0 != null) { 
  var a = tmp_0.P1; 
  #line 28 "Content\Boolean expressions\transform.mc"
-var tmp_2 = eval.Create(a);
+var tmp_2 = eval.StaticRun0_(a);
  #line 28 "Content\Boolean expressions\transform.mc"
 
-var tmp_1 = tmp_2.Run0_();
+var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as TRUE; 
  #line 28 "Content\Boolean expressions\transform.mc"
@@ -166,10 +166,10 @@ var tmp_0 = P1 as _opBang;
 if (tmp_0 != null) { 
  var a = tmp_0.P1; 
  #line 32 "Content\Boolean expressions\transform.mc"
-var tmp_2 = eval.Create(a);
+var tmp_2 = eval.StaticRun0_(a);
  #line 32 "Content\Boolean expressions\transform.mc"
 
-var tmp_1 = tmp_2.Run0_();
+var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as FALSE; 
  #line 32 "Content\Boolean expressions\transform.mc"
@@ -189,10 +189,10 @@ var tmp_0 = P1 as _opBitwiseOr;
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; 
  #line 37 "Content\Boolean expressions\transform.mc"
-var tmp_2 = eval.Create(a);
+var tmp_2 = eval.StaticRun0_(a);
  #line 37 "Content\Boolean expressions\transform.mc"
 
-var tmp_1 = tmp_2.Run0_();
+var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as TRUE; 
  #line 37 "Content\Boolean expressions\transform.mc"
@@ -212,20 +212,20 @@ var tmp_0 = P1 as _opBitwiseOr;
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; 
  #line 41 "Content\Boolean expressions\transform.mc"
-var tmp_2 = eval.Create(a);
+var tmp_2 = eval.StaticRun0_(a);
  #line 41 "Content\Boolean expressions\transform.mc"
 
-var tmp_1 = tmp_2.Run0_();
+var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as FALSE; 
  #line 41 "Content\Boolean expressions\transform.mc"
 if (tmp_3 != null) { 
  
  #line 41 "Content\Boolean expressions\transform.mc"
-var tmp_5 = eval.Create(b);
+var tmp_5 = eval.StaticRun0_(b);
  #line 41 "Content\Boolean expressions\transform.mc"
 
-var tmp_4 = tmp_5.Run0_();
+var tmp_4 = tmp_5;
 
 var y = tmp_4; 
  #line 41 "Content\Boolean expressions\transform.mc"
@@ -242,10 +242,10 @@ var tmp_0 = P1 as _opBitwiseAnd;
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; 
  #line 47 "Content\Boolean expressions\transform.mc"
-var tmp_2 = eval.Create(a);
+var tmp_2 = eval.StaticRun0_(a);
  #line 47 "Content\Boolean expressions\transform.mc"
 
-var tmp_1 = tmp_2.Run0_();
+var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as FALSE; 
  #line 47 "Content\Boolean expressions\transform.mc"
@@ -265,20 +265,20 @@ var tmp_0 = P1 as _opBitwiseAnd;
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; 
  #line 51 "Content\Boolean expressions\transform.mc"
-var tmp_2 = eval.Create(a);
+var tmp_2 = eval.StaticRun0_(a);
  #line 51 "Content\Boolean expressions\transform.mc"
 
-var tmp_1 = tmp_2.Run0_();
+var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as TRUE; 
  #line 51 "Content\Boolean expressions\transform.mc"
 if (tmp_3 != null) { 
  
  #line 51 "Content\Boolean expressions\transform.mc"
-var tmp_5 = eval.Create(b);
+var tmp_5 = eval.StaticRun0_(b);
  #line 51 "Content\Boolean expressions\transform.mc"
 
-var tmp_4 = tmp_5.Run0_();
+var tmp_4 = tmp_5;
 
 var y = tmp_4; 
  #line 51 "Content\Boolean expressions\transform.mc"
@@ -288,7 +288,7 @@ var result = y;
  } 
 
  var p = StaticRun(P1); return p; 
-throw new System.Exception("Error evaluating: " + new eval(P1).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: eval. No result returned."); }
 public Value Run0_() { return StaticRun0_(P1); }
 
 public static Value StaticRun(Expr P1) { 
@@ -325,10 +325,10 @@ public static run Create() { return new run(); }
  #line 17 "Content\Boolean expressions\transform.mc"
 
  #line 17 "Content\Boolean expressions\transform.mc"
-var tmp_1 = eval.Create(_opBitwiseOr.Create(FALSE.Create(), _opBitwiseAnd.Create(TRUE.Create(), _opBang.Create(FALSE.Create()))));
+var tmp_1 = eval.StaticRun0_(_opBitwiseOr.Create(FALSE.Create(), _opBitwiseAnd.Create(TRUE.Create(), _opBang.Create(FALSE.Create()))));
  #line 17 "Content\Boolean expressions\transform.mc"
 
-var tmp_0 = tmp_1.Run0_();
+var tmp_0 = tmp_1;
 
 var res = tmp_0; 
  #line 17 "Content\Boolean expressions\transform.mc"
@@ -338,7 +338,7 @@ var result = res;
  } 
 
   
-throw new System.Exception("Error evaluating: " + new run().ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: run. No result returned."); }
 public Value Run() { return StaticRun(); }
 
 public static Value StaticRun0_() { return StaticRun(); }

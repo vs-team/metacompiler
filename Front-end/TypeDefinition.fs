@@ -47,6 +47,18 @@ type Type =
             | ConstructedType(t, fs) -> sprintf "%A<%A>" (t.ToString()) [ for f in fs -> f.ToString() ]
             | TypeVariable(t,_) -> sprintf "%s" t
             | Unknown -> sprintf "Unknown"
+        member this.RemoveAbstractions =
+          match this with
+          | TypeAbstraction(a,b) -> b.RemoveAbstractions
+          | _ -> this
+        member this.CSharpString cleanup =
+            match this with
+            | TypeConstant(t,_) -> sprintf "%s" (cleanup t)
+            | ConstructedType(t, fs) -> sprintf "%s<%s>" (t.CSharpString cleanup) ([ for f in fs -> f.CSharpString cleanup] |> Seq.reduce (fun x y -> x + "," + y))
+            | TypeVariable(t,_) -> sprintf "%s" (cleanup t)
+            | TypeAbstraction(_)
+            | Unknown -> failwithf "Cannot convert type %A to C# string" this
+          
         static member compatible (==) (t1:Type) (t2:Type) =
           if t1 == t2 then true
           else

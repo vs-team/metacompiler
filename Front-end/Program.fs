@@ -83,7 +83,10 @@ let main argv =
   let samples = 
     [
 // converted to new keyword syntax:
+      "Binary trees", "run"
+
       "Peano numbers", "run"
+      "Boolean expressions", "run"
       "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
       "Lists", "plus 0;1;2;3;nil 10"
       "Lists", "length 0;1;2;3;nil"
@@ -98,14 +101,11 @@ let main argv =
       "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
       "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
 
-      "Binary trees", "run"
-      "Boolean expressions", "run"
-
       "Trees 234", @"main"
 
       "Lambda calculus", "run"
 
-//      "Generic lists", @"run"
+      "Generic lists", @"run"
       
 // not yet converted to new keyword syntax:
 

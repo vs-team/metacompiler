@@ -38,17 +38,17 @@ var tmp_0 = P1 as s;
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = P2; 
  #line 23 "Content\Peano numbers\transform.mc"
-var tmp_2 = _opMultiplication.Create(a, b);
+var tmp_2 = _opMultiplication.StaticRun(a, b);
  #line 23 "Content\Peano numbers\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var c = tmp_1; 
  #line 23 "Content\Peano numbers\transform.mc"
-var tmp_4 = _opAddition.Create(c, b);
+var tmp_4 = _opAddition.StaticRun(c, b);
  #line 23 "Content\Peano numbers\transform.mc"
 
-var tmp_3 = tmp_4.Run();
+var tmp_3 = tmp_4;
 
 var d = tmp_3; 
  #line 23 "Content\Peano numbers\transform.mc"
@@ -58,7 +58,7 @@ var result = d;
  } 
 
   
-throw new System.Exception("Error evaluating: " + new _opMultiplication(P1, P2).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: _opMultiplication. No result returned."); }
 public Num Run() { return StaticRun(P1, P2); }
 
 
@@ -98,10 +98,10 @@ var tmp_0 = P1 as z;
 if (tmp_0 != null) { 
  var a = P2; 
  #line 12 "Content\Peano numbers\transform.mc"
-var tmp_2 = eval.Create(a);
+var tmp_2 = eval.StaticRun(a);
  #line 12 "Content\Peano numbers\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var res = tmp_1; 
  #line 12 "Content\Peano numbers\transform.mc"
@@ -118,10 +118,10 @@ var tmp_0 = P1 as s;
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = P2; 
  #line 16 "Content\Peano numbers\transform.mc"
-var tmp_2 = _opAddition.Create(a, b);
+var tmp_2 = _opAddition.StaticRun(a, b);
  #line 16 "Content\Peano numbers\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var c = tmp_1; 
  #line 16 "Content\Peano numbers\transform.mc"
@@ -131,7 +131,7 @@ var result = s.Create(c);
  } 
 
   
-throw new System.Exception("Error evaluating: " + new _opAddition(P1, P2).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: _opAddition. No result returned."); }
 public Num Run() { return StaticRun(P1, P2); }
 
 
@@ -196,24 +196,24 @@ var tmp_0 = P1 as _opAddition;
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; 
  #line 35 "Content\Peano numbers\transform.mc"
-var tmp_2 = eval.Create(a);
+var tmp_2 = eval.StaticRun(a);
  #line 35 "Content\Peano numbers\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var a_Prime = tmp_1; 
  #line 35 "Content\Peano numbers\transform.mc"
-var tmp_4 = eval.Create(b);
+var tmp_4 = eval.StaticRun(b);
  #line 35 "Content\Peano numbers\transform.mc"
 
-var tmp_3 = tmp_4.Run();
+var tmp_3 = tmp_4;
 
 var b_Prime = tmp_3; 
  #line 35 "Content\Peano numbers\transform.mc"
-var tmp_6 = _opAddition.Create(a_Prime, b_Prime);
+var tmp_6 = _opAddition.StaticRun(a_Prime, b_Prime);
  #line 35 "Content\Peano numbers\transform.mc"
 
-var tmp_5 = tmp_6.Run();
+var tmp_5 = tmp_6;
 
 var c = tmp_5; 
  #line 35 "Content\Peano numbers\transform.mc"
@@ -230,24 +230,24 @@ var tmp_0 = P1 as _opMultiplication;
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; 
  #line 41 "Content\Peano numbers\transform.mc"
-var tmp_2 = eval.Create(a);
+var tmp_2 = eval.StaticRun(a);
  #line 41 "Content\Peano numbers\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var a_Prime = tmp_1; 
  #line 41 "Content\Peano numbers\transform.mc"
-var tmp_4 = eval.Create(b);
+var tmp_4 = eval.StaticRun(b);
  #line 41 "Content\Peano numbers\transform.mc"
 
-var tmp_3 = tmp_4.Run();
+var tmp_3 = tmp_4;
 
 var b_Prime = tmp_3; 
  #line 41 "Content\Peano numbers\transform.mc"
-var tmp_6 = _opMultiplication.Create(a_Prime, b_Prime);
+var tmp_6 = _opMultiplication.StaticRun(a_Prime, b_Prime);
  #line 41 "Content\Peano numbers\transform.mc"
 
-var tmp_5 = tmp_6.Run();
+var tmp_5 = tmp_6;
 
 var c = tmp_5; 
  #line 41 "Content\Peano numbers\transform.mc"
@@ -257,7 +257,7 @@ var result = c;
  } 
 
   
-throw new System.Exception("Error evaluating: " + new eval(P1).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: eval. No result returned."); }
 public Num Run() { return StaticRun(P1); }
 
 
@@ -291,17 +291,17 @@ public static run Create() { return new run(); }
  #line 54 "Content\Peano numbers\transform.mc"
 
  #line 54 "Content\Peano numbers\transform.mc"
-var tmp_1 = eval.Create(_opAddition.Create(_opMultiplication.Create(s.Create(s.Create(z.Create())), _opMultiplication.Create(s.Create(s.Create(z.Create())), s.Create(s.Create(z.Create())))), s.Create(z.Create())));
+var tmp_1 = eval.StaticRun(_opAddition.Create(_opMultiplication.Create(s.Create(s.Create(z.Create())), _opMultiplication.Create(s.Create(s.Create(z.Create())), s.Create(s.Create(z.Create())))), s.Create(z.Create())));
  #line 54 "Content\Peano numbers\transform.mc"
 
-var tmp_0 = tmp_1.Run();
+var tmp_0 = tmp_1;
 
 var n = tmp_0; 
  #line 54 "Content\Peano numbers\transform.mc"
-var tmp_3 = toNum.Create(n);
+var tmp_3 = toNum.StaticRun(n);
  #line 54 "Content\Peano numbers\transform.mc"
 
-var tmp_2 = tmp_3.Run();
+var tmp_2 = tmp_3;
 
 var res = tmp_2; 
  #line 54 "Content\Peano numbers\transform.mc"
@@ -368,10 +368,10 @@ var tmp_0 = P1 as s;
 if (tmp_0 != null) { 
  var a = tmp_0.P1; 
  #line 47 "Content\Peano numbers\transform.mc"
-var tmp_2 = toNum.Create(a);
+var tmp_2 = toNum.StaticRun(a);
  #line 47 "Content\Peano numbers\transform.mc"
 
-var tmp_1 = tmp_2.Run();
+var tmp_1 = tmp_2;
 
 var res = tmp_1; 
  #line 47 "Content\Peano numbers\transform.mc"
@@ -394,7 +394,7 @@ var result = 0;
  } 
 
   
-throw new System.Exception("Error evaluating: " + new toNum(P1).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: toNum. No result returned."); }
 public int Run() { return StaticRun(P1); }
 
 

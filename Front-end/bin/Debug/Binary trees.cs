@@ -7,19 +7,20 @@ namespace Binary_trees {
 
 public interface BinTreeInt : Expr {}
 public interface Expr {}
+public interface Pair<a, b> {}
 
 
 
-public class _Comma : Expr  {
-public Expr P1;
-public bool P2;
+public class _Comma<a, b> : Pair<a, b>  {
+public a P1;
+public b P2;
 
-public _Comma(Expr P1, bool P2) {this.P1 = P1; this.P2 = P2;}
-public static _Comma Create(Expr P1, bool P2) { return new _Comma(P1, P2); }
+public _Comma(a P1, b P2) {this.P1 = P1; this.P2 = P2;}
+public static _Comma<a, b> Create(a P1, b P2) { return new _Comma<a, b>(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
  res += " , "; res += P2.ToString(); 
 
@@ -28,7 +29,7 @@ if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as S
 }
 
 public override bool Equals(object other) {
- var tmp = other as _Comma;
+ var tmp = other as _Comma<a, b>;
  if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
 
@@ -83,10 +84,10 @@ if (tmp_0 != null) {
  #line 31 "Content\Binary trees\transform.mc"
 if(x<k) { 
  #line 31 "Content\Binary trees\transform.mc"
-var tmp_2 = add.Create(l, x);
+var tmp_2 = add.StaticRun0_(l, x);
  #line 31 "Content\Binary trees\transform.mc"
 
-var tmp_1 = tmp_2.Run0_();
+var tmp_1 = tmp_2;
 
 var l_Prime = tmp_1; 
  #line 31 "Content\Binary trees\transform.mc"
@@ -105,10 +106,10 @@ if (tmp_0 != null) {
  #line 36 "Content\Binary trees\transform.mc"
 if(x>k) { 
  #line 36 "Content\Binary trees\transform.mc"
-var tmp_2 = add.Create(r, x);
+var tmp_2 = add.StaticRun0_(r, x);
  #line 36 "Content\Binary trees\transform.mc"
 
-var tmp_1 = tmp_2.Run0_();
+var tmp_1 = tmp_2;
 
 var r_Prime = tmp_1; 
  #line 36 "Content\Binary trees\transform.mc"
@@ -118,7 +119,7 @@ var result = node.Create(l, k, r_Prime);
  } 
 
  var p = StaticRun(P1, P2); return p; 
-throw new System.Exception("Error evaluating: " + new add(P1, P2).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: add. No result returned."); }
 public BinTreeInt Run0_() { return StaticRun0_(P1, P2); }
 
 public static BinTreeInt StaticRun(BinTreeInt P1, int P2) { 
@@ -191,10 +192,10 @@ if (tmp_0 != null) {
  #line 49 "Content\Binary trees\transform.mc"
 if(x<k) { 
  #line 49 "Content\Binary trees\transform.mc"
-var tmp_2 = contains.Create(l, x);
+var tmp_2 = contains.StaticRun0_(l, x);
  #line 49 "Content\Binary trees\transform.mc"
 
-var tmp_1 = tmp_2.Run0_();
+var tmp_1 = tmp_2;
 
 var res = tmp_1; 
  #line 49 "Content\Binary trees\transform.mc"
@@ -213,10 +214,10 @@ if (tmp_0 != null) {
  #line 54 "Content\Binary trees\transform.mc"
 if(x>k) { 
  #line 54 "Content\Binary trees\transform.mc"
-var tmp_2 = contains.Create(r, x);
+var tmp_2 = contains.StaticRun0_(r, x);
  #line 54 "Content\Binary trees\transform.mc"
 
-var tmp_1 = tmp_2.Run0_();
+var tmp_1 = tmp_2;
 
 var res = tmp_1; 
  #line 54 "Content\Binary trees\transform.mc"
@@ -226,7 +227,7 @@ var result = res;
  } 
 
  var p = StaticRun(P1, P2); return p; 
-throw new System.Exception("Error evaluating: " + new contains(P1, P2).ToString() + " no result returned."); }
+throw new System.Exception("Error evaluating: contains. No result returned."); }
 public bool Run0_() { return StaticRun0_(P1, P2); }
 
 public static bool StaticRun(BinTreeInt P1, int P2) { 
@@ -308,71 +309,71 @@ public class run : Expr  {
 public run() {}
 public static run Create() { return new run(); }
 
-  public static Expr StaticRun() {    
+  public static Pair<Expr, bool> StaticRun() {    
  { 
  #line 13 "Content\Binary trees\transform.mc"
 
  #line 13 "Content\Binary trees\transform.mc"
-var tmp_1 = add.Create(nil.Create(), 10);
+var tmp_1 = add.StaticRun0_(nil.Create(), 10);
  #line 13 "Content\Binary trees\transform.mc"
 
-var tmp_0 = tmp_1.Run0_();
+var tmp_0 = tmp_1;
 
 var t1 = tmp_0; 
  #line 13 "Content\Binary trees\transform.mc"
-var tmp_3 = add.Create(t1, 5);
+var tmp_3 = add.StaticRun0_(t1, 5);
  #line 13 "Content\Binary trees\transform.mc"
 
-var tmp_2 = tmp_3.Run0_();
+var tmp_2 = tmp_3;
 
 var t2 = tmp_2; 
  #line 13 "Content\Binary trees\transform.mc"
-var tmp_5 = add.Create(t2, 7);
+var tmp_5 = add.StaticRun0_(t2, 7);
  #line 13 "Content\Binary trees\transform.mc"
 
-var tmp_4 = tmp_5.Run0_();
+var tmp_4 = tmp_5;
 
 var t2b = tmp_4; 
  #line 13 "Content\Binary trees\transform.mc"
-var tmp_7 = add.Create(t2b, 15);
+var tmp_7 = add.StaticRun0_(t2b, 15);
  #line 13 "Content\Binary trees\transform.mc"
 
-var tmp_6 = tmp_7.Run0_();
+var tmp_6 = tmp_7;
 
 var t3 = tmp_6; 
  #line 13 "Content\Binary trees\transform.mc"
-var tmp_9 = add.Create(t3, 1);
+var tmp_9 = add.StaticRun0_(t3, 1);
  #line 13 "Content\Binary trees\transform.mc"
 
-var tmp_8 = tmp_9.Run0_();
+var tmp_8 = tmp_9;
 
 var t4 = tmp_8; 
  #line 13 "Content\Binary trees\transform.mc"
-var tmp_11 = add.Create(t4, 16);
+var tmp_11 = add.StaticRun0_(t4, 16);
  #line 13 "Content\Binary trees\transform.mc"
 
-var tmp_10 = tmp_11.Run0_();
+var tmp_10 = tmp_11;
 
 var t = tmp_10; 
  #line 13 "Content\Binary trees\transform.mc"
-var tmp_13 = contains.Create(t, 7);
+var tmp_13 = contains.StaticRun0_(t, 7);
  #line 13 "Content\Binary trees\transform.mc"
 
-var tmp_12 = tmp_13.Run0_();
+var tmp_12 = tmp_13;
 
-var res = tmp_12; var arg = contains.Create(t, 7); 
+var res = tmp_12; var show = contains.Create(t, 7); 
  #line 13 "Content\Binary trees\transform.mc"
-var result = _Comma.Create(arg, res);
+var result = _Comma<Expr, bool>.Create(show, res);
  #line 13 "Content\Binary trees\transform.mc"
  return result; 
  } 
 
   
-throw new System.Exception("Error evaluating: " + new run().ToString() + " no result returned."); }
-public Expr Run() { return StaticRun(); }
+throw new System.Exception("Error evaluating: run. No result returned."); }
+public Pair<Expr, bool> Run() { return StaticRun(); }
 
-public static Expr StaticRun0_() { return StaticRun(); }
-public Expr Run0_(){ return StaticRun0_(); }
+public static Pair<Expr, bool> StaticRun0_() { return StaticRun(); }
+public Pair<Expr, bool> Run0_(){ return StaticRun0_(); }
 
 public override string ToString() {
 return "run";

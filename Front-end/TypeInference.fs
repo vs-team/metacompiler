@@ -28,15 +28,15 @@ type TypeEquivalence =
         Variables = Set.singleton v
         Types     = Set.singleton t
       }
-    static member add (equiv:TypeEquivalence, v:TypeVariableData,t:Type,ctxt) =
-      TypeEquivalence.add(equiv, TypeEquivalence.Create(v,t),ctxt)
-    static member add (t1:TypeEquivalence, t2:TypeEquivalence, ctxt) =
+    static member add (pos:Position, equiv:TypeEquivalence, v:TypeVariableData,t:Type,ctxt) =
+      TypeEquivalence.add(pos, equiv, TypeEquivalence.Create(v,t),ctxt)
+    static member add (pos:Position, t1:TypeEquivalence, t2:TypeEquivalence, ctxt) =
       for x in t1.Types do
         for y in t2.Types do
           let (==) a b =
             a = b || isSuperType ctxt x y || isSuperType ctxt y x
           if Type.compatible (==) x y |> not then
-            failwithf "Cannot unify %A and %A because types %A and %A are incompatible" t1 t2 x y
+            failwithf "Error at %A: cannot unify %A and %A because types %A and %A are incompatible" pos t1 t2 x y
       {
         Variables = t1.Variables + t2.Variables
         Types     = t1.Types + t2.Types
@@ -81,12 +81,12 @@ and TypeContext =
             varType, newScheme
         else
             failwithf "cannot introduce an already known variable %s." var
-        member this.substitute (v:TypeVariableData) (t:Type) ctxt =
+        member this.substitute (pos:Position) (v:TypeVariableData) (t:Type) ctxt =
           match this.Substitutions |> Map.tryFind v with
           | Some(equivalence) ->
             let mutable substitutions = this.Substitutions
             for v in equivalence.Variables do
-              substitutions <- substitutions |> Map.add v (TypeEquivalence.add(substitutions.[v],v,t,ctxt))
+              substitutions <- substitutions |> Map.add v (TypeEquivalence.add(pos,substitutions.[v],v,t,ctxt))
             { this with Substitutions = substitutions }
           | None -> 
             { this with Substitutions = this.Substitutions |> Map.add v (TypeEquivalence.Create(v,t)) }
@@ -122,13 +122,25 @@ let rec unify (pos:Position) (expected:Type) (given:Type) (scheme:TypeContext) (
   | TypeVariable(v1), TypeVariable(v2) ->
       let t1 = scheme.Substitutions.[v1]
       let t2 = scheme.Substitutions.[v2]
-      let t12 = TypeEquivalence.add(t1,t2,ctxt)
+      let t12 = TypeEquivalence.add(pos,t1,t2,ctxt)
       { scheme with Substitutions = scheme.Substitutions |> Map.add v1 t12 |> Map.add v2 t12 }
   | _, Unknown 
   | Unknown, _ -> scheme
+  | TypeVariable(v), (ConstructedType(h,args) as t)
+  | (ConstructedType(h,args) as t), TypeVariable(v) ->
+    let vSubs = scheme.Substitutions.[v]
+    let mutable scheme = scheme
+    for vSub in vSubs.Types do
+      match vSub with
+      | ConstructedType(h1,args1) -> 
+        scheme <- unify pos h h1 scheme ctxt
+        for a,a1 in Seq.zip args args1 do
+          scheme <- unify pos a a1 scheme ctxt
+      | _ -> ()
+    scheme.substitute pos v t ctxt
   | TypeVariable(v), t
   | t, TypeVariable(v) ->
-    scheme.substitute v t ctxt
+    scheme.substitute pos v t ctxt
   | _, _ when (isSuperType ctxt expected given) -> scheme
   | ConstructedType(h1,args1), ConstructedType(h2,args2) ->
     let scheme1 = unify pos h1 h2 scheme ctxt
@@ -150,26 +162,42 @@ let rec annotateUnknown (expr:BasicExpression<Keyword, Var, Literal, Position, U
   | Extension(e, pos, ()) ->
     Extension(e, pos, Unknown)
 
-let rec getBaseType depth (scheme:TypeContext) ctxt expr : Type * TypeContext = 
-  match expr with
-  | Application(br, a::args, di, ti) -> 
-    getBaseType (depth+1) scheme ctxt a
-  | Keyword((Custom kName),pos,_) ->
-    match ctxt.CustomKeywordsMap |> Map.tryFind kName with
-    | Some kwDescription ->
-      let t,variableSubs,scheme' = 
-        if depth = 0 then
-          kwDescription.BaseType, Map.empty, scheme.ForceBind kwDescription.GenericArguments
-        else
-          kwDescription.BaseType |> instantiateFresh scheme kwDescription.GenericArguments
-      t,scheme'
-    | None -> failwithf "Invalid keyword %A" kName
-  | Imported(importedType, pos, ti) ->
-    ti, scheme
-//  | Extension(e, pos, ti) ->
-//    ti
-  | _ -> 
-    failwithf "Cannot extract base type from expression %A" expr
+let rec extractLeadingKeyword e =
+  match e with
+  | Keyword(Custom k, _, _) -> k
+  | Application(Implicit, (Keyword(Custom k, _, _)) :: _, pos, _) -> k
+  | Application(Implicit, a :: _, pos, _) -> extractLeadingKeyword a
+  | _ -> failwithf "Cannot extract leading keyword from %A" e.DebugInformation
+
+let getBaseType depth (scheme:TypeContext) ctxt expr : Type * TypeContext =   
+  let rec getBaseType recurseInApplication depth (scheme:TypeContext) ctxt expr : Type * TypeContext = 
+    match expr with
+    | Application(br, a::args, di, ti) -> 
+      if recurseInApplication then
+        getBaseType recurseInApplication depth scheme ctxt a
+      else
+        ti, scheme
+    | Keyword((Custom kName),pos,ti) ->
+      match ctxt.CustomKeywordsMap |> Map.tryFind kName with
+      | Some kwDescription ->
+        let t,variableSubs,scheme' = 
+          if depth = 0 then
+            kwDescription.BaseType, Map.empty, scheme.ForceBind kwDescription.GenericArguments
+          else
+            kwDescription.BaseType |> instantiateFresh scheme kwDescription.GenericArguments
+        t,scheme'
+      | None -> failwithf "Invalid keyword %A" kName
+    | Imported(importedType, pos, ti) ->
+      ti, scheme
+    | _ -> 
+      failwithf "Cannot extract base type from expression %A" expr
+  let kName = extractLeadingKeyword expr
+  match ctxt.CustomKeywordsMap |> Map.tryFind kName with
+  | Some kwDescription ->
+    match kwDescription.Kind with
+    | Data -> getBaseType false depth scheme ctxt expr
+    | Func _ -> getBaseType true depth scheme ctxt expr
+  | _ -> getBaseType true depth scheme ctxt expr
 
 let rec traverse depth (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Keyword, Var, Literal, Position, Unit>) 
                  (constraints:Type) (scheme:TypeContext) : BasicExpression<Keyword, Var, Literal, Position, Type> * TypeContext =
@@ -181,10 +209,11 @@ let rec traverse depth (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Ke
       Application(Angle, args |> List.map annotateUnknown, pos, Unknown), scheme
   | Application(br, (Keyword(DefinedAs,_,()) as k)::left::right::[], pos, ()) ->
     let k' = k |> annotateUnknown
-    let left', scheme1 = traverse (depth+1) ctxt left Unknown scheme
-    let right', scheme2 = traverse (depth+1) ctxt right Unknown scheme1
-    let rightBaseType,scheme3 = getBaseType depth scheme ctxt right'
-    Application(br, k'::left'::right'::[], pos, Unknown), unify pos left'.TypeInformation rightBaseType scheme3 ctxt
+    let right', scheme1 = traverse (depth+1) ctxt right Unknown scheme
+    let rightBaseType,scheme2 = getBaseType (depth+1) scheme1 ctxt right'
+    let left', scheme3 = traverse (depth+1) ctxt left rightBaseType scheme2
+    let scheme4 = unify pos left'.TypeInformation rightBaseType scheme3 ctxt
+    Application(br, k'::left'::right'::[], pos, Unknown), scheme4
   | Application(br, (Keyword(DoubleArrow,_,()) as k)::left::right::[], pos, ()) ->
     let k' = k |> annotateUnknown
     let left', scheme1 = traverse (depth+1) ctxt left Unknown scheme
@@ -205,7 +234,8 @@ let rec traverse depth (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Ke
       let scheme3 = unify pos constraints returnType scheme2 ctxt
       Application(br, func'::args', pos, returnType), scheme3
   | Imported(imported, pos, ()) ->
-    let importedType = TypeConstant(imported.typeString, TypeConstantDescriptor.NativeValue)
+    let importedType = imported.typeString
+    let importedType = TypeConstant(importedType, TypeConstantDescriptor.FromName importedType)
     Imported(imported, pos, importedType), unify pos constraints importedType scheme ctxt
   | Keyword(kw, pos, ()) ->
     let kwType,scheme1 = 
@@ -272,8 +302,11 @@ let normalize ctxt (substitutions:Map<TypeVariableData, TypeEquivalence>) =
         | TypeVariable _, (ConstructedType _ as t)
         | (ConstructedType _ as t), TypeVariable _ ->
           t, closed, opened, substitutions
+        | TypeVariable(v1,TemporaryVariable), (TypeVariable(v2,TemporaryVariable)) ->
+          let closed1, opened1, substitutions1 = visit (v1,TemporaryVariable) closed opened substitutions
+          let closed2, opened2, substitutions2 = visit (v2,TemporaryVariable) closed1 opened1 substitutions1
+          t1, closed2, opened2, substitutions2
         | TypeVariable(_,TemporaryVariable), (TypeVariable(_,GenericParameter) as v)
-        | TypeVariable(_,TemporaryVariable), (TypeVariable(_,TemporaryVariable) as v)
         | (TypeVariable(_,GenericParameter) as v), TypeVariable(_,TemporaryVariable) ->
           v, closed, opened, substitutions
         | _ ,_ when isSuperType ctxt t1 t2 ->
@@ -301,9 +334,30 @@ let normalize ctxt (substitutions:Map<TypeVariableData, TypeEquivalence>) =
         | t1::t2::ts ->
           let t12, closed1, opened1, substitutions1 = mergeTypes ctxt t1 t2 closed opened substitutions
           collapseTypes ctxt (t12::ts) closed1 opened1 substitutions1
+
+      let rec collapseType (t:Type) (closed:Set<TypeVariableData>) (opened:Set<TypeVariableData>) (substitutions:Map<TypeVariableData, TypeEquivalence>) =
+        match t with
+        | Unknown
+        | TypeConstant(_) -> t, closed, opened, substitutions
+        | TypeAbstraction(a,b) ->
+          let a1, closed1, opened1, substitutions1 = collapseType a closed opened substitutions
+          let b1, closed2, opened2, substitutions2 = collapseType b closed1 opened1 substitutions1
+          TypeAbstraction(a1,b1), closed2, opened2, substitutions2
+        | ConstructedType(h,args) ->
+          let mutable h1, closed1, opened1, substitutions1 = collapseType h closed opened substitutions
+          let mutable args1 = []
+          for a in args do
+            let a1, closed', opened', substitutions' = collapseType a closed1 opened1 substitutions1
+            closed1 <- closed'
+            opened1 <- opened'
+            substitutions1 <- substitutions'
+            args1 <- a1 :: args1
+          ConstructedType(h1, args1 |> List.rev), closed, opened, substitutions
+        | TypeVariable(v) ->
+          let closed1, opened1, substitutions1 = visit v closed opened substitutions
+          let t1 = substitutions1.[v].Types.MinimumElement
+          t1, closed1, opened1, substitutions1
     
-      // here we want to add all types from equivalence.Variables.Types, with the exclusion of the current variable;
-      // if a variable is not yet closed, then we visit it first and take its Types afterwards
       let mutable vTypeCandidates = equivalence.Types
       let mutable closed, opened, substitutions = closed, opened, substitutions
       for v' in equivalence.Variables do
@@ -320,7 +374,9 @@ let normalize ctxt (substitutions:Map<TypeVariableData, TypeEquivalence>) =
         | [] -> TypeVariable v, closed, opened, substitutions
         | _ ->
           collapseTypes ctxt vTypeCandidates closed opened substitutions
-      closed1 |> Set.add v, opened1 |> Set.remove v, substitutions1 |> Map.add v { equivalence with Types = Set.singleton vType }
+
+      let vTypeCollapsed, closed2, opened2, substitutions2 = collapseType vType closed1 opened1 substitutions1
+      closed2 |> Set.add v, opened2 |> Set.remove v, substitutions2 |> Map.add v { equivalence with Types = Set.singleton vTypeCollapsed }
   and normalize (closed:Set<TypeVariableData>) (opened:Set<TypeVariableData>) (unexplored:List<TypeVariableData>) (substitutions:Map<TypeVariableData, TypeEquivalence>) =
     match unexplored with
     | [] -> substitutions
