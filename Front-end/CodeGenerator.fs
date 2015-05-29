@@ -27,6 +27,8 @@ let cleanupWithoutDot (s:string) =
   | "with" -> "_With"
   | _ ->
     s
+     .Replace("8==D", "_Penis")
+     .Replace("c==8", "_ReversePenis")
      .Replace(":=", "_DefinedAs")
      .Replace("->", "_Arrow")
      .Replace("<-", "_LeftArrow")
