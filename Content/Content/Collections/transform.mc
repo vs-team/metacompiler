@@ -5,6 +5,6 @@ Data[a b] Singleton[a] -> "," -> b : Tuple[a b]                         Priority
 Func[a b] "first" -> Tuple[a b] : TupleOperator => a                    Priority 10
 
 
----------------------
-first (x,y) => x
+-----------------
+first ($t x,y) => x
 
