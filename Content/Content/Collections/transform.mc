@@ -1,8 +1,10 @@
-﻿Data[a] "$t" -> a : Tuple[a]                             Priority 1000
-Data[a] Tuple[a] -> "," -> Tuple[a] : Tuple[a]           Priority 250
+﻿import System.Collections.Immutable
 
-Func[a] "run" -> Tuple[a] : Main => Tuple[a]             Priority 0
+Data[a] "$t" -> a : Singleton[a]                                        Priority 1000
+Data[a b] Singleton[a] -> "," -> b : Tuple[a b]                         Priority 250
+Func[a b] "first" -> Tuple[a b] : TupleOperator => a                    Priority 10
 
--------------
-run t => t 
+
+---------------------
+first (x,y) => x
 
