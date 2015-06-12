@@ -286,116 +286,121 @@ let rec traverse depth (ctxt:ConcreteExpressionContext) (expr:BasicExpression<Ke
       Extension({Name = var}, pos, varType), scheme1
   | _ -> failwithf "Unexpected expression %A" expr
 
-let normalize ctxt (substitutions:Map<TypeVariableData, TypeEquivalence>) =
-  let rec visit (v:TypeVariableData) (closed:Set<TypeVariableData>) (opened:Set<TypeVariableData>) (substitutions:Map<TypeVariableData, TypeEquivalence>) =
-    if opened |> Set.contains v then
-      opened,closed,substitutions
-    else
-      let opened = opened |> Set.add v
-      let equivalence = 
-        match substitutions |> Map.tryFind v with
-        | Some x -> x
-        | _ -> failwithf "Cannot find variable %A" v
-      let otherVars = equivalence.Variables
+let rec visit ctxt (v:TypeVariableData) (closed:Set<TypeVariableData>) (opened:Set<TypeVariableData>) (substitutions:Map<TypeVariableData, TypeEquivalence>) =
+  if opened |> Set.contains v then
+    opened,closed,substitutions
+  else
+    let opened = opened |> Set.add v
+    let equivalence = 
+      match substitutions |> Map.tryFind v with
+      | Some x -> x
+      | _ -> failwithf "Cannot find variable %A" v
+    let otherVars = equivalence.Variables
 
-      let rec mergeTypes ctxt (t1:Type) (t2:Type) (closed:Set<TypeVariableData>) (opened:Set<TypeVariableData>) (substitutions:Map<TypeVariableData, TypeEquivalence>) =
-        match t1,t2 with 
-        | Unknown, Unknown -> failwith "Cannot merge Unknown and Unknown types."
-        | TypeConstant(a,_), TypeConstant(b,_) when a = b ->
-          t1, closed, opened, substitutions
-        | Unknown, (TypeConstant _ as t)
-        | (TypeConstant _ as t), Unknown
-        | TypeVariable _, (TypeConstant _ as t)
-        | (TypeConstant _ as t), TypeVariable _
-        | TypeVariable _, (ConstructedType _ as t)
-        | (ConstructedType _ as t), TypeVariable _ ->
-          t, closed, opened, substitutions
-        | TypeVariable(v1,TemporaryVariable), (TypeVariable(v2,TemporaryVariable)) ->
-          let closed1, opened1, substitutions1 = visit (v1,TemporaryVariable) closed opened substitutions
-          let closed2, opened2, substitutions2 = visit (v2,TemporaryVariable) closed1 opened1 substitutions1
-          t1, closed2, opened2, substitutions2
-        | TypeVariable(_,TemporaryVariable), (TypeVariable(_,GenericParameter) as v)
-        | (TypeVariable(_,GenericParameter) as v), TypeVariable(_,TemporaryVariable) ->
-          v, closed, opened, substitutions
-        | _ ,_ when isSuperType ctxt t1 t2 ->
-          let res = t1
-          t1, closed, opened, substitutions
-        | _ ,_ when isSuperType ctxt t2 t1 ->
-          let res = t2
-          t2, closed, opened, substitutions
-        | ConstructedType(h1,args1), ConstructedType(h2,args2) ->
-          let mutable h, closed, opened, substitutions = mergeTypes ctxt h1 h2 closed opened substitutions
-          let mutable args = []
-          for a1,a2 in Seq.zip args1 args2 do
-            let a, closed', opened', substitutions' = mergeTypes ctxt a1 a2 closed opened substitutions
-            closed <- closed'
-            opened <- opened'
-            substitutions <- substitutions'
-            args <- a :: args
-          ConstructedType(h, args |> List.rev), closed, opened, substitutions
-        | _ -> failwithf "Not implemented type merging between %A and %A" t1 t2
-
-      let rec collapseTypes ctxt (ts:List<Type>) (closed:Set<TypeVariableData>) (opened:Set<TypeVariableData>) (substitutions:Map<TypeVariableData, TypeEquivalence>) =
-        match ts with
-        | [] -> failwith "Cannot collapse empty list!"
-        | t::[] -> t, closed, opened, substitutions
-        | t1::t2::ts ->
-          let t12, closed1, opened1, substitutions1 = mergeTypes ctxt t1 t2 closed opened substitutions
-          collapseTypes ctxt (t12::ts) closed1 opened1 substitutions1
-
-      let rec collapseType (t:Type) (closed:Set<TypeVariableData>) (opened:Set<TypeVariableData>) (substitutions:Map<TypeVariableData, TypeEquivalence>) =
-        match t with
-        | Unknown
-        | TypeConstant(_) -> t, closed, opened, substitutions
-        | TypeAbstraction(a,b) ->
-          let a1, closed1, opened1, substitutions1 = collapseType a closed opened substitutions
-          let b1, closed2, opened2, substitutions2 = collapseType b closed1 opened1 substitutions1
-          TypeAbstraction(a1,b1), closed2, opened2, substitutions2
-        | ConstructedType(h,args) ->
-          let mutable h1, closed1, opened1, substitutions1 = collapseType h closed opened substitutions
-          let mutable args1 = []
-          for a in args do
-            let a1, closed', opened', substitutions' = collapseType a closed1 opened1 substitutions1
-            closed1 <- closed'
-            opened1 <- opened'
-            substitutions1 <- substitutions'
-            args1 <- a1 :: args1
-          ConstructedType(h1, args1 |> List.rev), closed, opened, substitutions
-        | TypeVariable(v) ->
-          let closed1, opened1, substitutions1 = visit v closed opened substitutions
-          let t1 = substitutions1.[v].Types.MinimumElement
-          t1, closed1, opened1, substitutions1
-    
-      let mutable vTypeCandidates = equivalence.Types
-      let mutable closed, opened, substitutions = closed, opened, substitutions
-      for v' in equivalence.Variables do
-        if v <> v' then
-          let closed',opened',substitutions' = visit v' closed opened substitutions
+    let rec mergeTypes ctxt (t1:Type) (t2:Type) (closed:Set<TypeVariableData>) (opened:Set<TypeVariableData>) (substitutions:Map<TypeVariableData, TypeEquivalence>) =
+      match t1,t2 with 
+      | Unknown, Unknown -> failwith "Cannot merge Unknown and Unknown types."
+      | TypeConstant(a,_), TypeConstant(b,_) when a = b ->
+        t1, closed, opened, substitutions
+      | Unknown, (TypeConstant _ as t)
+      | (TypeConstant _ as t), Unknown
+      | TypeVariable _, (TypeConstant _ as t)
+      | (TypeConstant _ as t), TypeVariable _
+      | TypeVariable _, (ConstructedType _ as t)
+      | (ConstructedType _ as t), TypeVariable _ ->
+        t, closed, opened, substitutions
+      | TypeVariable(v1,TemporaryVariable), (TypeVariable(v2,TemporaryVariable)) ->
+        let closed1, opened1, substitutions1 = visit ctxt (v1,TemporaryVariable) closed opened substitutions
+        let closed2, opened2, substitutions2 = visit ctxt (v2,TemporaryVariable) closed1 opened1 substitutions1
+        t1, closed2, opened2, substitutions2
+      | TypeVariable(_,TemporaryVariable), (TypeVariable(_,GenericParameter) as v)
+      | (TypeVariable(_,GenericParameter) as v), TypeVariable(_,TemporaryVariable) ->
+        v, closed, opened, substitutions
+      | _ ,_ when isSuperType ctxt t1 t2 ->
+        let res = t1
+        t1, closed, opened, substitutions
+      | _ ,_ when isSuperType ctxt t2 t1 ->
+        let res = t2
+        t2, closed, opened, substitutions
+      | ConstructedType(h1,args1), ConstructedType(h2,args2) ->
+        let mutable h, closed, opened, substitutions = mergeTypes ctxt h1 h2 closed opened substitutions
+        let mutable args = []
+        for a1,a2 in Seq.zip args1 args2 do
+          let a, closed', opened', substitutions' = mergeTypes ctxt a1 a2 closed opened substitutions
           closed <- closed'
           opened <- opened'
           substitutions <- substitutions'
-          vTypeCandidates <- vTypeCandidates + substitutions.[v'].Types
+          args <- a :: args
+        ConstructedType(h, args |> List.rev), closed, opened, substitutions
+      | _ -> failwithf "Not implemented type merging between %A and %A" t1 t2
 
-      let vTypeCandidates = vTypeCandidates |> Set.toList
-      let vType, closed1, opened1, substitutions1 = 
-        match vTypeCandidates with
-        | [] -> TypeVariable v, closed, opened, substitutions
-        | _ ->
-          collapseTypes ctxt vTypeCandidates closed opened substitutions
+    let rec collapseTypes ctxt (ts:List<Type>) (closed:Set<TypeVariableData>) (opened:Set<TypeVariableData>) (substitutions:Map<TypeVariableData, TypeEquivalence>) =
+      match ts with
+      | [] -> failwith "Cannot collapse empty list!"
+      | t::[] -> t, closed, opened, substitutions
+      | t1::t2::ts ->
+        let t12, closed1, opened1, substitutions1 = mergeTypes ctxt t1 t2 closed opened substitutions
+        collapseTypes ctxt (t12::ts) closed1 opened1 substitutions1
 
-      let vTypeCollapsed, closed2, opened2, substitutions2 = collapseType vType closed1 opened1 substitutions1
-      closed2 |> Set.add v, opened2 |> Set.remove v, substitutions2 |> Map.add v { equivalence with Types = Set.singleton vTypeCollapsed }
-  and normalize (closed:Set<TypeVariableData>) (opened:Set<TypeVariableData>) (unexplored:List<TypeVariableData>) (substitutions:Map<TypeVariableData, TypeEquivalence>) =
-    match unexplored with
-    | [] -> substitutions
-    | v::vs ->
-      if closed |> Set.contains v |> not then
-        let closed1,opened1,substitutions1 = visit v closed opened substitutions
-        normalize closed1 opened1 vs substitutions1
-      else // just skip v, as it might have been visited within a previous visit to an equivalent variable
-        normalize closed opened vs substitutions
+    let rec collapseType (t:Type) (closed:Set<TypeVariableData>) (opened:Set<TypeVariableData>) (substitutions:Map<TypeVariableData, TypeEquivalence>) =
+      match t with
+      | Unknown
+      | TypeConstant(_) -> t, closed, opened, substitutions
+      | TypeAbstraction(a,b) ->
+        let a1, closed1, opened1, substitutions1 = collapseType a closed opened substitutions
+        let b1, closed2, opened2, substitutions2 = collapseType b closed1 opened1 substitutions1
+        TypeAbstraction(a1,b1), closed2, opened2, substitutions2
+      | ConstructedType(h,args) ->
+        let mutable h1, closed1, opened1, substitutions1 = collapseType h closed opened substitutions
+        let mutable args1 = []
+        for a in args do
+          let a1, closed', opened', substitutions' = collapseType a closed1 opened1 substitutions1
+          closed1 <- closed'
+          opened1 <- opened'
+          substitutions1 <- substitutions'
+          args1 <- a1 :: args1
+        ConstructedType(h1, args1 |> List.rev), closed, opened, substitutions
+      | TypeVariable((_,TemporaryVariable) as v) ->
+        let closed1, opened1, substitutions1 = visit ctxt v closed opened substitutions
+        let t1 = substitutions1.[v].Types.MinimumElement
+        t1, closed1, opened1, substitutions1
+      | TypeVariable((_,GenericParameter) as v) as t ->
+        let closed1, opened1, substitutions1 = visit ctxt v closed opened substitutions
+        t, closed1, opened1, substitutions1
+    
+    let mutable vTypeCandidates = equivalence.Types
+    let mutable closed, opened, substitutions = closed, opened, substitutions
+    for v' in equivalence.Variables do
+      if v <> v' then
+        let closed',opened',substitutions' = visit ctxt v' closed opened substitutions
+        closed <- closed'
+        opened <- opened'
+        substitutions <- substitutions'
+        vTypeCandidates <- vTypeCandidates + substitutions.[v'].Types
+
+    let vTypeCandidates = vTypeCandidates |> Set.toList
+    let vType, closed1, opened1, substitutions1 = 
+      match vTypeCandidates with
+      | [] -> TypeVariable v, closed, opened, substitutions
+      | _ ->
+        collapseTypes ctxt vTypeCandidates closed opened substitutions
+
+    let vTypeCollapsed, closed2, opened2, substitutions2 = collapseType vType closed1 opened1 substitutions1
+    closed2 |> Set.add v, opened2 |> Set.remove v, substitutions2 |> Map.add v { equivalence with Types = Set.singleton vTypeCollapsed }
+
+and normalize ctxt (closed:Set<TypeVariableData>) (opened:Set<TypeVariableData>) (unexplored:List<TypeVariableData>) (substitutions:Map<TypeVariableData, TypeEquivalence>) =
+  match unexplored with
+  | [] -> substitutions
+  | v::vs ->
+    if closed |> Set.contains v |> not then
+      let closed1,opened1,substitutions1 = visit ctxt v closed opened substitutions
+      normalize ctxt closed1 opened1 vs substitutions1
+    else // just skip v, as it might have been visited within a previous visit to an equivalent variable
+      normalize ctxt closed opened vs substitutions
+
+let normalizeSubstitutions ctxt (substitutions:Map<TypeVariableData, TypeEquivalence>) =
   let allVariables = [ for kv in substitutions -> kv.Key]
-  normalize Set.empty Set.empty allVariables substitutions
+  normalize ctxt Set.empty Set.empty allVariables substitutions
     
 
 let inferTypes input output clauses ctxt =
@@ -412,7 +417,7 @@ let inferTypes input output clauses ctxt =
   let clausesTyped, scheme2 = traverseMap ctxt clauses scheme1
   let outputTyped, scheme3 = traverse 1 ctxt output inputTyped.TypeInformation scheme2
 
-  let finalSubstitutions = normalize ctxt scheme3.Substitutions
+  let finalSubstitutions = normalizeSubstitutions ctxt scheme3.Substitutions
 
   let rec lookup ti =
     match ti with

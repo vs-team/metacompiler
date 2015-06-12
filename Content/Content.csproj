@@ -62,6 +62,9 @@
     <Compile Include="..\Front-end\bin\Debug\Casanova semantics.cs">
       <Link>Casanova semantics.cs</Link>
     </Compile>
+    <Compile Include="..\Front-end\bin\Debug\Collections.cs">
+      <Link>Collections.cs</Link>
+    </Compile>
     <Compile Include="..\Front-end\bin\Debug\Eval with memory.cs">
       <Link>Eval with memory.cs</Link>
     </Compile>
