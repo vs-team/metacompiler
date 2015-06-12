@@ -105,7 +105,7 @@ let main argv =
 //      "Lambda calculus", "run"
 //
 //      "Generic lists", @"run"
-      "Collections", "emptyDictionary"
+      "Collections", "run $t 3 , $t 4, $t 10"
       
 // not yet converted to new keyword syntax:
 
