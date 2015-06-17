@@ -476,8 +476,8 @@ and Literal = StringLiteral of string | IntLiteral of int | BoolLiteral of bool 
         | StringLiteral l -> "string"
         | IntLiteral i -> "int"
         | BoolLiteral b -> "bool"
-        | SingleLiteral s -> "float32"
-        | DoubleLiteral d -> "float"
+        | SingleLiteral s -> "float"
+        | DoubleLiteral d -> "double"
 
 let getPredefinedKeywords() =
   p{

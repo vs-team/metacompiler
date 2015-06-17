@@ -83,29 +83,33 @@ let main argv =
   let samples = 
     [
 // converted to new keyword syntax:
-      "Peano numbers", "run"
-      "Boolean expressions", "run"
-      "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
-      "Lists", "plus 0;1;2;3;nil 10"
-      "Lists", "length 0;1;2;3;nil"
-      "Lists", "contains 0;1;2;3;nil 2"
-      "Lists", "removeOdd 0;1;2;3;nil"
-      "Lists", "add 0;1;2;3;nil"
-
-      "stsil", "dda lin snoc 3 snoc 2 snoc 1"
-
-      "Eval without memory", "run"
-      "Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
-      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
-      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
-
-      "Binary trees", "run"
-      "Trees 234", @"main"
-
-      "Lambda calculus", "run"
-
-      "Generic lists", @"run"
-      "Collections", "first (5, true)"
+//      "Peano numbers", "run"
+//      "Boolean expressions", "run"
+//      "Lists", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
+//      "Lists", "plus 0;1;2;3;nil 10"
+//      "Lists", "length 0;1;2;3;nil"
+//      "Lists", "contains 0;1;2;3;nil 2"
+//      "Lists", "removeOdd 0;1;2;3;nil"
+//      "Lists", "add 0;1;2;3;nil"
+//
+//      "stsil", "dda lin snoc 3 snoc 2 snoc 1"
+//
+//      "Eval without memory", "run"
+//      "Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
+//      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
+//      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
+//
+//      "Binary trees", "run"
+//      "Trees 234", @"main"
+//
+//      "Lambda calculus", "run"
+//
+//      "Generic lists", @"run"
+//      "Collections", "run (<<ImmutableDictionary<string, int>.Empty>>, <<ImmutableDictionary<string, int>.Empty>>)"
+//      "Collections", "run1 (5, 10)"
+//      "Collections", "run2 (5, <<ImmutableDictionary<string, int>.Empty>>)"
+//      "Collections", "run3 (5, (<<ImmutableDictionary<string, int>.Empty>>, <<ImmutableDictionary<string, int>.Empty>>))"
+      "Collections", "run4"
       
 // not yet converted to new keyword syntax:
 

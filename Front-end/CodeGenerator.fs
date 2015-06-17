@@ -627,6 +627,7 @@ type GeneratedClass =
               match p.Type with
               | TypeDefinition.TypeConstant(t, TypeDefinition.TypeConstantDescriptor.Defined)
               | TypeDefinition.TypeConstant(t, TypeDefinition.TypeConstantDescriptor.NativeRef)
+              | TypeDefinition.TypeVariable(t, _)
               | TypeDefinition.ConstructedType(TypeDefinition.TypeConstant(t, _),_) when t <> "int" && t <> "float" && t <> "double" && t <> "bool" ->
                 sprintf "if (%s is System.Collections.IEnumerable) { res += \"{\"; foreach(var x in %s as System.Collections.IEnumerable) res += x.ToString(); res += \"}\";  } else { res += %s.ToString(); } \n" p.Name p.Name p.Name
               | _ -> 
