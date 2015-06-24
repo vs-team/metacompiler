@@ -14,7 +14,7 @@ Data stmt -> ";" -> stmt : stmt                                                 
 Data "wait" -> <<float>> : stmt                                                               Priority 100
 Data "let" -> ID -> EQ -> Expr : stmt                                                         Priority 100
 Data "if" -> Expr -> Then -> stmt -> Else -> stmt : stmt                                      Priority 100
-
+Data "yield" -> List[Expr] : stmt                                                             Priority 100
 Data "rule" stmt -> stmt -> ctxt -> <<float>> : Rule                                          Priority 20
 
 Data "unit" : Unit
@@ -30,17 +30,23 @@ Func "rebuild" -> List[Rule] -> List[Rule] -> List[ExecutionResult] -> <<float>>
 
 Data "Done" -> ctxt : ExecutionResult
 Data "Suspend" -> stmt -> ctxt : ExecutionResult                              Priority 7
-Data "Yield" -> stmt -> List[ID] -> List[Value] -> ctxt : ExecutionResult
+Data "Yield" -> stmt -> List[Value] -> ctxt : ExecutionResult
 Data "Resume" -> stmt -> ctxt : ExecutionResult
 Data "Atomic" -> stmt -> ctxt : ExecutionResult
 
 Data "Context" -> locals -> entity -> world : ctxt
 
-Data "$e" : entity
+Data "$e" -> <<ImmutableDictionary<string, Value> >> : entity
 Data "$w" : world
 Data "$l" -> <<ImmutableDictionary<string, Value> >> : locals
 
 Func "eval_s" -> stmt -> stmt -> ctxt -> <<float>> : Execution => ExecutionResult
+Func "evalYield" -> List[Expr] -> ctxt : YieldEvaluation => List[Value]
+Func <<ImmutableDictionary<string, Value> >> -> "add" -> <<string>> -> Value : DictionaryOp => <<ImmutableDictionary<string, Value> >>    Priority 10
+
+<<d.SetItem(k,v)>> => dict
+------------------------
+d add k v => dict
 
 
 eval ($b a) (locals) => $b true
@@ -64,6 +70,21 @@ eval_s (wait t) k ctxt dt => Suspend wait <<t - dt>>;k ctxt
 <<t <= dt>> == true
 ----------------------------------
 eval_s (wait t) k ctxt dt => Resume k ctxt
+
+
+-------------------------
+evalYield nil ctxt => nil
+
+eval expr locals => v
+evalYield exprs (Context ($l locals) entity world) => vs
+-----------------------------------------------------------------------------
+evalYield (expr :: exprs) (Context ($l locals) entity world) => v :: vs
+
+
+evalYield exprs ctxt => values
+------------------------------------------------------
+eval_s (yield exprs) k ctxt dt => Yield k values ctxt
+
 
 a != nop
 ---------------------
@@ -99,9 +120,9 @@ evalRule (rule ks nop context dt) => res
 -------------------------------
 evalRule (rule b k ctxt dt)  => res
 
-eval_s b k ctxt dt => Yield ks ids values context
+eval_s b k ctxt dt => Yield ks values context
 -------------------------------
-evalRule (rule b k ctxt dt)  => Yield ks ids values context
+evalRule (rule b k ctxt dt)  => Yield ks values context
 
 evalRule a => b
 tick as dt => res
@@ -139,9 +160,10 @@ loopRules original rs 0 dt => fin
 p12 := if ($b true) then (wait 4.0;wait 1.0) else (wait 2.0)
 p1 := wait 3.0
 p2 := wait 2.0
-p3 := let $"x" = $i 10 
-temporaryrule := rule (p1;p3;p12) nop (Context ($l <<ImmutableDictionary<string, Value>.Empty>>) $e $w) 1.0
-typorule := rule (p2) nop (Context ($l <<ImmutableDictionary<string, Value>.Empty>>) $e $w) 1.0
+p3 := let $"x" = $i 10
+<<ImmutableDictionary<string, Value>.Empty>> add "test" ($i 100) => dict
+temporaryrule := rule (p1;p3;p12) nop (Context ($l <<ImmutableDictionary<string, Value>.Empty>>) ($e dict) $w) 1.0
+typorule := rule (p2) nop (Context ($l <<ImmutableDictionary<string, Value>.Empty>>) ($e dict) $w) 1.0
 loopRules (temporaryrule::typorule::nil) (temporaryrule::typorule::nil) 3 1.0 => res
 -----------------------------------------------------------------------------------------------------------
 run => res
