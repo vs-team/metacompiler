@@ -3,6 +3,7 @@ include Content.CNV3.Tuples.mc
 include Content.GenericLists.transform.mc
 
 import System.Collections.Immutable
+import System.Threading
 
 Data "=" : EQ
 Data "then" : Then
@@ -53,8 +54,6 @@ eval_s (if ($b a) then b else c) k (Context ($l locals) entity world) dt => Atom
 
 eval (b) (locals) => c
 <<locals.SetItem(a, c)>> => res
-<<Console.Write("let ")>>
-<<Console.WriteLine(k.ToString())>>
 ---------------------------------
 eval_s (let ($a) = b) k (Context ($l locals) entity world) dt => Atomic k (Context ($l res) entity world)
 
@@ -82,11 +81,8 @@ eval_s (a;b) k ctxt dt => res
 -------------------------------
 eval_s nop nop ctxt dt => Done ctxt
 
-<<Console.WriteLine("--------------")>>
 eval_s b k ctxt dt => Atomic z c
-<<Console.Write("Atomic ")>>
-<<Console.WriteLine(z)>>
-eval_s z nop c dt => res 
+evalRule (rule z nop c dt) => res
 -------------------------------
 evalRule (rule b k ctxt dt)  => res
 
@@ -99,8 +95,7 @@ eval_s b k ctxt dt => Suspend ks context
 evalRule (rule b k ctxt dt)  => Suspend ks context
 
 eval_s b k ctxt dt => Resume ks context
-<<Console.WriteLine(b)>>
-eval_s ks nop context dt => res
+evalRule (rule ks nop context dt) => res
 -------------------------------
 evalRule (rule b k ctxt dt)  => res
 
@@ -129,7 +124,9 @@ rebuild (m::ms) ((rule body k context delta)::q) ((Suspend (wait t;cont) updated
 
 tick rs dt => temp
 rebuild original rs temp dt => nrs
-steps > 0 
+steps > 0
+<<Console.WriteLine(temp)>>
+<<Thread.Sleep((int)(dt * 1000))>>
 loopRules original nrs <<steps - 1>> dt => res
 --------------------------------------------
 loopRules original rs steps dt => res
@@ -139,7 +136,7 @@ tick rs dt => fin
 loopRules original rs 0 dt => fin
 
 
-p12 := if ($b true) then (wait 16.0;wait 7.0) else (wait 2.0)
+p12 := if ($b true) then (wait 4.0;wait 1.0) else (wait 2.0)
 p1 := wait 3.0
 p2 := wait 2.0
 p3 := let $"x" = $i 10 
