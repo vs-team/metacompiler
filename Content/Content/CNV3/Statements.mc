@@ -20,16 +20,18 @@ Data "unit" : Unit
 Func "run" : runnable => List[ExecutionResult]
 Func "evalRule" -> Rule : ExcecutionRule => ExecutionResult                                   Priority 10
 Func "tick" -> List[Rule] -> <<float>> : ticker => List[ExecutionResult]                      Priority 10
-Func "loopRules" -> List[Rule] -> <<int>> -> <<float>> : RuleLooper => List[ExecutionResult]  Priority 10
+Func "loopRules" -> List[Rule] -> List[Rule] -> <<int>> -> <<float>> : RuleLooper => List[ExecutionResult]  Priority 10
 
-Func "rebuild" -> List[ExecutionResult] -> <<float>> : Rebuild => List[Rule]                  Priority 10
+Func "addStmt" -> stmt -> stmt : AddStmt => stmt
+
+
+Func "rebuild" -> List[Rule] -> List[Rule] -> List[ExecutionResult] -> <<float>> : Rebuild => List[Rule]                  Priority 10
 
 Data "Done" -> ctxt : ExecutionResult
 Data "Suspend" -> stmt -> ctxt : ExecutionResult                              Priority 7
-Data "Yield" -> stmt -> ctxt : ExecutionResult
+Data "Yield" -> stmt -> List[ID] -> List[Value] -> ctxt : ExecutionResult
 Data "Resume" -> stmt -> ctxt : ExecutionResult
-Data "Atomic" -> ctxt : ExecutionResult
-Data "None" : ExecutionResult
+Data "Atomic" -> stmt -> ctxt : ExecutionResult
 
 Data "Context" -> locals -> entity -> world : ctxt
 
@@ -41,138 +43,108 @@ Func "eval_s" -> stmt -> stmt -> ctxt -> <<float>> : Execution => ExecutionResul
 
 
 eval ($b a) (locals) => $b true
-eval_s b k (Context ($l locals) entity world) dt => res
 --------------------------------------------------------------------------
-eval_s (if ($b a) then b else c) k (Context ($l locals) entity world) dt => res
+eval_s (if ($b a) then b else c) k (Context ($l locals) entity world) dt => Atomic b;k (Context ($l locals) entity world)
 
 eval ($b a) (locals) => $b false
-eval_s c k (Context ($l locals) entity world) dt => res
 --------------------------------------------------------------------------
-eval_s (if ($b a) then b else c) k (Context ($l locals) entity world) dt => res
+eval_s (if ($b a) then b else c) k (Context ($l locals) entity world) dt => Atomic c;k (Context ($l locals) entity world)
 
 
 eval (b) (locals) => c
-<<locals.SetItem(a, c)>> 
+<<locals.SetItem(a, c)>> => res
+<<Console.Write("let ")>>
+<<Console.WriteLine(k.ToString())>>
 ---------------------------------
-eval_s (let ($a) = b) k (Context ($l locals) entity world) dt => Atomic (Context ($l locals) entity world)
+eval_s (let ($a) = b) k (Context ($l locals) entity world) dt => Atomic k (Context ($l res) entity world)
+
+<<t <= dt>> == false
+----------------------------------
+eval_s (wait t) k ctxt dt => Suspend wait <<t - dt>>;k ctxt
 
 <<t <= dt>> == true
-<<System.Console.WriteLine("wait 0")>>
-<<System.Console.WriteLine(k.ToString())>>
 ----------------------------------
 eval_s (wait t) k ctxt dt => Resume k ctxt
 
-k !=nop
 a != nop
-<<t <= dt>> == false
-<<System.Console.WriteLine("a2 " + t.ToString())>>
-<<System.Console.WriteLine("b2: " + a.ToString())>>
-<<System.Console.WriteLine("c2: " + k.ToString())>>
------------------------------------------------------------------------------------------
-eval_s (wait t;a) k (Context locals entity world) dt => Suspend ((wait <<t - dt>>);a;k) (Context locals entity world)
+---------------------
+addStmt a b => a;b
 
-k == nop
-a !=nop
-<<t <= dt>> == false
-<<System.Console.WriteLine("a1: " + t.ToString())>>
-<<System.Console.WriteLine("b1: " + a.ToString())>>
-<<System.Console.WriteLine("c1: " + k.ToString())>>
------------------------------------------------------------------------------------------
-eval_s (wait t;a) k (Context locals entity world) dt => Suspend ((wait <<t - dt>>);a) (Context locals entity world)
+-------------------
+addStmt nop nop => nop
 
-k == nop
-<<t <= dt>> == false
-<<System.Console.WriteLine("a0: " + k.ToString())>>
-<<System.Console.WriteLine("b0: " + t.ToString())>>
------------------------------------------------------------------------------------------
-eval_s (wait t;nop) k (Context locals entity world) dt => Suspend ((wait <<t - dt>>)) (Context locals entity world)
-
-b != nop
-eval_s a (b;k) ctxt dt => res
+addStmt b k => cont
+eval_s a (cont) ctxt dt => res
 -------------------------------
 eval_s (a;b) k ctxt dt => res
+
 
 -------------------------------
 eval_s nop nop ctxt dt => Done ctxt
 
-k != nop
-eval_s k nop ctxt dt => res
+<<Console.WriteLine("--------------")>>
+eval_s b k ctxt dt => Atomic z c
+<<Console.Write("Atomic ")>>
+<<Console.WriteLine(z)>>
+eval_s z nop c dt => res 
 -------------------------------
-eval_s nop k ctxt dt => res
+evalRule (rule b k ctxt dt)  => res
 
-
-eval_s body k context dt => Done ctxt
+eval_s b k ctxt dt => Done context
 -------------------------------
-evalRule rule body k context dt => Done ctxt
+evalRule (rule b k ctxt dt)  => Done context
 
-eval_s body k (Context locals entity world) dt => Suspend a updatedLocals
--------------------------------------------------------------------------
-evalRule rule body k (Context locals entity world) dt => Suspend a updatedLocals
+eval_s b k ctxt dt => Suspend ks context
+-------------------------------
+evalRule (rule b k ctxt dt)  => Suspend ks context
+
+eval_s b k ctxt dt => Resume ks context
+<<Console.WriteLine(b)>>
+eval_s ks nop context dt => res
+-------------------------------
+evalRule (rule b k ctxt dt)  => res
+
+eval_s b k ctxt dt => Yield ks ids values context
+-------------------------------
+evalRule (rule b k ctxt dt)  => Yield ks ids values context
+
+evalRule a => b
+tick as dt => res
+------------------------------------------------------
+tick a::as dt => b::res
+
+---------------
+tick nil dt => nil
+
+---------------------------
+rebuild nil nil nil dt => nil
+
+rebuild q rs b dt => res
+-------------------------
+rebuild ((rule body nop context delta)::q) (r::rs) ((Done cont)::b) dt => (rule body nop cont dt)::res
+
+rebuild ms q b dt => res
+-------------------------
+rebuild (m::ms) ((rule body k context delta)::q) ((Suspend (wait t;cont) updatedcontext)::b) dt => (rule (wait t) cont updatedcontext dt)::res
+
+tick rs dt => temp
+rebuild original rs temp dt => nrs
+steps > 0 
+loopRules original nrs <<steps - 1>> dt => res
+--------------------------------------------
+loopRules original rs steps dt => res
+
+tick rs dt => fin
+--------------------------
+loopRules original rs 0 dt => fin
 
 
-evalRule (rule body k (Context locals entity world) deltaTime) => Done context
-r := rule body k (Context locals entity world) deltaTime
-newa := rule body nop context dt
-<<System.Console.WriteLine("tick2")>>
-tick (newa::b) dt => res
-----------------------------------------------------------------------
-tick ((rule body k (Context locals entity world) deltaTime)::b) dt => res
-
-evalRule (rule body k (Context locals entity world) deltaTime) => Resume newCont context
-newa := rule newCont nop context dt
-<<System.Console.WriteLine("tick1")>>
-tick (newa::b) dt => res
-----------------------------------------------------------------------
-tick ((rule body k (Context locals entity world) deltaTime)::b) dt => res
-
-evalRule (rule body k (Context locals entity world) deltaTime) => Suspend newCont context
-newa := rule newCont nop context dt
-<<System.Console.WriteLine("tick0")>>
-tick (newa::b) dt => res
-----------------------------------------------------------------------
-tick ((rule body k (Context locals entity world) deltaTime)::b) dt => res
-
-
-
-evalRule a => z
-<<System.Console.WriteLine("tick_base")>>
-tick b dt => res
----------------------
-tick (a::b) dt => z::res
-
-<<System.Console.WriteLine("xxxx")>>
-------------------------
-tick (nil) dt => nil
-
-
-rebuild as dt => newrules
-body := (wait t);k
-r := rule body nop ctxt dt
-------------------------------------------------------------------
-rebuild ((Suspend ((wait t);k) ctxt)::as) dt => (r::newrules)
-
------------------------
-rebuild nil dt => nil
-
-<<System.Console.WriteLine("Fellow")>>
-tick rs dt => res
------------------------
-loopRules rs 0 dt => res
-
-steps > 0
-<<System.Console.WriteLine(steps)>>
-tick rs dt => res
-rebuild res dt => newrs
-loopRules newrs <<steps - 1>> dt => rest
---------------------------------
-loopRules rs steps dt => rest
-
-p12 := if ($b true) then ((wait 3.0);if ($b true) then (wait 16.0) else (wait 200.0)) else (wait 5.0)
+p12 := if ($b true) then (wait 16.0;wait 7.0) else (wait 2.0)
 p1 := wait 3.0
 p2 := wait 2.0
 p3 := let $"x" = $i 10 
-temporaryrule := rule (p1;p2) nop (Context ($l <<ImmutableDictionary<string, Value>.Empty>>) $e $w) 1.0
+temporaryrule := rule (p1;p3;p12) nop (Context ($l <<ImmutableDictionary<string, Value>.Empty>>) $e $w) 1.0
 typorule := rule (p2) nop (Context ($l <<ImmutableDictionary<string, Value>.Empty>>) $e $w) 1.0
-loopRules (temporaryrule::nil) 0 1.0 => res
+loopRules (temporaryrule::typorule::nil) (temporaryrule::typorule::nil) 3 1.0 => res
 -----------------------------------------------------------------------------------------------------------
 run => res

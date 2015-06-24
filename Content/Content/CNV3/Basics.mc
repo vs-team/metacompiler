@@ -16,7 +16,7 @@ Data Expr -> "/" -> Expr : Expr          Priority 1000
 Data Expr -> "||" -> Expr : Expr         Priority 1000
 Data Expr -> "&&" -> Expr : Expr         Priority 1000
 
-Func "eval" -> Expr -> <<ImmutableDictionary<string, Value> >> : Evaluator => Value      Priority 1000
+Func "eval" -> Expr -> <<ImmutableDictionary<string, Value> >> : Evaluator => Value      Priority 10
 
 Value is Expr
 ID is Expr
@@ -50,7 +50,7 @@ eval b m => $i d
 eval (a - b) m => $i res
 
 
-eval a  m => $i c
+eval a m => $i c
 eval b m => $i d
 <<c * d>> => res
 -----------------------------
