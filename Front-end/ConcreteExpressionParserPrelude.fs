@@ -417,8 +417,8 @@ and ConcreteExpressionContext =
         {
             PredefinedKeywords = ctxt.PredefinedKeywords
             CustomKeywords = ctxt.CustomKeywords |> List.append ctxt'.CustomKeywords
-            CustomKeywordsByPrefix = ctxt.CustomKeywordsByPrefix |> List.append ctxt'.CustomKeywordsByPrefix
-            CustomKeywordsMap = ctxt.CustomKeywordsMap |> concatMap ctxt'.CustomKeywordsMap
+            CustomKeywordsByPrefix = ctxt.CustomKeywordsByPrefix |> List.append ctxt'.CustomKeywordsByPrefix |> List.sortBy (fun k -> k.Name) |> List.rev
+            CustomKeywordsMap = ctxt.CustomKeywordsMap |> concatMap ctxt'.CustomKeywordsMap 
             InheritanceRelationships = ctxt.InheritanceRelationships |> concatMap ctxt'.InheritanceRelationships
             ImportedModules = ctxt.ImportedModules |> List.append ctxt'.ImportedModules
         }

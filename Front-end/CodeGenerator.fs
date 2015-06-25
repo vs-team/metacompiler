@@ -50,6 +50,7 @@ let cleanupWithoutDot (s:string) =
      .Replace(";", "_Semicolon")
      .Replace(":", "_Colon")
      .Replace(">", "_opGreaterThan")
+     .Replace("<", "_opLessThan")
      .Replace("=", "_opEquals")
      .Replace("[", "<") // keep last or > becomes opGreaterThan
      .Replace("]", ">") // see previous comment
@@ -813,10 +814,10 @@ let generateCode (originalFilePath:string) (program_name:string)
 
       match programKeyword.Multeplicity with
       | KeywordMulteplicity.Single ->
-        sprintf "public class EntryPoint {\nstatic public object Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\n %s\n var result = p.Run(); %s\n\nreturn result;\n}\n}\n" 
+        sprintf "public class EntryPoint {\n public static bool Print(string s) {System.Console.WriteLine(s); return true;}\n   \nstatic public object Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\n %s\n var result = p.Run(); %s\n\nreturn result;\n}\n}\n" 
                 (createElement ctxt programTyped |> fst) OptionalPrintHead OptionalPrintTail
       | KeywordMulteplicity.Multiple ->
-        sprintf "public class EntryPoint {\nstatic public IEnumerable<object> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" 
+        sprintf "public class EntryPoint {\n public static bool Print(string s) {System.Console.WriteLine(s); return true;}\n   static public IEnumerable<object> Run(bool printInput)\n{\n #line 1 \"input\"\n var p = %s;\nif(printInput) System.Console.WriteLine(p.ToString());\nforeach(var x in p.Run())\nyield return x;\n}\n}\n" 
                 (createElement ctxt programTyped |> fst)
     [
       yield imports

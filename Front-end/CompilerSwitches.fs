@@ -1,6 +1,6 @@
 ﻿module CompilerSwitches
 
-let numProfilerRuns = 1
+let numProfilerRuns = 10000
 
 let printExpressionTree = false
 let flushCSFileOnError = true

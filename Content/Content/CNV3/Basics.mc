@@ -16,14 +16,21 @@ Data Expr -> "/" -> Expr : Expr          Priority 1000
 Data Expr -> "||" -> Expr : Expr         Priority 1000
 Data Expr -> "&&" -> Expr : Expr         Priority 1000
 
-Func "eval" -> Expr -> <<ImmutableDictionary<string, Value> >> : Evaluator => Value      Priority 10
+Data "Context" -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> : ctxt
+
+Func "eval" -> Expr -> ctxt : Evaluator => Value      Priority 10
 
 Value is Expr
 ID is Expr
 
-<<m.GetKey(a)>> => res
------------------
-eval $a m => res
+<<locals.ContainsKey(a)>> == true
+<<locals.GetKey(a)>> => res
+--------------------------------------------
+eval $a (Context locals entity world) => res
+
+<<entity.GetKey(a)>> => res
+--------------------------------------------
+eval $a (Context locals entity world) => res
 
 ---------------------
 eval ($b a) m => $b a

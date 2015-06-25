@@ -7,6 +7,7 @@ open ParserMonad
 open BasicExpression
 open ConcreteExpressionParserPrelude
 open TypeDefinition
+open System.IO
 
 let mutable debug_expr = false
 let mutable debug_rules = false
@@ -39,12 +40,12 @@ let rec program() =
           { initialContext
               with
                 PredefinedKeywords        = fail ""
-                CustomKeywords            = keywordParsingKS
-                CustomKeywordsByPrefix    = keywordParsingKS |> List.sortBy (fun k -> k.Name) |> List.rev
+                CustomKeywords            = keywordParsingKS |> List.rev
+                CustomKeywordsByPrefix    = keywordParsingKS |> List.sortBy (fun k -> k.Name)
                 CustomKeywordsMap         = keywordParsingKS |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
                 InheritanceRelationships  = Map.empty
                 ImportedModules           = imps
-              }
+           }
     let! ks = keywords
     let ksDecoded = ks |> List.map Keyword.decode
     let ctxt = 
@@ -397,6 +398,9 @@ and included_file()=
         let rules = System.IO.File.ReadAllText(path)
         return (program()).Parse (rules |> Seq.toList) ConcreteExpressionContext.Empty (Position.Create path)
     }
+
+
+      
 
 and included_files =
     p {
