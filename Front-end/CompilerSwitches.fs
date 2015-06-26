@@ -1,9 +1,9 @@
 ﻿module CompilerSwitches
 
-let numProfilerRuns = 10000
+let numProfilerRuns = 0
 
 let printExpressionTree = false
-let flushCSFileOnError = true
+let flushCSFileOnError = false
 let generateLineDirectives = true
 
 let optimizeDirectParentCall = true

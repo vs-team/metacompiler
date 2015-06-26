@@ -101,7 +101,7 @@ let main argv =
 //        "Sequence/seq.mc", "evals bb"
 //        "CNV3/Tuples.mc", "run"
 //          "Test/test.mc", "run"
-//      "CNV3/Basics.mc", "eval ($b true && $b false) <<ImmutableDictionary<string, Value>.Empty>>"
+//      "CNV3/Basics.mc", "test"
 // converted to new keyword syntax:
 //      "Peano numbers", "run"
 //      "Lists/transform.mc", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"

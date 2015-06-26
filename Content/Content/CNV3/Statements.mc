@@ -1,6 +1,6 @@
 ﻿include Content.CNV3.Basics.mc
 include Content.CNV3.Tuples.mc
-include Content.GenericLists.transform.mc
+
 
 import System.Collections.Immutable
 import System.Threading
@@ -15,6 +15,7 @@ Data "wait" -> <<float>> : stmt                                                 
 Data "let" -> ID -> EQ -> Expr : stmt                                                         Priority 100
 Data "if" -> Expr -> Then -> stmt -> Else -> stmt : stmt                                      Priority 100
 Data "while" -> Expr -> stmt : stmt                                                           Priority 100
+Data "for" -> ID -> Expr -> stmt : stmt                                                       Priority 100
 Data "yield" -> List[Expr] : stmt                                                             Priority 100
 Data "rule" List[<<string>>] -> stmt -> stmt -> ctxt -> <<float>> : Rule                                          Priority 20
 
@@ -62,6 +63,16 @@ eval_s (while cond b) k ctxt dt => Atomic b;((while cond b);k) ctxt
 eval cond ctxt => $b false
 --------------------------------------------------------------------
 eval_s (while cond b) k ctxt dt => Atomic k ctxt
+
+
+eval expr ctxt => ($l nil)
+------------------------------------------
+eval_s (for v expr b) k ctxt dt => Atomic k ctxt
+
+eval expr (Context locals entity world) => ($l (x :: xs))
+locals add var x => updatedLocals
+----------------------------------------------------------------
+eval_s (for ($ var) expr b) k (Context locals entity world) dt => Atomic b;((for ($ var) ($l xs) b);k) (Context updatedLocals entity world)
 
 
 eval (b) (Context locals entity world) => c
@@ -171,25 +182,31 @@ rebuild (m::ms) ((rule dom body k context delta)::q) ((Resume cont updatedContex
 tick rs dt => temp
 rebuild original rs temp dt => nrs
 steps > 0
+<<Thread.Sleep((int)(dt * 1000))>>
+<<Console.WriteLine(temp)>>
 loopRules original nrs <<steps - 1>> dt => res
 --------------------------------------------
 loopRules original rs steps dt => res
 
 tick rs dt => fin
+<<Thread.Sleep((int)(dt * 1000))>>
 --------------------------
 loopRules original rs 0 dt => fin
 
 
 p12 := if ($b true) then (wait 4.0;yield (($i 5)::($i 0)::nil)) else (wait 2.0)
+xs := $l (($i 1) :: ($i 2) :: ($i 3) :: nil)
 p1 := wait 3.0
 p2 := wait 2.0
 p3 := let $"x" = $i 10
 p4 := yield (($"Test" + $i 5)::($"X" + $i 1)::nil)
 p5 := while ($b true) (wait 1.0;p4)
+p6 := yield (($"Test" + $i 1)::($"X" + $i 1)::nil)
+p7 := for $"x" xs (p6)
 <<ImmutableDictionary<string, Value>.Empty>> add "Test" ($i 0) => dd
 dd add "X" ($i 1) => dict
-temporaryrule := rule ("Test" :: "X" :: nil) (p5) nop (Context (<<ImmutableDictionary<string, Value>.Empty>>) dict (<<ImmutableDictionary<string, Value>.Empty>>)) 0.016
-typorule := rule ("test" :: nil) (p2) nop (Context (<<ImmutableDictionary<string, Value>.Empty>>) dict (<<ImmutableDictionary<string, Value>.Empty>>)) 0.016
-loopRules (temporaryrule::nil) (temporaryrule::nil) 4 0.016 => res
+temporaryrule := rule ("Test" :: "X" :: nil) (p7) nop (Context (<<ImmutableDictionary<string, Value>.Empty>>) dict (<<ImmutableDictionary<string, Value>.Empty>>)) 1.0
+typorule := rule ("test" :: nil) (p2) nop (Context (<<ImmutableDictionary<string, Value>.Empty>>) dict (<<ImmutableDictionary<string, Value>.Empty>>)) 1.0
+loopRules (temporaryrule::nil) (temporaryrule::nil) 10 1.0 => res
 ---------------------------------------------------------------------------------------------------------
 run => res

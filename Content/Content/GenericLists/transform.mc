@@ -5,22 +5,9 @@ Data[a b] a -> "," -> b : Pair[a b]                                     Priority
 Data[a] a -> "::" -> List[a] : List[a]                                   Priority 1000
 Data[a] "nil" : List[a]
 
-Func "removeOdd" -> List[<<int>>] : Expr => List[<<int>>]
-
-
-
-Func "run" : Expr => Pair[Pair[Expr <<int>>] List[<<int>>]]
-
-
-l0 := nil
-l1 := "x"::"y"::"z"::l0
-l2 := 1::2::3::4::5::nil
-length l1 => x
-removeOdd l2 => y
-len := length l1
-----------------------
-run => (len,x),y
-
+Func "removeOdd" -> List[<<int>>] : ListOperator => List[<<int>>]
+Func[a] "length" -> List[a] : ListOperator => <<int>>
+Func[a] List[a] -> "append" -> List[a] : ListOperator => List[a]
 
 ----------------
 length nil => 0
@@ -28,6 +15,14 @@ length nil => 0
 length xs => y
 --------------------------
 length x::xs => <<1 + y>>
+
+
+---------------------
+nil append ys => ys
+
+xs append ys => zs
+-----------------------------
+(x :: xs) append ys => x :: zs
 
 
 ---------------------

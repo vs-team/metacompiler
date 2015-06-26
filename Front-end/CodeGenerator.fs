@@ -52,6 +52,8 @@ let cleanupWithoutDot (s:string) =
      .Replace(">", "_opGreaterThan")
      .Replace("<", "_opLessThan")
      .Replace("=", "_opEquals")
+     .Replace("@", "_opAt")
+     .Replace("++", "_opListAdd")
      .Replace("[", "<") // keep last or > becomes opGreaterThan
      .Replace("]", ">") // see previous comment
 

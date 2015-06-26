@@ -1,11 +1,16 @@
-﻿import System
+﻿include Content.GenericLists.transform.mc
+
+import System
 import System.Collections.Immutable
+
+
 
 
 Data "$i" -> <<int>> : Value             Priority 10000
 Data "$s" -> <<string>> : Value          Priority 10000
 Data "$b" -> <<bool>> : Value            Priority 10000
 Data "$f" -> <<float>> : Value           Priority 10000
+Data "$l" -> List[Value] : Value         Priority 10000
 
 Data "$" -> <<string>> : ID              Priority 10000
 
@@ -15,10 +20,15 @@ Data Expr -> "*" -> Expr : Expr          Priority 1000
 Data Expr -> "/" -> Expr : Expr          Priority 1000
 Data Expr -> "||" -> Expr : Expr         Priority 1000
 Data Expr -> "&&" -> Expr : Expr         Priority 1000
+Data Expr -> "++" -> Expr : Expr         Priority 1000
+Data Expr -> "@" -> Expr : Expr          Priority 1000
+
+
 
 Data "Context" -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> : ctxt
 
 Func "eval" -> Expr -> ctxt : Evaluator => Value      Priority 10
+Func "test" : Test => Value                           Priority 10
 
 Value is Expr
 ID is Expr
@@ -114,4 +124,27 @@ eval a m => $b c
 c == false
 ---------------------
 eval (a && b) m => $b c
+
+
+--------------------
+eval ($l li) m => $l li
+
+eval e m => v
+eval el m => ($l li)
+-------------------------
+eval (e ++ el) m => ($l (v :: li))
+
+eval ex m => ($l xs)
+eval ey m => ($l ys)
+xs append ys => zs
+-----------------------
+eval ex @ ey m => ($l zs)
+
+
+x := $l (($i 1) :: ($i 2) :: ($i 3) :: nil)
+y := $l ($i 4 :: nil)
+m := Context <<ImmutableDictionary<string, Value>.Empty>> <<ImmutableDictionary<string, Value>.Empty>> <<ImmutableDictionary<string, Value>.Empty>>
+eval (x @ y) m => res
+----------------------------------
+test => res
 
