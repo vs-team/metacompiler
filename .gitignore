@@ -1,0 +1,5 @@
+/Content/bin/
+/Content/obj/
+/Front-end/bin/
+/Front-end/obj/
+*.suo
