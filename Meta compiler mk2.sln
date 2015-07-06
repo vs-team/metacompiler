@@ -5,26 +5,14 @@ VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Front-end", "Front-end\Front-end.fsproj", "{576DA5B3-015F-423D-8244-D3B8DC601225}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Content", "Content\Content.csproj", "{EDCA9158-66E7-429E-B7C7-6074D948026F}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3DEC99D7-E507-4095-B0FA-1CEC12466300}"
 	ProjectSection(SolutionItems) = preProject
 		todo.txt = todo.txt
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Content", "Content\Content.csproj", "{EDCA9158-66E7-429E-B7C7-6074D948026F}"
+EndProject
 Global
-	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 3
-		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = https://tfs.codeplex.com/tfs/tfs17
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = Content\\Content.csproj
-		SccProjectName1 = Content
-		SccLocalPath1 = Content
-		SccProjectUniqueName2 = Front-end\\Front-end.fsproj
-		SccProjectName2 = Front-end
-		SccLocalPath2 = Front-end
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU

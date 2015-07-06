@@ -50,48 +50,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Front-end\bin\Debug\Binary numbers.cs">
-      <Link>Binary numbers.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\Binary trees.cs">
-      <Link>Binary trees.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\Boolean expressions.cs">
-      <Link>Boolean expressions.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\Casanova semantics.cs">
-      <Link>Casanova semantics.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\Collections.cs">
-      <Link>Collections.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\Eval with memory.cs">
-      <Link>Eval with memory.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\Eval with readonly memory.cs">
-      <Link>Eval with readonly memory.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\Generic lists.cs">
-      <Link>Generic lists.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\Lambda calculus.cs">
-      <Link>Lambda calculus.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\Lists.cs">
-      <Link>Lists.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\Maps test.cs">
-      <Link>Maps test.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\Peano numbers.cs">
-      <Link>Peano numbers.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\stsil.cs">
-      <Link>stsil.cs</Link>
-    </Compile>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Content\Analyser\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -164,13 +122,12 @@
     <None Include="Content\Casanova semantics\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="packages.config" />
     <None Include="Content\Stsil\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Content\Wiskunde 7 herkansing\Exam instructions.txt" />
+    <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
