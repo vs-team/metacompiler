@@ -21,10 +21,11 @@ Data "yield" -> List[Expr] : stmt                                               
 Data "rule" List[<<string>>] -> stmt -> stmt -> <<ImmutableDictionary<string, Value> >>  -> <<float>> : Rule     Priority 20
 
 Data "unit" : Unit
-Func "run" : runnable => List[ExecutionResult]
+Data "State" List[Rule] -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> : GameState   Priority 10
+Func "run" : runnable => GameState
 Func "evalRule" -> Rule -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> : ExecutionRule  => ExecutionResult   Priority 10
-Func "tick" -> List[Rule] -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> -> <<float>> : ticker => List[ExecutionResult]                      Priority 10
-Func "loopRules" -> List[Rule] -> List[Rule] -> <<int>> -> <<float>> : RuleLooper => List[ExecutionResult]  Priority 10
+Func "tick" -> List[Rule] -> List[Rule] -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> -> <<float>> : ticker => GameState                      Priority 10
+Func "loopRules" -> List[Rule] -> List[Rule] -> <<int>> -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> -> <<float>> : RuleLooper => GameState  Priority 10
 
 Func "addStmt" -> stmt -> stmt : AddStmt => stmt
 
@@ -162,48 +163,54 @@ updateFields fs vs (Context l updatedEntity world) => updatedContext
 -------------------------------------------------------------------------------------
 updateFields (f :: fs) (v :: vs) (Context l entity world) => updatedContext
 
-evalRule a fields globals => Yield ks values (Context newLocals newFields newGlobals)
-tick as newFields newGlobals dt => res
+
+evalRule r fields globals => Done (Context newLocals newFields newGlobals)
+tick originals rs newFields newGlobals dt => (State updatedRules updatedFields updatedGlobals)
+st := State (original::updatedRules) updatedFields updatedGlobals
+-------------------------------------------------------------------------------------
+tick (original::originals) (r::rs) fields globals dt => st
+
+evalRule (rule dom body k locals delta) fields globals => Suspend (s;cont) (Context newLocals newFields newGlobals)
+r := rule dom s cont newLocals dt
+tick originals rs newFields newGlobals dt => (State updatedRules updatedFields updatedGlobals)
+st := State (r::updatedRules) updatedFields updatedGlobals
 ------------------------------------------------------
-tick (a::as) fields globals dt => b::res
+tick (original::originals) ((rule dom body k locals delta)::rs) fields globals dt => st
 
----------------------------------
-tick nil fields globals dt => nil
 
----------------------------
-rebuild nil nil nil dt => nil
+evalRule (rule dom body k locals delta) fields globals => Yield cont values (Context newLocals newFields newGlobals)
+r := rule dom cont nop newLocals dt
+tick originals rs newFields newGlobals dt => (State updatedRules updatedFields updatedGlobals)
+st := State (r::updatedRules) updatedFields updatedGlobals
+------------------------------------------------------
+tick (original::originals) ((rule dom body k locals delta)::rs) fields globals dt => st
 
-rebuild q rs b dt => res
----------------------------
-rebuild ((rule dom body nop context delta)::q) (r::rs) ((Done cont)::b) dt => (rule dom body nop cont dt)::res
+evalRule (rule dom body k locals delta) fields globals => Resume cont (Context newLocals newFields newGlobals)
+r := rule dom cont nop newLocals dt
+tick originals rs newFields newGlobals dt => (State updatedRules updatedFields updatedGlobals)
+st := State (r::updatedRules) updatedFields updatedGlobals
+------------------------------------------------------
+tick (original::originals) ((rule dom body k locals delta)::rs) fields globals dt => st
 
-rebuild ms q b dt => res
--------------------------
-rebuild (m::ms) ((rule dom body k context delta)::q) ((Suspend (s;cont) updatedContext)::b) dt => (rule dom s cont updatedContext dt)::res
 
-rebuild ms q b dt => res
--------------------------
-rebuild (m::ms) ((rule dom body k context delta)::q) ((Yield cont values updatedContext)::b) dt => (rule dom cont nop updatedContext dt)::res
-
-rebuild ms q b dt => res
--------------------------
-rebuild (m::ms) ((rule dom body k context delta)::q) ((Resume cont updatedContext)::b) dt => (rule dom cont nop updatedContext dt)::res
+------------------------------------------------------------
+tick nil nil fields globals dt => (State nil fields globals)
 
 
 
-tick rs dt => temp
-rebuild original rs temp dt => nrs
+tick original rs fields globals dt => (State nrs newFields newGlobals)
+st := State nrs newFields newGlobals
 steps > 0
 <<Thread.Sleep((int)(dt * 1000))>>
-<<Console.WriteLine(nrs)>>
-loopRules original nrs <<steps - 1>> dt => res
---------------------------------------------
-loopRules original rs steps dt => res
+<<Console.WriteLine(st)>>
+loopRules original nrs <<steps - 1>> newFields newGlobals dt => s
+-----------------------------------------------------------
+loopRules original rs steps fields globals dt => s
 
-tick rs dt => nrs
+tick original rs fields globals dt => s
 <<Thread.Sleep((int)(dt * 1000))>>
---------------------------
-loopRules original rs 0 dt => nrs
+----------------------------------------------
+loopRules original rs 0 fields globals dt => s
 
 
 p12 := if ($b true) then (wait $f 4.0;yield (($i 5)::($i 0)::nil)) else (wait $f 2.0)
@@ -219,8 +226,8 @@ p8 := when $"X" gt $i 1
 p9 := yield (($"Test" + $i 1000)::nil)
 <<ImmutableDictionary<string, Value>.Empty>> add "Test" ($i 0) => dd
 dd add "X" ($i 1) => dict
-ra := rule ("Test" :: "X" :: nil) (p2;p6) nop (Context (<<ImmutableDictionary<string, Value>.Empty>>) dict (<<ImmutableDictionary<string, Value>.Empty>>)) 1.0
-rb := rule ("test" :: nil) (p8;p3;p2) nop (Context (<<ImmutableDictionary<string, Value>.Empty>>) dict (<<ImmutableDictionary<string, Value>.Empty>>)) 1.0
-loopRules (ra::rb::nil) (ra::rb::nil) 6 1.0 => res
----------------------------------------------------------------------------------------------------------
+ra := rule ("Test" :: "X" :: nil) (p2;p6) nop <<ImmutableDictionary<string, Value>.Empty>> 1.0
+rb := rule ("test" :: nil) (p8;p3;p2) nop <<ImmutableDictionary<string, Value>.Empty>> 1.0
+loopRules (ra::rb::nil) (ra::rb::nil) 6 dict <<ImmutableDictionary<string, Value>.Empty>> 1.0 => res
+--------------------------------------------------------------------------------------------------
 run => res
