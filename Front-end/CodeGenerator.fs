@@ -25,6 +25,7 @@ let cleanupWithoutDot (s:string) =
   | "true" -> "_True"
   | "false" -> "_False"
   | "with" -> "_With"
+  | "in" -> "_In"
   | _ ->
     s
      .Replace("8==D", "_Penis")
