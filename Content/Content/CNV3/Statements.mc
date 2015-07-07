@@ -29,9 +29,6 @@ Func "loopRules" -> List[Rule] -> List[Rule] -> <<int>> -> <<ImmutableDictionary
 
 Func "addStmt" -> stmt -> stmt : AddStmt => stmt
 
-
-Func "rebuild" -> List[Rule] -> List[Rule] -> List[ExecutionResult] -> <<float>> : Rebuild => List[Rule]                 Priority 10
-
 Data "Done" -> ctxt : ExecutionResult
 Data "Suspend" -> stmt -> ctxt : ExecutionResult                              Priority 7
 Data "Yield" -> stmt -> List[Value] -> ctxt : ExecutionResult
@@ -201,8 +198,9 @@ tick nil nil fields globals dt => (State nil fields globals)
 tick original rs fields globals dt => (State nrs newFields newGlobals)
 st := State nrs newFields newGlobals
 steps > 0
-<<Thread.Sleep((int)(dt * 1000))>>
 <<Console.WriteLine(st)>>
+<<Thread.Sleep((int)(dt * 1000))>>
+<<Console.WriteLine("-------------------------")>>
 loopRules original nrs <<steps - 1>> newFields newGlobals dt => s
 -----------------------------------------------------------
 loopRules original rs steps fields globals dt => s
@@ -227,7 +225,7 @@ p9 := yield (($"Test" + $i 1000)::nil)
 <<ImmutableDictionary<string, Value>.Empty>> add "Test" ($i 0) => dd
 dd add "X" ($i 1) => dict
 ra := rule ("Test" :: "X" :: nil) (p2;p6) nop <<ImmutableDictionary<string, Value>.Empty>> 1.0
-rb := rule ("test" :: nil) (p8;p3;p2) nop <<ImmutableDictionary<string, Value>.Empty>> 1.0
+rb := rule ("Test" :: nil) (p8;p3;p2) nop <<ImmutableDictionary<string, Value>.Empty>> 1.0
 loopRules (ra::rb::nil) (ra::rb::nil) 6 dict <<ImmutableDictionary<string, Value>.Empty>> 1.0 => res
 --------------------------------------------------------------------------------------------------
 run => res
