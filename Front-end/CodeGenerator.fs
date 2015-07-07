@@ -44,6 +44,7 @@ let generateCode (originalFilePath:string) (program_name:string)
     let programTyped,_,_ = TypeInference.inferTypes program (Extension({ Name = "___tmp" }, Position.Zero, ())) [] ctxt
 
     let classes = classes
+    Graph.hook classes
     let extensions = @"public static class Extensions { public static V GetKey<T, V>(this System.Collections.Immutable.ImmutableDictionary<T, V> self, T key) { return self[key]; } }"
     let interfaces = [ for k in ctxt.CustomKeywords -> Keyword.ArgumentCSharpStyle k.BaseType cleanupWithoutDot ] |> Seq.distinct |> Seq.toList 
     let inheritanceRelationships = inheritanceRelationships
