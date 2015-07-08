@@ -5,7 +5,7 @@ include Content.CNV3.Tuples.mc
 import System.Collections.Immutable
 import System.Threading
 
-Data "=" : EQ
+Data "=" : EQ                                                                                 Priority 5
 Data "then" : Then
 Data "else" : Else
 
@@ -266,10 +266,15 @@ p6 := yield (($"Test" + $i 1)::($"X" + $i 1)::nil)
 p7 := for $"x" in xs (p1;p6;p2)
 p8 := when $"X" gt $i 1
 p9 := yield (($"Test" + $i 1000)::nil)
+subq := from $"y" in ($l (($i 1)::($i 3)::($i 5)::nil)) nil where $"y" lt $i 5 select $"y"
+subl := let $"subq" = subq
+q := from $"x" in ($l (($i 1)::($i 2)::($i 3)::nil)) (subl::nil) where $"x" gt $i 1 select ($"x" ++ $"subq")
+p10 := let $"q" = q
+p11 := yield (($"Test")::($"q")::nil)
 <<ImmutableDictionary<string, Value>.Empty>> add "Test" ($i 0) => dd
 dd add "X" ($i 1) => dict
-ra := rule ("Test" :: "X" :: nil) (p2;p6) nop <<ImmutableDictionary<string, Value>.Empty>> 1.0
-rb := rule ("Test" :: nil) (p8;p3;p2) nop <<ImmutableDictionary<string, Value>.Empty>> 1.0
-loopRules (ra::rb::nil) (ra::rb::nil) 6 dict <<ImmutableDictionary<string, Value>.Empty>> 1.0 => res
+r1 := rule ("Test" :: "X" :: nil) (p2;p10;p11) nop <<ImmutableDictionary<string, Value>.Empty>> 1.0
+r2 := rule ("Test" :: nil) (p8;p3;p2) nop <<ImmutableDictionary<string, Value>.Empty>> 1.0
+loopRules (r1::nil) (r1::nil) 6 dict <<ImmutableDictionary<string, Value>.Empty>> 1.0 => res
 --------------------------------------------------------------------------------------------------
 run => res

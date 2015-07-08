@@ -10,7 +10,7 @@ Data "$i" -> <<int>> : Value             Priority 10000
 Data "$s" -> <<string>> : Value          Priority 10000
 Data "$b" -> <<bool>> : Value            Priority 10000
 Data "$f" -> <<float>> : Value           Priority 10000
-Data "$l" -> List[Value] : Value         Priority 10000
+Data "$l" -> List[Value] : Value         Priority 5000
 
 Data "$" -> <<string>> : ID              Priority 10000
 
@@ -22,7 +22,7 @@ Data Expr -> "||" -> Expr : Expr         Priority 1000
 Data Expr -> "&&" -> Expr : Expr         Priority 1000
 Data Expr -> "++" -> Expr : Expr         Priority 1000
 Data Expr -> "@" -> Expr : Expr          Priority 1000
-Data Expr -> "ls" -> Expr : Expr         Priority 1000
+Data Expr -> "lt" -> Expr : Expr         Priority 1000
 Data Expr -> "leq" -> Expr : Expr        Priority 1000
 Data Expr -> "gt" -> Expr : Expr         Priority 1000
 Data Expr -> "geq" -> Expr : Expr        Priority 1000
@@ -133,7 +133,7 @@ eval (a && b) m => $b c
 eval a m => $i x
 eval b m => $i y
 -------------------------
-eval (a ls b) m => $b (<<x < y>>)
+eval (a lt b) m => $b (<<x < y>>)
 
 eval a m => $i x
 eval b m => $i y
@@ -153,7 +153,7 @@ eval (a geq b) m => $b (<<x >= y>>)
 eval a m => $f x
 eval b m => $f y
 -------------------------
-eval (a ls b) m => $b (<<x < y>>)
+eval (a lt b) m => $b (<<x < y>>)
 
 eval a m => $f x
 eval b m => $f y
