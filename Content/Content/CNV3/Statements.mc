@@ -1,5 +1,4 @@
 ﻿include Content.CNV3.Basics.mc
-include Content.CNV3.Tuples.mc
 
 
 import System.Collections.Immutable

@@ -680,7 +680,7 @@ type GeneratedClass =
                 else
                   match c.Keyword.Multeplicity with
                   | KeywordMulteplicity.Single ->
-                    sprintf "\nthrow new System.Exception(\"Error evaluating: \" + %s.ToString() + \" no result returned.\");" self_constructor
+                    sprintf "\nthrow new System.Exception(\"Error evaluating: %s no result returned.\");" c.Keyword.Name
                   | KeywordMulteplicity.Multiple ->
                     "foreach (var p in Enumerable.Range(0,0)) yield return null;"
               let path = p.ToString()

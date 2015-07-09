@@ -1,4 +1,5 @@
 ﻿include Content.GenericLists.transform.mc
+include Content.CNV3.Tuples.mc
 
 import System
 import System.Collections.Immutable
@@ -11,6 +12,9 @@ Data "$s" -> <<string>> : Value          Priority 10000
 Data "$b" -> <<bool>> : Value            Priority 10000
 Data "$f" -> <<float>> : Value           Priority 10000
 Data "$l" -> List[Value] : Value         Priority 5000
+Data "$t" -> Tuple[Value Value] : Value      Priority 5000
+Data "$first" -> Expr : Expr               Priority 10
+Data "$second" -> Expr : Expr               Priority 10
 
 Data "$" -> <<string>> : ID              Priority 10000
 
@@ -58,6 +62,9 @@ eval ($s s) m => $s s
 
 -----------------------
 eval ($f f) m => $f f
+
+---------------------
+eval ($t t) m => $t t
 
 eval a m => $i c
 eval b m => $i d
@@ -185,11 +192,21 @@ xs append ys => zs
 -----------------------
 eval ex @ ey m => ($l zs)
 
+eval expr m => ($t t)
+<<Console.WriteLine(t)>>
+fst t => res
+------------------------
+eval $first expr m => res
 
-x := $l (($i 1) :: ($i 2) :: ($i 3) :: nil)
-y := $l ($i 4 :: nil)
+eval expr m => ($t t)
+snd t => res
+------------------------
+eval $second expr m => res
+
+
+t := $t ($f 1.0,($t ($f 2.0,$f 3.0)))
 m := Context <<ImmutableDictionary<string, Value>.Empty>> <<ImmutableDictionary<string, Value>.Empty>> <<ImmutableDictionary<string, Value>.Empty>>
-eval (x @ y) m => res
+eval $first t m => res
 ----------------------------------
 test => res
 

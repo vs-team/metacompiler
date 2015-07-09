@@ -421,18 +421,15 @@ and included_files =
 and merge_included_files =
     let rec merge_rules exprs =
         [
-            for exp in exprs do
+          for exp in exprs do
             match exp with
-            | x::xs ->
-                match x with
-                | Application (_, rules,_, _) ->
-                    match rules with
-                    | r::rules ->
-                        yield rules
-                    | _ -> ()
-                | _ -> ()
-            | _ -> ()
-        ] |> List.concat       
+            | Application (_,rules,_,_) ->
+                yield! rules |> List.filter(fun x ->
+                                              match x with
+                                              | Keyword(_) -> false
+                                              | _ -> true)
+            | _ -> () 
+        ]      
     let rec merge_context ctxt =
         match ctxt with
         | x::xs ->
@@ -443,7 +440,7 @@ and merge_included_files =
     p {
         let! includes = included_files
         let s = ( List.map fst includes )
-        let rules = merge_rules (List.toSeq [s])
+        let rules = merge_rules (List.toSeq s)
         let context = merge_context ( List.map snd includes )
         return (rules, context)
     }

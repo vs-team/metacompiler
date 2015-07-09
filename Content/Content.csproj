@@ -59,7 +59,7 @@
     <None Include="Content\Cmm\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Content\Collections\transform.mc">
+    <None Include="Content\Tuples\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Content\CNV3\Basics.mc">
@@ -116,7 +116,7 @@
     <None Include="Content\Binary numbers\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Content\Peano numbers\transform.mc">
+    <None Include="Content\PeanoNumbers\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Content\Casanova semantics\transform.mc">
@@ -131,6 +131,17 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\CNV3\todo.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\Front-end\bin\Debug\Basics.mc.cs">
+      <Link>Basics.mc.cs</Link>
+    </Compile>
+    <Compile Include="..\Front-end\bin\Debug\test.mc.cs">
+      <Link>test.mc.cs</Link>
+    </Compile>
+    <Compile Include="..\Front-end\bin\Debug\Tuples.mc.cs">
+      <Link>Tuples.mc.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

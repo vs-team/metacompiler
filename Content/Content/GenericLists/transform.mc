@@ -1,7 +1,5 @@
 ﻿import System      
 
-Data[a b] a -> "," -> b : Pair[a b]                                     Priority 900
-
 Data[a] a -> "::" -> List[a] : List[a]                                   Priority 1000
 Data[a] "nil" : List[a]
 

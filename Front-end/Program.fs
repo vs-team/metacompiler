@@ -64,7 +64,7 @@ let runDeduction path =
                 let types = results.CompiledAssembly.GetTypes()
                 let entryPoint = types |> Seq.find (fun t -> t.Name = "EntryPoint")
                 let run = entryPoint.GetMethod("Run")
-                let results = 
+                let results =
                   match run.Invoke(null, [|false|]) with
                   | :? seq<obj> as res -> res |> Seq.toList
                   | res -> [res]
@@ -99,8 +99,8 @@ let main argv =
     [
       "CNV3/Statements.mc", "run"
 //        "Sequence/seq.mc", "evals bb"
-//        "CNV3/Tuples.mc", "run"
-//          "Test/test.mc", "run"
+//        "CNV3/Tuples.mc", "fst (1.0,2.0)"
+//          "Test/test.mc", "debug"
 //      "CNV3/Basics.mc", "test"
 // converted to new keyword syntax:
 //      "Peano numbers", "run"

@@ -4,7 +4,7 @@ let numProfilerRuns = 0
 
 let printExpressionTree = false
 let flushCSFileOnError = false
-let generateLineDirectives = true
+let generateLineDirectives = false
 
 let optimizeDirectParentCall = true
 let generateStaticRun = true
