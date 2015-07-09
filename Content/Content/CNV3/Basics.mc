@@ -193,7 +193,6 @@ xs append ys => zs
 eval ex @ ey m => ($l zs)
 
 eval expr m => ($t t)
-<<Console.WriteLine(t)>>
 fst t => res
 ------------------------
 eval $first expr m => res
