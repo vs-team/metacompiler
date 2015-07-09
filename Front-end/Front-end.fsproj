@@ -65,6 +65,8 @@
     <Compile Include="ConcreteExpressionParserPrelude.fs" />
     <Compile Include="ConcreteExpressionParser.fs" />
     <Compile Include="TypeInference.fs" />
+    <Compile Include="CodeGeneratorDeps.fs" />
+    <Compile Include="Graph.fs" />
     <Compile Include="CodeGenerator.fs" />
     <Compile Include="GUI.fs" />
     <Compile Include="AnalyserAST.fs" />

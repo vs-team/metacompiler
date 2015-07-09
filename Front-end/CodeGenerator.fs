@@ -8,6 +8,7 @@ open BasicExpression
 open TypeDefinition
 open ConcreteExpressionParserPrelude
 open ConcreteExpressionParser
+open CodeGeneratorDeps
 
 type TypedExpression   = BasicExpression<Keyword, Var, Literal, Position, Type>
 type UntypedExpression = BasicExpression<Keyword, Var, Literal, Position, unit>
@@ -680,7 +681,7 @@ type GeneratedClass =
                 else
                   match c.Keyword.Multeplicity with
                   | KeywordMulteplicity.Single ->
-                    sprintf "\nthrow new System.Exception(\"Error evaluating: %s no result returned.\");" c.Keyword.Name
+                    sprintf "\nthrow new System.Exception(\"Error evaluating: \" + %s.ToString() + \" no result returned.\");" self_constructor
                   | KeywordMulteplicity.Multiple ->
                     "foreach (var p in Enumerable.Range(0,0)) yield return null;"
               let path = p.ToString()
@@ -783,6 +784,7 @@ let generateCode (originalFilePath:string) (program_name:string)
     let programTyped,_,_ = TypeInference.inferTypes program (Extension({ Name = "___tmp" }, Position.Zero, ())) [] ctxt
 
     let classes = classes
+    Graph.hook classes
     let extensions = @"public static class Extensions { public static V GetKey<T, V>(this System.Collections.Immutable.ImmutableDictionary<T, V> self, T key) { return self[key]; } }"
     let interfaces = [ for k in ctxt.CustomKeywords -> Keyword.ArgumentCSharpStyle k.BaseType cleanupWithoutDot ] |> Seq.distinct |> Seq.toList 
     let inheritanceRelationships = inheritanceRelationships
