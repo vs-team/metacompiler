@@ -65,14 +65,14 @@
     <Compile Include="ConcreteExpressionParserPrelude.fs" />
     <Compile Include="ConcreteExpressionParser.fs" />
     <Compile Include="TypeInference.fs" />
-    <Compile Include="CodeGeneratorDeps.fs" />
-    <Compile Include="Graph.fs" />
+	<Compile Include="CodeGeneratorDeps.fs" />
     <Compile Include="CodeGenerator.fs" />
     <Compile Include="GUI.fs" />
     <Compile Include="AnalyserAST.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <None Include="packages.config" />
+
   </ItemGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />
