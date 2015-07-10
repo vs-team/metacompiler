@@ -44,6 +44,8 @@ let runDeduction path =
             match expr().Parse (input |> Seq.toList) ctxt Position.Zero with
             | First(y,_,ctxt',pos') ->
               try
+              if CompilerSwitches.useGraphBasedCodeGenerator then 
+                GraphBasedCodeGenerator.generate originalFilePath title x y ctxt 
               let generatedPath = generateCode originalFilePath title x y ctxt
               let programToAnalyser = convert x
               //let customKeywordsToAnalyser = ctxt.CustomKeywords |> List.map(fun keyword -> convert keyword)

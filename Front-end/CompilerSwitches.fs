@@ -6,7 +6,7 @@ let printExpressionTree = false
 let flushCSFileOnError = false
 let generateLineDirectives = false
 
-let useGraphBasedCodegen = false
+let useGraphBasedCodeGenerator = true
 
 let optimizeDirectParentCall = true
 let generateStaticRun = true
