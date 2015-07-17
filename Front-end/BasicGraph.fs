@@ -36,16 +36,23 @@ type Clause = {
   keyword: Keyword
 }
 
+type FunctionDef = {
+  Identifier : string
+  
+}
+
 type RuleID     = RuleID of Position
 type ClauseID   = ClauseID of Position
+type FunctionDefinitionID = FunctionDefinitionID of string
 
 type BasicGraph = {
   Rules   : Map<RuleID,Rule>
   Clauses : Map<ClauseID,Clause> 
   ClausesPerRule : Map<RuleID, List<ClauseID>>
+  CustomKeywordsMap : Map<FunctionDefinitionID, ParsedKeyword<Keyword, Var, Literal, Position, unit>>
 }
 
-let emptyBasicGraph = {Rules=Map.empty; Clauses=Map.empty; ClausesPerRule=Map.empty}
+let emptyBasicGraph = {Rules=Map.empty; Clauses=Map.empty; ClausesPerRule=Map.empty; CustomKeywordsMap = Map.empty}
 let join (p:Map<'a,'b>) (q:Map<'a,'b>) = 
     [ (Map.toSeq p) ; (Map.toSeq q) ] |> Seq.concat |> Map.ofSeq
 
@@ -115,8 +122,14 @@ let rec generateBasicGraph (rules:List<Rule*List<Clause>>) (graph:BasicGraph) : 
         | x::xs -> foreach_clause xs (clausemap.Add(ClauseID(x.position),x))
       let new_clause_map = join graph.Clauses (foreach_clause clauses Map.empty)
       let new_clauses_per_rule_map = graph.ClausesPerRule.Add(RuleID(rule.position), (new_clause_map |> Map.toList |> List.map (fun (x,y) -> x)))
-      let newgraph:BasicGraph = { Rules = new_rule_map; Clauses = new_clause_map; ClausesPerRule = new_clauses_per_rule_map }
+      let newgraph:BasicGraph = { 
+        Rules = new_rule_map
+        Clauses = new_clause_map
+        ClausesPerRule = new_clauses_per_rule_map
+        CustomKeywordsMap = Map.empty}
       generateBasicGraph xs newgraph
 
-let generate (rules:List<BasicExpression<_,_,Literal,Position, Unit>>) ctxt = 
-    generateBasicGraph (process_rules [] rules ctxt) emptyBasicGraph
+let generate (rules:List<BasicExpression<_,_,Literal,Position, Unit>>) (ctxt:ConcreteExpressionContext) = 
+    let graph = generateBasicGraph (process_rules [] rules ctxt) emptyBasicGraph
+    let keywords = ctxt.CustomKeywordsMap |> Map.toList |> List.map (fun (k,v) -> FunctionDefinitionID(k),v) |> Map.ofList
+    { graph with CustomKeywordsMap = keywords }
