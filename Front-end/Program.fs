@@ -99,14 +99,14 @@ let runDeduction path =
 let main argv = 
   let samples = 
     [
-      "CNV3/Statements.mc", "run"
+//      "CNV3/Statements.mc", "run"
 //        "Sequence/seq.mc", "evals bb"
 //        "CNV3/Tuples.mc", "fst (1.0,2.0)"
 //          "Test/test.mc", "debug"
 //      "CNV3/Basics.mc", "test"
 // converted to new keyword syntax:
 //      "Peano numbers", "run"
-//      "Lists/transform.mc", "mergeSort 5;6;4;10;9;8;7;0;1;2;3;nil"
+      "CodegenTest/ListTest.mc", "length 5::(4::(3::(2::(1::nil))))"
 //      "Lists", "plus 0;1;2;3;nil 10"
 //      "Lists", "length 0;1;2;3;nil"
 //      "Lists", "contains 0;1;2;3;nil 2"
