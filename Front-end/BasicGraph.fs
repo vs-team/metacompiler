@@ -36,7 +36,6 @@ type Clause = {
   Keyword  : Keyword
 }
 
-type FunctionDefinition   = ParsedKeyword<Keyword, Var, Literal, Position, unit>
 
 type RuleID     = RuleID of Position
 type ClauseID   = ClauseID of Position
@@ -45,10 +44,9 @@ type BasicGraph = {
   Rules   : Map<RuleID,Rule>
   Clauses : Map<ClauseID,Clause> 
   ClausesPerRule : Map<RuleID, List<ClauseID>>
-  CustomKeywordsMap : Map<string, FunctionDefinition>
 }
 
-let emptyBasicGraph = { Rules=Map.empty; Clauses=Map.empty; ClausesPerRule=Map.empty; CustomKeywordsMap = Map.empty }
+let emptyBasicGraph = { Rules=Map.empty; Clauses=Map.empty; ClausesPerRule=Map.empty }
 let join (p:Map<'a,'b>) (q:Map<'a,'b>) = 
     [ (Map.toSeq p) ; (Map.toSeq q) ] |> Seq.concat |> Map.ofSeq
 
@@ -122,11 +120,9 @@ let rec generateBasicGraph (rules:List<Rule*List<Clause>>) (graph:BasicGraph) : 
         Rules = new_rule_map
         Clauses = new_clause_map
         ClausesPerRule = new_clauses_per_rule_map
-        CustomKeywordsMap = Map.empty
       }
       generateBasicGraph xs newgraph
 
 let generate (rules:List<BasicExpression<_,_,Literal,Position, Unit>>) (ctxt:ConcreteExpressionContext) = 
-    let graph = generateBasicGraph (process_rules [] rules ctxt) emptyBasicGraph
-    { graph with CustomKeywordsMap = ctxt.CustomKeywordsMap }
+    generateBasicGraph (process_rules [] rules ctxt) emptyBasicGraph
     
