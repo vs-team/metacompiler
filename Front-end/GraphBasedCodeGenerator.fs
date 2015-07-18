@@ -27,14 +27,23 @@ let forwardDeclareStructs (m:Map<string,FunctionDefinition>) : string =
     sprintf "%sstruct %s; typedef struct %s %s;\n" s k k k 
   Map.fold fn "/* forward struct declaration */\n" m
 
-let forwardDeclareUnions (m:Map<string,list<string>>) : string =
-  let fn s k v = 
-    let k = sanitizeIdentifier k
-    sprintf "%sunion %s; typedef union %s %s;\n" s k k k 
+let forwardDeclareUnions (m:Map<string,List<string>>) : string =
+  let fn s k (v:List<string>) = 
+    if v.Length <= 1 then s else
+      let k = sanitizeIdentifier k
+      sprintf "%sunion %s; typedef union %s %s;\n" s k k k 
   Map.fold fn "/* forward union declaration */\n" m
 
+let invert_map (m:Map<'a,'b>) : Map<'b,List<'a>> =
+  let fn (s:Map<'b,List<'a>>) k v =
+    if s |> Map.containsKey v then
+      s |> Map.remove v |> Map.add v (k::s.[v])
+    else
+      s |> Map.add v (k::[])
+  m |> Map.fold fn Map.empty
+
 let genPolymorphicTypeMap (m:Map<string,FunctionDefinition>) : Map<string,List<string>> = 
-  Map.empty // todo: implement
+  m |> Map.map (fun k v -> v.BaseType.ToString()) |> invert_map
 
 let generate (originalFilePath:string)
              (program_name:string)
@@ -47,6 +56,7 @@ let generate (originalFilePath:string)
     let basicgraph = BasicGraph.generate rules ctxt
     let customKeywordsMap = ctxt.CustomKeywordsMap
     let polymorphicTypeMap = genPolymorphicTypeMap customKeywordsMap
+    printfn "#include \"mc_runtime.h\"\n"
     printfn "%s" (forwardDeclareStructs customKeywordsMap)
     printfn "%s" (forwardDeclareUnions  polymorphicTypeMap)
     printfn "/* end */\n" 
