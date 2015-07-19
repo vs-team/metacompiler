@@ -64,7 +64,7 @@ let implementUnions (m:Map<string,List<FunctionDefinition>>) : string =
   let fn s k (v:List<FunctionDefinition>) =
     let fn (s:string) (x:FunctionDefinition) = 
       let x = sanitizeIdentifier x.Name
-      sprintf "%s%s %s_Subtype; " s x x
+      sprintf "%s%s* %s_Subtype; " s x x
     let k = sanitizeIdentifier k
     sprintf "%sunion %s{%s};\n" s k (v |> List.fold fn "")
   m |> Map.fold fn ""
@@ -73,15 +73,15 @@ let declareDataTables (m:Map<string,FunctionDefinition>) :string =
   let fn s k (v:FunctionDefinition) =
     let k = sanitizeIdentifier k
     if v.Arguments.Length.Equals 0 then
-      sprintf "%s%s %sValue_;\n" s k k
+      sprintf "%s%s %sValue;\n" s k k
     else
-      sprintf "%stable %sTable_;\n" s k
+      sprintf "%stable %sTable;\n" s k
   m |> Map.fold fn ""
 
 let declareUnionTables (m:Map<string,list<FunctionDefinition>>) :string = 
   let fn s k (v:list<FunctionDefinition>) =
     let k = sanitizeIdentifier k
-    sprintf "%stable %sTable_;\n" s k
+    sprintf "%stable %sTable;\n" s k
   m |> Map.fold fn ""
 
 let tableInitialization (dataMap:Map<string,FunctionDefinition>) (unionMap:Map<string,List<FunctionDefinition>>) : string =
@@ -89,10 +89,10 @@ let tableInitialization (dataMap:Map<string,FunctionDefinition>) (unionMap:Map<s
   let data  s k (v:FunctionDefinition) = 
     let k = sanitizeIdentifier k
     if v.Arguments.Length.Equals 0 then s else
-      sprintf "%s    %sTable_ = table_alloc(%d,sizeof(%s));\n" s k size k
+      sprintf "%s    %sTable = table_alloc(%d,sizeof(%s));\n" s k size k
   let union s k _ =
     let k = sanitizeIdentifier k
-    sprintf "%s    %sTable_ = table_alloc(%d,sizeof(%s));\n" s k size k
+    sprintf "%s    %sTable = table_alloc(%d,sizeof(%s));\n" s k size k
   sprintf "void initialize_tables(void){\n%s%s}\n" (Map.fold data "" dataMap) (Map.fold union "" unionMap)
 
 let invert_map (m:Map<'a,'b>) : Map<'b,List<'a>> =
@@ -117,8 +117,8 @@ let generate (originalFilePath:string)
     printfn "#include \"mc_runtime.h\"\n"
     printfn "/* forward struct declaration */\n%s" (forwardDeclareStructs dataMap)
     printfn "/* forward union declaration */\n%s"  (forwardDeclareUnions unionMap)
-    printfn "/* struct implementation */\n%s" (implementStructs dataMap)
     printfn "/* union implementation */\n%s" (implementUnions unionMap)
+    printfn "/* struct implementation */\n%s" (implementStructs dataMap)
     printfn "/* data table declaration */\n%s" (declareDataTables dataMap)
     printfn "/* union table declaration */\n%s" (declareUnionTables unionMap)
     printfn "%s" (tableInitialization dataMap unionMap)
