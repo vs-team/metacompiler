@@ -1,0 +1,45 @@
+The basic rules of logic are very simple. Logica is entirely defined as a way to manipulate symbols. These symbols are usually common signs such as numbers, letter, Greek letters, etc., but it is not forbidden to use any symbol we find useful or interesting. In this section, precisely with the goal of illustrating the \textit{independence of logic from the symbols chosen}, we shall manipulate smileys and other icons. \textbf{The first step is thus choosing the symbols.} Logic is really the description of most (complex) dynamic processes that search for an answer in a complex space. This search may be a purely mathematical search, or it could be a program running. The dynamic process is defined in terms of a series of rules which are activated whenever we find a matching input. Thus, \textbf{the second step is choosing the rules that define our dynamic processes}.
+
+After defining symbols and rules, things become interesting and we can try to use our system to find answers and process information. We usually start with a given proposition, which is the input of the whole process. A \textit{proposition} is just a series of symbols, such as for example: \texttt{3 + 2 = 5 of \dSmiley\dSmiley\Candle\Candle}. We apply the rules to the proposition until we reach the desired answer, and we have also answered all of the intermediate questions that came to existance during the dynamic process.
+
+\paragraph{A concrete example}
+Let us consider a full example. Consider the symbols of our language to be:
+\begin{itemize}
+\item A smiley \dSmiley
+\item A candle \Candle
+\item A tree \Springtree
+\item A coffee cup \Coffeecup
+\end{itemize}
+
+We consider a proposition to be true if and only if we can process it until we reach a \Coffeecup. \footnote{Given the extreme importance of coffee in the diet of mathematicians and computer scientists, equating coffee with truth does not really seem that illogical a step} Our rules are:
+
+\begin{itemize}
+\item \textbf{(G0)} A \Coffeecup means we are done
+\item \textbf{(R1)} Two \dSmiley followed by a \Springtree, and then further followed by \texttt{r}, means that we will have to process \texttt{r} to find the answer
+\item \textbf{(R2)} Two \Candle followed by a \Springtree, and then further followed by \texttt{r}, means that we will have to process \texttt{r} to find the answer
+\end{itemize}
+
+Consider now the input proposition of \\
+\dSmiley\dSmiley\Springtree\Candle\Candle\Springtree\dSmiley\dSmiley\Springtree\Coffeecup \\
+
+We begin by using \textbf{R2}, therefore obtaining: \\
+\Candle\Candle\Springtree\dSmiley\dSmiley\Springtree\Coffeecup \\
+
+We then use rule \textbf{R1}, therefore obtaining: \\
+\dSmiley\dSmiley\Springtree\Coffeecup \\
+
+We then use rule \textbf{R2}, therefore obtaining: \\
+\Coffeecup \\
+
+Now according to \textbf{G0} we are done. The proof is successfull, therefore we can conclude that \dSmiley\dSmiley\Springtree\Candle\Candle\Springtree\dSmiley\dSmiley\Springtree\Coffeecup was \textbf{true within our system of rules}. 
+
+Consider now the new input proposition of \\
+\dSmiley\dSmiley\Springtree\dSmiley\dSmiley\Springtree\Candle\Springtree\Coffeecup \\
+
+We begin by using \textbf{R2}, therefore obtaining: \\
+\dSmiley\dSmiley\Springtree\Candle\Springtree\Coffeecup \\
+
+We then use rule \textbf{R1}, therefore obtaining: \\
+\Candle\Springtree\Coffeecup \\
+
+Unfortunately now we cannot apply rule \textbf{R1} again, because we have no \dSmiley at the head of our proposition; we cannot apply rule \textbf{R2} because we have no \Candle at the head of our proposition; and we can certainly not apply rule \textbf{G0} because there is no lonely \Coffeecup. If we cannot apply any of our rules, the process is \textit{stuck}. This means that we cannot prove \dSmiley\dSmiley\Springtree\dSmiley\dSmiley\Springtree\Candle\Springtree\Coffeecup with our rules, thus \dSmiley\dSmiley\Springtree\dSmiley\dSmiley\Springtree\Candle\Springtree\Coffeecup was \textbf{not true within our system of rules}.

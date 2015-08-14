@@ -1,0 +1,198 @@
+The first full-blown logic program that we see is, quite fittingly\footnote{Boolean logic is an interpretation of logic itself, which fits snugly within our own implementation of an interpretation of logic. Recursion can be quite fun, as we will see in one of the last chapters.}, a program for the definition and evaluation of boolean expressions.
+
+\paragraph{Symbols}
+The basic symbols that we need represents the boolean values of \texttt{TRUE} and \texttt{FALSE}, and they both have type \texttt{Value}:
+
+\begin{lstlisting}
+Data [] "TRUE" [] Priority 10000 Type Value
+Data [] "FALSE" [] Priority 10000 Type Value
+\end{lstlisting}
+
+Boolean expressions, all of type \texttt{Expr}, are: 
+\begin{inparaenum}[\itshape i\upshape)]
+\item traditional negation (the unary operator \texttt{!} following the tradition of C-like languages);
+\item disjunction of boolean expressions (commonly known as ``or'');
+\item conjunction of boolean expressions (commonly known as ``and'').
+\end{inparaenum}
+
+\begin{lstlisting}
+Data [] "!" [Expr] Priority 30 Type Expr
+Data [Expr] "|" [Expr] Priority 10 Type Expr
+Data [Expr] "&" [Expr] Priority 20 Type Expr
+\end{lstlisting}
+
+Of course we want to be able to use values as expressions, otherwise writing \texttt{TRUE \& TRUE} would not be allowed. For this reason we specify that anything that has type \texttt{Value} can also be used where a type \texttt{Expr} is expected:
+
+\begin{lstlisting}
+Value is Expr
+\end{lstlisting}
+
+In order to compute the \texttt{Value} of an \texttt{Expr}, we define the \texttt{eval} function.
+
+\begin{lstlisting}
+Func [] "eval" [Expr] Priority 1 Type Expr => Value
+\end{lstlisting}
+
+\paragraph{Rules}
+The only rules that we can define involve the \texttt{eval} function, which is the only function that we have defined. The first two rules  trivially specify that when we reach the evaluation of \texttt{TRUE} or \texttt{FALSE}, then we do not need to further proceed:
+
+\begin{lstlisting}
+------------------ (G0)
+eval TRUE => TRUE
+
+-------------------- (G1)
+eval FALSE => FALSE
+\end{lstlisting}
+
+If we reach the evaluation of the negation of some expression \texttt{a}, then we will evaluate \texttt{a}. If the evaluation of \texttt{a} returns \texttt{TRUE}, then the evaluation of the negation of \texttt{a} returns \texttt{FALSE}:
+
+\begin{lstlisting}
+eval a => TRUE
+----------------- (NEG0)
+eval !a => FALSE
+\end{lstlisting}
+
+Similarly, if we reach the evaluation of the negation of some expression \texttt{a}, and evaluation of \texttt{a} returns \texttt{FALSE}, then the evaluation of the negation of \texttt{a} returns \texttt{TRUE}:
+
+\begin{lstlisting}
+eval a => FALSE
+---------------- (NEG1)
+eval !a => TRUE
+\end{lstlisting}
+
+When evaluating the disjunction of two expressions \texttt{a} and \texttt{b}, we try to evaluate \texttt{a}:
+\begin{inparaenum}[\itshape i\upshape)]
+\item if \texttt{a} evaluates to \texttt{TRUE}, then there is no need to further evaluate \texttt{b} and we can directly return \texttt{TRUE};
+\item if \texttt{a} evaluates to \texttt{FALSE}, then we evaluate \texttt{b} and return whatever result of its evaluation.
+\end{inparaenum}
+
+\begin{lstlisting}
+eval a => TRUE
+------------------- (OR0)
+eval (a|b) => TRUE
+
+eval a => FALSE
+eval b => y
+----------------- (OR1)
+eval (a|b) => y
+\end{lstlisting}
+
+When evaluating the conjunction of two expressions \texttt{a} and \texttt{b}, we try to evaluate \texttt{a}:
+\begin{inparaenum}[\itshape i\upshape)]
+\item if \texttt{a} evaluates to \texttt{FALSE}, then there is no need to further evaluate \texttt{b} and we can directly return \texttt{FALSE};
+\item if \texttt{a} evaluates to \texttt{TRUE}, then we evaluate \texttt{b} and return whatever result of its evaluation.
+\end{inparaenum}
+
+\begin{lstlisting}
+eval a => FALSE
+-------------------- (AND0)
+eval (a&b) => FALSE
+
+eval a => TRUE
+eval b => y
+---------------- (AND1)
+eval (a&b) => y
+\end{lstlisting}
+
+
+\paragraph{Example run}
+Consider now the evaluation of an expression such as \texttt{eval (FALSE | !(TRUE \& FALSE))}. We begin with
+
+\begin{lstlisting}
+------------------------------------
+eval (FALSE | !(TRUE & FALSE)) => ?
+\end{lstlisting}
+
+This expression is an instance of \texttt{eval (a|b)}, therefore we investigate the first premise according to rule \texttt{OR0} (notice the question marks at the end of some lines, which mean that we are verifying that this is indeed the case):
+
+\begin{lstlisting}
+eval FALSE => TRUE?
+---------------------------------------
+eval (FALSE | !(TRUE & FALSE)) => TRUE?
+\end{lstlisting}
+
+Since \texttt{eval FALSE} does never return \texttt{TRUE}, this branch of execution is interrupted. We try the alternate rule \texttt{OR1} for \texttt{eval (a|b)}, therefore we investigate two premises:
+
+\begin{lstlisting}
+eval FALSE => FALSE?
+eval !(TRUE & FALSE) => y
+------------------------------------
+eval (FALSE | !(TRUE & FALSE)) => y
+\end{lstlisting}
+
+The first premise, \texttt{eval FALSE => FALSE}, is trivially verified by the rule \texttt{G1}. We may thus delete it from the tree of derivation:
+
+\begin{lstlisting}
+eval !(TRUE & FALSE) => y
+------------------------------------
+eval (FALSE | !(TRUE & FALSE)) => y
+\end{lstlisting}
+
+The second premise is itself complex, so we need to find its result and then assign it to \texttt{y}. We begin with rule \texttt{NEG1}\footnote{Note that Meta-Casanova would actually first try \texttt{NEG0}, which fails, but for reasons of space we skip that lengthy and fruitless derivation.}, which expects the input to evaluate to \texttt{FALSE}. In this case, since we know from \texttt{NEG1} that \texttt{eval !(TRUE \& FALSE)} would return \texttt{TRUE}, we substitute \texttt{y} with \texttt{TRUE} speculatively:
+
+\begin{lstlisting}
+eval (TRUE & FALSE) => FALSE?
+-----------------------------
+eval !(TRUE & FALSE) => TRUE
+---------------------------------------
+eval (FALSE | !(TRUE & FALSE)) => TRUE
+\end{lstlisting}
+
+We now need to evaluate premise \texttt{eval (TRUE \& FALSE)}, and we do so with application of rule \texttt{AND1}\footnote{Again, \texttt{AND1} is chosen ad-hoc to go directly to the result.}. Rule \texttt{AND1} evaluates the second term and returns its result:
+
+\begin{lstlisting}
+eval TRUE => TRUE?
+eval FALSE => y
+------------------------------
+eval (TRUE & FALSE) => y
+y == FALSE?
+-----------------------------
+eval !(TRUE & FALSE) => TRUE
+---------------------------------------
+eval (FALSE | !(TRUE & FALSE)) => TRUE
+\end{lstlisting}
+
+Fortunately, \texttt{eval TRUE => TRUE} is trivially verified by rule \texttt{G0}; we can safely remove it from our tree of derivation:
+
+\begin{lstlisting}
+eval FALSE => y
+------------------------------
+eval (TRUE & FALSE) => y
+y == FALSE?
+-----------------------------
+eval !(TRUE & FALSE) => TRUE
+---------------------------------------
+eval (FALSE | !(TRUE & FALSE)) => TRUE
+\end{lstlisting}
+
+\texttt{eval FALSE} returns \texttt{FALSE} as an immediate consequence of rule \texttt{G1}. Therefore, we can replace \texttt{y} with \texttt{FALSE}:
+
+\begin{lstlisting}
+eval FALSE => FALSE
+------------------------------
+eval (TRUE & FALSE) => FALSE
+FALSE == FALSE?
+-----------------------------
+eval !(TRUE & FALSE) => TRUE
+---------------------------------------
+eval (FALSE | !(TRUE & FALSE)) => TRUE
+\end{lstlisting}
+
+The two upper premises are now completely evaluated, so we can safely remove them from the derivation tree:
+
+\begin{lstlisting}
+FALSE == FALSE?
+-----------------------------
+eval !(TRUE & FALSE) => TRUE
+---------------------------------------
+eval (FALSE | !(TRUE & FALSE)) => TRUE
+\end{lstlisting}
+
+We now need to verify that the result of the last evaluation of \texttt{AND1} is compatible with the evaluation of \texttt{NEG1}, that is \texttt{FALSE == FALSE}. This is trivially the case, and therefore we can discharg the last two premises:
+
+\begin{lstlisting}
+eval (FALSE | !(TRUE & FALSE)) => TRUE
+\end{lstlisting}
+
+Since we have no more premises, we can safely conclude that indeed the result of the evaluation of the original proposition \texttt{eval (FALSE | !(TRUE \& FALSE))} yields \texttt{TRUE}, which is also what we would expect from intuition.
+

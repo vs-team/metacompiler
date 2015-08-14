@@ -1,0 +1,281 @@
+Lists are intrinsically monodimensional, without any additional information besides sequentialisation. The implication of this is that any operation on lists will require to potentially go through the whole list, and we will be sure that we can stop only after having processed all elements. For this reason lists are expensive as containers: as the number of elements of the list grows, so grows the number of steps needed for processing operations.
+
+A solution to this issue is to build data structures where the position of elements within the data structures has some correlation with the value of the elements themselves, and stronger yet with the relationship between the value of each element and the values of other elements. One of the most used such data structures is the binary search tree. A binary search tree is a tree where each node contains an element and two subtrees, which are usually called \texttt{left} and \texttt{right}. The \textit{fundamental search property} of binary trees states that, for any node within the tree, each element is bigger than all elements within the left tree and smaller than all elements within the right tree. Thanks to this fundamental property, when searching a tree for an element we will always be able to determine with a single comparison whether all elements of the left or right subtree may be immediately discarded.
+
+Of course a tree may also be empty. We encode such a tree as follows, with the \texttt{nil} keyword:
+
+\begin{lstlisting}
+Data [] "nil" [] Priority 0 Type BinTreeInt
+\end{lstlisting}
+
+A node of a tree, encoded with the \texttt{node} keyword, takes three parameters as input: the left sub-tree, the element of the node, and the right sub-tree:
+
+\begin{lstlisting}
+Data [] "node" [BinTreeInt <<int>> BinTreeInt] Priority 1010 Type BinTreeInt
+\end{lstlisting}
+
+According to the definitions above, a tree such as:
+
+\begin{lstlisting}
+    5
+   / \
+  2   7
+ / \
+1   3
+\end{lstlisting}
+
+would be encoded as: \texttt{node (node (node nil 1 nil) 2 (node nil 3 nil)) 5 (node nil 7 nil)}.
+
+\subsection{Insertion}
+Adding an element to a binary tree is not trivial as it is for lists. Whereas in a list we simply use \texttt{;} to push yet an element on top of the list, for binary trees we must make sure to return a tree which still satisfies the fundamental search property. The \texttt{add} keyword, which takes a left parameter which is the initial tree, and a right parameter which is the integer value to add, will return a new tree which contains the elements of the initial tree, plus the new element to add, all the while respecting the fundamental search property:
+
+\begin{lstlisting}
+Func [BinTreeInt] "add" [<<int>>] Priority 100 Class Expr => BinTreeInt
+\end{lstlisting}
+
+Let us begin with the simplest case of adding an element \texttt{k} to an empty tree. There is not much to do in this case, since we can simply create a new node with element \texttt{k} and empty left and right subtrees:
+
+\begin{lstlisting}
+----------------------------
+nil add k => node nil k nil
+\end{lstlisting}
+
+If the current node of the binary tree contains an element which is identical to the one we are inserting, then there is not much to do. In this case we simply return the original tree, as it already satisfied our requirement that the returned tree contains the desired element:
+
+\begin{lstlisting}
+x == k
+---------------------------------
+(node l x r) add k => node l k r
+\end{lstlisting}
+
+If the current node of the binary tree contains an element which is bigger than the element we are adding, then we add the element to the left subtree and we use the resulting left subtree (which contains the elements of \texttt{l} plus \texttt{k}) as the left subtree of the final result:
+
+\begin{lstlisting}
+k < x
+l add k => l'
+----------------------------------
+(node l x r) add k => node l' x r
+\end{lstlisting}
+
+If the current node of the binary tree contains an element which is smaller than the element we are adding, then we add the element to the right subtree and we use the resulting right subtree (which contains the elements of \texttt{r} plus \texttt{k}) as the right subtree of the final result:
+
+\begin{lstlisting}
+k > x
+r add k => r'
+------------------------------------
+(node l x r) add k => (node l x r')
+\end{lstlisting}
+
+
+For example, consider adding element \texttt{3} to tree \texttt{node nil 5 (node nil 7 nil)}:
+
+\begin{lstlisting}
+5
+ \
+  7
+\end{lstlisting}
+
+We start with the following program:
+
+\begin{lstlisting}
+-----------------------------------------
+(node nil 5 (node nil 7 nil)) add 3 => ?
+\end{lstlisting}
+
+The first rule which is applied is the rule for recursion in the left subtree, thus:
+
+\begin{lstlisting}
+3 < 5
+nil add 3 => l'
+-----------------------------------------------------------------
+(node nil 5 (node nil 7 nil)) add 3 => node l' 5 (node nil 7 nil)
+\end{lstlisting}
+
+Addition within an empty sub-tree is trivially resolved, thus we obtain:
+
+\begin{lstlisting}
+l' := node nil 3 nil
+---------------------
+nil add 3 => l'
+-----------------------------------------------------------------
+(node nil 5 (node nil 7 nil)) add 3 => node l' 5 (node nil 7 nil)
+\end{lstlisting}
+
+We can now unwind the stack, which after just one unwinding step yields the final result:
+
+\begin{lstlisting}
+-------------------------------------------------------------------------------
+(node nil 5 (node nil 7 nil)) add 3 => node (node nil 3 nil) 5 (node nil 7 nil)
+\end{lstlisting}
+
+which (as expected) is the tree:
+
+\begin{lstlisting}
+  5
+ / \
+3   7
+\end{lstlisting}
+
+
+\subsection{Search}
+Just like we did for lists, we can perform a search within a binary search tree. Search determines whether or not a given element is contained within the tree, and we encode it with the operator \texttt{contains} which has a tree as its left parameter and an integer element as right parameter:
+
+\begin{lstlisting}
+Func [BinTreeInt] "contains" [<<int>>] Priority 100 Type Expr => YesNo
+\end{lstlisting}
+
+An empty tree never contains an element:
+
+\begin{lstlisting}
+---------------------
+nil contains k => no
+\end{lstlisting}
+
+On the other hand, a tree that begins with the element we are looking for trivially contains the element:
+
+\begin{lstlisting}
+x == k
+-------------------------------
+(node l k r) contains x => yes
+\end{lstlisting}
+
+If the tree begins with an element \texttt{x} that is bigger than the element \texttt{k} we are looking for, than we know that only the left subtree is of interest: all elements of the right subtree are bigger than \texttt{x}, and thus also of \texttt{k}:
+
+\begin{lstlisting}
+k < x
+l contains k  => res
+-------------------------------
+(node l x r) contains k => res
+\end{lstlisting}
+
+Symmetrically for a tree that begins with an element \texttt{x} that is bigger than the element \texttt{k} we are looking for, than we know that only the right subtree is of interest: all elements of the left subtree are smaller than \texttt{x}, and thus also of \texttt{k}:
+
+\begin{lstlisting}
+k > x
+r contains k  => res
+-------------------------------
+(node l x r) contains k => res
+\end{lstlisting}
+
+
+Consider now searching element \texttt{10} within tree:
+
+\begin{lstlisting}
+  5
+ / \
+3   7
+\end{lstlisting}
+
+This means resolving:
+
+\begin{lstlisting}
+-----------------------------------------------
+(node nil 5 (node nil 7 nil)) contains 10 => ?
+\end{lstlisting}
+
+Since \texttt{10} is bigger than \texttt{5}, we proceed recursively into the right sub-tree:
+
+\begin{lstlisting}
+5 < 10
+(node nil 7 nil) contains 10 => res
+-------------------------------------------------
+(node nil 5 (node nil 7 nil)) contains 10 => res
+\end{lstlisting}
+
+Again, since \texttt{10} is bigger than \texttt{7}, we proceed recursively into the right-subtree:
+
+\begin{lstlisting}
+10 < 7
+nil contains 10 => res'
+res := res'
+------------------------------------
+(node nil 7 nil) contains 10 => res
+-------------------------------------------------
+(node nil 5 (node nil 7 nil)) contains 10 => res
+\end{lstlisting}
+
+Searching within the empty tree always fails, therefore:
+
+\begin{lstlisting}
+res' := no
+------------------------
+nil contains 10 => res'
+res := res'
+------------------------------------
+(node nil 7 nil) contains 10 => res
+-------------------------------------------------
+(node nil 5 (node nil 7 nil)) contains 10 => res
+\end{lstlisting}
+
+At this point we can begin unwinding. The first unwinding step yields:
+
+\begin{lstlisting}
+nil contains 10 => no
+res := no
+------------------------------------
+(node nil 7 nil) contains 10 => res
+-------------------------------------------------
+(node nil 5 (node nil 7 nil)) contains 10 => res
+\end{lstlisting}
+
+after just another unwinding step we end up with the final result:
+
+\begin{lstlisting}
+(node nil 5 (node nil 7 nil)) contains 10 => no
+\end{lstlisting}
+
+
+\subsection{Performance}
+The more the tree is balanced, the more effective search and insertion into a binary search tree will be. Let us intuitively analyse the number of steps we will need to perform during a binary search. Assume that we have a perfectly balanced tree with \texttt{n+1} elements; since the tree is balanced, then both the left and the right sub-trees contain exactly \texttt{n/2} elements each.
+
+In the beginning we are searching among the whole \texttt{n+1} elements, that is our tree is:
+
+\begin{lstlisting}
+  x    = 1 element
+ / \
+l   r  = n/2 + n/2 elements
+\end{lstlisting}
+
+
+After comparing the searched value and the current element of the tree, we choose one between the two sub-trees and fully discard the other. This means that after one step we focus on a smaller sub-tree:
+
+\begin{lstlisting}[mathescape=true]
+  x'    = 1 element
+ / \
+l'  r'  $\approx$ n/4 + n/4 elements
+\end{lstlisting}
+
+After yet another step we get:
+
+\begin{lstlisting}[mathescape=true]
+  x''    = 1 element
+ / \
+l'' r''  $\approx$ n/8 + n/8 elements
+\end{lstlisting}
+
+It should be clear that every step roughly divides the number of active elements (the set within which we are searching) by two, therefore after \texttt{k} steps we have only 
+
+$$\frac{n}{2^k}$$
+
+elements left to consider. We are sure that at worst we will stop when this set of elements left has at most one element, thus we stop when:
+
+$$\frac{n}{2^k} = 1$$
+
+By multiplying both sides by $2^k$, we get:
+
+$$n = 2^k$$
+
+And by taking the logarithm of both sides, we obtain the final result that:
+
+$$\log_2 n = k$$
+
+that is we will stop searching after (at most) \texttt{k} steps, which is the logarithm in base $2$ of \texttt{n}.\footnote{One might go back to the definition of logarithm for a moment to clarify this last step: \textit{the logarithm is the exponent to which a fixed value, the base, must be raised to produce the desired number}. This means literally that if $\log_b(x)=y$ then $b^y=x$.}
+
+Logarithms grow quite slowly. This means that we will take roughly:
+\begin{itemize}
+\item $10$ search steps if the tree has $10^3$ elements
+\item $20$ search steps if the tree has $10^6$ elements
+\item $40$ search steps if the tree has $10^{12}$ elements
+\end{itemize}
+
+This makes binary search trees one of the most efficient data structures for handling large data sets, but one word of warning is necessary. The original assumption that binary search trees need to be balanced for such good performance properties to be verified is quite a strong hypothesis, which needs further exploration.

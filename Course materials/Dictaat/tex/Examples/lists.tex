@@ -1,0 +1,481 @@
+Our final goal is to define complex computational structures through the use of our inference system. The most complex computational structures known to us are programming languages, and as such we will set the mark there: we intend to define the syntax and semantics of a (small) programming language through a series of inference rules. Before we can dive into that, we need the ability to represent some basic algorithms which will prove of fundamental usefulness to defining a programming language. After all, our programming language will have memory of some sort, and as such we need to represent memory somehow.
+
+The first, and perhaps most basic data structure that we can define is the \textit{list}. A list is used to represent a sequence of values which may contain any number of elements: from no elements (the special \textit{empty list}) to hundreds of thousands of elements.
+
+\subsection{Lists of integers}
+For our example, we will limit ourselves to lists of integers. It will be possible to extend this definition thanks to the use of inheritance (a list of \texttt{Expr}) or with generic datatypes (which will be explored in a later section), but for now we shall keep things simple.
+
+A list is defined very much like Peano numbers or binary digits. We have a ``termination symbol'' \texttt{nil}, which defines an empty list of integers:
+
+\begin{lstlisting}
+Data [] "nil" [] Priority 0 Type ListInt
+\end{lstlisting}
+
+Given a list of integers (commonly known as \textit{tail}), we can add an integer to it (commonly known as \textit{head}) and obtain a new list of integers. Head and tail are separated by a symbol such as:
+
+\begin{lstlisting}
+Data [<<int>>] ";" [ListInt] Priority 1000 Type ListInt
+\end{lstlisting}
+
+Notice that our language assumes the existance of \textit{predefined data types}, which can be accessed with the special brackets \texttt{<<} and \texttt{>>}.
+
+Thanks to this definition, we can now build a few example lists:
+
+\begin{itemize}
+\item \texttt{nil}
+\item \texttt{1;nil}
+\item \texttt{0;(1;(2;(3;nil)))}
+\item ...
+\end{itemize}
+
+\subsection{List querying}
+We will now define a series of list operations that allow us to process a list and extract various properties from it.
+
+\paragraph{Length of a list}
+Among the most fundamental operations that we can perform on lists, we have the determination of the length of a list. We define the \texttt{length} symbol that takes a parameter of type list and returns an integer\footnote{Remember that \texttt{<<} and \texttt{>>} identify built-in types, so \texttt{<<int>>} literally means a machine-integer.} as result (the length of the list):
+
+\begin{lstlisting}
+Func "length" [ListInt] Priority 100 Type Expr => <<int>>
+\end{lstlisting}
+
+Determining the length of the empty list is simple, as we can immediately answer that it has a length of zero:
+
+\begin{lstlisting}
+----------------
+length nil => 0
+\end{lstlisting}
+
+If the input list is not empty, then we compute the length of its tail (\texttt{xs}) and then return this length plus one as the total length of the whole list:
+
+\begin{lstlisting}
+length xs => y
+--------------------------
+length x;xs => <<1 + y>>
+\end{lstlisting}
+
+Consider now execution of program \texttt{length 1;2;3;nil}. We start with the initial proposition, which is clearly no instance of \texttt{length nil}:
+
+\begin{lstlisting}
+----------------------
+length 1;2;3;nil => ?
+\end{lstlisting}
+
+The proposition above instances a recursive premise on the tail of the list:
+
+\begin{lstlisting}
+length 2;3;nil => y1
+-------------------------------
+length 1;2;3;nil => <<1 + y1>>
+\end{lstlisting}
+
+Proposition \texttt{length 2;3;nil} is, once again, clearly no instance of \texttt{length nil}, and we proceed for a few steps\footnote{Which, with a smile and some handwaving, allows us to skip a couple of boring paragraphs of the book, which you smart reader feel no need for.} until we get to the following derivation tree:
+
+\begin{lstlisting}
+length nil => y3
+y2 := <<1 + y3>>
+------------------------
+length 3;nil => y2
+y1 := <<1 + y2>>
+------------------------
+length 2;3;nil => y1
+-------------------------------
+length 1;2;3;nil => <<1 + y1>>
+\end{lstlisting}
+
+The last premise, \texttt{length nil}, is quite obviously an instance of \texttt{length nil}, therefore we can directly jump to the result that \texttt{y3 := 0}:
+
+\begin{lstlisting}
+y3 := 0
+-----------------
+length nil => y3
+y2 := <<1 + y3>>
+------------------------
+length 3;nil => y2
+y1 := <<1 + y2>>
+------------------------
+length 2;3;nil => y1
+-------------------------------
+length 1;2;3;nil => <<1 + y1>>
+\end{lstlisting}
+
+We can now fold back the results, just like a stack unwinding in a series of recursive calls. The first unwinding step yields:
+
+\begin{lstlisting}
+length nil => 0
+y2 := <<1 + 0>>
+------------------------
+length 3;nil => y2
+y1 := <<1 + y2>>
+------------------------
+length 2;3;nil => y1
+-------------------------------
+length 1;2;3;nil => <<1 + y1>>
+\end{lstlisting}
+
+We then proceed with the second unwinding step:
+
+\begin{lstlisting}
+------------------------
+length 3;nil => 1
+y1 := <<1 + 1>>
+------------------------
+length 2;3;nil => y1
+-------------------------------
+length 1;2;3;nil => <<1 + y1>>
+\end{lstlisting}
+
+And so on, until we reach the final expected answer which was \texttt{length 1;2;3;nil => 3}.
+
+
+\paragraph{Searching}
+A slightly more complex operation that we can perform is searching. Search determines whether or not a list \texttt{contains} an element. We define the \texttt{contains} function that takes a list and an integer as parameters:
+
+\begin{lstlisting}
+Func "contains" [ListInt <<int>>] Priority 100 Type Expr => <<int>>
+\end{lstlisting}
+
+The simplest test we perform is on an empty list. An empty list \texttt{nil} never contains a value \texttt{k}, independently of its value. The \texttt{contains} function in this case will thus return \texttt{no}\footnote{Assume we have defined symbols \texttt{yes} and \texttt{no}, but of course as a sane alternative boolean values can be used.} directly:
+
+\begin{lstlisting}
+---------------------
+nil contains k => no
+\end{lstlisting}
+
+If the input list is not empty, then it means that it is not \texttt{nil}, and therefore it is made up of an element \texttt{x} followed by the rest of the list \texttt{xs}: \texttt{x;xs}. In this case, we check to see whether or not the head of the list is equal to the search element (the single premise \texttt{x == k}). If the premise is positively discharged (it is true) then we can return \texttt{yes} as the final result:
+
+\begin{lstlisting}
+x == k
+-----------------------
+x;xs contains k => yes
+\end{lstlisting}
+
+If the input list is not empty, but the first element is not equal to the searched key, then we need to keep searching. The result of the overall search will therefore be the result of searching in the rest of the list \texttt{xs} with the premise \texttt{xs contains k => res}:
+
+\begin{lstlisting}
+x != k
+xs contains k => res
+-----------------------
+x;xs contains k => res
+\end{lstlisting}
+
+
+\paragraph{Transforming}
+Consider now the problem of transforming a list by incrementing all of its elements by \texttt{k}. This example is interesting because it shows how a new list can be rebuilt and returned, instead of a single value like we did in the previous examples. 
+
+We begin by deifning the \texttt{plus} function which takes as input a list and an integer:
+
+\begin{lstlisting}
+Func [] "plus" [ListInt <<int>>] Priority 100 Type Expr => ListInt
+\end{lstlisting}
+
+The transformation of an empty list remains an empty list, as there are no elements to transform:
+
+\begin{lstlisting}
+-------------------
+plus nil k => nil
+\end{lstlisting}
+
+The transform of the non-empty list proceeds first with the transformation of the rest of the list into \texttt{xs'}, then it computes \texttt{x+k} (the transformed head) into \texttt{x'}, and finally it returns the list \texttt{x';xs'} as the whole transformed list:
+
+\begin{lstlisting}
+plus xs k => xs'
+<<x+k>> => x'
+----------------------
+plus x;xs k => x';xs'
+\end{lstlisting}
+
+
+Many useful functions on lists take the general form above: an immediate (often trivial) answer for the case of an empty list, and a recursive step which somehow combines premises on the first element with premises on the remaining elements. In a sense, lists are the embodiement of the simplest principles of recursion.
+
+
+\paragraph{Sorting}
+Let us now consider a slightly more complex algorithm, which allows us to test the algorithmic expressive power of the language. In particular, let us consider a powerful and fast sorting algorithm, the well-known \textit{merge-sort}. Merge sort works by, recursively, dividing the list of elements into two sublists, sorting them separately, and then merging the two sorted lists into a single, final sorted list.
+
+We need two auxiliary symbol definitions: one is the comma, which will be used to represent a pair of lists, and the other is the \texttt{mergeSort} function itself:
+
+\begin{lstlisting}
+Data [] [ListInt] "," [ListInt] Priority 900 Type ListIntPair
+Func [] "mergeSort" [ListInt] Priority 100 Type Expr => ListInt
+\end{lstlisting}
+
+The definition of \texttt{mergeSort} then becomes quite simple. If the list is empty, or contains only one element, then no sorting needs to take place and we can immediately return the sorted list as an answer:
+
+\begin{lstlisting}
+---------------------
+mergeSort nil => nil
+
+-------------------------
+mergeSort x;nil => x;nil
+\end{lstlisting}
+
+If the list contains at least two elements, then:
+\begin{inparaenum}[\itshape i\upshape)]
+\item we split it into two sub-lists \texttt{l} and \texttt{r};
+\item we sort \texttt{l} into \texttt{l'} with a recursive call;
+\item we sort \texttt{r} into \texttt{r'} with a recursive call;
+\item we merge \texttt{l'} and \texttt{r'}, therefore obtaining the final sorted list.
+\end{inparaenum}
+
+\begin{lstlisting}
+split x;y;xs => l,r
+mergeSort l => l'
+mergeSort r => r'
+merge l' r' => res
+------------------------
+mergeSort x;y;xs => res
+\end{lstlisting}
+
+Splitting a list is done with function \texttt{split}:
+
+\begin{lstlisting}
+Func [] "split" [ListInt] Priority 100 Type Expr => ListIntPair
+\end{lstlisting}
+
+If the list to split has less than two elements, then splitting is trivial:
+
+\begin{lstlisting}
+---------------------
+split nil => nil,nil
+
+-------------------------
+split x;nil => x;nil,nil
+\end{lstlisting}
+
+If the list to split has at least two elements \texttt{x} and \texttt{y}, then:
+\begin{inparaenum}[\itshape i\upshape)]
+\item we split the remaining list recursively, obtaining partial splits \texttt{l} and \texttt{r};
+\item list \texttt{x;l} is the first item of the result;
+\item list \texttt{y;r} is the second item of the result.
+\end{inparaenum}
+
+\begin{lstlisting}
+split xs => l,r
+----------------------------
+split x;y;xs => (x;l),(y;r)
+\end{lstlisting}
+
+Let us consider a short example of how split works on a list such as:
+
+\begin{lstlisting}
+-------------------------
+split 0;1;2;3;4;nil => ?
+\end{lstlisting}
+
+Since the list contains at least two elements, we apply the recursive rule for \texttt{x=0}, \texttt{y=1}, and \texttt{xs=2;3;4;nil}:
+
+\begin{lstlisting}
+split 2;3;4;nil => l,r
+-----------------------------------
+split 0;1;2;3;4;nil => (0;l),(1;r)
+\end{lstlisting}
+
+We apply the same rule again because \texttt{2;3;4;nil} has at least two elements, thus:
+
+\begin{lstlisting}
+split 4;nil => l',r'
+l := 2;l'
+r := 3;r'
+-----------------------
+split 2;3;4;nil => l,r
+-----------------------------------
+split 0;1;2;3;4;nil => (0;l),(1;r)
+\end{lstlisting}
+
+We end up with list \texttt{4;nil}, which has only one element. This requires us to apply one of the trivial rules above:
+
+\begin{lstlisting}
+l' := 4;nil
+r' := nil
+--------------------
+split 4;nil => l',r'
+l := 2;l'
+r := 3;r'
+-----------------------
+split 2;3;4;nil => l,r
+-----------------------------------
+split 0;1;2;3;4;nil => (0;l),(1;r)
+\end{lstlisting}
+
+We can now unwind the stack of intermediate results. The first unwind step yields:
+
+\begin{lstlisting}
+l := 2;4;nil
+r := 3;nil
+-----------------------
+split 2;3;4;nil => l,r
+-----------------------------------
+split 0;1;2;3;4;nil => (0;l),(1;r)
+\end{lstlisting}
+
+The second and last unwind step returns the final result:
+
+\begin{lstlisting}
+---------------------------------------------
+split 0;1;2;3;4;nil => (0;2;4;nil),(1;3;nil)
+\end{lstlisting}
+
+The role of \texttt{split} is thus to split the list in two, but instead of taking the first half and then the second half of the list, we \textit{interleave} the elements: elements in odd positions go in the first sublist, elements in even positions go in the second sublist.
+
+Merging two lists requires a bit of care, because we take as input two sorted lists and we must give as output a single list which contains all elements of the two lists to merge \textit{in sorted order}. Merging is done with function \texttt{merge}:
+
+\begin{lstlisting}
+Func [] "merge" [ListInt ListInt] Priority 100 Type Expr => ListInt
+\end{lstlisting}
+
+If any of the input lists to merge is empty, then the answer is trivial to find and return:
+
+\begin{lstlisting}
+---------------------
+merge nil nil => nil
+
+-----------------------
+merge x;xs nil => x;xs
+
+-----------------------
+merge nil y;ys => y;ys
+\end{lstlisting}
+
+If the first list begins with an element that is smaller than the first element of the second list, then the resulting list will need to start with that element (and vice-versa):
+
+\begin{lstlisting}
+x <= y
+merge xs y;ys => res
+-------------------------
+merge x;xs y;ys => x;res
+
+x > y
+merge x;xs ys => res
+-----------------------
+merge x;xs y;ys => y;res
+\end{lstlisting}
+
+Consider now the merging of two partial sorted lists \texttt{0;2;nil} and \texttt{1;3;nil} (the lists do not need to be of the same length, nor do the elements need to interleave so strictly):
+
+\begin{lstlisting}
+---------------------------
+merge 0;2;nil 1;3;nil => ?
+\end{lstlisting}
+
+The first element of the first list is smaller than the first element of the second list, thus it will become the first element of the result:
+
+\begin{lstlisting}
+merge 2;nil 1;3;nil => res
+-------------------------------
+merge 0;2;nil 1;3;nil => 0;res
+\end{lstlisting}
+
+The first element of the second list is smaller than the first element of the first list, thus it will be selected as the first element of the (intermediate) result:
+
+\begin{lstlisting}
+--------------------------
+merge 2;nil 3;nil => res'
+res := 1;res'
+---------------------------
+merge 2;nil 1;3;nil => res
+-------------------------------
+merge 0;2;nil 1;3;nil => 0;res
+\end{lstlisting}
+
+We now select \texttt{2} as the new head of the intermediate result:
+
+\begin{lstlisting}
+merge nil 3;nil => res''
+res' := 2;res''
+--------------------------
+merge 2;nil 3;nil => res'
+res := 1;res'
+---------------------------
+merge 2;nil 1;3;nil => res
+-------------------------------
+merge 0;2;nil 1;3;nil => 0;res
+\end{lstlisting}
+
+Finally, since the first list is empty, we directly return the second:
+
+\begin{lstlisting}
+res'' := 3;nil
+-------------------------
+merge nil 3;nil => res''
+res' := 2;res''
+--------------------------
+merge 2;nil 3;nil => res'
+res := 1;res'
+---------------------------
+merge 2;nil 1;3;nil => res
+-------------------------------
+merge 0;2;nil 1;3;nil => 0;res
+\end{lstlisting}
+
+Since we have no more intermediate results to process, we can now begin the unwinding. First of all \texttt{res''} is replaced with \texttt{3;nil}:
+
+\begin{lstlisting}
+res' := 2;3;nil
+--------------------------
+merge 2;nil 3;nil => res'
+res := 1;res'
+---------------------------
+merge 2;nil 1;3;nil => res
+-------------------------------
+merge 0;2;nil 1;3;nil => 0;res
+\end{lstlisting}
+
+Then we replace \texttt{res'} with its value of \texttt{2;3;nil}:
+
+\begin{lstlisting}
+res := 1;2;3;nil
+---------------------------
+merge 2;nil 1;3;nil => res
+-------------------------------
+merge 0;2;nil 1;3;nil => 0;res
+\end{lstlisting}
+
+Finally we replace \texttt{res}, therefore obtaining the final answer:
+
+\begin{lstlisting}
+merge 0;2;nil 1;3;nil => 0;1;2;3;nil
+\end{lstlisting}
+
+At this point we can better discuss what \texttt{mergeSort} does, without doing the full derivation which would take too long. Suppose we wished to sort sequence \texttt{5;4;3;2;1;nil}:
+
+\begin{lstlisting}
+split 5;4;3;2;1;nil => l,r
+mergeSort l => l'
+mergeSort r => r'
+merge l' r' => res
+------------------------
+mergeSort 5;4;3;2;1;nil => res
+\end{lstlisting}
+
+Without going (again) into the details of \texttt{split}, we can just assume it will work as expected and obtain:
+
+\begin{lstlisting}
+split 5;4;3;2;1;nil => (5;3;1;nil),(4;2;nil)
+mergeSort 5;3;1;nil => l'
+mergeSort 4;2;nil => r'
+merge l' r' => res
+------------------------
+mergeSort 5;4;3;2;1;nil => res
+\end{lstlisting}
+
+At this point we make a strong assumption, which we can safely make because of the principle of induction, that is we assume that \texttt{mergeSort 5;3;1;nil} and \texttt{mergeSort 4;2;nil} will both return a sorted list. The next step is therefore:
+
+\begin{lstlisting}
+mergeSort 5;3;1;nil => 1;3;5;nil
+mergeSort 4;2;nil => 2;4;nil
+merge 1;3;5;nil 2;4;nil => res
+-------------------------------
+mergeSort 5;4;3;2;1;nil => res
+\end{lstlisting}
+
+Without going (again) into the details of \texttt{merge}, we can just assume it will work as expected and obtain:
+
+\begin{lstlisting}
+merge 1;3;5;nil 2;4;nil => 1;2;3;4;5;nil
+-----------------------------------------
+mergeSort 5;4;3;2;1;nil => 1;2;3;4;5;nil
+\end{lstlisting}
+
+which is precisely the expected result.
+
+\paragraph{Conclusions}
+What we have seen so far extends (with more or less translation work depending on the circumstances) to all known algorithms on lists. It is possible to write algorithms such as insertion sort, various kinds of search, and so on with minimal adjustments. In the coming sections we will dig yet deeper into recursive data structures such as binary trees.

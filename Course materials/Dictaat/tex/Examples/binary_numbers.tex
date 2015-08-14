@@ -1,0 +1,140 @@
+In this section we will study the limitations of our previous encoding of natural numbers. We will then use a positional system (the simplest of which is binary numbers) to show a much more efficient conversion process.
+
+\subsection{Performance considerations of unary encoding}
+Let us begin with an analysis of how long it takes to perform addition of two Peano numbers. Let us assume that the cost of building or decomposing terms is $O(1)$, since it can be implemented with a constant number of low-level operations such as memory allocation, runtime type checks, and similar, but it does not require recursion or iteration. Consider addition between two numbers $n + m$ with the rules:
+
+\begin{lstlisting}
+----------- r0
+z + a => a
+
+a + b => c
+----------------- r1
+s(a) + b => s(c)
+\end{lstlisting}
+
+We have two alternatives that clearly only depend from $n$ ($m$ does not have influx on the number of operations, since it is just returned directly as the last step): either $n=0$, or $n=n'+1$. In case of $n=0$, then rule \texttt{r0} is used, producing a result directly. This means that the number of steps $T$ performed by the system is:
+
+$$T(n) = 1 \text{ when } n=0$$
+
+In the case of $n=n'+1$, then rule \texttt{r1} is used. Evaluating rule \texttt{r1} requires first evaluating the expression $n'+m$\footnote{Note that this again an application of \textit{induction}, albeit less formal}, and then performing a single operation which is the addition of the \texttt{s} keyword to intermediate result \texttt{c}:
+
+$$T(n) = T(n') + 1 = T(n-1) + 1 \text{ when } n=n'+1$$
+
+This means that the system will perform exactly $n+1$ computation steps, therefore having a complexity of $O(n)$ where $n$ is the value of the first number. This is highly inefficient.
+
+\subsection{Binary encoding}
+Let us consider positional encoding. Specifically, let us consider binary encoding (base 2 encoding). We will define a binary number as a series of binary digits, which are either zero or one:
+
+\begin{lstlisting}
+Data [] "d0" [] Priority 0 Type Digit
+Data [] "d1" [] Priority 0 Type Digit
+\end{lstlisting}
+
+The binary number itself is defined as a digit, followed by the rest of the number. We will use the comma operator to specify this separation:
+
+\begin{lstlisting}
+Data [Num] "," [Digit] Priority 10 Type Num
+\end{lstlisting}
+
+Of course numbers need to end at some point\footnote{not in real life, where we could simply assume an infinite sequence of zero's, but in a computer with limited memory this simplification is ubiquitous}, so we define a special symbol that represents the ``end of list'' number:
+
+\begin{lstlisting}
+Data [] "nil" [] Priority 0 Type Num
+\end{lstlisting}
+
+A number such as $3 = 011$ would then be expressed as \texttt{(((nil,d0),d1),d1)}. Notice that we associate the digits to the left, so that the first digit we encounter is the one of the lowest order. This is not strictly necessary, but it makes it easier to extract the digits in order of significance, and this in turns simplifies the traditional definition of addition.
+
+
+\subsection{Addition}
+To add two numbers, we will encode the well-known process of adding numbers with a \textit{carry}. This means that we will add, repeatedly, three digits at a time: the first two digits of the numbers that we are adding, plus the carry that comes from the previous addition of digits. We now define this sum of digits:
+
+\begin{lstlisting}
+Func [] "addDigits" [Digit Digit Digit] Priority 5 Type Expr => Num
+\end{lstlisting}
+
+We have eight instances of \texttt{addDigits}, one for each possible combination of digits (each digit has two possible values, \texttt{d0} and \texttt{d1}, thus we have $2^3$ total combinations). For each such combination, we directly return the sum of the three digits in the format of a two-digit binary number. We need no more than two digits for the result, since the maximum number we will need to return is the sum of \texttt{d1} three times:
+
+\begin{lstlisting}
+----------------------------------
+addDigits d0 d0 d0 => (nil,d0),d0
+
+----------------------------------
+addDigits d0 d0 d1 => (nil,d0),d1
+
+...
+
+----------------------------------
+addDigits d1 d1 d1 => (nil,d1),d1
+\end{lstlisting}
+
+Addition with carry performs the digit addition of the current digits of the numbers being added, plus the current carry. The two resulting digits are the lower-order unit of the result, together with the carry that will be used to add together the remaining bits of the input numbers. The function that recursively adds the digits is \texttt{addCarry}:
+
+\begin{lstlisting}
+Func [] "addCarry" [Num Num Digit] Priority 5 Type Expr => Num
+\end{lstlisting}
+
+\begin{lstlisting}
+addDigits da db dr => (nil,dr',d)
+addCarry a b dr' => res
+----------------------------------
+addCarry a,da b,db dr => res,d
+\end{lstlisting}
+
+Of course addition ends when it encounters the end of the numbers, which needs to be accompanied with a null carry:
+
+\begin{lstlisting}
+--------------------------
+addCarry nil nil d0 => nil
+\end{lstlisting}
+
+We might even add an \texttt{overflow} keyword and graciously handle the case of non-null last carry as follows:
+
+
+\begin{lstlisting}
+--------------------------------
+addCarry nil nil d1 => overflow
+\end{lstlisting}
+
+The first step of addition simply instances \texttt{addCarry} with a null initial carry:
+
+\begin{lstlisting}
+addCarry a b d0 => c
+--------------------
+a + b => c
+\end{lstlisting}
+
+Multiplication follows a similar scheme, and as such we will not give it here. Also, notice that we only support numbers of the same length. Supporting addition of numbers of different lengths would be relatively trivial, and as such is also not shown here.
+
+
+\subsection{Performance considerations of binary encoding}
+Binary encoding allows us to perform operations much faster, that is with less rules used when compared with Peano addition. Remember that Peano addition took a significant $O(n)$ amount of operations to perform, with $n$ being the value of the first operand.
+
+Consider only the rule which performs a single step of the binary addition:
+
+\begin{lstlisting}
+addDigits da db dr => (nil,dr',d)
+addCarry a b dr' => res
+----------------------------------
+addCarry a,da b,db dr => res,d
+\end{lstlisting}
+
+\texttt{addDigits} is just one single step, in that it directly resolves the parameters and returns the appropriate result. The only thing that matters for the purpose of the complexity of \texttt{addCarry} is the recursive call. Let us observe that the recursive call \texttt{addCarry a b dr'} uses \texttt{a} and \texttt{b} as input numbers, whereas the original addition \texttt{addCarry a,da b,db dr} used \texttt{a,da} and \texttt{b,db}, which are precisely equal to \texttt{a} and \texttt{b}, but with the additional digits \texttt{da} and \texttt{db} respectively. What is the relationship between \texttt{a} and \texttt{a,da}? Simply enough, we know that \texttt{a} is \texttt{a,da} divided by two. In general, removing the least-significant digit in a number encoded in base $b$ is equivalent to dividing the number by $b$ itself. Consider the following examples of removal of a least-significant digit:
+
+$\begin{array}{c c c}
+  110 / 2 & = & 11 \\
+  111 / 2 & = & 11 \\
+  1000 / 2 & = & 100
+\end{array}$
+
+This happens because a number $n$ in an arbitrary base $b$ is decomposed into:
+
+$$d_m \times b^m \dots + d_2 \times b^2 + d_1 \times b^1 + d_0 \times b^0$$
+
+Removing one digit decreases all powers of $b$, resulting in:
+
+$$d_m \times b^{m-1} \dots + d_2 \times b^{2-1} + d_1 \times b^{1-1}$$
+
+which is precisely equal to the original number divided by $b$.
+
+
+When there are no more digits, it means that the number has been divided by the base ($2$ for our binary numbers) enough times to render the highest coefficient null. If the original number was $n$, we will have stopped only after $k$ steps such that $\frac{n}{2^k} = 0$. The smallest solution to this is actually well known, and is $k = \log_2 n$. This leads us to the conclusion that the complexity of this method of addition is $O(\log n)$, which is significantly faster than $O(n)$. As a way of comparison, assume that we are computing the sum $1000000 + 1000000$: the Peano addition will take about $1000000$ steps, whereas binary addition will take about $6$.

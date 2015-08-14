@@ -1,0 +1,142 @@
+\documentclass[12pt,b5paper]{book}
+\usepackage[toc,page]{appendix}
+\usepackage[utf8]{inputenc}
+\usepackage{csquotes}
+\usepackage{fullpage}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{paralist}
+\usepackage{tikzsymbols}
+\lstset{frame=lrbt}
+\lstset{basicstyle=\footnotesize}
+
+\lstset
+{
+	basicstyle=\scriptsize\ttfamily,
+	breaklines=true,
+	frame=single,
+	showstringspaces=false,
+	tabsize=2
+}
+
+\theoremstyle{definition}
+\newtheorem{example}{Example}
+
+\title{Friendly F\# - fun with logic.}
+\author{Dr. Giuseppe Maggiore \\
+Dr. Giulia Costantini \\
+Francesco Di Giacomo \\
+Gerard van Kruiningen}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\chapter{Introduction}
+\label{sec:introduction}
+\input{tex/introduction}
+
+
+\section{An informal introduction to logic}
+\label{sec:informalIntroduction}
+\input{tex/informal_introduction}
+
+
+\section{Inference systems}
+\label{sec:inferenceSystems}
+\input{tex/inference_systems}
+
+
+\section{A first example: boolean expressions}
+\label{sec:booleanExpressions}
+\input{tex/examples/boolean_expressions}
+
+
+\chapter{Numbers}
+\label{chap:numbers}
+In order to investigate the power of a logical framework such as the one we are working with, it may be interesting to see what we can do about the lack of direct support for numbers in the language. At a first glance, there is no relationship between our ability to define symbols and rules, and for example natural numbers, and as such we may be tempted to just ``add primitive support'' to manipulate such quantities directly.
+
+Interestingly enough, natural numbers are not strictly needed as a primitive concept. Even though for practical reasons\footnote{They are fast, and time is money. Thus, machine integers are money. QED. You never realized that your computer was indeed full of gold!} a modern programming language should always offer the possibility of directly interfacing with machine integers, they can be easily re-built outside of hardware support.
+
+In this chapter we will begin with formalizing and implementing the concept of \textit{counting} in Section \ref{sec:peanoNumbers}. We will then implement a higher performance version of numbers that uses the positional system in Section \ref{sec:binaryNumbers}. 
+
+After this chapter we will have seen that logic is powerful enough to define apparently primitive concepts such as natural numbers. Of course it would be possible to go much further, into the definition of rational numbers, and then many other concepts of traditional arithmetics. In any case for practical reasons we will not use this in later chapters as it would have a dramatic impact on performance.
+
+
+\section{Peano numbers}
+\label{sec:peanoNumbers}
+\input{tex/examples/peano_numbers}
+
+
+\section{Binary numbers}
+\label{sec:binaryNumbers}
+\input{tex/examples/binary_numbers}
+
+
+\chapter{Data structures}
+\label{chap:dataStructures}
+It is one thing to implement numbers, but of course in order to tackle computationally interesting problems we do need to define data structures. This should, again at a first glance, give an impression of an impossible task. After all, how could we define something as complex as a self-balancing binary tree with something as fine-grained such as logical inference?
+
+Thanks to data structures like lists, trees, etc. defined in this chapter, we will be able to implement most of the well-known algorithms that are found in collections such as \cite{CLRS}. Moreover, these data structures will become fundamental helpers for the meta-programming that we will see in Chapter \ref{chap:aPL}.
+
+
+\section{List manipulation}
+\label{sec:lists}
+\input{tex/examples/lists}
+
+
+\section{Binary search trees}
+\label{sec:binarySearchTrees}
+\input{tex/examples/binary_search_trees}
+
+
+\section{Balanced binary trees}
+\label{sec:balancedBinaryTrees}
+\input{tex/examples/balanced_binary_search_trees}
+
+
+\chapter{Syntax and semantics of a programming language}
+\label{chap:aPL}
+As our ``crowning achievement'', we will push our logic language yet further. We will define the semantics of a small, imperative programming language within our logic language. Thanks to this we will see that even the most complex scenario, that of building a whole programming language, is not too much for our programming language.
+
+
+\section{Evaluating expressions}
+\label{sec:evaluatingExpressions}
+\input{tex/examples/evaluating_expressions}
+
+
+\chapter{Closing remarks}
+\label{chap:closingRemarks}
+As we have seen so far, we have shown that we can build a multitude of different things with our logic language:
+\begin{inparaenum}[\itshape i\upshape)]
+\item basic concepts from mathematics such as numbers in various formats;
+\item various concepts from programming such as data structures and even interpreters for programming languages.
+\end{inparaenum}
+
+It is quite evident that any mathematical procedure can be defined as a logic program, well beyond the simplicity of implementing numbers.
+Moreover we could build a modern assembler and use our logical language as a ``universal'' interpreter, therefore running any existing software in it (albeit at a snail's pace). If we can implement the whole of mathematical procedures and the whole of programming, then what is left that we cannot compute? In this chapter we draw some closing remarks on the field of computability and what consequences this has for programming languages and logical thinking in general.
+
+
+\section{Fragments of computability}
+\label{sec:computability}
+\input{tex/computability}
+
+
+\chapter{Conclusions}
+\input{tex/conclusions}
+
+
+\begin{appendices}
+\chapter{A not so small imperative language}
+\input{tex/examples/ImperativeLanguage/intro}
+\input{tex/examples/ImperativeLanguage/semantics}
+\input{tex/examples/ImperativeLanguage/conclusions}
+\end{appendices}
+
+
+\end{document}

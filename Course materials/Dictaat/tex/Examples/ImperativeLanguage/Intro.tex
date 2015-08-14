@@ -1,0 +1,78 @@
+A compiler is a software which translates a program written in a high-level language into machine code. Given the complexity of this task, a compiler is usually split into modules which accomplish different steps during the translation process. During the translation process the compiler checks also that the targeted code is correct as for the syntax and semantics of the language.
+Usually the compiler is made of the following components:
+
+\begin{itemize}
+	\item The \textbf{Lexer} converts a sequence of characters into a sequence of \textit{tokens}, which are meaningful character strings. It analyses that a sequence of symbols form a valid ``word'' of our language. For example in Java language the sequence \texttt{newObject} would be a valid token for an identifier, while \texttt{1234xyz} would be rejected by the lexer.
+	\item The \textbf{Parser} checks the syntax of the program, i.e. that it checks that the grammar rules of our language are followed. It checks that the ``sentences'' of our language are well formed. For example in Java language the statement \texttt{int x = 35;} is a valid statement while \texttt{x + 3} is not a valid statement according to the language grammar. 
+	\item The \textbf{Type Checker} checks the semantics of the program, i.e. that what we write has a meaning. This check can be performed either at compile time (\textit{statically typed} languages such as C, C++, Java, C\#, F\#, ...) or at runtime (\textit{dynamically typed} languages such as Javascript, Python, Lua, ...). Dynamically typed languages include in the output code the type verification code which is run every time a statement is executed.
+	\item The \textbf{Intermediate code generator} defines the operational semantics, i.e. how the language statements and operators actually behave, and usually translates the high-level code to an \textit{intermediate code} which is close to assembly.
+	\item The \textbf{Target code generator} translates the intermediate code into the targeted architecture code (x86,x64,ARM,...).
+\end{itemize}
+
+Interpreted languages such as Java do not include the last component because they generate bytecode which is interpreted by a Virtual Machine. The lexer, parser, and type checker are defined as compiler \textit{front-end}, while the intermediate and target code generators are defined as compiler \textit{back-end}. All the components except the target code generator are independent on the CPU architecture. Interpreted languages trade off performance for independence from the CPU architecture.
+
+\subsection{Operational semantics of C-{}-}
+\label{sec:semantics}
+In this section we will define the operational semantics of a language derived from C called C-{}-. We will assume for brevity that the input program has already been correctly type-checked and here we just define the behaviour of the language structures and operators.
+
+Informally a C-{}- program is a set of statements, which can act on the memory and alter it. It is not possible to make function calls nor define new functions. The language has 4 native types (\texttt{int}, \texttt{bool}, \texttt{double}, and \texttt{string}). The language has 3 control structures: \textit{if-else}, \textit{while}, and \textit{for}. The language supports variable scoping, which means that you can re-define a variable with an existing name within a control structure body. The new variable will replace the existing one while inside the body. When the program exists the body the previous variable is restored. Besides variables define inside bodies are visible only within the body itself or other nested bodies starting from the current one. The evaluation of the program returns the state of the memory, which is a table containing a variable name paired with its current value.
+
+\begin{example}
+Consider the following code snippets:
+\begin{lstlisting}
+	int z ;
+	int y;
+	z = 4;
+	y = 1;
+	if (z > 0)
+		int y;
+		y = 2;
+		z = z + y;
+		y = y + 1;
+\end{lstlisting}
+
+\begin{lstlisting}
+	int z ;
+	int y;
+	z = 4;
+	y = 1;
+	if (z > 0)
+		z = z + y;
+		y = y + 1;
+\end{lstlisting}
+
+\noindent
+In the first snippet the variable \texttt{y} definition is replaced inside the \texttt{if} body according to the scoping rule. The state of the memory at the end of the program in the first snippet is:
+
+\begin{table}[!h]
+\centering
+\begin{tabular}{|c|c|}
+\hline
+\textbf{VARIABLE} & \textbf{VALUE}\\
+\hline
+z & 6\\
+\hline
+y & 1\\
+\hline
+\end{tabular}
+\end{table}
+
+\noindent
+while at the end of the second snippet is:
+
+\begin{table}[!h]
+\centering
+\begin{tabular}{|c|c|}
+\hline
+\textbf{VARIABLE} & \textbf{VALUE}\\
+\hline
+z & 5\\
+\hline
+y & 2\\
+\hline
+\end{tabular}
+\end{table}
+
+\end{example}
+
+Implementing scoping requires that we use a list of \textit{symbol tables}. A \textit{symbol table} is a dictionary where the key is the variable name (which is indeed unique) and the value contains the value of the variable. Each time we enter a new body we insert in the list an empty symbol table. When we exit the body we delete the symbol table. At the end of the program we will have a single symbol table containing only the global variables.

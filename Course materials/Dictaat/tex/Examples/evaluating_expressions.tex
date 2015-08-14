@@ -1,0 +1,472 @@
+After data structures, which are a complex part of programming knowledge, we can move on to an even more ambitious goal. We will now try and build a full-blown programming language with our logic language. We will begin with simple arithmetic expressions, which we will augment with memory and flow-control statements.
+
+\subsection{Evaluating simple arithmetic expressions}
+Simple arithmetic expressions are defined as trees\footnote{These are, surprisingly, commonly referred to as \textit{expression trees}.}. Each node of the tree is either a \texttt{+} or a \texttt{*}, and the two children of the nodes are the sub expressions that must be, respectively, added or multiplied together. The recursion ends when we find a leaf (\texttt{\$}), which contains a single integer value. Examples of expressions that we can represent are \texttt{3 + 5}, \texttt{5 + 2 * 3}, etc.
+
+The reason why such expressions can be represented with a tree can be visualized graphically quite intuitively. Consider expression \texttt{5 + 2 * 3}; we can render it into a tree as:
+
+\begin{lstlisting}
+  +
+ / \
+5  *
+  / \
+ 2   3
+\end{lstlisting}
+
+The above definition of expressions can be summed up into three new data declarations:
+
+\begin{lstlisting}
+Data [Expr] "+" [Expr] Priority 10 Type Expr
+Data [Expr] "*" [Expr] Priority 20 Type Expr
+Data [] "$" [<<int>>] Priority 10000 Type Value
+\end{lstlisting}
+
+Of course a \texttt{Value} sometimes needs to be used where an \texttt{Expr} is expected, therefore we add\footnote{At this point we might even say ``the usual''.}:
+
+\begin{lstlisting}
+Value is Expr
+\end{lstlisting}
+
+Evaluating an expression is done with the \texttt{eval} function, which takes an \texttt{Expr} as input and then returns an \texttt{<<int>>}:
+
+\begin{lstlisting}
+Func "eval" [Expr] Priority 1 Type Expr => <<int>>
+\end{lstlisting}
+
+When the expression to evaluate is an integer constant (the \texttt{\$} operator is just a wrapper to make an \texttt{<<int>>} appear as an \texttt{Expr}), then the result of the evaluation is just the integer constant itself:
+
+\begin{lstlisting}
+---------------
+eval ($i) => i
+\end{lstlisting}
+
+When the expression to evaluate is a compound expression of sub-expressions \texttt{a} and \texttt{b}, then: \begin{inparaenum}[\itshape i\upshape)]
+\item we evaluate the sub-expressions into \texttt{x} and \texttt{y} respectively;
+\item we combine \texttt{x} and \texttt{y} into the final result \texttt{res} by invoking native operations such as machine integer addition between \texttt{<<} and \texttt{>>} brackets.
+\end{inparaenum}
+
+\begin{lstlisting}
+eval a => x
+eval b => y
+<<x+y>> => res
+------------------
+eval (a+b) => res
+
+eval a => x
+eval b => y
+<<x*y>> => res
+------------------
+eval (a*b) => res
+\end{lstlisting}
+
+It is trivial to extend the above to yet more arithmetic operations such as subtraction, division, etc.
+
+Consider now the evaluation of the expression seen before: \texttt{\$5 + (\$2 * \$3)}:
+
+\begin{lstlisting}
+-----------------------
+eval ($5+($2*$3)) => ?
+\end{lstlisting}
+
+The first rule that is instanced is the rule for addition:
+
+\begin{lstlisting}
+eval $5 => x
+eval ($2*$3) => y
+<<x+y>> => res
+-------------------------
+eval ($5+($2*$3)) => res
+\end{lstlisting}
+
+The premise above (\texttt{\$5}) is very easily solved by applying the rule for constants:
+
+\begin{lstlisting}
+x := 5
+--------------
+eval $5 => x
+eval ($2*$3) => y
+<<x+y>> => res
+-------------------------
+eval ($5+($2*$3)) => res
+\end{lstlisting}
+
+At this point we cannot proceed before unwinding the stack by one step, thus we obtain:
+
+\begin{lstlisting}
+eval ($2*$3) => y
+<<5+y>> => res
+-------------------------
+eval ($5+($2*$3)) => res
+\end{lstlisting}
+
+We now have to resolve the second premise, thus we apply the rule for multiplication and we obtain:
+
+\begin{lstlisting}
+eval $2 => x'
+eval $3 => y'
+<<x'*y'>> => res'
+y := res'
+------------------
+eval ($2*$3) => y
+<<5+y>> => res
+-------------------------
+eval ($5+($2*$3)) => res
+\end{lstlisting}
+
+We can now use a rule to solve the evaluation of the first constant:
+
+\begin{lstlisting}
+x' := 2
+--------------
+eval $2 => x'
+eval $3 => y'
+<<x'+y'>> => res'
+y := res'
+------------------
+eval ($2*$3) => y
+<<5+y>> => res
+-------------------------
+eval ($5+($2*$3)) => res
+\end{lstlisting}
+
+We unwind the stack by one step:
+
+\begin{lstlisting}
+eval $3 => y'
+<<2*y'>> => res'
+y := res'
+------------------
+eval ($2*$3) => y
+<<5+y>> => res
+-------------------------
+eval ($5+($2*$3)) => res
+\end{lstlisting}
+
+Again we apply the rule for constants:
+
+\begin{lstlisting}
+y' := 3
+--------------
+eval $3 => y'
+<<2+y'>> => res'
+y := res'
+------------------
+eval ($2*$3) => y
+<<5+y>> => res
+-------------------------
+eval ($5+($2*$3)) => res
+\end{lstlisting}
+
+We unwind the stack yet again:
+
+\begin{lstlisting}
+<<2*3>> => res'
+y := res'
+------------------
+eval ($2*$3) => y
+<<5+y>> => res
+-------------------------
+eval ($5+($2*$3)) => res
+\end{lstlisting}
+
+At this point we can just unwind the stack multiple times, from:
+
+\begin{lstlisting}
+y := 6
+------------------
+eval ($2*$3) => y
+<<5+y>> => res
+-------------------------
+eval ($5+($2*$3)) => res
+\end{lstlisting}
+
+to:
+
+\begin{lstlisting}
+<<5+6>> => res
+-------------------------
+eval ($5+($2*$3)) => res
+\end{lstlisting}
+
+And finally we obtain the desired result of:
+
+\begin{lstlisting}
+------------------------
+eval ($5+($2*$3)) => 11
+\end{lstlisting}
+
+\subsection{Evaluating expressions with memory}
+
+Suppose that we now want to be able to define expressions with symbols such as \texttt{``x''} or \texttt{``y''} in the middle, for example: \texttt{5 + 2 * x}.
+
+The immediate result is that to represent such an expression we need a new data term for variables\footnote{This term, much like \texttt{\$} for integer constants, is essentially just a wrapper around \texttt{<<string>>} that allows us to treat a string as an \texttt{Expr}.}
+
+\begin{lstlisting}
+Data [] "!" [<<string>>] Priority 10000 Type Variable
+\end{lstlisting}
+
+Of course since we want variables to be useable where expressions are expected, we add:
+
+\begin{lstlisting}
+Variable is Expr
+\end{lstlisting}
+
+Evaluation of an expression cannot be done directly, because we encounter variables we do not know what value to assign them. For this reason we shall extend the \texttt{eval} function so that it also takes as input parameter a \texttt{Memory}:
+
+\begin{lstlisting}
+Func [] "eval" [Expr Memory] Priority 1 Type Expr => <<int>>
+\end{lstlisting}
+
+In the following we assume that \texttt{Memory} is any container of data. The concrete implementation of \texttt{Memory} is actually not that important for the purpose of our scneario: it could be a list of \texttt{<<string>>}, \texttt{<<int>>} pairs, a binary search tree, a balanced binary search tree, or some other data structure such as those defined in Chapter \ref{chap:dataStructures}. The only requirement that we impose is that we have an operator to \texttt{lookup} the value of a variable given its name:
+
+\begin{lstlisting}
+Func [Memory] "lookup" [<<string>>] Priority 10 Type Expr => <<int>>
+\end{lstlisting}
+
+The rules that we have seen so far are substantially unchanged, that is they do not use the memory but rather just pass it around:
+
+\begin{lstlisting}
+-----------------
+eval ($i) m => i
+
+eval a m => x
+eval b m => y
+<<x+y>> => res
+------------------
+eval (a+b) m => res
+
+...
+\end{lstlisting}
+
+When we encounter a variable, which is prefixed by \texttt{!}, we simply look up its value from memory and return it:
+
+\begin{lstlisting}
+m lookup v => res
+------------------
+eval !v m => res
+\end{lstlisting}
+
+Consider now a very simple evaluation: expression \texttt{!v + \$3}, where memory is \texttt{[v -> 10]}. We start at:
+
+\begin{lstlisting}
+------------------------------
+eval (!v + $3) [v -> 10] => ?
+\end{lstlisting}
+
+We begin by applying the rule for addition, which yields:
+
+\begin{lstlisting}
+eval !v [v -> 10] => x
+eval $3 [v -> 10] => y
+<<x + y>> => res
+--------------------------------
+eval (!v + $3) [v -> 10] => res
+\end{lstlisting}
+
+We now use the rule for variable lookup, which results in:
+
+\begin{lstlisting}
+[v -> 10] lookup v => res'
+x := res'
+--------------------------
+eval !v [v -> 10] => x
+eval $3 [v -> 10] => y
+<<x + y>> => res
+--------------------------------
+eval (!v + $3) [v -> 10] => res
+\end{lstlisting}
+
+The result of looking up is that of obtaining the appropriate value from memory, therefore leading to:
+
+\begin{lstlisting}
+x := 10
+--------------------------
+eval !v [v -> 10] => x
+eval $3 [v -> 10] => y
+<<x + y>> => res
+--------------------------------
+eval (!v + $3) [v -> 10] => res
+\end{lstlisting}
+
+We must now unwind the stack once for \texttt{x}:
+
+\begin{lstlisting}
+eval $3 [v -> 10] => y
+<<10 + y>> => res
+--------------------------------
+eval (!v + $3) [v -> 10] => res
+\end{lstlisting}
+
+We have to evaluate constant \texttt{\$3}, which immediately yields \texttt{3} itself as the result:
+
+\begin{lstlisting}
+<<10 + 3>> => res
+--------------------------------
+eval (!v + $3) [v -> 10] => res
+\end{lstlisting}
+
+The final unwinding step gives us the expected result of:
+
+\begin{lstlisting}
+-------------------------------
+eval (!v + $3) [v -> 10] => 13
+\end{lstlisting}
+
+\subsection{Evaluating statements}
+
+Let us now consider yet another extension: we want to be able to assign variables. This means that we have a new possible expression data term, which we will use for assigning values to variables:
+
+\begin{lstlisting}
+Data [Variable] ":=" [Expr] Priority 1 Type Expr
+\end{lstlisting}
+
+Evaluation of expressions such as assignment can be considered to return nothing, and just affect memory. We therefore define the \texttt{nothing} value:
+
+\begin{lstlisting}
+Data [] "nothing" [] Priority 1 Type Value
+\end{lstlisting}
+
+A natural extension of expression that comes from assignment is the fact that expressions can also be sequenced together, much like lists:
+
+\begin{lstlisting}
+Data [] "nil" [] Priority 1 Type Expr
+Data [Expr] ";" [Expr] Priority 1 Type Expr
+\end{lstlisting}
+
+After evaluating an expression, we do not just get the resulting value; this happens because if one expression contains an assignment then evaluation will return the resulting value, but also the changed memory after the assignment. We therefore define a new data type that contains both a value and memory, and extend the return type of \texttt{eval} so that it now returns such a pair:
+
+\begin{lstlisting}
+Data [Value] "," [Memory] Priority 1 Type ValueMemory
+Func [] "eval" [Expr Memory] Priority 1 Type Expr => ValueMemory
+\end{lstlisting}
+
+Evaluating a null expression is quite simple: we just return nothing and pass the memory through:
+
+\begin{lstlisting}
+------------------------
+eval nil m => nothing,m
+\end{lstlisting}
+
+When evaluating a sequence of expressions, we:
+\begin{inparaenum}[\itshape i\upshape)]
+\item evaluate the first sub-expression with the input memory \texttt{m}, therefore obtaining the new memory \texttt{m1};
+\item evaluate the second sub-expression with the new memory \texttt{m1}, therefore obtaining a result \texttt{res} and new memory \texttt{m2};
+\item return \texttt{res} and \texttt{m2} as the final result of the whole expression:
+\end{inparaenum}
+
+\begin{lstlisting}
+eval a m0 => nothing,m1
+eval b m1 => res,m2
+------------------------
+eval (a;b) m0 => res,m2
+\end{lstlisting}
+
+It is important to realize that the \texttt{;} operator role is simply that of letting the changes done to memory ``fall through'' from one expression to the next.
+
+Assume now that we have some implementation of a function that adds (or updates) a key-value parir into memory:
+
+\begin{lstlisting}
+Func [Memory] "add" [<<string>> <<int>>] Priority 1 Type Expr => Memory
+\end{lstlisting}
+
+We can use this function to define how the assignment operator works:
+\begin{inparaenum}[\itshape i\upshape)]
+\item we evaluate the right-hand side of the assignment, obtaining a result \texttt{res} and a potentially changed memory \texttt{m1};
+\item we bind \texttt{res} to \texttt{v}, therefore obtaining a new memory \texttt{m2};
+\item we return \texttt{nothing} and the final memory \texttt{m2} as the final result.
+\end{inparaenum}
+
+\begin{lstlisting}
+eval e m => res,m1
+m1 add v res => m2
+-------------------------------
+eval (!v := e) m => nothing,m2
+\end{lstlisting}
+
+This actually gives us a complete memory model which can be extended to operators of all kinds. As strange as it may sound to think of memory as just another value that we freely pass around, consider the possibilities that this manner of reasoning offers us:
+\begin{inparaenum}[\itshape i\upshape)]
+\item we might decide to build a system where memory can be split so that one thread gets some variables and another thread gets some other variables, so that no risky interaction is possible;
+\item we might define an operator that saves memory in order roll-back the program state to an earlier safe state in case of error;
+\item we might define a transactional operator that creates a new copy of memory which is only committed after some kind of confirmation;
+\item etc.
+\end{inparaenum}
+
+The possibilities of such a model are endless, and it is important not to be fooled by the fact that we are limiting ourselves \textit{on purpose} to implement only well-known models of computation. \footnote{Indeed, new models of computation could just as easily be built, even though they would be quite poor examples for illustration!}
+
+\subsection{Evaluating control flow statements}
+
+Most of the work has been done so far, but we can now add some finishing touches to turn our tiny language into something more complete, albeit still quite primitive. The final extensions to our language will therefore be a series of control flow operators such as \texttt{if}, \texttt{while}, etc., plus a few ``decorative'' symbols such as \texttt{then}, \texttt{else}, and \texttt{do} which, although not strictly necessary, make code much more readable:
+
+\begin{lstlisting}
+Data [Expr] "gt" [Expr] Priority 10 Type Expr
+Data [] "if" [Expr Then Expr Else Expr] Priority 5 Type Expr
+Data [] "then" [] Priority 10000 Type Then
+Data [] "else" [] Priority 10000 Type Else
+Data [] "while" [Expr Do Expr] Priority 5 Type Expr
+Data [] "do" [] Priority 10000 Type Do
+\end{lstlisting}
+
+Since we will now also need to manipulate boolean expressions, we will create a new data type to wrap boolean values:
+
+\begin{lstlisting}
+Keyword [] "?" [<<bool>>] Priority 10000 Type Value
+\end{lstlisting}
+
+Since evaluation may now return values as well, we update the definition of \texttt{eval} so that its return type is now \texttt{Value} instead of just \texttt{<<int>>}. Evaluating a \texttt{gt} (greater than) comparison now looks very much like the evaluation of a sum or a product:
+
+\begin{lstlisting}
+eval a m0 => $x,m1
+eval b m1 => $y,m2
+x > y
+-----------------------------
+eval (a gt b) m0 => ?true,m2
+
+eval a m0 => $x,m1
+eval b m1 => $y,m2
+x <= y
+------------------------------
+eval (a gt b) m0 => ?false,m2
+\end{lstlisting}
+
+When evaluating a conditional statement, then we first evaluate the condition. If the condition evaluates to a value of \texttt{true}, then we evaluate the \texttt{then} branch and return the result of its evaluation:
+
+\begin{lstlisting}
+eval c m0 => ?true, m1
+eval a m1 => res,m2
+---------------------------------------
+eval (if c then a else b) m0 => res,m2
+\end{lstlisting}
+
+If the condition evaluates to a value of \texttt{false}, then we evaluate the \texttt{else} branch and return the result of its evaluation:
+
+\begin{lstlisting}
+eval c m0 => ?false, m1
+eval b m1 => res,m2
+---------------------------------------
+eval (if c then a else b) m0 => res,m2
+\end{lstlisting}
+
+The evaluation of a \texttt{while} loop is just as simple. We evaluate the condition of the \texttt{while} loop, and if we obtain a result of \texttt{false} then we are done and we can return a result of \texttt{nothing}:
+
+\begin{lstlisting}
+eval c m0 => ?false,m1
+-------------------------------------
+eval (while c do b) m0 => nothing,m1
+\end{lstlisting}
+
+If the condition of the loop evaluates to \texttt{true}, then we evaluate the body of the loop once, obtaining a new memory \texttt{m2}. This new memory will be used to re-evaluate the \texttt{while} loop:
+
+\begin{lstlisting}
+eval c m0 => ?true, m1
+eval b m1 => nothing,m2
+eval (while c do b) m2 => nothing,m3
+-------------------------------------
+eval (while c do b) m0 => nothing,m3
+\end{lstlisting}
+
+In this case we will skip a practical example as it would be quite long, and it does not really add much to the examples seen previously in the chapter.
+
+\paragraph{Conclusions}
+It is quite possible to further extend our tiny language to all sorts of additional niceness. For example, we could define functions, we could distinguish between \textit{heap} and \textit{stack} memory, we could define data structures, etc. Of course this would quite complicate our definitions, but surprisingly less than one would expect. For example, a much richer implementation that also contains declaration and even scoping of variables (the fundamental construct that makes function definition possible) requires as little as 360 lines of code. The implementation of a real-time oriented programming language for game development (Casanova) took less than 600 lines of code. Compared with the equivalent definition of a compiler written by hand, we are talking about a significant difference; the Casanova compiler written in F\# is almost two orders of magnitude larger than the new implementation, at a whopping 10,000 lines of code.
+
+Moreover, primitive or not, our tiny language now supports integer variables and some looping constructs. This means that the sample language we have defined in this chapter enjoys a very important property known as \textit{Turing completeness}, which guarantees that it is powerful enough to compute anything that is computable. This important property and its consequences will be further elaborated in Chapter \ref{chap:closingRemarks}.

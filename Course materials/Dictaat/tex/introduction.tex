@@ -1,0 +1,22 @@
+The goal of this document is to make you acquainted with the concept of inference systems. You will learn various aspects of logic and inference system, which we will use to give rise to definitions of concepts such as numbers, boolean expressions, etc. As an advanced example you will also learn how to model programming languages constructs into inference systems. This leads to an important end result: you will learn the \textit{what} of programming languages, in contrast to the \textit{how} that you have studied so far. As a short conclusion we will discuss the strong relationship between logic and programming, and draw some conclusions about computability.
+
+\subsection{Why bother?}
+Try drawing a circle or a similar shape. The circle starts out as a single ``piece''. Choose two points along the border and draw a connecting line between the two: the circle is now split into two pieces. Chose now a third point and connect it to the other two points: the circle is now split into four pieces. A clear pattern is emerging: every point we add, we get twice as many pieces. This suggests that by \texttt{k} points we get $2^{k-1}$ pieces.
+
+This seems all quite logical, but there is a catch. Try now doing this with six points along the border of the circle: instead of the expected 32 pieces, we will end up with 31. This means that the original conclusion was definitely not correct.
+
+What is the moral of this story? If you want (or need) to be absolutely sure about some assertion (often called \textit{proposition} or \textit{hypothesis}), then you cannot trust a few examples and an intuitively appealing story to show that some pattern will always hold true. In the practice, and certainly in that of informatics or medical technology, there are many situations where a few tests and an intuition of why the system works are sufficient. Would you dare fly in an airplane where the programmer concluded after a dozen of tests that ``it all works, send it to production''? Would you dare step into an MRI machine (which throws radioactive isotopes at your body) knowing that the software was quickly written during a weekend with a bit of unit testing? Of course not\footnote{as a side note, if you are comfortable with these scenarios, then perhaps the motivation for the rest of the document will feel quite weak, so you might better go back to your vacation in Chernobyl or flying in planes held together by duct tape.}.
+
+The use of logic as a foundation for programming does not automatically solve all our problems. It is very well possible (we will get there) that there is no single mathematical formalism or piece of software that will entirely remove the need for human intellect when writing software. \textbf{In any case, the use of logic and formality when decomposing problems can greatly help in writing software that is better thought out and over which it is far easier to reason and prove properties.}
+
+\subsection{Structure of the document}
+In the rest of this document we will: 
+\begin{inparaenum}[\itshape i\upshape)]
+\item introduce informal logical reasoning in Section \ref{sec:informalIntroduction};
+\item introduce a more formal logical formalism in Section \ref{sec:inferenceSystems};
+\item give a first example of logic in action to define basic boolean operators in Section \ref{sec:booleanExpressions};
+\item use logic to define \textit{apparently atomic} and unrelated concepts such as numbers in Chapter \ref{chap:numbers};
+\item construct complex data structures such as lists, binary search trees, and even balanced binary search trees in Chapter \ref{chap:dataStructures};
+\item build a small programming language in Chapter \ref{chap:aPL};
+\item we conclude with a short and woefully incomplete presentation of fragments of computability in Chapter \ref{chap:closingRemarks}.
+\end{inparaenum}

@@ -1,0 +1,361 @@
+\subsection{Evaluating a C-{}- program}
+A C-{}- program will take as input an empty memory state and a list of expressions (or statements). We define then the following keywords:
+
+\begin{lstlisting}
+Keyword [] "$m" Dictionary Priority 300 Class SymbolTable
+Keyword [SymbolTable] "nextTable" [TableList] Priority 10 Class TableList
+Keyword [] "nilTable" [] Priority 500 Class TableList
+Keyword [SymbolTable] "add" [Id Value] Priority 100 Class DictionaryOp
+Keyword [SymbolTable] "lookup" [Id] Priority 100 Class DictionaryOp
+Keyword [SymbolTable] "contains" [Id] Priority 100 Class DictionaryOp
+
+Keyword [Expr] ";" [ExprList] Priority 5 Class ExprList
+Keyword [] "nop" [] Priority 500 Class ExprList
+
+Keyword [] "program" [SymbolTable ExprList] Priority 0 Class Program
+\end{lstlisting}
+
+\noindent
+Evaluating a C-{}- program means evaluating a series of statements separated by ``;'' and update the list of symbol tables at each evaluation. We can build an evaluation rule which takes the current statement, evaluates it, and then recursively call itself on the rest of the program. The evaluation rule returns the list of the updated symbol tables and the value returned by the evaluation.
+
+\begin{lstlisting}
+Keyword [] "eval" [TableList Expr] Priority 0 Class RuntimeOp
+Keyword [] "evalResult" [TableList Value] Priority 0 Class EvaluationResult
+\end{lstlisting}
+
+The list of values available in C-{}- are the following:
+
+\begin{lstlisting}
+Keyword [] "$i" [<<int>>] Priority 300 Class Value
+Keyword [] "$d" [<<double>>] Priority 300 Class Value
+Keyword [] "$s" [<<string>>] Priority 300 Class Value
+Keyword [] "$b" [<<bool>>] Priority 300 Class Value
+Keyword [] "$void" [] Priority 300 Class Value
+\end{lstlisting}
+
+Starting from the \texttt{program}, we call the evaluation function on the program code. The program evaluation returns the updated global symbol table. The value returned by the program evaluation is \texttt{void} because a program is made by a sequence of statements that alter the memory, but they do not return any result.
+
+\begin{lstlisting}
+eval (memory nextTable nilTable) code => evalResult (memory' nextTable nilTable) $void
+------------------------------------------------------------
+program memory code => memory'
+\end{lstlisting}
+
+\noindent
+The evaluation rule for a list of statements is the following:
+
+\begin{lstlisting}
+eval tables a => evalResult tables' $void
+eval tables' b => res
+----------------------------------------
+eval tables (a;b) => res
+
+-------------------------------------------
+eval tables nop => evalResult tables $void
+\end{lstlisting}
+
+\noindent
+We evaluate the head of the list, which possibly returns a modified list of symbol tables and returns \texttt{void} (we are evaluating a statement). We stop when we find the end of the sequence of statements.
+
+In the following sections we will implement the evaluation rules for all the possible statements in the language.
+
+\subsection{Variable definition}
+C-{}- requires that the variable is defined before assigning a value to it. We define an operator called \texttt{variable} which takes a type followed by an identifier. The type are keywords themselves:
+
+\begin{lstlisting}
+Keyword [] "t_int" [] Priority 500 Class Type
+Keyword [] "t_double" [] Priority 500 Class Type
+Keyword [] "t_string" [] Priority 500 Class Type
+Keyword [] "t_bool" [] Priority 500 Class Type
+\end{lstlisting}
+
+\noindent
+An identifier is a string marked with the unary operator \texttt{\$}:
+
+\begin{lstlisting}
+Keyword [] "$" [<<string>>] Priority 300 Class Id
+\end{lstlisting}
+
+\noindent
+The rule for variable definition calls the rule for adding an element into the symbol table. The correct symbol table which must store the variable, according to the scoping rules defined above, is the symbol table of the current scope, which is the first element of the symbol table list. All the variables are initialize with the default value \texttt{\$void}.
+
+\begin{lstlisting}
+Keyword [SymbolTable] "defineVariable" [Id] Priority 300 Class MemoryOp
+
+symbols defineVariable id => symbols'
+---------------------------------------------------
+eval (symbols nextTable tables) (variable t id) => evalResult (symbols' nextTable tables) $void
+
+
+  symbols add id $void => symbols'
+  -------------------------------------
+  symbols defineVariable id => symbols'
+\end{lstlisting}
+
+\subsection{Variable assignment}
+Variable assignment has the form \texttt{\$id = expression}. 
+
+\begin{lstlisting}
+Keyword [Id] "=" [Expr] Priority 10 Class Expr
+\end{lstlisting}
+
+\noindent
+The left side of the assignment is called \textit{lvalue}, and in our language can be only a variable. The right side of the assignment is called \textit{rvalue} and can be an arithmetic expression, a boolean expression, or another variable. The evaluation rule must evaluate the expression, look up the variable \textbf{in the whole symbol table list} taking the first occurrence, and write the value in the table. Before that we have to write the evaluation rules for rvalues.
+
+\subsubsection{Atomic values}
+The simplest case of rvalues is an atomic value. Atomic values in C-{}- can be integer, double, string, or boolean values. \texttt{\$void} value cannot be assigned to variables, nor be an expression. The evaluation rules for atomic values simply return the values themselves, without altering the symbol tables:
+
+\begin{lstlisting}
+------------------------------------------------
+eval tables ($i v) => evalResult tables ($i v)
+
+-----------------------------------------------
+eval tables ($d v) => evalResult tables ($d v)
+
+-----------------------------------------------
+eval tables ($s v) => evalResult tables ($s v)
+
+-----------------------------------------------
+eval tables ($b v) => evalResult tables ($b v)
+\end{lstlisting}
+
+\subsubsection{Arithmetic expression evaluation}
+
+An arithmetic expression is a composition of the operators +,-,*,/ whose left and right arguments can be recursively arithmetic expressions, variables or integer and double values. For example $1 + 3 * 5 - 4 / 6$ is made of $+$ applied to $1$ and $3 * 5 - 4 / 6$ whose arguments are $3 * 5$ and $4 / 6$. The evaluation rule simply evaluates recursively the arguments of an arithmetic operators and then combine the results. We will just show the evaluation rules for integer expressions, the rules for double expressions are the same. Also it is shown the + operator for string, which outputs the concatenation of two strings.
+
+\begin{lstlisting}
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
+arithmeticResult := <<val1 + val2>>
+----------------------------------------------------------------------
+eval tables expr1 + expr2 => evalResult tables'' ($i arithmeticResult)
+
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
+arithmeticResult := <<val1 - val2>>
+----------------------------------------------------------------------
+eval tables expr1 - expr2 => evalResult tables'' ($i arithmeticResult)
+
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
+arithmeticResult := <<val1 * val2>>
+----------------------------------------------------------------------
+eval tables expr1 * expr2 => evalResult tables'' ($i arithmeticResult)
+
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
+arithmeticResult := <<val1 / val2>>
+----------------------------------------------------------------------
+eval tables expr1 / expr2 => evalResult tables'' ($i arithmeticResult)
+
+eval tables expr1 => evalResult tables' ($s val1)
+eval tables' expr2 => evalResult tables'' ($s val2)
+arithmeticResult := <<val1 + val2>>
+----------------------------------------------------------------------
+eval tables expr1 + expr2 => evalResult tables'' ($s arithmeticResult)
+\end{lstlisting}
+
+\subsubsection{Boolean expression evaluation}
+Boolean expressions can be obtained by either combining boolean operators or by using numeric comparison operators. In what follows we will give the evaluation rules only for integer comparison operators, the rules for double values are analogous. Equality and inequality operators can be applied to any value.
+
+\begin{lstlisting}
+eval tables expr1 => evalResult tables' ($b val1)
+eval tables' expr2 => evalResult tables'' ($b val2)
+boolResult := <<val1 && val2>>
+----------------------------------------------------------------------
+eval tables expr1 && expr2 => evalResult tables'' ($b boolResult)
+
+eval tables expr1 => evalResult tables' ($b val1)
+eval tables' expr2 => evalResult tables'' ($b val2)
+boolResult := <<val1 || val2>>
+----------------------------------------------------------------------
+eval tables expr1 || expr2 => evalResult tables'' ($b boolResult)
+
+
+eval tables expr => evalResult tables' ($b val)
+boolResult := << !val >>
+--------------------------------------------------------
+eval tables (!expr) => evalResult tables' ($b boolResult)
+
+eval tables expr1 => evalResult tables' val1
+eval tables' expr2 => evalResult tables'' val2
+val1 == val2
+--------------------------------------------------------
+eval tables (expr1 equals expr2) => evalResult tables' ($b true)
+
+eval tables expr1 => evalResult tables' val1
+eval tables' expr2 => evalResult tables'' val2
+val1 != val2
+--------------------------------------------------------
+eval tables (expr1 equals expr2) => evalResult tables' ($b false)
+
+
+eval tables (expr1 equals expr2) => evalResult tables' ($b res)
+boolResult := << !res >>
+-------------------------------------------------------------------
+eval tables (expr1 neq expr2) => evalResult tables' ($b boolResult)
+
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
+boolResult := << val1 < val2 >>
+---------------------------------------------------------
+eval tables (expr1 ls expr2) => evalResult tables' ($b boolResult)
+
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
+boolResult := << val1 <= val2 >>
+---------------------------------------------------------
+eval tables (expr1 leq expr2) => evalResult tables' ($b boolResult)
+
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
+boolResult := << val1 > val2 >>
+---------------------------------------------------------
+eval tables (expr1 grt expr2) => evalResult tables' ($b boolResult)
+
+eval tables expr1 => evalResult tables' ($i val1)
+eval tables' expr2 => evalResult tables'' ($i val2)
+boolResult := << val1 >= val2 >>
+---------------------------------------------------------
+eval tables (expr1 geq expr2) => evalResult tables' ($b boolResult)
+\end{lstlisting}
+
+\subsubsection{Variable lookup}
+The last case of rvalue (and also of arithmetic and boolean expression) is the variable assignment. The rule must iterate the symbol table list until it finds a variable matching the variable name. Then it returns the value contained in that variable.
+
+\begin{lstlisting}
+symbols contains ($name) => Yes
+symbols lookup ($name) => val
+-----------------------------------------------------------
+eval (symbols nextTable tables) ($name) => evalResult (symbols nextTable tables) val
+
+
+symbols contains ($name) => No
+eval tables ($name) => evalResult tables' val
+-----------------------------------------------------------
+eval (symbols nextTable tables) ($name) => evalResult (symbols nextTable tables') val
+\end{lstlisting}
+
+\subsubsection{Evaluation of the assignment}
+One could be prone to write the following rules for the assignment:
+
+\begin{lstlisting}
+table contains id => Yes
+eval table expr => evalResult table' val
+table add id val => table''
+-------------------------------------------------------
+eval (table nextTable tables) (id = expr) => evalResult table'' 
+
+table contains id => No
+eval tables (id = expr) => res
+---------------------------------------------------------
+eval (table nextTable tables) (id = expr) => res
+\end{lstlisting}
+
+\noindent
+If the lvalue is contained in the current symbol table we update it with the result of the expression evaluation, otherwise we iterate the symbol table list. This implementation is however \textbf{wrong}. Indeed consider the assignment \texttt{z = z + y} in the example using variable scoping in Section \ref{sec:semantics}. The variable \texttt{z} is not in the current scope symbol table, so we recursively call \texttt{eval} dropping the head of the list. At this point we have a symbol table which contains \texttt{z}. Unfortunately, when we evaluate the rvalue, we cannot find \texttt{y} which was in the symbol table we dropped before the recursive call.
+
+From this example we see that we need to keep the original list of symbol tables to be able to perform the correct lookup for rvalues. We rewrite the evaluation rule using a different rule \texttt{updateTables} which correctly perform the assignment by carrying both the current scope list and the original list with all the symbol tables.
+
+\begin{lstlisting}
+symbols contains id => Yes
+eval globals expr => evalResult globals' val
+symbols add id val => symbols'
+-------------------------------------------------------
+updateTables globals (symbols nextTable tables) id expr => evalResult (symbols' nextTable tables) $void 
+
+symbols contains id => No
+updateTables globals tables id expr => evalResult tables' $void
+-------------------------------------------------------
+updateTables globals (symbols nextTable tables) id expr => evalResult (symbols nextTable tables') $void
+
+
+updateTables tables tables id expr => res
+----------------------------------------
+eval tables (id = expr) => res
+\end{lstlisting}
+
+\noindent
+The new rule evaluates the rvalue by using the global table instead of the partial symbol table carried by the recursive calls, so that it can correctly access all the variables defined so far.
+
+\subsection{Evaluation of the If-Else statement}
+This statement has the form \texttt{if (condition) then expr1 else expr2}.
+
+\begin{lstlisting}
+Keyword [] "then" [] Priority 10 Class Then
+Keyword [] "else" [] Priority 10 Class Else
+Keyword [] "if" [Expr Then Expr Else Expr] Priority 10 Class Expr
+\end{lstlisting}
+
+\noindent
+The operational semantics is that if the boolean expression in the condition evaluates \texttt{true} we evaluate \texttt{expr1} otherwise we evaluate \texttt{expr2}. When we execute either of the two blocks, we have to add a symbol table for the scope of the new body we are going to evaluate. When the body has been evaluated, we discard the symbol table we added (because we are exiting the \texttt{if-else} scope) and keep the other possibly modified symbol tables. Thus we have two evaluation rules:
+
+\begin{lstlisting}
+eval tables condition => evalResult tables' ($b true)
+eval (empty nextTable tables) expr1 => evalResult (table' nextTable tables'') val
+-----------------------------------------------------
+eval tables (if condition then expr1 else expr2) => evalResult tables'' val
+
+eval tables condition => evalResult tables' ($b false)
+eval (empty nextTable tables) expr2 => evalResult (table' nextTable tables'') val
+-----------------------------------------------------
+eval tables (if condition then expr1 else expr2) => evalResult tables'' val
+\end{lstlisting}
+
+\subsection{Evaluation of the While statement}
+This statement has the form \texttt{while (condition) expr}
+
+\begin{lstlisting}
+Keyword [] "while" [Expr Expr] Priority 10 Class Expr
+\end{lstlisting}
+
+The statement evaluates the condition, then executes \texttt{expr} if the condition is true. At the end of the body evaluation we re-evaluate the condition and possibly execute the body again. If the condition is false we skip to the next statement. The considerations about the symbol tables done for the \texttt{if-else} statement are the same:
+
+\begin{lstlisting}
+eval tables condition => evalResult tables' ($b true)
+eval (empty nextTable tables) expr => evalResult (table' nextTable tables'') val
+eval tables'' (while condition expr) => res
+---------------------------------------------------
+eval tables (while condition expr) => res
+
+eval tables condition => evalResult tables' ($b false)
+-----------------------------------------------------------
+eval tables (while condition expr) => evalResult tables' $void
+\end{lstlisting}
+
+\subsection{Evaluation of the For statement}
+This statement has the form \texttt{for (init condition step) expr}
+
+\begin{lstlisting}
+Keyword [] "for" [Expr Expr Expr Expr] Priority 10 Class Expr
+\end{lstlisting}
+
+\noindent
+The statement evaluates once the \texttt{init} statement. After that it evaluates the condition, and if it is true \texttt{expr} is evaluated. At the end of the evaluation the \texttt{step} statement is evaluated and then the condition is evaluated again.
+
+Since the \texttt{init} statement must be executed only once, we cannot recursively call the evaluation rule for the \texttt{for} statement directly. We then define a keyword \texttt{loopFor} which do the evaluations after the \texttt{init} statement has been evaluated.
+
+\noindent
+\begin{lstlisting}
+Keyword [] "loopFor" [TableList Expr Expr Expr] Priority 0 Class RuntimeOp
+\end{lstlisting}
+
+\noindent
+The rule associated to this keyword evaluates the condition and the body, updating the symbol tables accordingly.
+\begin{lstlisting}
+eval tables init => evalResult tables' $void
+loopFor tables' condition step expr => res
+-------------------------------------------------------
+eval tables (for init condition step expr) => res
+
+  eval tables condition => evalResult tables' ($b true)
+  eval (empty nextTable tables) expr => evalResult (table' nextTable tables'') val
+  eval tables'' step => evalResult tables3 val'
+  loopFor tables3 condition step expr => res 
+  ------------------------------------------------------------------
+  loopFor tables condition step expr => res
+
+  eval tables condition => evalResult tables' ($b false)
+  ------------------------------------------------------------------
+  loopFor tables condition step expr => evalResult tables' $void
+\end{lstlisting}

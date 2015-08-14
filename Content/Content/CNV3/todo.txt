@@ -1,4 +1,0 @@
-﻿- Debug queries.
-- Add Casanova tuples.
-- Support tuples as arguments of for loops and queries.
-- Scoping for local variables.

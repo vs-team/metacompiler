@@ -1,0 +1,243 @@
+An instance of an inference system begins by defining the set of recognized keywords and operators. Keywords and operators all have an ariety, a class to which they belong, and a priority level to define how lack of parentheses should be interpreted. As an example we will consider the unary notation for defining natural numbers. 
+
+\subsection{Inductive definition of natural numbers}
+Natural numbers (\texttt{Num}) in the \textit{unary notation}, also known as \textit{Peano numbers}, are defined in terms of one zero value (\texttt{z}), which does not take anything as input and one successor value (\texttt{s}), which takes as input another number\footnote{The successor of a natural number is that number plus one, thus \texttt{s(a)} can be seen as intuitively equivalent to \texttt{a+1}. A word of warning: we are implying a distinction here between the operation \texttt{+1}, which is an elementary operation that we always know how to perform in a single step, and arbitrary addition of potentially large numbers: although the two operations both use the same symbol \texttt{+}, \textbf{they are not the same!}}
+
+\begin{lstlisting}
+Data [] "z" []    Priority 2  Type Num
+Data [] "s" [Num] Priority 3  Type Num
+\end{lstlisting}
+
+With the keywords above it becomes possible to express some natural numbers. A few examples are:
+\begin{description}
+\item[0] \texttt{z}
+\item[1] \texttt{s(z)}
+\item[2] \texttt{s(s(z))}
+\item[3] \texttt{s(s(s(z)))}
+\end{description}
+
+All the examples above are \textit{expressions}, because they only use keywords and composition of keywords. We could also define \textit{patterns}, which can be informally considered as ``expressions with holes'', where the holes are symbols that may be replaced with any valid expression. Consider pattern \texttt{s(s(a))}, which is the pattern that describes the ``successor of the successor of \texttt{a}'', whatever \texttt{a} will be. Possible expressions that may generated from this pattern are:
+
+\begin{itemize}
+\item \texttt{s(s(z))}, for \texttt{a = z}
+\item \texttt{s(s(s(z)))}, for \texttt{a = s(z)}
+\end{itemize}
+
+We call expressions that may generated from a pattern \textit{instances}. We can consider a pattern as a function that takes one or more expressions as parameters and returns a resulting expression.
+
+\subsection{Expressions of natural numbers}
+Natural numbers may be composed together to form expressions. An expression is defined recursively as the sum of two expressions, \texttt{+}, or the product of two expressions \texttt{*}:
+
+\begin{lstlisting}
+Func [Expr] "+" [Expr] Priority 0  Type Expr => Num
+Func [Expr] "*" [Expr] Priority 1  Type Expr => Num
+\end{lstlisting}
+
+Notice that numbers were defined in the above as belonging to class \texttt{Num}, whereas addition and multiplication belong to the class \texttt{Expr}, and both expect an \texttt{Expr} to the right and an \texttt{Expr} to the left. So far thus it would be impossible to use numbers as built with \texttt{s} and \texttt{z} as left and right parameters of \texttt{+} and \texttt{*}. In order to connect these two sets of keywords we can specify a relationship between \texttt{Num} and \texttt{Expr}, namely that a \texttt{Num} can be used where an \texttt{Expr} is expected. We can do so with the following code:
+
+\begin{lstlisting}
+Num is Expr
+\end{lstlisting}
+
+The \texttt{is} operator plays a role that is akin to that of the inheritance operators found in object-oriented languages.\footnote{To be precise, this is an example of \textit{subtype polymorphism}.}
+
+Multiplication takes syntactic precedence over addition, thus we can be slightly less verbose with parentheses just like with the usual definitions of addition and multiplication.
+
+Valid expressions written in this notation could be:
+
+\begin{itemize}
+\item \texttt{z + z}
+\item \texttt{s(z) + s(z)}
+\item \texttt{z + s(z)}
+\item \texttt{s(s(z)) * s(s(z))}
+\end{itemize}
+
+We can also define patterns such as:
+
+\begin{itemize}
+\item \texttt{z + a}, the addition of \texttt{z} and an arbitrary expression \texttt{a}
+\item \texttt{s(z) + s(a)}, the addition of \texttt{s(z)} and the successor of an arbitrary expression \texttt{a}
+\end{itemize}
+
+\subsection{Addition as repeated succession}
+There is no intrinsic difference between keywords such as \texttt{s} and \texttt{z}, and keywords such as \texttt{+} and \texttt{*}, even though one might be tempted to think that only because we used symbols commonly known in arithmetics then they will have their usual meaning here as well. It is very important to realize that this is not the case. We could have just as easily used other symbols such as \texttt{++} for multiplication and \texttt{?} for addition, or anything else we might have fancied. The inference system assumes no prior meaning of symbols, and indeed we are not forced in any way to follow the usual rules of engagement known for numbers. Nevertheless, to reduce the confusion, we will indeed follow such conventions. 
+
+We will now assign meaning to the various symbols we just defined. This will allow us to perform transformations on our expressions, in order to perform computations on numbers. We do so by specifiying a \textit{set of rules}. Let us begin with addition.
+
+We can very easily state that adding zero (\texttt{z}) to an arbitrary number \texttt{a} will result in \texttt{a} itself, without any further steps. We express this as a rule without premises as follows:
+
+\begin{lstlisting}
+-----------
+z + a => a
+\end{lstlisting}
+
+The lack of premises above the horizontal bar means that as soon as the inference system recognizes a pattern of the form \texttt{z+a}, then it will immediately yield \texttt{a} as the output result.
+
+Suppose now that we add a number which is not zero to another arbitrary number. Since we are dealing with natural numbers, this means that a non-zero number will always be at least one, thus it will be at least one application of \texttt{s} to some arbitrary number. The input pattern that describes this set of circumstances would be \texttt{s(a) + b}. Given this pattern it is not immediately possible to derive a result: rather, we must decompose the determination of the result into a series of intermediate steps. As a first step, we add \texttt{a} and \texttt{b} together. Then we can return the result by appliying the successor operation once to the result. We can express this as a single premise:
+
+\begin{lstlisting}
+a + b => c
+-----------------
+s(a) + b => s(c)
+\end{lstlisting}
+
+Notice that the above is exactly equivalent to the following very simple equation:
+
+$$(a+1) + b = (a+b)+1$$
+
+where $a+b$ is an intermediate value called \texttt{c}, and $a+1$ is the successor of \texttt{a}, thus \texttt{s(a)}.
+
+
+\subsubsection{Termination proof (informal sketch)}
+One might be tempted to wonder how such a blatantly cyclical definition would ever be able to reach any useful conclusion. After all we are defining addition in terms of another addition: does this not equate to ``looping forever''?
+
+We can show, inductively, that we have no infinite looping. Let us define the \texttt{height} of an addition \texttt{a + b} as the number of applications of \texttt{s} within \texttt{a}. For example:
+
+\begin{itemize}
+\item \texttt{height(z + z)} is $0$
+\item \texttt{height(z + s(z))} is $0$
+\item \texttt{height(s(z) + z)} is $1$
+\end{itemize}
+
+The \textbf{base case} of our proof is that of height equal to $0$. This means that our addition takes \texttt{z} as a first parameter, and thus rule 
+
+\begin{lstlisting}
+-----------
+z + a => a
+\end{lstlisting}
+
+can be applied. Addition terminates in this case, yielding the second term as a result.
+
+The \textbf{inductive case} of our proof is that of height equal to $n>1$. This means that our addition takes \texttt{s(a)} as a first parameter. We cannot apply the previous rule, but we can apply the second:
+
+\begin{lstlisting}
+a + b => c
+-----------------
+s(a) + b => s(c)
+\end{lstlisting}
+
+This rule will terminate only if \texttt{a + b => c} terminates. Given that \texttt{height(a + b)} is $n-1$, because of the induction hypothesis we can assume its evaluation will terminate as well. Evaluation of \texttt{s(c)} is just a trivial step which does not pose any risk of recursive behaviour, and thus we can conclude that indeed the process will terminate.
+
+\subsubsection{Example of addition execution}
+Consider the following addition: \texttt{s(s(z)) + s(z)}. Let us see how it is evaluated. First we see which rules we can apply. Clearly the first term is not \texttt{z}, thus we must apply
+
+\begin{lstlisting}
+a + b => c
+-----------------
+s(a) + b => s(c)
+\end{lstlisting}
+
+where \texttt{a = s(z)} and \texttt{b = s(z)}. Let us perform this replacement:
+
+\begin{lstlisting}
+s(z) + s(z) => c
+-----------------
+s(s(z)) + s(z) => s(c)
+\end{lstlisting}
+
+We cannot directly determine \texttt{c}, but we can use \texttt{s(z) + s(z)} as the current expression to evaluate.  Since the first operand of the intermediate addition is not \texttt{z}, then we have to apply the same rule again, this time with \texttt{a = z} and \texttt{b = s(z)}:
+
+\begin{lstlisting}
+z + s(z) => c'
+--------------------
+s(z) + s(z) => s(c')
+---------------------- c = s(c')
+s(s(z)) + s(z) => s(c)
+\end{lstlisting}
+
+Notice that the result of the second application of the rule will yield its own result, which we called \texttt{c'} to disambiguate it with the result of the first application. The successor of the result of the second application will be the result of the intermediate application of the first rule, thus we could also write:
+
+\begin{lstlisting}
+z + s(z) => c'
+--------------------
+s(z) + s(z) => s(c')
+---------------------------
+s(s(z)) + s(z) => s(s(c'))
+\end{lstlisting}
+
+Now we can apply rule 
+
+\begin{lstlisting}
+-----------
+z + a => a
+\end{lstlisting}
+
+to the current expression to evaluate, which is \texttt{z + s(z)}, for \texttt{a = s(z)}. This leads us to finding out that \texttt{c' = a = s(z)}, thus yielding:
+
+\begin{lstlisting}
+z + s(z) => s(z)
+--------------------
+s(z) + s(z) => s(s(z))
+---------------------------
+s(s(z)) + s(z) => s(s(s(z)))
+\end{lstlisting}
+
+Let us take a quick step back and realize that \texttt{s(s(z))} is the successor of the succcessor of zero, that is $2$, and \texttt{s(z)} is the successor of zero, that is $1$. Their sum, as computed by our system, is \texttt{s(s(s(z)))}, that is $3$, precisely as we would have expected given common arithmetic sense.
+
+
+\subsection{Multiplication as repeated addition}
+Multiplication is defined in a way that is very similar to addition. We start with a base case of multiplication that we know how to solve immediately. From basic arithmetic we know that multiplication of zero and an arbitrary number always yields zero, thus:
+
+\begin{lstlisting}
+-----------
+z * a => z
+\end{lstlisting}
+
+For the intermediate step, we will use the same decomposition technique that we used for addition. The input pattern will thus be multiplication of a number greater than zero, \texttt{s(a)}, and an arbitrary number \texttt{b}: \texttt{s(a) * b}. To solve this multiplication, first we will multiply \texttt{a} and \texttt{b} together (remember the termination proof that we saw for addition: \texttt{height(a) < height(s(a))}, therefore we expect this smaller multiplication to terminate), and then we add \texttt{b} to the result:
+
+\begin{lstlisting}
+a * b => c
+c + b => d
+--------------
+s(a) * b => d
+\end{lstlisting}
+
+Notice that the above is exactly equivalent to the following very simple equation:
+
+$$(a+1) \times b = (a \times b) + b$$
+
+where $a \times b$ is an intermediate value called \texttt{c}.
+
+
+\subsection{Resolving nested operations}
+So far we have only defined operators between numbers. As a further level of sophistication, we could define a stronger version of our operations that do not only work with numbers, but rather with arbitrarily nested operations. This means that we wish to be able to support expressions of the form \texttt{a+b+c}, which we currently have not specified how to solve.
+
+We begin with the definition of a new operator which will be responsible for the recursive exploration of an expression in order to resolve its inner operations:
+
+\begin{lstlisting}
+Func = "!" LeftArguments = [] RightArguments = [Expr] Priority = 1 Type = Expr => Num
+\end{lstlisting}
+
+As a base case we can say that if we encounter a number, then \texttt{!} simply returns it as it was:
+
+\begin{lstlisting}
+--------
+!z => z
+
+---------------
+!(s a) => s a
+\end{lstlisting}
+
+The inductive step, on the other hand, works with operations and ensures that both operands have been simplified to numbers before performing the actual operation:
+
+\begin{lstlisting}
+!a => a'
+!b => b'
+a' + b' => c
+--------------
+!(a + b) => c
+
+!a => a'
+!b => b'
+a' * b' => c
+--------------
+!(a * b) => c
+\end{lstlisting}
+
+The two rules above are relatively straightforward, and require no change in the definition of addition and multiplication. Thanks to these rules, we can now solve a complex input expression such as \texttt{!(((s(s(z))) * (s(s(z)))) * (s(s(z)) + s(z)))}, equivalent to $2 * 2 * (2 + 1)$), and obtaining as a result the expected \texttt{(s(s(s(s(s(s(s(s(s(s(s(sz))))))))))))}, which is $12$.
+
+
+\subsection{Closing considerations}
+The natural numbers example that we have just seen is very important. Its importance is not of a practical nature, since natural numbers are well known and moreover unary encoding is one of the least efficient ways to manipulate numbers. The importance of the example above is rather conceptual: armed with only the most basic constructs of logical derivation, a highly abstract concept, we have built something that is very concrete and apparently unrelated.
+
+The process of logical derivation is indeed very powerful. In the following we will use it to define increasingly complex systems. We will begin by reformulating integer numbers with the well-known \textit{binary encoding}. Then we will show how to manipulate sequences of things, in order to dispose over more complex data structures. Finally, we will build a small imperative language interpreter and its type system. Finally, we will explore the consequences of having implemented a full-blown programming language within our logical system.

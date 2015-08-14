@@ -1,0 +1,81 @@
+\select@language {english}
+\contentsline {chapter}{\numberline {1}Introduction}{5}
+\contentsline {subsection}{\numberline {1.0.1}Why bother?}{5}
+\contentsline {subsection}{\numberline {1.0.2}Structure of the document}{6}
+\contentsline {section}{\numberline {1.1}An informal introduction to logic}{7}
+\contentsline {paragraph}{A concrete example}{7}
+\contentsline {section}{\numberline {1.2}Inference systems}{9}
+\contentsline {subsection}{\numberline {1.2.1}Syntax for symbol definitions}{9}
+\contentsline {paragraph}{Data symbols}{9}
+\contentsline {paragraph}{Function symbols}{10}
+\contentsline {subsection}{\numberline {1.2.2}Syntax and semantics of rules}{11}
+\contentsline {paragraph}{Main input}{12}
+\contentsline {section}{\numberline {1.3}A first example: boolean expressions}{13}
+\contentsline {paragraph}{Symbols}{13}
+\contentsline {paragraph}{Rules}{14}
+\contentsline {paragraph}{Example run}{15}
+\contentsline {chapter}{\numberline {2}Numbers}{19}
+\contentsline {section}{\numberline {2.1}Peano numbers}{20}
+\contentsline {subsection}{\numberline {2.1.1}Inductive definition of natural numbers}{20}
+\contentsline {subsection}{\numberline {2.1.2}Expressions of natural numbers}{21}
+\contentsline {subsection}{\numberline {2.1.3}Addition as repeated succession}{22}
+\contentsline {subsubsection}{Termination proof (informal sketch)}{23}
+\contentsline {subsubsection}{Example of addition execution}{24}
+\contentsline {subsection}{\numberline {2.1.4}Multiplication as repeated addition}{25}
+\contentsline {subsection}{\numberline {2.1.5}Resolving nested operations}{26}
+\contentsline {subsection}{\numberline {2.1.6}Closing considerations}{27}
+\contentsline {section}{\numberline {2.2}Binary numbers}{27}
+\contentsline {subsection}{\numberline {2.2.1}Performance considerations of unary encoding}{28}
+\contentsline {subsection}{\numberline {2.2.2}Binary encoding}{28}
+\contentsline {subsection}{\numberline {2.2.3}Addition}{29}
+\contentsline {subsection}{\numberline {2.2.4}Performance considerations of binary encoding}{31}
+\contentsline {chapter}{\numberline {3}Data structures}{33}
+\contentsline {section}{\numberline {3.1}List manipulation}{33}
+\contentsline {subsection}{\numberline {3.1.1}Lists of integers}{34}
+\contentsline {subsection}{\numberline {3.1.2}List querying}{34}
+\contentsline {paragraph}{Length of a list}{35}
+\contentsline {paragraph}{Searching}{36}
+\contentsline {paragraph}{Transforming}{37}
+\contentsline {paragraph}{Sorting}{38}
+\contentsline {paragraph}{Conclusions}{43}
+\contentsline {section}{\numberline {3.2}Binary search trees}{44}
+\contentsline {subsection}{\numberline {3.2.1}Insertion}{45}
+\contentsline {subsection}{\numberline {3.2.2}Search}{47}
+\contentsline {subsection}{\numberline {3.2.3}Performance}{49}
+\contentsline {section}{\numberline {3.3}Balanced binary trees}{50}
+\contentsline {paragraph}{Structure of 2-3-4 trees}{51}
+\contentsline {paragraph}{Insertion}{52}
+\contentsline {paragraph}{A coward's approach to search}{59}
+\contentsline {paragraph}{A courageous approach to search}{59}
+\contentsline {chapter}{\numberline {4}Syntax and semantics of a programming language}{63}
+\contentsline {section}{\numberline {4.1}Evaluating expressions}{63}
+\contentsline {subsection}{\numberline {4.1.1}Evaluating simple arithmetic expressions}{63}
+\contentsline {subsection}{\numberline {4.1.2}Evaluating expressions with memory}{67}
+\contentsline {subsection}{\numberline {4.1.3}Evaluating statements}{69}
+\contentsline {subsection}{\numberline {4.1.4}Evaluating control flow statements}{71}
+\contentsline {paragraph}{Conclusions}{73}
+\contentsline {chapter}{\numberline {5}Closing remarks}{75}
+\contentsline {section}{\numberline {5.1}Fragments of computability}{75}
+\contentsline {subsection}{\numberline {5.1.1}Halting problem}{76}
+\contentsline {paragraph}{G\IeC {\"o}del numbering}{76}
+\contentsline {paragraph}{Halting}{77}
+\contentsline {subsection}{\numberline {5.1.2}Some desperate grasping}{79}
+\contentsline {paragraph}{Computers are really finite}{81}
+\contentsline {subsection}{\numberline {5.1.3}Some equivalences and translations}{82}
+\contentsline {section}{\numberline {5.2}Conclusion}{86}
+\contentsline {chapter}{\numberline {6}Conclusions}{89}
+\contentsline {chapter}{Appendices}{91}
+\contentsline {chapter}{\numberline {A}A not so small imperative language}{93}
+\contentsline {subsection}{\numberline {A.0.1}Operational semantics of C-{}-}{94}
+\contentsline {subsection}{\numberline {A.0.2}Evaluating a C-{}- program}{96}
+\contentsline {subsection}{\numberline {A.0.3}Variable definition}{97}
+\contentsline {subsection}{\numberline {A.0.4}Variable assignment}{98}
+\contentsline {subsubsection}{Atomic values}{98}
+\contentsline {subsubsection}{Arithmetic expression evaluation}{99}
+\contentsline {subsubsection}{Boolean expression evaluation}{100}
+\contentsline {subsubsection}{Variable lookup}{101}
+\contentsline {subsubsection}{Evaluation of the assignment}{101}
+\contentsline {subsection}{\numberline {A.0.5}Evaluation of the If-Else statement}{102}
+\contentsline {subsection}{\numberline {A.0.6}Evaluation of the While statement}{103}
+\contentsline {subsection}{\numberline {A.0.7}Evaluation of the For statement}{104}
+\contentsline {subsection}{\numberline {A.0.8}Conclusions}{104}

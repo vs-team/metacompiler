@@ -1,0 +1,569 @@
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (MiKTeX 2.9) (preloaded format=pdflatex 2015.1.6)  10 FEB 2015 13:41
+entering extended mode
+**Modulewijzer*TINWIS07.tex
+
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\Modulewijzer TINWIS07.tex"
+LaTeX2e <2011/06/27>
+Babel <v3.8m> and hyphenation patterns for english, afrikaans, ancientgreek, ar
+abic, armenian, assamese, basque, bengali, bokmal, bulgarian, catalan, coptic, 
+croatian, czech, danish, dutch, esperanto, estonian, farsi, finnish, french, ga
+lician, german, german-x-2013-05-26, greek, gujarati, hindi, hungarian, iceland
+ic, indonesian, interlingua, irish, italian, kannada, kurmanji, latin, latvian,
+ lithuanian, malayalam, marathi, mongolian, mongolianlmc, monogreek, ngerman, n
+german-x-2013-05-26, nynorsk, oriya, panjabi, pinyin, polish, portuguese, roman
+ian, russian, sanskrit, serbian, slovak, slovenian, spanish, swedish, swissgerm
+an, tamil, telugu, turkish, turkmen, ukenglish, ukrainian, uppersorbian, usengl
+ishmax, welsh, loaded.
+("C:\SD\Program Files\Miktex\tex\latex\base\article.cls"
+Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
+("C:\SD\Program Files\Miktex\tex\latex\base\size10.clo"
+File: size10.clo 2007/10/19 v1.4h Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+("C:\SD\Program Files\Miktex\tex\latex\geometry\geometry.sty"
+Package: geometry 2010/09/12 v5.6 Page Geometry
+
+("C:\SD\Program Files\Miktex\tex\latex\graphics\keyval.sty"
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks14
+)
+("C:\SD\Program Files\Miktex\tex\generic\oberdiek\ifpdf.sty"
+Package: ifpdf 2011/01/30 v2.3 Provides the ifpdf switch (HO)
+Package ifpdf Info: pdfTeX in PDF mode is detected.
+)
+("C:\SD\Program Files\Miktex\tex\generic\oberdiek\ifvtex.sty"
+Package: ifvtex 2010/03/01 v1.5 Detect VTeX and its facilities (HO)
+Package ifvtex Info: VTeX not detected.
+)
+("C:\SD\Program Files\Miktex\tex\generic\ifxetex\ifxetex.sty"
+Package: ifxetex 2010/09/12 v0.6 Provides ifxetex conditional
+)
+\Gm@cnth=\count87
+\Gm@cntv=\count88
+\c@Gm@tempcnt=\count89
+\Gm@bindingoffset=\dimen103
+\Gm@wd@mp=\dimen104
+\Gm@odd@mp=\dimen105
+\Gm@even@mp=\dimen106
+\Gm@layoutwidth=\dimen107
+\Gm@layoutheight=\dimen108
+\Gm@layouthoffset=\dimen109
+\Gm@layoutvoffset=\dimen110
+\Gm@dimlist=\toks15
+
+("C:\SD\Program Files\Miktex\tex\latex\geometry\geometry.cfg"))
+("C:\SD\Program Files\Miktex\tex\latex\graphics\graphicx.sty"
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
+
+("C:\SD\Program Files\Miktex\tex\latex\graphics\graphics.sty"
+Package: graphics 2009/02/05 v1.0o Standard LaTeX Graphics (DPC,SPQR)
+
+("C:\SD\Program Files\Miktex\tex\latex\graphics\trig.sty"
+Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
+)
+("C:\SD\Program Files\Miktex\tex\latex\00miktex\graphics.cfg"
+File: graphics.cfg 2007/01/18 v1.5 graphics configuration of teTeX/TeXLive
+)
+Package graphics Info: Driver file: pdftex.def on input line 91.
+
+("C:\SD\Program Files\Miktex\tex\latex\pdftex-def\pdftex.def"
+File: pdftex.def 2011/05/27 v0.06d Graphics/color for pdfTeX
+
+("C:\SD\Program Files\Miktex\tex\generic\oberdiek\infwarerr.sty"
+Package: infwarerr 2010/04/08 v1.3 Providing info/warning/error messages (HO)
+)
+("C:\SD\Program Files\Miktex\tex\generic\oberdiek\ltxcmds.sty"
+Package: ltxcmds 2011/11/09 v1.22 LaTeX kernel commands for general use (HO)
+)
+\Gread@gobject=\count90
+))
+\Gin@req@height=\dimen111
+\Gin@req@width=\dimen112
+)
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\fancyhdr\fancyhdr.sty
+\fancy@headwidth=\skip43
+\f@ncyO@elh=\skip44
+\f@ncyO@erh=\skip45
+\f@ncyO@olh=\skip46
+\f@ncyO@orh=\skip47
+\f@ncyO@elf=\skip48
+\f@ncyO@erf=\skip49
+\f@ncyO@olf=\skip50
+\f@ncyO@orf=\skip51
+)
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\sectionbox\sectionbox.s
+ty
+Package: sectionbox 2005/10/13, v1.01 section boxes for posters (MHFW)
+ ("C:\SD\Program Files\Miktex\tex\latex\base\ifthen.sty"
+Package: ifthen 2001/05/26 v1.1c Standard LaTeX ifthen package (DPC)
+)
+("C:\SD\Program Files\Miktex\tex\latex\tools\calc.sty"
+Package: calc 2007/08/22 v4.3 Infix arithmetic (KKT,FJ)
+\calc@Acount=\count91
+\calc@Bcount=\count92
+\calc@Adimen=\dimen113
+\calc@Bdimen=\dimen114
+\calc@Askip=\skip52
+\calc@Bskip=\skip53
+LaTeX Info: Redefining \setlength on input line 76.
+LaTeX Info: Redefining \addtolength on input line 77.
+\calc@Ccount=\count93
+\calc@Cskip=\skip54
+)
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\fancybox\fancybox.sty
+Package: fancybox 2010/05/15 1.4
+
+Style option: `fancybox' v1.4 <2010/05/15> (tvz)
+\@fancybox=\box26
+\shadowsize=\dimen115
+\@Sbox=\box27
+\do@VerbBox=\toks16
+\the@fancyput=\toks17
+\this@fancyput=\toks18
+\EndVerbatimTokens=\toks19
+\Verbatim@Outfile=\write3
+\Verbatim@Infile=\read1
+) ("C:\SD\Program Files\Miktex\tex\latex\graphics\color.sty"
+Package: color 2005/11/14 v1.0j Standard LaTeX Color (DPC)
+
+("C:\SD\Program Files\Miktex\tex\latex\00miktex\color.cfg"
+File: color.cfg 2007/01/18 v1.5 color configuration of teTeX/TeXLive
+)
+Package color Info: Driver file: pdftex.def on input line 130.
+)
+\sectboxskip=\skip55
+\subsectboxskip=\skip56
+\subsubsectboxskip=\skip57
+\subsectmargin=\skip58
+\subsubsectmargin=\skip59
+\sectsavebox=\box28
+\subsectsavebox=\box29
+\subsubsectsavebox=\box30
+\colboxsep=\skip60
+)
+("C:\SD\Program Files\Miktex\tex\generic\babel\babel.sty"
+Package: babel 2008/07/08 v3.8m The Babel package
+
+*************************************
+* Local config file bblopts.cfg used
+*
+("C:\SD\Program Files\Miktex\tex\latex\00miktex\bblopts.cfg"
+File: bblopts.cfg 2006/07/31 v1.0 MiKTeX 'babel' configuration
+)
+("C:\SD\Program Files\Miktex\tex\generic\babel\dutch.ldf"
+Language: dutch 2005/03/30 v3.8i Dutch support from the babel system
+
+("C:\SD\Program Files\Miktex\tex\generic\babel\babel.def"
+File: babel.def 2008/07/08 v3.8m Babel common definitions
+\babel@savecnt=\count94
+\U@D=\dimen116
+)
+Package babel Info: Making " an active character on input line 132.
+))
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\chngcntr\chngcntr.sty
+Package: chngcntr 2009/09/02 v1.0a change counter resetting
+)
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\cite\cite.sty
+LaTeX Info: Redefining \cite on input line 302.
+LaTeX Info: Redefining \nocite on input line 373.
+Package: cite 2010/09/10  v 5.3
+)
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\url\url.sty
+\Urlmuskip=\muskip10
+Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
+)
+("C:\SD\Program Files\Miktex\tex\latex\base\makeidx.sty"
+Package: makeidx 2000/03/29 v1.0m Standard LaTeX package
+)
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\enumitem\enumitem.sty
+Package: enumitem 2011/09/28 v3.5.2 Customized lists
+\labelindent=\skip61
+\enit@outerparindent=\dimen117
+\enit@toks=\toks20
+\enit@inbox=\box31
+\enitdp@description=\count95
+)
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\tocloft\tocloft.sty
+Package: tocloft 2013/05/02 v2.3f parameterised ToC, etc., typesetting
+Package tocloft Info: The document has section divisions on input line 44.
+\cftparskip=\skip62
+\cftbeforetoctitleskip=\skip63
+\cftaftertoctitleskip=\skip64
+\cftbeforepartskip=\skip65
+\cftpartnumwidth=\skip66
+\cftpartindent=\skip67
+\cftbeforesecskip=\skip68
+\cftsecindent=\skip69
+\cftsecnumwidth=\skip70
+\cftbeforesubsecskip=\skip71
+\cftsubsecindent=\skip72
+\cftsubsecnumwidth=\skip73
+\cftbeforesubsubsecskip=\skip74
+\cftsubsubsecindent=\skip75
+\cftsubsubsecnumwidth=\skip76
+\cftbeforeparaskip=\skip77
+\cftparaindent=\skip78
+\cftparanumwidth=\skip79
+\cftbeforesubparaskip=\skip80
+\cftsubparaindent=\skip81
+\cftsubparanumwidth=\skip82
+\cftbeforeloftitleskip=\skip83
+\cftafterloftitleskip=\skip84
+\cftbeforefigskip=\skip85
+\cftfigindent=\skip86
+\cftfignumwidth=\skip87
+\c@lofdepth=\count96
+\c@lotdepth=\count97
+\cftbeforelottitleskip=\skip88
+\cftafterlottitleskip=\skip89
+\cftbeforetabskip=\skip90
+\cfttabindent=\skip91
+\cfttabnumwidth=\skip92
+)
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\listliketab\listliketab
+.sty
+Package: listliketab 2005/01/09 v1.0a Create list-like tabulars
+ ("C:\SD\Program Files\Miktex\tex\latex\tools\array.sty"
+Package: array 2008/09/09 v2.4c Tabular extension package (FMi)
+\col@sep=\dimen118
+\extrarowheight=\dimen119
+\NC@list=\toks21
+\extratabsurround=\skip93
+\backup@length=\skip94
+)
+\llt@labelwidth=\skip95
+\llt@labelsep=\skip96
+\llt@topsep=\skip97
+\llt@rightmargin=\skip98
+\llt@tab@indent=\skip99
+\llt@bot@sep=\skip100
+\llt@arraystretch=\skip101
+\llt@list@box=\box32
+)
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\xcolor\xcolor.sty
+Package: xcolor 2007/01/21 v2.11 LaTeX color extensions (UK)
+
+("C:\SD\Program Files\Miktex\tex\latex\00miktex\color.cfg"
+File: color.cfg 2007/01/18 v1.5 color configuration of teTeX/TeXLive
+)
+Package xcolor Info: Driver file: pdftex.def on input line 225.
+
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\colortbl\colortbl.sty
+Package: colortbl 2012/02/13 v1.0a Color table columns (DPC)
+\everycr=\toks22
+\minrowclearance=\skip102
+)
+LaTeX Info: Redefining \color on input line 702.
+\rownum=\count98
+Package xcolor Info: Model `cmy' substituted by `cmy0' on input line 1337.
+Package xcolor Info: Model `hsb' substituted by `rgb' on input line 1341.
+Package xcolor Info: Model `RGB' extended on input line 1353.
+Package xcolor Info: Model `HTML' substituted by `rgb' on input line 1355.
+Package xcolor Info: Model `Hsb' substituted by `hsb' on input line 1356.
+Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1357.
+Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1358.
+Package xcolor Info: Model `Gray' substituted by `gray' on input line 1359.
+Package xcolor Info: Model `wave' substituted by `hsb' on input line 1360.
+) ("C:\SD\Program Files\Miktex\tex\latex\tools\tabularx.sty"
+Package: tabularx 1999/01/07 v2.07 `tabularx' package (DPC)
+\TX@col@width=\dimen120
+\TX@old@table=\dimen121
+\TX@old@col=\dimen122
+\TX@target=\dimen123
+\TX@delta=\dimen124
+\TX@cols=\count99
+\TX@ftn=\toks23
+)
+("C:\SD\Program Files\Miktex\tex\latex\graphics\epsfig.sty"
+Package: epsfig 1999/02/16 v1.7a (e)psfig emulation (SPQR)
+\epsfxsize=\dimen125
+\epsfysize=\dimen126
+)
+("C:\SD\Program Files\Miktex\tex\latex\oberdiek\pdflscape.sty"
+Package: pdflscape 2008/08/11 v0.10 Display of landscape pages in PDF (HO)
+
+("C:\SD\Program Files\Miktex\tex\latex\graphics\lscape.sty"
+Package: lscape 2000/10/22 v3.01 Landscape Pages (DPC)
+)
+Package pdflscape Info: Auto-detected driver: pdftex on input line 80.
+)
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\pdfpages\pdfpages.sty
+Package: pdfpages 2013/08/25 v0.4v Insert pages of external PDF documents (AM)
+
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\eso-pic\eso-pic.sty
+Package: eso-pic 2013/10/06 v2.0d eso-pic (RN)
+
+("C:\SD\Program Files\Miktex\tex\generic\oberdiek\atbegshi.sty"
+Package: atbegshi 2011/10/05 v1.16 At begin shipout hook (HO)
+))
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\pdfpages\pppdftex.def
+File: pppdftex.def 2013/08/25 v0.4v Pdfpages driver for pdfTeX (AM)
+)
+\AM@pagebox=\box33
+\AM@toc@title=\toks24
+\c@AM@survey=\count100
+\AM@templatesizebox=\box34
+) ("C:\SD\Program Files\Miktex\tex\latex\float\float.sty"
+Package: float 2001/11/08 v1.3d Float enhancements (AL)
+\c@float@type=\count101
+\float@exts=\toks25
+\float@box=\box35
+\@float@everytoks=\toks26
+\@floatcapt=\box36
+)
+("C:\SD\Program Files\Miktex\tex\latex\multirow\multirow.sty"
+\bigstrutjot=\dimen127
+)
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\latex\rotating\rotating.sty
+Package: rotating 2009/03/28 v2.16a rotated objects in LaTeX
+\c@r@tfl@t=\count102
+\rotFPtop=\skip103
+\rotFPbot=\skip104
+\rot@float@box=\box37
+\rot@mess@toks=\toks27
+)
+\@indexfile=\write4
+
+Writing index file Modulewijzer*TINWIS07.idx
+
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\Modulewijzer TINWIS07.aux"
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\tex/Modulebeschrijving.aux")
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\tex/AlgemeneOmschrijving.aux")
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\tex/Programma.aux")
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\tex/Toetsing.aux"))
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 67.
+LaTeX Font Info:    ... okay on input line 67.
+
+*geometry* driver: auto-detecting
+*geometry* detected driver: pdftex
+*geometry* verbose mode - [ preamble ] result:
+* driver: pdftex
+* paper: a4paper
+* layout: <same size as paper>
+* layoutoffset:(h,v)=(0.0pt,0.0pt)
+* modes: 
+* h-part:(L,W,R)=(72.26999pt, 452.9679pt, 72.26999pt)
+* v-part:(T,H,B)=(72.26999pt, 700.50687pt, 72.26999pt)
+* \paperwidth=597.50787pt
+* \paperheight=845.04684pt
+* \textwidth=452.9679pt
+* \textheight=700.50687pt
+* \oddsidemargin=0.0pt
+* \evensidemargin=0.0pt
+* \topmargin=-37.0pt
+* \headheight=36.0pt
+* \headsep=25.0pt
+* \topskip=10.0pt
+* \footskip=30.0pt
+* \marginparwidth=57.0pt
+* \marginparsep=11.0pt
+* \columnsep=10.0pt
+* \skip\footins=9.0pt plus 4.0pt minus 2.0pt
+* \hoffset=0.0pt
+* \voffset=0.0pt
+* \mag=1000
+* \@twocolumnfalse
+* \@twosidefalse
+* \@mparswitchfalse
+* \@reversemarginfalse
+* (1in=72.27pt=25.4mm, 1cm=28.453pt)
+
+(C:\Users\Giuseppe\AppData\Roaming\MiKTeX\2.9\tex\context\base\supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count103
+\scratchdimen=\dimen128
+\scratchbox=\box38
+\nofMPsegments=\count104
+\nofMParguments=\count105
+\everyMPshowfont=\toks28
+\MPscratchCnt=\count106
+\MPscratchDim=\dimen129
+\MPnumerator=\count107
+\makeMPintoPDFobject=\count108
+\everyMPtoPDFconversion=\toks29
+)
+\AtBeginShipoutBox=\box39
+
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\tex/Voorblad.tex"
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 26.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 26.
+)
+<img/logo.png, id=1, 133.24782pt x 105.39375pt>
+File: img/logo.png Graphic file (type png)
+ <use img/logo.png>
+Package pdftex.def Info: img/logo.png used on input line 74.
+(pdftex.def)             Requested size: 40.76544pt x 32.24394pt.
+ [1{C:/Users/Giuseppe/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map}
+
+ <C:/Users/Giuseppe/OneDrive/Documents/Hogeschool Rotterdam - Giuseppe/Wiskunde
+ 7 - inferentie systemen/Modulewijzer/img/logo.png>]
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\tex/Modulebeschrijving.tex"
+("C:\SD\Program Files\Miktex\tex\latex\base\omscmr.fd")
+Underfull \hbox (badness 10000) in paragraph at lines 42--42
+\OT1/cmr/m/n/10 gram-ming Lan-gu-a-ges.
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 42--42
+\OT1/cmr/m/n/10 Cam-bridge Uni-ver-sity
+ []
+
+File: img/logo.png Graphic file (type png)
+<use img/logo.png>
+Package pdftex.def Info: img/logo.png used on input line 43.
+(pdftex.def)             Requested size: 40.76544pt x 32.24394pt.
+ [1
+
+])
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\tex/AlgemeneOmschrijving.tex"
+Underfull \hbox (badness 10000) in paragraph at lines 7--8
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 10--11
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 20--21
+
+ []
+
+)
+File: img/logo.png Graphic file (type png)
+ <use img/logo.png>
+Package pdftex.def Info: img/logo.png used on input line 90.
+(pdftex.def)             Requested size: 40.76544pt x 32.24394pt.
+ [2
+
+
+]
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\tex/Programma.tex"
+Underfull \hbox (badness 10000) in paragraph at lines 12--13
+
+ []
+
+)
+File: img/logo.png Graphic file (type png)
+ <use img/logo.png>
+Package pdftex.def Info: img/logo.png used on input line 92.
+(pdftex.def)             Requested size: 40.76544pt x 32.24394pt.
+ [3
+
+
+]
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\tex/Toetsing.tex"
+Underfull \hbox (badness 10000) in paragraph at lines 10--11
+
+ []
+
+)
+File: img/logo.png Graphic file (type png)
+ <use img/logo.png>
+Package pdftex.def Info: img/logo.png used on input line 94.
+(pdftex.def)             Requested size: 40.76544pt x 32.24394pt.
+ [4
+
+
+]
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\tex/Bijlage1.tex"
+Underfull \hbox (badness 1102) in paragraph at lines 8--8
+[]|\OT1/cmr/m/n/10 simpel ex-pres-sies be-wer-
+ []
+
+
+Underfull \hbox (badness 1354) in paragraph at lines 10--10
+[]|\OT1/cmr/m/n/10 recursieve ex-pres-sies be-
+ []
+
+
+Underfull \hbox (badness 1354) in paragraph at lines 12--12
+[]|\OT1/cmr/m/n/10 recursieve ex-pres-sies be-
+ []
+
+
+Underfull \hbox (badness 6157) in paragraph at lines 14--14
+[]|\OT1/cmr/m/n/10 bouwen een in-ter-pre-ter
+ []
+
+
+Underfull \hbox (badness 3128) in paragraph at lines 14--14
+\OT1/cmr/m/n/10 voor af-lei-dings-re-gel-sys-te-
+ []
+
+)
+No file Modulewijzer*TINWIS07.ind.
+File: img/logo.png Graphic file (type png)
+<use img/logo.png>
+Package pdftex.def Info: img/logo.png used on input line 109.
+(pdftex.def)             Requested size: 40.76544pt x 32.24394pt.
+ [5
+
+]
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\Modulewijzer TINWIS07.aux"
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\tex/Modulebeschrijving.aux")
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\tex/AlgemeneOmschrijving.aux")
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\tex/Programma.aux")
+("C:\Users\Giuseppe\OneDrive\Documents\Hogeschool Rotterdam - Giuseppe\Wiskunde
+ 7 - inferentie systemen\Modulewijzer\tex/Toetsing.aux")) ) 
+Here is how much of TeX's memory you used:
+ 4700 strings out of 493921
+ 70517 string characters out of 3147675
+ 150440 words of memory out of 3000000
+ 7867 multiletter control sequences out of 15000+200000
+ 6362 words of font info for 23 fonts, out of 3000000 for 9000
+ 841 hyphenation exceptions out of 8191
+ 41i,15n,43p,354b,381s stack positions out of 5000i,500n,10000p,200000b,50000s
+<C:/SD/Program Files
+/Miktex/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/SD/Program Files/Miktex/f
+onts/type1/public/amsfonts/cm/cmbx12.pfb><C:/SD/Program Files/Miktex/fonts/type
+1/public/amsfonts/cm/cmr10.pfb><C:/SD/Program Files/Miktex/fonts/type1/public/a
+msfonts/cm/cmr7.pfb><C:/SD/Program Files/Miktex/fonts/type1/public/amsfonts/cm/
+cmr8.pfb><C:/SD/Program Files/Miktex/fonts/type1/public/amsfonts/cm/cmr9.pfb><C
+:/SD/Program Files/Miktex/fonts/type1/public/amsfonts/cm/cmsy10.pfb>
+Output written on "Modulewijzer TINWIS07.pdf" (6 pages, 111117 bytes).
+PDF statistics:
+ 52 PDF objects out of 1000 (max. 8388607)
+ 0 named destinations out of 1000 (max. 500000)
+ 6 words of extra memory for PDF output out of 10000 (max. 10000000)
+

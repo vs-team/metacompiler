@@ -1,0 +1,450 @@
+Binary search trees suffer from a problem which is known as ``degeneration''. A binary tree is said to be \textit{degenerate} if for each node there is only one non-empty child. This phenomenon happens when the elements inserted do not have a substantially random distribution, that is they are partially ordered. The limit case is the insertion of a sorted sequence such as the numbers from 1 to 10, which results in the following tree:
+
+\begin{lstlisting}
+1
+ \
+  2
+ / \
+    3
+   / \
+      5
+     / \
+        6
+       / \
+          7
+         / \
+            8
+           / \
+              9
+             / \
+               10
+              /  \
+\end{lstlisting}
+
+Search and removal operations in this sort of tree will have $O(N)$ complexity, which is significantly worse than the $O(\log N)$ that we expect from a balanced tree.
+
+In the rest of this section, we will present a new sort of binary trees, 2-3-4 trees, which always remain balanced by only adding elements to the root node and therefore increasing the height of the tree uniformly by one.
+
+
+There are multiple possible implementations of balanced binary trees. We present here 2-3-4 trees as they are very widely used in many common implementation, and are also slightly simpler to describe and relatively simple to implement in our language. A widely used alternative to 2-3-4 trees is \textit{red-black} trees, which are \textit{isomorph} to 2-3-4. In other words, any 2-3-4 tree can be translated to an equivalent red-black tree without loss of structure or information, and vice-versa.
+
+\paragraph{Structure of 2-3-4 trees}
+A 2-3-4 tree does not only have nodes with one value\footnote{\textit{values} are often also called \textit{keys}.} and two children. In a 2-3-4 tree we distinguish three kinds of nodes: 
+\begin{inparaenum}[\itshape i\upshape)]
+\item 2-nodes have one value $k$ and two children $l$ and $r$ such that $\forall k' \in l . k' < k$ and $\forall k' \in r . k' > k$;
+\item 3-nodes have two value $k_1$ and $k_2$ and three children $l$, $m$, and $r$ such that $\forall k' \in l . k' < k_1$, $\forall k' \in r . k' > k_2$, and $\forall k' \in m . k_1 < k' < k_2$;
+\item 4-nodes have three values $k_1$, $k_2$, and $k_3$ and four children $l$, $m_1$, $m_2$, and $r$ such that $\forall k' \in l . k' < k_1$, $\forall k' \in r . k' > k_3$, $\forall k' \in m_1 . k_1 < k' < k_2$, and $\forall k' \in m_2 . k_2 < k' < k_3$.
+\end{inparaenum}
+
+An example of such a tree with a depth of only two could be:
+
+\begin{lstlisting}
+    10 20 
+ /   |    \
+5   17   22 24 29
+\end{lstlisting}
+
+Here the root \texttt{10 20} is a 3-node with two elements, \texttt{10} and \texttt{20}, and three children:
+\begin{inparaenum}[\itshape i\upshape)]
+\item 2-node \texttt{5};
+\item 2-node \texttt{17};
+\item 4-node \texttt{22 24 29}.
+\end{inparaenum}
+
+Our goal is to insert elements in such a manner that the tree maintains its balance, independent of the order of insertion of the elements.
+
+Our implementation of 2-3-4 trees is based on lists of elements. Lists are defined as usual, either a list is empty (\texttt{nil}) or it is the append of an element to a list (\texttt{;}):
+
+\begin{lstlisting}
+Data [] "nil" [] Priority 0 Type List
+Data [ListElem] ";" [List] Priority 100 Type List
+\end{lstlisting}
+
+The elements of the list can either be values (in our case just integers) or children, thus:
+
+\begin{lstlisting}
+<<int>> is ListElem
+BTree is ListElem
+\end{lstlisting}
+
+The tree is defined as either an \texttt{empty} node without values and children, or a proper \texttt{node} that contains a list of values and children:
+
+\begin{lstlisting}
+Data [] "empty" [] Priority 0 Type BTree
+Data [] "node" [List] Priority 0 Type BTree
+\end{lstlisting}
+
+The above definition means that a 2-node with value \texttt{k} and children \texttt{l} and \texttt{r} will be represented as:
+
+\begin{lstlisting}
+node l;k;r;nil
+\end{lstlisting}
+
+a 3-node with values \texttt{k1} and \texttt{k2} and children \texttt{l}, \texttt{m}, and \texttt{r} will be represented as:
+
+\begin{lstlisting}
+node l;k1;m;k2;r;nil
+\end{lstlisting}
+
+and similarly for 4-nodes.
+
+\paragraph{Insertion}
+The main idea behind insertion into a \texttt{2-3-4} tree is that for each node, we:
+\begin{inparaenum}[\itshape i\upshape)]
+\item find the appropriate child where we wish to insert by checking the values inside the node;
+\item insert into that child;
+\item if the child becomes too big (a 5-node, which is not allowed) then we split the node into two smaller nodes and insert the excess value into the current node.
+\end{inparaenum}
+
+Insertion is thus a function that given a tree and an element to add returns the transformed tree:
+
+\begin{lstlisting}
+Func [BTree] "insert" [<<int>>] Priority 0 Class Expr => BTree
+\end{lstlisting}
+
+Insertion into an empty tree is quite simple, in that we add the element between two empty nodes, therefore creating a trivial 2-node. This will only happen during the first insertion, that is when the tree is empty:
+
+\begin{lstlisting}
+----------------------------------------------
+empty insert kv => node (empty;(kv;(empty;nil)))
+\end{lstlisting}
+
+For non-empty trees we will always stop right before the empty children, and we will always insert into leaf nodes. If the node is not a leaf, then we find the appropriate position and insert the new value there with function \texttt{insertInto}. This yields a new tree which needs to be \texttt{split} if its root is too big (a 5-node):
+
+\begin{lstlisting}
+isLeaf l => no
+kv insertInto l => l'
+split l' => res
+----------------------------------------
+(node l) insert kv => res
+\end{lstlisting}
+
+If the node is indeed a leaf, then we find the appropriate position within its list of content and add the element plus a new \texttt{empty} child with the \texttt{insertSorted} function. The node, just like in the previous case, might become too big (a 5-node) as a result of insertion, and may thus need to be \texttt{split}:
+
+\begin{lstlisting}
+isLeaf l => yes
+l insertSorted kv empty => l1
+split l1 => res
+-------------------------------
+(node l) insert kv => res
+\end{lstlisting}
+
+The function that checks whether or not a tree is a leaf takes as input its list of values and children and returns a boolean value:
+
+\begin{lstlisting}
+Func [] "isLeaf" [List] Priority 0 Type Expr => YesNo
+\end{lstlisting}
+
+\texttt{isLeaf} returns \texttt{yes} when the children of the node are all \texttt{empty}. Since we know that this is a balanced tree, then we know that if one child (for example the first) is \texttt{empty}, then all other children will be as well:
+
+\begin{lstlisting}
+---------------------------------
+isLeaf (empty;rest) => yes
+\end{lstlisting}
+
+If the first child of the tre is not \texttt{empty}, then we can be sure that all other children are not empty as well and thus we are not in presence of a leaf:
+
+\begin{lstlisting}
+l != empty
+---------------------------------
+isLeaf (l;rest) => no
+\end{lstlisting}
+
+In case of leaves, we simply\footnote{For a large enough value of ``simply''.} need to find the proper position within the list where to insert our element. The \texttt{insertSorted} will therefore take a list of values and trees plus a value to insert as input, and return another such list:
+
+\begin{lstlisting}
+Func [List] "insertSorted" [<<int>>] Priority 0 Type Expr => List
+\end{lstlisting}
+
+If we reach the end of the list, then we simply add the value followed by the \texttt{empty} tree. The function \texttt{insertSorted} is only called on leaves, thus all children are already \texttt{empty}:
+
+\begin{lstlisting}
+--------------------------------------
+l;nil insertSorted k => l;k;empty;nil
+\end{lstlisting}
+
+If we find the element already in the tree, then we do nothing and return the original tree untouched:
+
+\begin{lstlisting}
+x == k
+--------------------------------
+l;x;xs insertSorted k => l;x;xs
+\end{lstlisting}
+
+If the element to insert is bigger than the current value in the list, then we have found the point of insertion. We put the new element right before the bigger element and between them we put an \texttt{empty} child:
+
+\begin{lstlisting}
+x > k
+----------------------------------------
+l;x;xs insertSorted k => l;k;empty;x;xs
+\end{lstlisting}
+
+If the element to insert is smaller than the current value in the list, then we will have to go on looking in the rest of the list. We perform the insertion in the rest of the list, which then becomes the updated tail\footnote{\textit{Tail} is a common name given to ``the rest of a recursively defined list''.}:
+
+\begin{lstlisting}
+x < k
+xs insertSorted k => xs'
+--------------------------------
+l;x;xs insertSorted k => l;x;xs'
+\end{lstlisting}
+
+
+Insertion into non-leaf elements is very similar to \texttt{insertSorted}. The first aspect of \texttt{insertInto} is that it looks for the right position in the list of values and children where the insertion needs to happen. Whereas \texttt{insertSorted} at that point simply adds two elements to the list, \texttt{insertInto} recursively calls \texttt{insert} into the appropriate child. We know that the child where we perform the recursive insertion is not \texttt{empty} because otherwise \texttt{insertSorted} would have been called instead of \texttt{insertInto}.
+
+\texttt{insertInto} takes as input the value to insert and the list where the insertion needs to take place, and returns the list with the value added:
+
+\begin{lstlisting}
+Func [<<int>>] "insertInto" [List] Priority 0 Type Expr => List
+\end{lstlisting}
+
+The base case of \texttt{insertInto} happens when we reach the last child of the input list. In this case we cannot proceed forward, and therefore we will have to perform the insertion into the last child itself. After the recursive insertion step is performed, the child is updated and we need to \texttt{merge} it back into the original list:
+
+\begin{lstlisting}
+l insert k => l'
+merge l' nil => l''
+---------------------------
+k insertInto l;nil => l''
+\end{lstlisting}
+
+If the value we are trying to insert is smaller than the current value, then we have found the position of insertion and perform the \texttt{insert} and the \texttt{merge} steps precisely like we did for the previous case:
+
+\begin{lstlisting}
+x > k
+l insert k => l'
+merge l' x;xs => l''
+---------------------------
+k insertInto l;x;xs => l''
+\end{lstlisting}
+
+If we find the value we are trying to insert, then we simply return the original list unchanged:
+
+\begin{lstlisting}
+x == k
+------------------------------
+k insertInto l;x;xs => l;k;xs
+\end{lstlisting}
+
+If the value we are trying to insert is bigger than the current value, then we try to insert it at a later position with a recursive call to \texttt{insertInto} the tail of the list \texttt{xs}:
+
+\begin{lstlisting}
+x < k
+k insertInto xs => xs'
+-------------------------------
+k insertInto l;x;xs => l;x;xs'
+\end{lstlisting}
+
+The role of \texttt{split} is extremely important. After insertion, we may get a 5-node, which is not allowed. Split therefore takes as input a list of values and nodes, and returns a 2-3-4 tree where the eventual 5-nodes have been split:
+
+\begin{lstlisting}
+Func [] "split" [List] Priority 0 Class Expr => BTree
+\end{lstlisting}
+
+If \texttt{split} encounters a 2-node (list of three elements), 3-node (list of five elements), or 4-node (list of seven elements), then it simply ``wraps'' the list into a single node and returns the node as the resulting tree:
+
+\begin{lstlisting}
+------------------------------------------
+split l;(k;(r;nil)) => node l;(k;(r;nil))
+
+-------------------------------------------------------------
+split l;(k1;(m;(k2;(r;nil)))) => node l;(k1;(m;(k2;(r;nil))))
+
+------------------------------------------------------------------------
+split l;(k1;(l_m;(k2;(r_m;(k3;(r;nil)))))) => node l;(k1;(l_m;(k2;(r_m;(k3;(r;nil))))))
+\end{lstlisting}
+
+If the list is a 5-node, then it contains nine elements. We take the middle value as a \textit{pivot}, and use the first three elements of the list as a 2-node and the remaining five elements of the list as a 3-node. We then return a 2-node where the newly created elements are the left and right child and the \textit{pivot} is the value:
+
+\begin{lstlisting}
+l' := node l;(k1;(l_m;nil))
+r' := node m;(k3;(r_m;(k4;(r;nil))))
+----------------------------------------------------------------------------
+split l;(k1;(l_m;(k2;(m;(k3;(r_m;(k4;(r;nil)))))))) => node l';(k2;(r';nil))
+\end{lstlisting}
+
+
+After insertion we always perform a \texttt{split}. The fact that we just performed an insertion means that the sub-tree is now bigger by one element. The fact that we just \texttt{split} means that if we find a 2-node then this node was just split and therefore its single element should be added to the current list of elements, thereby promoting it by one level and therefore potentially propagating the excess size to the parent node. This way, if we need to create a new node, we keep sending new elements to parent nodes until we reach the root. When we split the root, then \textit{the whole tree} has grown by one level. This will always keep the tree perfectly balanced.
+
+\texttt{merge} takes as input a tree (where the insertion just took place) and the list of elements where the node needs to be merged, and returns a new list of elements where the input tree has been added:
+
+\begin{lstlisting}
+Func [] "merge" [BTree List] Priority 0 Type Expr => List
+\end{lstlisting}
+
+If we find a 2-node, then we know that it has just been split. This means that we effectively promote its value to the current level:
+
+\begin{lstlisting}
+---------------------------------------
+merge (node l;(k;(r;nil))) xs => l;(k;(r;xs))
+\end{lstlisting}
+
+If we find a 3-node or a 4-node (in general a node where the input list is longer than four elements) then we simply add this node as a single child of the list to return:
+
+\begin{lstlisting}
+--------------------------------------------------
+merge (node l;(k1;(m;(k2;rs)))) xs => (node l;(k1;(m;(k2;rs))));xs
+\end{lstlisting}
+
+
+Let us now try to visualize\footnote{``Try'' is the keyword here.} this process. We will consider the most interesting path of insertion, that is insertion into a tree which needs to grow in height by one.
+
+The initial tree, where we shall insert the value 9, is:
+
+\begin{lstlisting}
+   1  3  5
+ /  |   |  \
+0   2   4  6 7 8
+\end{lstlisting}
+
+The initial call to \texttt{insert} processes the root of the tree. Since the root is not a leaf (all its children are non-empty), then it will perform an \texttt{insertInto} followed by a \texttt{split}.
+
+\texttt{insertInto} finds that 9 is bigger than all elements of the root, thus insertion needs to happen in the right-most child: \texttt{6 7 8}. This leads us to another call to \texttt{insert} of value 9 into tree, which will then be followed by a call to \texttt{merge}.
+
+\begin{lstlisting}
+  6 7 8
+ /  |  \
+\end{lstlisting}
+
+Since the node is a leaf, then \texttt{insert} calls \texttt{insertSorted}, followed by a \texttt{split}. \texttt{insertSorted} simply places the new value into the right position in the tree:
+
+\begin{lstlisting}
+  6 7 8 9
+ / | | | \
+\end{lstlisting}
+
+The first \texttt{split} creates a new 2-node:
+
+\begin{lstlisting}
+     7
+   /   \
+  6    8 9
+ / \  / | \
+\end{lstlisting}
+
+This tree is sent back to as the result of \texttt{insertInto}, which merges it with the list of values which was the original root of the tree (that is \texttt{|2|4|5|}). \texttt{merge} adds the value of the 2-node as a sibling of the elements of the root, since it recognizes the result of a succesful split. The resulting tree (not yet valid) is thus:
+
+\begin{lstlisting}
+   1  3  5  7
+ /  |   |  |  \
+0   2   4  6  8 9
+\end{lstlisting}
+
+This is returned as the result of \texttt{insertInto}, which is then processed by the last call to \texttt{split}. Since \texttt{split} finds a 5-node, it proceeds with its splitting and returns the result as the final tree:
+
+\begin{lstlisting}
+         3
+      /     \
+     /       \
+   1        5  7
+ /   \     /  |  \
+0     2   4   6  8 9
+\end{lstlisting}
+
+This elegant algorithm has thus managed to push the excess elements back up until the root was reached, therefore performing the final split at the root instead of one of the leaves and thus all nodes increase by one level of height instead of just a few, which would progressively unbalance the tree. Notice that the nodes of the resulting tree are all 2-nodes or 3-nodes, therefore it will take a few more insertions (at least three) before we can increase the height of the tree yet again.
+
+
+\paragraph{A coward's approach to search}
+We now quickly conclude the section by showing a ``lazy'' (in the sense that we use very simple predicates and some code duplication) approach to lookup. We define function \texttt{contains} which determines whether or not a value is present within the tree:
+
+\begin{lstlisting}
+Func [] "contains" [BTree <<int>>] Priority 0 Type Expr => Bool
+\end{lstlisting}
+
+The trivial case is that the search has ended up in an empty tree. In this case we simply return a negative result:
+
+\begin{lstlisting}
+-----------------------
+contains empty k => no
+\end{lstlisting}
+
+If we have found a two-node, then we check whether the value of the node is the one we are looking for. If this is the case, then we can return a positive result:
+
+\begin{lstlisting}
+x == k
+-----------------------------------
+contains (node l;x;r;nil) k => yes
+\end{lstlisting}
+
+If the value of the node is bigger (smaller) than the searched value, then we proceed with a recursive search in the left (right) child:
+
+\begin{lstlisting}
+k < x
+contains l key => res
+----------------------------------
+contains node(l;x;r;nil) k => res
+
+k > x
+contains r key => res
+----------------------------------
+contains node(l;x;r;nil) k => res
+\end{lstlisting}
+
+Similarly, for 3-nodes we need to find the proper interval where search must recursively continue:
+
+\begin{lstlisting}
+key > x1
+key < x2
+contains m k => res
+------------------------------------------
+contains node(l;x1;m;x2;r;nil) k => res
+\end{lstlisting}
+
+The rest would need to be written by hand.
+
+\paragraph{A courageous approach to search}
+The above is perhaps useful for illustration purposes. As an alternative, we could write a recursive search functions similar to \texttt{insertSorted} or \texttt{insertInto}.
+
+Containment fails immediately on an \texttt{empty} sub-tree:
+
+\begin{lstlisting}
+-----------------------
+contains empty k => no
+\end{lstlisting}
+
+On a non-empty \texttt{node} we invoke auxiliary function \texttt{containsIterate}, which simply takes a list of elements instead of a tree as a parameter:
+
+\begin{lstlisting}
+Func [] "containsIterate" [List <<int>>] Priority 0 Type Expr => Bool
+\end{lstlisting}
+
+\begin{lstlisting}
+containsIterate l k => res
+---------------------------
+contains node l k => res
+\end{lstlisting}
+
+\texttt{containsIterate} defaults to searching in the right-most child if no other suitable children have been found so far:
+
+\begin{lstlisting}
+contains r k => res
+-------------------------
+containsIterate r;nil k => res
+\end{lstlisting}
+
+If the current value of the list is equal to the value we are searching, then search has been concluded positively:
+
+\begin{lstlisting}
+k = x
+--------------------------------
+containsIterate l;x;xs k => yes
+\end{lstlisting}
+
+If the current value of the list is bigger than the value we are searching, then we have found the child where search needs to continue recursively:
+
+\begin{lstlisting}
+k < x
+contains l k => res
+--------------------------------
+containsIterate l;x;xs k => res
+\end{lstlisting}
+
+If the current value of the list is smaller than the value we are searching, then we have not yet found the child where search needs to recurse, and we must continue iterating the elements of the list:
+
+\begin{lstlisting}
+k > x
+containsIterate xs k => res
+--------------------------------
+containsIterate l;x;xs k => res
+\end{lstlisting}
+
+
+This second formulation of search is quite shorter than the previous, and illustrates nicely how a well-though out recursive procedure is often much shorter to write and read \footnote{but perhaps not invent} than lots of repeated, boilerplate code.

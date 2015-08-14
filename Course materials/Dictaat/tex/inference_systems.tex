@@ -1,0 +1,140 @@
+In this section we present a slightly more formal treatment of inference systems. Moreover, we give a clearer syntax for expressing operators and rules. The formalism which we will use, which is also a programming language, is \textit{Meta-Casanova}. Meta-Casanova falls under the broader category of \textit{logic programming languages}, but given its structure and some of its applications it can also be considered a \textit{meta-compiler}.
+
+
+\subsection{Syntax for symbol definitions}
+Defining symbols in Meta-Casanova requires drawing a distinction: some symbols are considered \textit{data}, that is they are just a way to structure information, while other symbols are considered \textit{functions}, that is they are a way to define transformations from propositions to propositions.
+
+\paragraph{Data symbols}
+Data symbols are defined with the following syntax:
+
+\begin{lstlisting}[mathescape=true]
+Data [$\alpha_1$] "$\alpha_2$" [$\alpha_3$] Priority $\alpha_4$ Type $\alpha_5$
+\end{lstlisting}
+
+The $\alpha_i$'s are the arguments of the symbols:
+\begin{description}
+\item[$\alpha_1$] are the arguments that come left of the symbol
+\item[$\alpha_2$] is the name of the symbol
+\item[$\alpha_3$] are the arguments that come right of the symbol
+\item[$\alpha_4$] is the priority of the symbol
+\item[$\alpha_5$] is the type of the symbol
+\end{description}
+
+Examples of such a definition could be:
+
+\begin{lstlisting}
+Data [] "TRUE" [] Priority 10000 Type Expr
+Data [Expr] "|" [Expr] Priority 10 Type Expr
+\end{lstlisting}
+
+the above come from the boolean expressions sample, which will be discussed in depth in a further chapter. The first line defines the \texttt{TRUE} symbols, which has no arguments left or right (it is just a value), has a very high priority (which does not matter given that this symbol has no parameters), and which is of type \texttt{Value}. The second line defines an \textit{or}-style operator that takes an \texttt{Expr} to the left, an \texttt{Expr} to the right, has a priority of 10, and is an expression itself. 
+
+With the definitions above we can write a proposition such as \texttt{TRUE | TRUE}, which would be perfectly valid. Associativity is by default to the right, thus \texttt{TRUE | TRUE | TRUE} is equivalent to \texttt{TRUE | (TRUE | TRUE)}. We can modify the default associativity by adding a last parameter of:
+
+\begin{lstlisting}
+Data [Expr] "|" [Expr] Priority 10 Type Expr Associativity Left
+\end{lstlisting}
+
+We might even go as fast as wanting to re-define \texttt{TRUE} to a new type, because indeed we could say that \texttt{TRUE} is more a value than an expression:
+
+\begin{lstlisting}
+Data [] "TRUE" [] Priority 10000 Type Value
+\end{lstlisting}
+
+With the above definition it becomes impossible to write expressions such as \texttt{TRUE | TRUE}: the compiler will refuse this as invalid code, because \texttt{|} expects arguments of type \texttt{Expr} but it is instead given arguments of type \texttt{Value}. We can say:
+
+\begin{lstlisting}
+Value is Expr
+\end{lstlisting}
+
+to inform the compiler that whenever an \texttt{Expr} is expected, then we can also give a \texttt{Value} without issues. This can be considered a form of \textit{inheritance} such as that found and used in object-oriented languages.
+
+
+\paragraph{Function symbols}
+Function symbols are defined with the following syntax:
+
+\begin{lstlisting}[mathescape=true]
+Func [$\alpha_1$] "$\alpha_2$" [$\alpha_3$] Priority $\alpha_4$ Type $\alpha_5$ => $\alpha_6$
+\end{lstlisting}
+
+These symbols are defined almost identically to data symbols, with the difference that they also specify what is the type ($\alpha_6$) of the data they will return as a result of transformation.
+
+An example of such a definition could be a function that, given a boolean expression, return the corresponding value:
+
+\begin{lstlisting}
+Func [] "eval" [Expr] Priority 1 Type Expr => Value
+\end{lstlisting}
+
+It will now be possible to write \texttt{eval (TRUE | TRUE)}. Of course so far we have only defined the aacceptable \textit{shape} of terms, but we have not yet said anything about how computations happen.
+
+\subsection{Syntax and semantics of rules}
+Rules define how propositions that begin with a \textit{functions} process the \textit{data} that they have as parameters. The rules of an inference system are syntactically quite simple. The simplicity comes from the fact that a rule syntax is only made up of two operators and two additional concepts. The two operators are:
+
+\begin{itemize}
+\item the \textbf{horizontal bar} \texttt{------------}
+\item the \textbf{arrow} \texttt{=>}
+\end{itemize}
+
+Both horizontal bar and implication arrow can be read out loud as ``therefore'', as they both capture a form of implication. The horizontal bar separates the main implication from its premises, and thus operates at a higher level of precedence and abstraction with respect to the arrow. A single inference rule will consist of a series of \textbf{premises} which are separated from the \textbf{main proposition} by the horizontal bar:
+
+\begin{lstlisting}
+PREMISE 1
+PREMISE 2
+...
+PREMISE N
+-----------------
+MAIN PROPOSITION
+\end{lstlisting}
+
+Both individual premises and the main proposition are defined as the \textbf{input} sequence of symbols, separated from the \textbf{output sequence of symbols} by the implication arrow:
+
+\begin{lstlisting}
+INPUT SYMBOLS => OUTPUT SYMBOLS
+\end{lstlisting}
+
+A pattern consists of a series of keywords, operators, and variables, recursively \textbf{applied to each other}. Applied in this case is meant in the sense of function application, as in \texttt{f(3)} where \texttt{f} is applied to three, or \texttt{3+x}, where \texttt{+} is applied to symbol \texttt{3} and variable \texttt{x}. 
+
+For example, with reference to the example above, we might want to define a rule that has no premises as:
+
+\begin{lstlisting}
+------------------------
+eval (TRUE | x) => TRUE
+\end{lstlisting}
+
+The rule above tells us that whenever we encounter \texttt{eval (TRUE | x)} for some \texttt{x} which is left unspecified, then we can directly return \texttt{TRUE}.
+
+A rule with premises, which therefore shall require further nested computation, could be:
+
+\begin{lstlisting}
+eval x => TRUE
+------------------------
+eval (FALSE | x) => TRUE
+\end{lstlisting}
+
+The rule above tells us that whenever we encounter \texttt{eval (FALSE | x)} for some \texttt{x} which is left unspecified, then we need to evaluate premise \texttt{eval x => TRUE}; this premise begins by evaluating \texttt{eval x}, and if it returns \texttt{TRUE} then we proceed to return \texttt{TRUE} as the final result. If the premise returns something else than \texttt{TRUE}, then execution of the rule is interrupted (it is indeed a failure) and no result is returned. To ensure termination we could add another complementary rule:
+
+\begin{lstlisting}
+eval x => FALSE
+------------------------
+eval (FALSE | x) => FALSE
+\end{lstlisting}
+
+Of course we could merge the two rules above into a single rule so that the result of the premise is directly propagated:
+
+\begin{lstlisting}
+eval x => y
+----------------------
+eval (FALSE | x) => y
+\end{lstlisting}
+
+
+\paragraph{Main input}
+The overall input sequence of symbols of the inference system, which can be considered as the \textit{main question} to answer or the \textit{main program} to execute, is just a sequence of symbols without variables such as \texttt{eval TRUE} or \texttt{eval (TRUE | TRUE)}. Meta-Casanova will return a list of the sequences of symbols that are obtained as a result of applying the rules of the system to the input; the list will either be:
+
+\begin{itemize}
+\item empty if no rule could be applied at some point; this means that the input is \textit{not supported} by our rules
+\item one or more results if the input can be processed without issues
+\item undefined if the program keeps looping forever
+\end{itemize}
+
+Note that the possiblity to return multiple results is very important to support algorithms such as \textit{backtracking} or similar searches, where multiple possible branches of derivation are followed simultaneously to see how many of them will reach an answer. This specific aspect means that the language behaviour can be considered as a sort of path-finder
