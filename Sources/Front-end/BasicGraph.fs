@@ -50,17 +50,17 @@ let emptyBasicGraph = { Rules=Map.empty; Clauses=Map.empty; ClausesPerRule=Map.e
 let join (p:Map<'a,'b>) (q:Map<'a,'b>) = 
     [ (Map.toSeq p) ; (Map.toSeq q) ] |> Seq.concat |> Map.ofSeq
 
-let add_rule (rule:BasicExpression<_,_,Literal, Position, Unit>) (rule_path:Scope) (HasScope:bool) ctxt : Rule*List<Clause> =
+let add_rule (rule:BasicExpression<_,_,Literal, Position, Unit>) (rule_path:Scope) (hasScope:bool) ctxt : Rule*List<Clause> =
   let method_path = rule_path.Tail
   match rule with
-  | Application(Implicit, Keyword(FractionLine, _, _) :: (Application(Implicit, Keyword(DoubleArrow, _, _) :: Input :: Output :: [], innerPos, _)) :: clauses, pos, _) ->
-    let Input, Output, clauses = TypeInference.inferTypes Input Output clauses ctxt
+  | Application(Implicit, Keyword(FractionLine, _, _) :: (Application(Implicit, Keyword(DoubleArrow, _, _) :: input :: output :: [], innerPos, _)) :: clauses, pos, _) ->
+    let input, output, clauses = TypeInference.inferTypes input output clauses ctxt
     let rule = { 
         Position = pos
-        Input    = Input
-        Output   = Output
+        Input    = input
+        Output   = output
         Scope    = rule_path
-        HasScope = HasScope }
+        HasScope = hasScope }
     let clauses:List<Clause> =  
           [ for c in clauses do
               match c with
@@ -95,8 +95,8 @@ let process_rules (path:List<int>) (rules:List<BasicExpression<_,_,Literal,Posit
           self,true
         | self -> self,false
       match self with
-      | Application(Implicit, Keyword(FractionLine, _, _) :: (Application(Implicit, Keyword(DoubleArrow, _, _) :: Input :: Output, clausesPos, _)) :: clauses, pos, _) ->
-        let InputKeyword = extractLeadingKeyword Input
+      | Application(Implicit, Keyword(FractionLine, _, _) :: (Application(Implicit, Keyword(DoubleArrow, _, _) :: input :: output, clausesPos, _)) :: clauses, pos, _) ->
+        let inputKeyword = extractLeadingKeyword input
         let new_rule = (add_rule self (Scope path') HasScope ctxt)
         lst := new_rule  :: !lst
       | _ -> failwithf "Malformed rule @ %A" self.DebugInformation

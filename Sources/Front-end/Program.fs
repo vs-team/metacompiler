@@ -105,31 +105,31 @@ let main argv =
 //          "Test/test.mc", "debug"
 //      "CNV3/Basics.mc", "test"
 // converted to new keyword syntax:
-//      "Peano numbers", "run"
-      "CodegenTest/ListTest.mc", "length 5::(4::(3::(2::(1::nil))))"
-//      "Lists", "plus 0;1;2;3;nil 10"
-//      "Lists", "length 0;1;2;3;nil"
-//      "Lists", "contains 0;1;2;3;nil 2"
-//      "Lists", "removeOdd 0;1;2;3;nil"
-//      "Lists", "add 0;1;2;3;nil"
+//      "PeanoNumbers/transform.mc", "run"
+//      "CodegenTest/ListTest.mc", "length 5::(4::(3::(2::(1::nil))))"
+//      "Lists/transform.mc", "plus 0;1;2;3;nil 10"
+//      "Lists/transform.mc", "length 0;1;2;3;nil"
+//      "Lists/transform.mc", "contains 0;1;2;3;nil 2"
+//      "Lists/transform.mc", "removeOdd 0;1;2;3;nil"
+//      "Lists/transform.mc", "add 0;1;2;3;nil"
 //
 //      "stsil/transform.mc", "dda lin snoc 3 snoc 2 snoc 1"
 //      
-//      "Eval without memory", "run"
-//      "Eval with readonly memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
-//      "Eval with memory", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
-//      "Eval with memory and control flow", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
-//
-//      "Binary trees", "run"
-//      "Boolean expressions", "run"
-//
-//
-//      "Trees 234", @"main"
-//
-//      "Lambda calculus", "run"
+//      "Eval without memory/transform.mc", "run"
+//      "Eval with readonly memory/transform.mc", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
+//      "Eval with memory/transform.mc", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
+//      "Eval with memory and control flow/transform.mc", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
 
-
-//      "Generic lists", @"run"
+//      "Binary trees/transform.mc", "run"
+//      "Boolean expressions/transform.mc", "run"
+//
+//
+//      "Trees 234/transform.mc", @"main"
+//
+//      "Lambda calculus/transform.mc", "run"
+//
+//      "GenericLists/transform.mc", @"length 0::1::2::3::nil"
+//      "GenericLists/transform.mc", @"length ""0""::""1""::""2""::""3""::nil"
       
 // not yet converted to new keyword syntax:
 

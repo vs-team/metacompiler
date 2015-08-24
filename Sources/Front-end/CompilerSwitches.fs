@@ -3,10 +3,10 @@
 let numProfilerRuns = 0
 
 let printExpressionTree = false
-let flushCSFileOnError = false
-let generateLineDirectives = false
+let flushCSFileOnError = true
+let generateLineDirectives = true
 
-let useGraphBasedCodeGenerator = true
+let useGraphBasedCodeGenerator = false
 
 let optimizeDirectParentCall = true
 let generateStaticRun = true
