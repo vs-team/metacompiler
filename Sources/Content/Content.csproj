@@ -59,6 +59,9 @@
     <None Include="Content\Cmm\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Content\CNV3\Traverse.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Content\CodegenTest\ListTest.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -137,17 +140,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\CNV3\todo.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\Front-end\bin\Debug\Basics.mc.cs">
-      <Link>Basics.mc.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\test.mc.cs">
-      <Link>test.mc.cs</Link>
-    </Compile>
-    <Compile Include="..\Front-end\bin\Debug\Tuples.mc.cs">
-      <Link>Tuples.mc.cs</Link>
-    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

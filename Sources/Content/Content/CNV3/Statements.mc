@@ -15,13 +15,12 @@ Data "when" -> Expr : stmt                                                      
 Data "let" -> ID -> EQ -> Expr : Let                                                          Priority 100
 Data "if" -> Expr -> Then -> stmt -> Else -> stmt : stmt                                      Priority 100
 Data "while" -> Expr -> stmt : stmt                                                           Priority 100
-Data "for" -> ID -> In -> Expr -> stmt : stmt                                                       Priority 100
+Data "for" -> ID -> In -> Expr -> stmt : stmt                                                 Priority 100
 Data "yield" -> List[Expr] : stmt                                                             Priority 100
-Data "rule" List[<<string>>] -> stmt -> stmt -> <<ImmutableDictionary<string, Value> >>  -> <<float>> : Rule     Priority 20
+Data "rule" List[<<string>>] -> stmt -> stmt -> <<ImmutableDictionary<string, Value> >>  -> <<float>> : Rule     Priority 20  
 
 Data "unit" : Unit
 Data "State" List[Rule] -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> : GameState   Priority 10
-Func "run" : runnable => GameState
 Func "evalRule" -> Rule -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> : ExecutionRule  => ExecutionResult   Priority 10
 Func "tick" -> List[Rule] -> List[Rule] -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> -> <<float>> : ticker => GameState                      Priority 10
 Func "loopRules" -> List[Rule] -> List[Rule] -> <<int>> -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> -> <<float>> : RuleLooper => GameState  Priority 10
@@ -111,16 +110,16 @@ eval expr ctxt => ($l nil)
 ------------------------------------------
 eval_s (for v in expr b) k ctxt dt => Atomic k ctxt
 
-eval expr (Context locals entity world) => ($l (x :: xs))
+eval expr (Context locals e w) => ($l (x :: xs))
 locals add var x => updatedLocals
 ----------------------------------------------------------------
-eval_s (for ($ var) in expr b) k (Context locals entity world) dt => Atomic b;((for ($ var) in ($l xs) b);k) (Context updatedLocals entity world)
+eval_s (for ($ var) in expr b) k (Context locals e w) dt => Atomic b;((for ($ var) in ($l xs) b);k) (Context updatedLocals e w)
 
 
-eval (b) (Context locals entity world) => c
+eval (b) (Context locals e w) => c
 <<locals.SetItem(a, c)>> => res
 ---------------------------------
-eval_s (let ($a) = b) k (Context locals entity world) dt => Atomic k (Context res entity world)
+eval_s (let ($a) = b) k (Context locals e w) dt => Atomic k (Context res e w)
 
 eval expr ctxt => ($f t)
 <<t <= dt>> == false
@@ -198,10 +197,10 @@ evalRule (rule dom b k locals dt) fields globals => Yield ks values updatedConte
 ----------------------------------------
 updateFields nil nil context => context
 
-entity add f v => updatedEntity
-updateFields fs vs (Context l updatedEntity world) => updatedContext
+e add f v => updatedEntity
+updateFields fs vs (Context l updatedEntity w) => updatedContext
 -------------------------------------------------------------------------------------
-updateFields (f :: fs) (v :: vs) (Context l entity world) => updatedContext
+updateFields (f :: fs) (v :: vs) (Context l e w) => updatedContext
 
 
 evalRule r fields globals => Done (Context newLocals newFields newGlobals)
@@ -254,26 +253,3 @@ tick original rs fields globals dt => s
 loopRules original rs 0 fields globals dt => s
 
 
-p12 := if ($b true) then (wait $f 4.0;yield (($i 5)::($i 0)::nil)) else (wait $f 2.0)
-xs := $l (($i 1) :: ($i 2) :: ($i 3) :: nil)
-p1 := wait $f 3.0
-p2 := wait $f 2.0
-p3 := let $"x" = $i 10
-p4 := yield (($"Test" + $i 5)::($"X" + $i 1)::nil)
-p5 := while ($b true) (wait $f 1.0;p4)
-p6 := yield (($"Test" + $i 1)::($"X" + $i 1)::nil)
-p7 := for $"x" in xs (p1;p6;p2)
-p8 := when $"X" gt $i 1
-p9 := yield (($"Test" + $i 1000)::nil)
-subq := from $"y" in ($l (($i 1)::($i 3)::($i 5)::nil)) nil where $"y" lt $i 5 select $"y"
-subl := let $"subq" = subq
-q := from $"x" in ($l (($i 1)::($i 2)::($i 3)::nil)) (subl::nil) where $"x" gt $i 1 select ($"x" ++ $"subq")
-p10 := let $"q" = q
-p11 := yield (($"Test")::($"q")::nil)
-<<ImmutableDictionary<string, Value>.Empty>> add "Test" ($i 0) => dd
-dd add "X" ($i 1) => dict
-r1 := rule ("Test" :: "X" :: nil) (p2;p10;p11) nop <<ImmutableDictionary<string, Value>.Empty>> 1.0
-r2 := rule ("Test" :: nil) (p8;p3;p2) nop <<ImmutableDictionary<string, Value>.Empty>> 1.0
-loopRules (r1::nil) (r1::nil) 6 dict <<ImmutableDictionary<string, Value>.Empty>> 1.0 => res
---------------------------------------------------------------------------------------------------
-run => res
