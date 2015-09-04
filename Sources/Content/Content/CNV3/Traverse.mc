@@ -4,7 +4,7 @@ import System.Collections.Immutable
 import System.Collections.Generic
 
 Data "entity" -> List[<<string>>] -> <<ImmutableDictionary<string, Value> >> -> List[Rule] -> List[Rule] : Entity                  Priority 10
-Data "worldEntity" -> <<ImmutableDictionary<string, Value> >> -> List[Rule] -> List[Rule] : World                                  Priority 10
+Data "worldEntity" -> List[<<string>>] -> <<ImmutableDictionary<string, Value> >> -> List[Rule] -> List[Rule] : World                                  Priority 10
 Data "traverseResult" -> Value -> <<ImmutableDictionary<string, Value> >> : TraverseResult
 Func "traverse" -> Value -> <<ImmutableDictionary<string, Value> >> -> <<float>> : Traverse => TraverseResult                             Priority 10
 Func "run" : runnable => GameState
@@ -27,8 +27,10 @@ traverse ($s x) globals dt => traverseResult ($s x) globals
 
 traverse x globals dt => traverseResult x1 g1
 traverse y g1 dt => traverseResult y1 g2
---------------------------------------------------------
-traverse ($t x y) globals dt => traverseResult ($t x1 y1) g2
+----------------------------------------------------------------
+traverse ($t (x,y)) globals dt => traverseResult ($t (x1,y1)) g2
+
+
 
 traverse x globals dt => traverseResult x1 g1
 traverse ($l xs) g1 dt => traverseResult ($l xs1) g2
@@ -49,8 +51,8 @@ traverse (entity fs updatedFields original rs) g1 dt => res
 traverse (entity f::fs fields original rs) globals dt => res
 
 
-traverse (entity fieldNames fields original rs) fields dt => traverseResult (entity updatedNames updatedFields updatedOriginal updatedRules) newGlobals dt
-traverse (worldEntity updatedNames newGlobals updatedOriginal updatedRules) <<ImmutableDictionary<string, Value>.Empty>> dt =>  
+traverse (entity fieldNames fields original rs) fields dt => traverseResult (entity updatedNames updatedFields updatedOriginal updatedRules) newGlobals
+traverse (worldEntity updatedNames newGlobals updatedOriginal updatedRules) <<ImmutableDictionary<string, Value>.Empty>> dt => res
 --------------------------------------------------------------------------------------
 traverse (worldEntity fieldNames fields original rs) <<ImmutableDictionary<string, Value>.Empty>> dt => res
 

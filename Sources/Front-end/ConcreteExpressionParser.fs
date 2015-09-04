@@ -56,6 +56,8 @@ let rec program() =
             CustomKeywordsMap         = ksDecoded |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
             InheritanceRelationships  = Map.empty
             ImportedModules           = imps
+            DefaultDlls               = []
+            ImportedDlls              = []
           }
     let newContext = ctxt
     do! setContext newContext

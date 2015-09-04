@@ -44,6 +44,10 @@ let runDeduction path =
             match expr().Parse (input |> Seq.toList) ctxt Position.Zero with
             | First(y,_,ctxt',pos') ->
               try
+              let customDlls = ["Vector3.dll"; "System.Collections.Immutable.dll"]
+              let defaultDlls = [ "mscorlib.dll"; "System.dll"; "System.Runtime.dll"; "System.Core.dll"; "System.Collections.dll" ] 
+              let dllParam = Array.append (List.toArray defaultDlls) (List.toArray customDlls)
+              let ctxt = { ctxt with ImportedDlls = customDlls; DefaultDlls = defaultDlls }
               if CompilerSwitches.useGraphBasedCodeGenerator then 
                 GraphBasedCodeGenerator.generate originalFilePath title x y ctxt 
               let generatedPath = generateCode originalFilePath title x y ctxt
@@ -52,7 +56,7 @@ let runDeduction path =
               let args = new System.Collections.Generic.Dictionary<string, string>()
               do args.Add("CompilerVersion", "v4.5")
               let csc = new CSharpCodeProvider()
-              let parameters = new CompilerParameters([| "mscorlib.dll"; "System.dll"; "System.Runtime.dll"; "System.Core.dll"; "System.Collections.Immutable.dll" |], sprintf "%s.dll" title, true)
+              let parameters = new CompilerParameters(dllParam, sprintf "%s.dll" title, true)
               do parameters.GenerateInMemory <- true
               do parameters.CompilerOptions <- @"/optimize+"
               let results = csc.CompileAssemblyFromFile(parameters, [|generatedPath|])
@@ -99,7 +103,7 @@ let runDeduction path =
 let main argv = 
   let samples = 
     [
-//        "CNV3/Traverse.mc", "run"
+        "CNV3/Traverse.mc", "run"
 //        "Sequence/seq.mc", "evals bb"
 //      "CNV3/Tuples.mc", "fst (1.0,2.0)"
 //          "Test/test.mc", "debug"

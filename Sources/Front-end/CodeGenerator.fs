@@ -2,6 +2,8 @@
 
 open TypeInference
 open System
+open System.Reflection
+open System.IO
 open Utilities
 open ParserMonad
 open BasicExpression
@@ -633,7 +635,47 @@ type GeneratedClass =
               | TypeDefinition.TypeConstant(t, TypeDefinition.TypeConstantDescriptor.NativeRef)
               | TypeDefinition.TypeVariable(t, _)
               | TypeDefinition.ConstructedType(TypeDefinition.TypeConstant(t, _),_) when t <> "int" && t <> "float" && t <> "double" && t <> "bool" ->
-                sprintf "if (%s is System.Collections.IEnumerable) { res += \"{\"; foreach(var x in %s as System.Collections.IEnumerable) res += x.ToString(); res += \"}\";  } else { res += %s.ToString(); } \n" p.Name p.Name p.Name
+                let dotnetPath = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
+
+                let filterDotNetName (name : string) =
+                  let apostrophIndex = name.IndexOf('`')
+                  if (apostrophIndex > 0) then
+                    name.Remove(apostrophIndex)
+                  else
+                    name
+
+                let defaultTypes =
+                  [for dllName in ctxt.DefaultDlls do
+                      let assemblyPath = Path.Combine(dotnetPath, dllName)
+                      yield! Assembly.LoadFile(assemblyPath).GetTypes()]
+                let defaultTypeNames =
+                  [for _type in defaultTypes do
+                      yield _type.AssemblyQualifiedName,_type.Name |> filterDotNetName,_type.FullName |> filterDotNetName]
+                let customTypes =
+                  [for dllName in ctxt.ImportedDlls do
+                    let assemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), dllName)
+                    yield! Assembly.LoadFile(assemblyPath).GetTypes()]
+                let customTypeNames =
+                  [for _type in customTypes do
+                    yield _type.AssemblyQualifiedName,_type.Name,_type.FullName]
+                let currentType = 
+                  [for (qualifiedName, name, fullName) in customTypeNames do
+                      if t = fullName || t = name then
+                        yield System.Type.GetType(qualifiedName)] @
+                  [for (qualifiedName, name, fullName) in defaultTypeNames do
+                      if t = fullName || t = name then
+                          yield System.Type.GetType(qualifiedName)]
+                if currentType.IsEmpty |> not then
+                  let interfaces = currentType.Head.GetInterfaces()
+                  //Cesco :: I do not understand why reflection does not show IEnumerable among ImmutableDictionary collections even if in the generated code the cast works.
+                  //Added special case for that in the "if" condition
+                  if interfaces |> Array.exists (fun i -> i = typeof<System.Collections.IEnumerable>) || currentType.Head.Namespace = "System.Collections.Immutable" then
+                    sprintf "if (%s is System.Collections.IEnumerable) { res += \"{\"; foreach(var x in %s as System.Collections.IEnumerable) res += x.ToString(); res += \"}\";  } else { res += %s.ToString(); } \n" p.Name p.Name p.Name
+                  else
+                    sprintf "res += %s.ToString(); \n" p.Name
+                else
+                  sprintf "res += %s.ToString(); \n" p.Name
+                  
               | _ -> 
                 sprintf "res += %s.ToString(); \n" p.Name
             let leftParameters = c.Parameters |> Seq.filter (fun x -> x.IsLeft) |> Seq.map (fun x -> printParameter x) |> Seq.fold (+) ""
