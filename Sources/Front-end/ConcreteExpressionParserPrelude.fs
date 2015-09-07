@@ -5,6 +5,7 @@ open TypeDefinition
 open ParserMonad
 open StateMonad
 open BasicExpression
+open AssemblyPrecaching
 
 type Associativity = 
   | Right
@@ -385,8 +386,7 @@ and ConcreteExpressionContext =
     CustomKeywordsMap : Map<string, ParsedKeyword<Keyword, Var, Literal, Position, unit>>    
     InheritanceRelationships : Map<string, Set<string>>
     ImportedModules : List<string>
-    DefaultDlls  : List<string>
-    ImportedDlls : List<string>
+    AssemblyInfo    : System.Collections.Generic.Dictionary<System.Type, CachedAssemblyInfo>
   } with
       member this.AllInheritanceRelationships =
         seq{
@@ -412,8 +412,7 @@ and ConcreteExpressionContext =
           CustomKeywordsMap        = Map.empty
           InheritanceRelationships = Map.empty
           ImportedModules          = []
-          DefaultDlls              = []
-          ImportedDlls             = []
+          AssemblyInfo             = System.Collections.Generic.Dictionary<System.Type, CachedAssemblyInfo>()
         }
       static member (++) (ctxt:ConcreteExpressionContext, ctxt':ConcreteExpressionContext) =
         let concatMap (p:Map<'a,'b>) (q:Map<'a,'b>) = 
@@ -425,8 +424,7 @@ and ConcreteExpressionContext =
             CustomKeywordsMap = ctxt.CustomKeywordsMap |> concatMap ctxt'.CustomKeywordsMap 
             InheritanceRelationships = ctxt.InheritanceRelationships |> concatMap ctxt'.InheritanceRelationships
             ImportedModules = ctxt.ImportedModules |> List.append ctxt'.ImportedModules
-            DefaultDlls  = ctxt.DefaultDlls
-            ImportedDlls = ctxt.ImportedDlls
+            AssemblyInfo = ctxt.AssemblyInfo
         }
       static member CSharp =
         let (!) x = TypeConstant(x, Defined)
@@ -460,8 +458,7 @@ and ConcreteExpressionContext =
           CustomKeywordsMap = ks |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
           InheritanceRelationships = Map.empty
           ImportedModules          = []
-          DefaultDlls              = []
-          ImportedDlls             = []
+          AssemblyInfo             = System.Collections.Generic.Dictionary<System.Type, CachedAssemblyInfo>()
         }
 
 and Var = { Name : string }

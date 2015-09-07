@@ -11,6 +11,7 @@ open System.IO
 open System.Runtime.Serialization
 open System.Xml.Serialization
 open AnalyserAST
+open AssemblyPrecaching
 
 do System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.GetCultureInfo("EN-US")
 
@@ -45,9 +46,9 @@ let runDeduction path =
             | First(y,_,ctxt',pos') ->
               try
               let customDlls = ["Vector3.dll"; "System.Collections.Immutable.dll"]
-              let defaultDlls = [ "mscorlib.dll"; "System.dll"; "System.Runtime.dll"; "System.Core.dll"; "System.Collections.dll" ] 
+              let defaultDlls = [ "mscorlib.dll"; "System.dll"; "System.Runtime.dll"; "System.Core.dll"] 
               let dllParam = Array.append (List.toArray defaultDlls) (List.toArray customDlls)
-              let ctxt = { ctxt with ImportedDlls = customDlls; DefaultDlls = defaultDlls }
+              let ctxt = { ctxt with AssemblyInfo = assemblyPrecache defaultDlls customDlls}
               if CompilerSwitches.useGraphBasedCodeGenerator then 
                 GraphBasedCodeGenerator.generate originalFilePath title x y ctxt 
               let generatedPath = generateCode originalFilePath title x y ctxt
