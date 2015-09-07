@@ -8,6 +8,7 @@ open BasicExpression
 open ConcreteExpressionParserPrelude
 open TypeDefinition
 open System.IO
+open AssemblyPrecaching
 
 let mutable debug_expr = false
 let mutable debug_rules = false
@@ -56,6 +57,7 @@ let rec program() =
             CustomKeywordsMap         = ksDecoded |> Seq.map (fun x -> x.Name, x) |> Map.ofSeq
             InheritanceRelationships  = Map.empty
             ImportedModules           = imps
+            AssemblyInfo              = System.Collections.Generic.Dictionary<System.Type, CachedAssemblyInfo>()
           }
     let newContext = ctxt
     do! setContext newContext
@@ -251,7 +253,7 @@ and literal() =
     | Second(Second s) -> return StringLiteral(new System.String(s |> Seq.toArray))
   }
 
-and expr() = 
+and expr() : Parser<BasicExpression<Keyword,Var,Literal,Position,unit>, ConcreteExpressionContext> = 
   let rec shrink bracket_type pos (es:List<BasicExpression<_,_,_,_,_>>) (customKeywordsMap:Map<string,ParsedKeyword<_,_,_,_,_>>) : BasicExpression<_,_,_,_,_> =
     let ariety (b:BasicExpression<_,_,_,_,_>) = 
       match b with

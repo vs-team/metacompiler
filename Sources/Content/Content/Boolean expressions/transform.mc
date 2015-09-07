@@ -5,6 +5,7 @@ Func "run" : Expr => Value                      Priority 0
 Func "eval" -> Expr : Expr => Value             Priority 1
 Data Expr -> "|" -> Expr : Expr                 Priority 10
 Data Expr -> "&" -> Expr : Expr                 Priority 20
+Data Expr -> "^" -> Expr : Expr                 Priority 20
 Data "!" -> Expr : Expr                         Priority 30
 
 Data "TRUE" : Value
@@ -14,7 +15,7 @@ Data "FALSE" : Value
 Value is Expr
 
 
-eval (FALSE | TRUE & !FALSE) => res
+eval (FALSE ^ (TRUE & !FALSE)) => res
 -----------------------------
 run => res
 
@@ -52,3 +53,24 @@ run => res
   eval b => y
   -------------------
   eval (a&b) => y
+
+
+  eval a => TRUE
+  eval b => FALSE
+  -------------------
+  eval (a ^ b) => TRUE
+
+  eval a => FALSE
+  eval b => TRUE
+  -------------------
+  eval (a ^ b) => TRUE
+
+  eval a => FALSE
+  eval b => FALSE
+  -------------------
+  eval (a ^ b) => FALSE
+
+  eval a => TRUE
+  eval b => TRUE
+  -------------------
+  eval (a ^ b) => FALSE

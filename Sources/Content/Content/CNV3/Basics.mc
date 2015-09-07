@@ -2,6 +2,7 @@
 include Content.CNV3.Tuples.mc
 
 import System
+import UnityEngine
 import System.Collections.Immutable
 
 
@@ -11,6 +12,7 @@ Data "$i" -> <<int>> : Value             Priority 10000
 Data "$s" -> <<string>> : Value          Priority 10000
 Data "$b" -> <<bool>> : Value            Priority 10000
 Data "$f" -> <<float>> : Value           Priority 10000
+Data "$Vector3" -> << Vector3 >> : Value  Priority 10000 
 Data "$l" -> List[Value] : Value         Priority 5000
 Data "$t" -> Tuple[Value Value] : Value      Priority 5000
 Data "$first" -> Expr : Expr               Priority 10
@@ -37,9 +39,10 @@ Data Expr -> "geq" -> Expr : Expr        Priority 1000
 Data "Context" -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> : ctxt
 
 Func "eval" -> Expr -> ctxt : Evaluator => Value      Priority 10
-Func "test" : Test => Value                           Priority 10
+Func "test" : Test => Value                            Priority 10
 
 Value is Expr
+Imported is Value
 ID is Expr
 
 <<locals.ContainsKey(a)>> == true
@@ -65,6 +68,35 @@ eval ($f f) m => $f f
 
 ---------------------
 eval ($t t) m => $t t
+
+------------------------
+eval ($Vector3 v) m => $Vector3 v
+
+
+eval a m => $Vector3 v1
+eval b m => $Vector3 v2
+<<v1 + v2>> => res
+-----------------------------
+eval (a + b) m => $Vector3 res
+
+eval a m => $Vector3 v1
+eval b m => $Vector3 v2
+<<v1 - v2>> => res
+-----------------------------
+eval (a - b) m => $Vector3 res
+
+eval v m => $Vector3 v1
+eval s m => $f s1
+<< v1 * s1 >> => res
+--------------------------------
+eval (v * s) m => $Vector3 res
+
+eval v m => $Vector3 v1
+eval s m => $f s1
+<< v1 / s1 >> => res
+--------------------------------
+eval (v / s) m => $Vector3 res
+
 
 eval a m => $i c
 eval b m => $i d
@@ -202,10 +234,10 @@ snd t => res
 ------------------------
 eval $second expr m => res
 
-
-t := $t ($f 1.0,($t ($f 2.0,$f 3.0)))
+v1 := $Vector3 << new Vector3(1.0,-3.0,0.0) >>
+v2 := $Vector3 << new Vector3(0.5,1.5,0.0) >>
 m := Context <<ImmutableDictionary<string, Value>.Empty>> <<ImmutableDictionary<string, Value>.Empty>> <<ImmutableDictionary<string, Value>.Empty>>
-eval $first t m => res
+eval (v1 * $f 2.5) m => res
 ----------------------------------
 test => res
 

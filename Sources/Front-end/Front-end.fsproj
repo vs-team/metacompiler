@@ -55,6 +55,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyPrecaching.fs" />
     <Compile Include="CompilerSwitches.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="StateMonad.fs" />

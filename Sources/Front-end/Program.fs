@@ -11,6 +11,7 @@ open System.IO
 open System.Runtime.Serialization
 open System.Xml.Serialization
 open AnalyserAST
+open AssemblyPrecaching
 
 do System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo.GetCultureInfo("EN-US")
 
@@ -44,6 +45,10 @@ let runDeduction path =
             match expr().Parse (input |> Seq.toList) ctxt Position.Zero with
             | First(y,_,ctxt',pos') ->
               try
+              let customDlls = ["UnityEngine.dll"; "System.Collections.Immutable.dll"]
+              let defaultDlls = [ "mscorlib.dll"; "System.dll"; "System.Runtime.dll"; "System.Core.dll"] 
+              let dllParam = Array.append (List.toArray defaultDlls) (List.toArray customDlls)
+              let ctxt = { ctxt with AssemblyInfo = assemblyPrecache defaultDlls customDlls }
               if CompilerSwitches.useGraphBasedCodeGenerator then 
                 GraphBasedCodeGenerator.generate originalFilePath title x y ctxt 
               let generatedPath = generateCode originalFilePath title x y ctxt
@@ -52,7 +57,7 @@ let runDeduction path =
               let args = new System.Collections.Generic.Dictionary<string, string>()
               do args.Add("CompilerVersion", "v4.5")
               let csc = new CSharpCodeProvider()
-              let parameters = new CompilerParameters([| "mscorlib.dll"; "System.dll"; "System.Runtime.dll"; "System.Core.dll"; "System.Collections.Immutable.dll" |], sprintf "%s.dll" title, true)
+              let parameters = new CompilerParameters(dllParam, sprintf "%s.dll" title, true)
               do parameters.GenerateInMemory <- true
               do parameters.CompilerOptions <- @"/optimize+"
               let results = csc.CompileAssemblyFromFile(parameters, [|generatedPath|])
@@ -107,6 +112,8 @@ let main argv =
 
 //      "CodegenTest/ListTest.mc", "length 5::(4::(3::(2::(1::nil))))"
 
+      "Boolean expressions/transform.mc", "run"
+
       "PeanoNumbers/transform.mc", "run"
       "Lists/transform.mc", "plus 0;1;2;3;nil 10"
       "Lists/transform.mc", "length 0;1;2;3;nil"
@@ -122,8 +129,6 @@ let main argv =
       "Eval with memory and control flow/transform.mc", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
 
       "Binary trees/transform.mc", "run"
-      "Boolean expressions/transform.mc", "run"
-
 
       "Trees 234/transform.mc", @"main"
 
@@ -139,9 +144,9 @@ let main argv =
 //      "Casanova semantics", @"runTest1"
     ]
 
-//  for name,input in samples 
-//    do runDeduction (System.IO.Path.Combine([| "Content"; name|])) input |> printfn "%s"
+  for name,input in samples 
+    do runDeduction (System.IO.Path.Combine([| @"..\..\..\Content\Content"; name|])) input |> printfn "%s"
 
-  do GUI.ShowGUI samples runDeduction
+//  do GUI.ShowGUI samples runDeduction
 
   0

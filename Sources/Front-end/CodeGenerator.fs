@@ -2,6 +2,8 @@
 
 open TypeInference
 open System
+open System.Reflection
+open System.IO
 open Utilities
 open ParserMonad
 open BasicExpression
@@ -35,6 +37,7 @@ let cleanupWithoutDot (s:string) =
      .Replace("<-", "_LeftArrow")
      .Replace("\'", "_Prime")
      .Replace("\\", "_opSlash")
+     .Replace("^", "_opHat")
      .Replace("&&", "_opAnd")
      .Replace("||", "_opOr")
      .Replace("&", "_opBitwiseAnd")
@@ -633,7 +636,22 @@ type GeneratedClass =
               | TypeDefinition.TypeConstant(t, TypeDefinition.TypeConstantDescriptor.NativeRef)
               | TypeDefinition.TypeVariable(t, _)
               | TypeDefinition.ConstructedType(TypeDefinition.TypeConstant(t, _),_) when t <> "int" && t <> "float" && t <> "double" && t <> "bool" ->
-                sprintf "if (%s is System.Collections.IEnumerable) { res += \"{\"; foreach(var x in %s as System.Collections.IEnumerable) res += x.ToString(); res += \"}\";  } else { res += %s.ToString(); } \n" p.Name p.Name p.Name
+                let currentType =
+                  [for entry in ctxt.AssemblyInfo do
+                      if t = entry.Value.FilteredFullName || 
+                         t = entry.Value.FilteredName then
+                            yield entry.Key]
+                if currentType.IsEmpty |> not then
+                  let interfaces = ctxt.AssemblyInfo.[currentType.Head].Interfaces
+                  //Cesco :: I do not understand why reflection does not show IEnumerable among ImmutableDictionary collections even if in the generated code the cast works.
+                  //Added special case for that in the "if" condition
+                  if interfaces |> Array.exists (fun i -> i = typeof<System.Collections.IEnumerable>) || currentType.Head.Namespace = "System.Collections.Immutable" then
+                    sprintf "if (%s is System.Collections.IEnumerable) { res += \"{\"; foreach(var x in %s as System.Collections.IEnumerable) res += x.ToString(); res += \"}\";  } else { res += %s.ToString(); } \n" p.Name p.Name p.Name
+                  else
+                    sprintf "res += %s.ToString(); \n" p.Name
+                else
+                  sprintf "res += %s.ToString(); \n" p.Name
+                  
               | _ -> 
                 sprintf "res += %s.ToString(); \n" p.Name
             let leftParameters = c.Parameters |> Seq.filter (fun x -> x.IsLeft) |> Seq.map (fun x -> printParameter x) |> Seq.fold (+) ""
