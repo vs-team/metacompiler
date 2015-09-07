@@ -143,6 +143,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\CNV3\todo.txt" />
+    <None Include="UnityEngine.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Front-end\bin\Release\Basics.mc.cs">

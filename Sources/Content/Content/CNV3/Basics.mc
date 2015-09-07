@@ -2,7 +2,7 @@
 include Content.CNV3.Tuples.mc
 
 import System
-import Vectors
+import UnityEngine
 import System.Collections.Immutable
 
 
@@ -84,6 +84,18 @@ eval b m => $Vector3 v2
 <<v1 - v2>> => res
 -----------------------------
 eval (a - b) m => $Vector3 res
+
+eval v m => $Vector3 v1
+eval s m => $f s1
+<< v1 * s1 >> => res
+--------------------------------
+eval (v * s) m => $Vector3 res
+
+eval v m => $Vector3 v1
+eval s m => $f s1
+<< v1 / s1 >> => res
+--------------------------------
+eval (v / s) m => $Vector3 res
 
 
 eval a m => $i c
@@ -222,10 +234,10 @@ snd t => res
 ------------------------
 eval $second expr m => res
 
-v1 := $Vector3 << Vector3.Zero >>
-v2 := $Vector3 << Vector3.One >>
+v1 := $Vector3 << new Vector3(1.0,-3.0,0.0) >>
+v2 := $Vector3 << new Vector3(0.5,1.5,0.0) >>
 m := Context <<ImmutableDictionary<string, Value>.Empty>> <<ImmutableDictionary<string, Value>.Empty>> <<ImmutableDictionary<string, Value>.Empty>>
-eval (v1 + v2) m => res
+eval (v1 * $f 2.5) m => res
 ----------------------------------
 test => res
 

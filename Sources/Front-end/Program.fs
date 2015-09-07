@@ -45,10 +45,10 @@ let runDeduction path =
             match expr().Parse (input |> Seq.toList) ctxt Position.Zero with
             | First(y,_,ctxt',pos') ->
               try
-              let customDlls = ["Vector3.dll"; "System.Collections.Immutable.dll"]
+              let customDlls = ["UnityEngine.dll"; "System.Collections.Immutable.dll"]
               let defaultDlls = [ "mscorlib.dll"; "System.dll"; "System.Runtime.dll"; "System.Core.dll"] 
               let dllParam = Array.append (List.toArray defaultDlls) (List.toArray customDlls)
-              let ctxt = { ctxt with AssemblyInfo = assemblyPrecache defaultDlls customDlls}
+              let ctxt = { ctxt with AssemblyInfo = assemblyPrecache defaultDlls customDlls }
               if CompilerSwitches.useGraphBasedCodeGenerator then 
                 GraphBasedCodeGenerator.generate originalFilePath title x y ctxt 
               let generatedPath = generateCode originalFilePath title x y ctxt
@@ -104,11 +104,11 @@ let runDeduction path =
 let main argv = 
   let samples = 
     [
-        "CNV3/Traverse.mc", "run"
+//        "CNV3/Traverse.mc", "run"
 //        "Sequence/seq.mc", "evals bb"
 //      "CNV3/Tuples.mc", "fst (1.0,2.0)"
 //          "Test/test.mc", "debug"
-//      "CNV3/Basics.mc", "test"
+      "CNV3/Basics.mc", "test"
 //      converted to new keyword syntax:
 //      "PeanoNumbers/transform.mc", "run"
 //      "CodegenTest/ListTest.mc", "length 5::(4::(3::(2::(1::nil))))"

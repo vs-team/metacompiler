@@ -448,7 +448,9 @@ and ConcreteExpressionContext =
             ("%", [], !!["CSharpExpr"], !!["CSharpExpr"], 100, "CSharpExpr")
             ("+", [], !!["CSharpExpr"], !!["CSharpExpr"], 100, "CSharpExpr")
             ("-", [], !!["CSharpExpr"], !!["CSharpExpr"], 100, "CSharpExpr")
+            ("-", [], [], !!["CSharpExpr"], 1, "CSharpExpr")
             (".", [], !!["CSharpExpr"], !!["CSharpExpr"], 1000, "CSharpExpr")
+            ("new ", [], [], !!["CSharpExpr"], 1, "CSharpExpr")
           ] |> Seq.map Keyword.CreateCSharpKeyword
             |> Seq.toList
         {
