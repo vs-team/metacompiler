@@ -48,9 +48,6 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Vector3">
-      <HintPath>..\Front-end\Vector3.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Content\Analyser\transform.mc">
@@ -146,11 +143,6 @@
     <None Include="UnityEngine.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\Front-end\bin\Release\Basics.mc.cs">
-      <Link>Basics.mc.cs</Link>
-    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

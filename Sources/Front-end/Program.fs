@@ -104,11 +104,11 @@ let runDeduction path =
 let main argv = 
   let samples = 
     [
-//        "CNV3/Traverse.mc", "run"
+        "CNV3/Traverse.mc", "run"
 //        "Sequence/seq.mc", "evals bb"
 //      "CNV3/Tuples.mc", "fst (1.0,2.0)"
 //          "Test/test.mc", "debug"
-      "CNV3/Basics.mc", "test"
+//      "CNV3/Basics.mc", "test"
 //      converted to new keyword syntax:
 //      "PeanoNumbers/transform.mc", "run"
 //      "CodegenTest/ListTest.mc", "length 5::(4::(3::(2::(1::nil))))"

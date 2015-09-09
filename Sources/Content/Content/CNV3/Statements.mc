@@ -17,7 +17,7 @@ Data "if" -> Expr -> Then -> stmt -> Else -> stmt : stmt                        
 Data "while" -> Expr -> stmt : stmt                                                           Priority 100
 Data "for" -> ID -> In -> Expr -> stmt : stmt                                                 Priority 100
 Data "yield" -> List[Expr] : stmt                                                             Priority 100
-Data "rule" List[<<string>>] -> stmt -> stmt -> <<ImmutableDictionary<string, Value> >>  -> <<float>> : Rule     Priority 20  
+Data "rule" -> List[<<string>>] -> stmt -> stmt -> <<ImmutableDictionary<string, Value> >>  -> <<float>> : Rule     Priority 20
 
 Data "unit" : Unit
 Data "State" List[Rule] -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> : GameState   Priority 10
