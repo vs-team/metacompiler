@@ -112,30 +112,31 @@ let main argv =
 
 //      "CodegenTest/ListTest.mc", "length 5::(4::(3::(2::(1::nil))))"
 
-      "Boolean expressions/transform.mc", "run"
+//      "Boolean expressions/transform.mc", "run"
+      "Boolean expressions fast/transform.mc", "run"
 
-      "PeanoNumbers/transform.mc", "run"
-      "Lists/transform.mc", "plus 0;1;2;3;nil 10"
-      "Lists/transform.mc", "length 0;1;2;3;nil"
-      "Lists/transform.mc", "contains 0;1;2;3;nil 2"
-      "Lists/transform.mc", "removeOdd 0;1;2;3;nil"
-      "Lists/transform.mc", "add 0;1;2;3;nil"
-
-      "stsil/transform.mc", "dda lin snoc 3 snoc 2 snoc 1"
-      
-      "Eval without memory/transform.mc", "run"
-      "Eval with readonly memory/transform.mc", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
-      "Eval with memory/transform.mc", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
-      "Eval with memory and control flow/transform.mc", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
-
-      "Binary trees/transform.mc", "run"
-
-      "Trees 234/transform.mc", @"main"
-
-      "Lambda calculus/transform.mc", "run"
-
-      "GenericLists/transform.mc", @"length 0::1::2::3::nil"
-      "GenericLists/transform.mc", @"length ""0""::""1""::""2""::""3""::nil"
+//      "PeanoNumbers/transform.mc", "run"
+//      "Lists/transform.mc", "plus 0;1;2;3;nil 10"
+//      "Lists/transform.mc", "length 0;1;2;3;nil"
+//      "Lists/transform.mc", "contains 0;1;2;3;nil 2"
+//      "Lists/transform.mc", "removeOdd 0;1;2;3;nil"
+//      "Lists/transform.mc", "add 0;1;2;3;nil"
+//
+//      "stsil/transform.mc", "dda lin snoc 3 snoc 2 snoc 1"
+//      
+//      "Eval without memory/transform.mc", "run"
+//      "Eval with readonly memory/transform.mc", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
+//      "Eval with memory/transform.mc", "run (map <<ImmutableDictionary<string, int>.Empty>>)"
+//      "Eval with memory and control flow/transform.mc", "run (map <<ImmutableDictionary<string, Value>.Empty>>)"
+//
+//      "Binary trees/transform.mc", "run"
+//
+//      "Trees 234/transform.mc", @"main"
+//
+//      "Lambda calculus/transform.mc", "run"
+//
+//      "GenericLists/transform.mc", @"length 0::1::2::3::nil"
+//      "GenericLists/transform.mc", @"length ""0""::""1""::""2""::""3""::nil"
       
 // not yet converted to new keyword syntax:
 
