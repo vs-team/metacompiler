@@ -1,5 +1,6 @@
 ﻿include Content.CNV3.Statements.mc
 
+import UnityEngine
 import System.Collections.Immutable
 import System.Collections.Generic
 
@@ -56,28 +57,12 @@ traverse (worldEntity updatedNames newGlobals updatedOriginal updatedRules) <<Im
 --------------------------------------------------------------------------------------
 traverse (worldEntity fieldNames fields original rs) <<ImmutableDictionary<string, Value>.Empty>> dt => res
 
-
-
-p12 := if ($b true) then (wait $f 4.0;yield (($i 5)::($i 0)::nil)) else (wait $f 2.0)
-xs := $l (($i 1) :: ($i 2) :: ($i 3) :: nil)
-p1 := wait $f 3.0
-p2 := wait $f 2.0
-p3 := let $"x" = $i 10
-p4 := yield (($"Test" + $i 5)::($"X" + $"x")::nil)
-p5 := while ($b true) (wait $f 1.0;p4)
-p6 := yield (($"Test" + $i 1)::($"X" + $i 1)::nil)
-p7 := for $"x" in xs (p1;p6;p2)
-p8 := when $"X" gt $i 1
-p9 := yield (($"Test" + $i 1000)::nil)
-subq := from $"y" in ($l (($i 1)::($i 3)::($i 5)::nil)) nil where $"y" lt $i 5 select $"y"
-subl := let $"subq" = subq
-q := from $"x" in ($l (($i 1)::($i 2)::($i 3)::nil)) (subl::nil) where $"x" gt $i 1 select ($"x" ++ $"subq")
-p10 := let $"q" = q
-p11 := yield (($"Test")::($"q")::nil)
-<<ImmutableDictionary<string, Value>.Empty>> add "Test" ($i 0) => dd
-dd add "X" ($i 1) => dict
-r1 := rule ("Test" :: "X" :: nil) (p1;p3;p4) nop <<ImmutableDictionary<string, Value>.Empty>> 1.0
-r2 := rule ("Test" :: nil) (p8;p3;p2) nop <<ImmutableDictionary<string, Value>.Empty>> 1.0
-loopRules (r1::nil) (r1::nil) 4 dict <<ImmutableDictionary<string, Value>.Empty>> 1.0 => res
+vx := $Vector3 <<new Vector3(1.0,0.0,0.0)>>
+vy := $Vector3 << new Vector3(0.0,1.0,0.0) >>
+s1 := yield (($"Position" + vx)::nil)
+s2 := when ((vectorx $"Position") lt $f 30.0)
+<<ImmutableDictionary<string, Value>.Empty>> add "Position" ($Vector3 << new Vector3(0.0,0.0,1.0) >>) => dict
+r1 := rule ("Position" :: nil) (s1;s2) nop <<ImmutableDictionary<string, Value>.Empty>> 0.1
+loopRules (r1::nil) (r1::nil) 100 dict <<ImmutableDictionary<string, Value>.Empty>> 0.1 => res
 --------------------------------------------------------------------------------------------------
 run => res

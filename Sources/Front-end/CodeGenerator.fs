@@ -37,7 +37,6 @@ let cleanupWithoutDot (s:string) =
      .Replace("<-", "_LeftArrow")
      .Replace("\'", "_Prime")
      .Replace("\\", "_opSlash")
-     .Replace("^", "_opHat")
      .Replace("&&", "_opAnd")
      .Replace("||", "_opOr")
      .Replace("&", "_opBitwiseAnd")

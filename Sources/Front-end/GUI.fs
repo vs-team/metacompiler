@@ -3,7 +3,6 @@
 open System   
 open System.Windows
 open System.Windows.Controls
-open System.Windows.Controls.Primitives
 open System.Windows.Media
 open System.Windows.Shapes
 open System.Runtime.InteropServices
@@ -57,42 +56,8 @@ type RuleEditorWindow(path, file) =
   do editorText.Padding <- Thickness(10.0)
   do editorText.Margin <- Thickness(10.0)
   do editorText.AcceptsReturn <- true
-  do editorText.VerticalScrollBarVisibility <- ScrollBarVisibility.Auto
 
-  let textSize = new StackPanel()
-  do textSize.HorizontalAlignment <- HorizontalAlignment.Center
-  do textSize.Orientation <- Orientation.Horizontal
-  let textSizeLabel= new Label()
-  do textSizeLabel.Content <- "Text size:"
-  do textSizeLabel.FontFamily <- FontFamily("consolas")
-  do textSize.Children.Add textSizeLabel |> ignore
-  do textSize.Children.Add
-       (let textSize = new ScrollBar()
-        let textSizeCachePath = "textSizeCache.txt"
-        if System.IO.File.Exists textSizeCachePath then 
-          let cachedSize = System.IO.File.ReadAllText textSizeCachePath |> System.Double.Parse
-          do textSize.Value <- cachedSize
-          do editorText.FontSize <- cachedSize
-        do textSize.Width <- 150.0
-        do textSize.Height <- 5.0
-        do textSize.Orientation <- Orientation.Horizontal
-        do textSize.Minimum <- 8.0
-        do textSize.Maximum <- 24.0
-        let zoom _ =
-          do editorText.FontSize <- textSize.Value
-          do System.IO.File.WriteAllText(textSizeCachePath, textSize.Value |> string)
-        do textSize.Scroll.Add zoom
-        textSize) |> ignore
-  
-
-  let dockPanel = new DockPanel()
-  do dockPanel.Margin <- Thickness(10.0)
-  do dockPanel.Children.Add textSize |> ignore
-  do dockPanel.Children.Add editorText |> ignore
-  do DockPanel.SetDock(textSize, Dock.Top)
-  do DockPanel.SetDock(editorText, Dock.Bottom)
-
-  do base.Content <- dockPanel
+  do base.Content <- editorText
 
 
 
@@ -179,8 +144,7 @@ type WPFWindow(samples, runDeduction) =
   let runDeductionBtn = new Button()
   do runDeductionBtn.Content <- "Run deduction"
   let onRunDeduction _ = 
-    let path = IO.Path.Combine(deductionList.SelectedItem :?> string, "transform.mc")
-    deductionOutput.Text <- runDeduction path programToRun.Text
+    deductionOutput.Text <- runDeduction (deductionList.SelectedItem :?> string) programToRun.Text
     ()
   do runDeductionBtn.Click.Add onRunDeduction
   do runDeductionBtn.Width <- 90.0

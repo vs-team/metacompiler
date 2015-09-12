@@ -20,26 +20,30 @@ Data "$second" -> Expr : Expr               Priority 10
 
 Data "$" -> <<string>> : ID              Priority 10000
 
-Data Expr -> "+" -> Expr : Expr          Priority 500
-Data Expr -> "-" -> Expr : Expr          Priority 500
-Data Expr -> "*" -> Expr : Expr          Priority 1000
-Data Expr -> "/" -> Expr : Expr          Priority 1000
-Data Expr -> "||" -> Expr : Expr         Priority 1000
-Data Expr -> "&&" -> Expr : Expr         Priority 1000
-Data Expr -> "++" -> Expr : Expr         Priority 1000
-Data Expr -> "@" -> Expr : Expr          Priority 1000
-Data Expr -> "lt" -> Expr : Expr         Priority 1000
-Data Expr -> "leq" -> Expr : Expr        Priority 1000
-Data Expr -> "gt" -> Expr : Expr         Priority 1000
-Data Expr -> "geq" -> Expr : Expr        Priority 1000
+Data Expr -> "+" -> Expr : Expr                       Priority 500
+Data Expr -> "-" -> Expr : Expr                       Priority 500
+Data Expr -> "*" -> Expr : Expr                       Priority 1000
+Data Expr -> "/" -> Expr : Expr                       Priority 1000
+Data Expr -> "||" -> Expr : Expr                      Priority 1000
+Data Expr -> "&&" -> Expr : Expr                      Priority 1000
+Data Expr -> "++" -> Expr : Expr                      Priority 1000
+Data Expr -> "@" -> Expr : Expr                       Priority 1000
+Data Expr -> "lt" -> Expr : Expr                      Priority 1000
+Data Expr -> "leq" -> Expr : Expr                     Priority 1000
+Data Expr -> "gt" -> Expr : Expr                      Priority 1000
+Data Expr -> "geq" -> Expr : Expr                     Priority 1000
+Data "vectorx" -> Expr : Expr                         Priority 1000
+Data "vectory" -> Expr : Expr                         Priority 1000
+Data "vectorz" -> Expr : Expr                         Priority 1000
 
 
 
 
 Data "Context" -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> -> <<ImmutableDictionary<string, Value> >> : ctxt
 
-Func "eval" -> Expr -> ctxt : Evaluator => Value      Priority 10
-Func "test" : Test => Value                            Priority 10
+Func "eval" -> Expr -> ctxt : Evaluator => Value            Priority 10
+Func "createArgString" -> List[Expr] : Utility => Value     Priority 10
+Func "test" : Test => Value                                 Priority 10
 
 Value is Expr
 Imported is Value
@@ -234,10 +238,28 @@ snd t => res
 ------------------------
 eval $second expr m => res
 
+eval v m => $Vector3 v1
+<< v1.x >> => res
+-----------------------------
+eval (vectorx v) m => $f res
+
+eval v m => $Vector3 v1
+<< v1.y >> => res
+-----------------------------
+eval (vectory v) m => $f res
+
+eval v m => $Vector3 v1
+<< v1.z >> => res
+-----------------------------
+eval (vectorz v) m => $f res
+
+
+
 v1 := $Vector3 << new Vector3(1.0,-3.0,0.0) >>
 v2 := $Vector3 << new Vector3(0.5,1.5,0.0) >>
+<< new Vector3(1.0,-3.0,0.0) >> => vx
 m := Context <<ImmutableDictionary<string, Value>.Empty>> <<ImmutableDictionary<string, Value>.Empty>> <<ImmutableDictionary<string, Value>.Empty>>
-eval (v1 * $f 2.5) m => res
-----------------------------------
+eval ((vectorz v1) lt ($f 0.0)) m => res
+--------------------------------------
 test => res
 
