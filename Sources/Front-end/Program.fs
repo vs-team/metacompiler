@@ -146,7 +146,7 @@ let main argv =
     ]
 
   for name,input in samples 
-    do runDeduction (System.IO.Path.Combine([| @"..\..\..\Content\Content"; name|])) input |> printfn "%s"
+    do runDeduction (System.IO.Path.Combine([| @"../../../Content/Content"; name|])) input |> printfn "%s"
 
 //  do GUI.ShowGUI samples runDeduction
 
