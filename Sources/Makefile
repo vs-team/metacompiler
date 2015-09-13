@@ -9,13 +9,13 @@ all: debug
 debug: $(SRC)
 	mkdir -p $(DDIR)
 	cp -R -u Content/Content $(DDIR)
-	fsharpc -o $(DDIR)metacompiler.exe --debug:full -g --optimize- --tailcalls+\
+	fsharpc -o $(DDIR)DeductionEngine.exe --debug:full -g --optimize- --tailcalls+\
 		--platform:"x64" --nologo $(SRC)
 
 release: $(SRC)
 	mkdir -p $(RDIR)
 	cp -R -u Content/Content $(RDIR)
-	fsharpc -o $(RDIR)metacompiler.exe --debug:pbonly --optimize+ --tailcalls+ \
+	fsharpc -o $(RDIR)DeductionEngine.exe --debug:pbonly --optimize+ --tailcalls+ \
 		--crossoptimize+ --platform:"x64" --nologo $(SRC)
 
 clean:
