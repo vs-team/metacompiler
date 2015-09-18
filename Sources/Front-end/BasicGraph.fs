@@ -115,7 +115,6 @@ let rec generateBasicGraph (rules:List<Rule*List<Clause>>) (graph:BasicGraph) : 
         | []    -> clausemap
         | x::xs -> foreach_clause xs (clausemap.Add(ClauseID(x.Position),x))
       let new_clause_map = (foreach_clause clauses Map.empty)
-//      let new_clause_map = join graph.Clauses (foreach_clause clauses Map.empty)
       let new_clauses_per_rule_map = graph.ClausesPerRule.Add(RuleID(rule.Position), (new_clause_map |> Map.toList |> List.map (fun (x,y) -> x)))
       let newgraph:BasicGraph = { 
         Rules = new_rule_map
