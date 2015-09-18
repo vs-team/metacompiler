@@ -1,4 +1,4 @@
-﻿module GUI
+﻿module HelperGUI
 
 open System   
 open System.Windows

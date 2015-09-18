@@ -60,7 +60,6 @@ let main argv =
 //      "Casanova semantics", @"runTest1"
     ]
 
-  for name,input in samples 
-    do Launcher.runDeduction (System.IO.Path.Combine([| @"../../../Content/Content"; name|])) input |> printfn "%s"
+  do HelperGUI.ShowGUI samples Launcher.runDeduction
 
   0
