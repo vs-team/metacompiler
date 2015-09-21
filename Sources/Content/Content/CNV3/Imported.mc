@@ -13,8 +13,10 @@ getPosition x => res
 -----------------------
 x setPosition v => unit
 
-<< WrapperTest.Instantiate(<< new Vector3(0.0,1.0,0.0) >>) >> => x
-<< new Vector3(0.0,2.0,1.0) >> => v
+<< new Vector3(0.0,1.0,0.0) >> => v1
+<< new Vector3(0.0,2.0,1.0) >> => v2
+<< WrapperTest.Instantiate(v1) >> => x
+<< v1 + v2 >> => v
 x setPosition v => u
 getPosition x => res
 -----------------------------
