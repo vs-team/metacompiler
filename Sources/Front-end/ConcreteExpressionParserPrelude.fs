@@ -433,6 +433,7 @@ and ConcreteExpressionContext =
           [
             ("true", [], [], [], 0, "CSharpExpr")
             ("false", [], [], [], 0, "CSharpExpr")
+            ("=", [], !!["CSharpExpr"], !!["CSharpExpr"], 1, "CSharpExpr")
             ("&&", [], !!["CSharpExpr"], !!["CSharpExpr"], 1, "CSharpExpr")
             ("||", [], !!["CSharpExpr"], !!["CSharpExpr"], 1, "CSharpExpr")
             ("!", [], [], !!["CSharpExpr"], 1, "CSharpExpr")
