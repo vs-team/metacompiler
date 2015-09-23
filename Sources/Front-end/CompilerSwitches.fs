@@ -4,7 +4,7 @@ let numProfilerRuns = 0
 
 let printExpressionTree = false
 let flushCSFileOnError = true
-let generateLineDirectives = true
+let generateLineDirectives = false
 
 let useGraphBasedCodeGenerator = false
 
