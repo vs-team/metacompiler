@@ -43,7 +43,7 @@ let runDeduction path =
       //      do debug_expr <- true
             match expr().Parse (input |> Seq.toList) ctxt Position.Zero with
             | First(y,_,ctxt',pos') ->
-              try
+//              try
               let customDlls = ["UnityEngine.dll"; "WrapperTest.dll" ; "System.Collections.Immutable.dll"]
               let defaultDlls = [ "mscorlib.dll"; "System.dll"; "System.Runtime.dll"; "System.Core.dll"] 
               let dllParam = Array.append (List.toArray defaultDlls) (List.toArray customDlls)
@@ -86,9 +86,9 @@ let runDeduction path =
                   do sprintf "Total elapsed time per iteration = %gms" (float timer.ElapsedMilliseconds / float CompilerSwitches.numProfilerRuns) |> addOutput
                 else
                   do sprintf "Total elapsed time per iteration = 0ms" |> addOutput
-              with
-              | e ->
-                e.Message |> addOutput  
+//              with
+//              | e ->
+//                e.Message |> addOutput  
               output.Value
             | Second errors -> 
               sprintf "Parse error(s) in program at\n%s." ([errors] |> Error.Distinct |> Seq.map (fun e -> e.Line |> string) |> Seq.reduce (fun s x -> sprintf "%s\n%s" s x)) |> addOutput

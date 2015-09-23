@@ -44,6 +44,8 @@ Data "in" : In                                                                  
 Data "where" -> Expr : Where                                                     Priority 1000
 Data "select" -> Expr: Select                                                    Priority 1000
 
+Func "testStatement" : Test => GameState
+
 Let is stmt
 
 
@@ -197,11 +199,16 @@ evalRule (rule dom b k locals dt) fields globals => Yield ks values updatedConte
 ----------------------------------------
 updateFields nil nil context => context
 
+eval y c => $Vector3 v
+<< x.Position = v >> => u
+updateFields fs vs c => updatedContext
+-------------------------------------------------------------------------------------
+updateFields (f :: fs) (($wrapperSet x y) :: vs) c => updatedContext
+
 e add f v => updatedEntity
 updateFields fs vs (Context l updatedEntity w) => updatedContext
 -------------------------------------------------------------------------------------
 updateFields (f :: fs) (v :: vs) (Context l e w) => updatedContext
-
 
 evalRule r fields globals => Done (Context newLocals newFields newGlobals)
 tick originals rs newFields newGlobals dt => (State updatedRules updatedFields updatedGlobals)
@@ -251,5 +258,19 @@ tick original rs fields globals dt => s
 <<Thread.Sleep((int)(dt * 1000))>>
 ----------------------------------------------
 loopRules original rs 0 fields globals dt => s
+
+
+vx := $Vector3 <<new Vector3(1.0,0.0,0.0)>>
+vy := $Vector3 << new Vector3(0.0,1.0,0.0) >>
+<< new Vector3(0.0,0.0,1.0) >> => p
+<< WrapperTest.Instantiate(p) >> => wt
+s1 := yield (($wrapperSet wt ($"Base" + vx))::nil)
+s2 := when ((vectorx $"Base") lt $f 30.0)
+<<ImmutableDictionary<string, Value>.Empty>> add "Base" ($wrapper wt) => dict
+c := Context <<ImmutableDictionary<string, Value>.Empty>> dict <<ImmutableDictionary<string, Value>.Empty>>
+r1 := rule ("Base" :: nil) (s1;s2) nop <<ImmutableDictionary<string, Value>.Empty>> 0.1
+tick (r1::nil) (r1::nil) dict <<ImmutableDictionary<string, Value>.Empty>> 0.1  => res
+--------------------------
+testStatement => res
 
 

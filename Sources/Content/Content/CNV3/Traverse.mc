@@ -60,10 +60,12 @@ traverse (worldEntity fieldNames fields original rs) <<ImmutableDictionary<strin
 
 vx := $Vector3 <<new Vector3(1.0,0.0,0.0)>>
 vy := $Vector3 << new Vector3(0.0,1.0,0.0) >>
-s1 := yield (($"Position" + vx)::nil)
-s2 := when ((vectorx $"Position") lt $f 30.0)
-<<ImmutableDictionary<string, Value>.Empty>> add "Position" ($Vector3 << new Vector3(0.0,0.0,1.0) >>) => dict
-r1 := rule ("Position" :: nil) (s1;s2) nop <<ImmutableDictionary<string, Value>.Empty>> dt
+<< new Vector3(0.0,0.0,1.0) >> => p
+<< WrapperTest.Instantiate(p) >> => wt
+s1 := yield (($wrapperSet wt ($"Base" + vx))::nil)
+s2 := when ((vectorx $"Base") lt $f 30.0)
+<<ImmutableDictionary<string, Value>.Empty>> add "Base" ($wrapper wt) => dict
+r1 := rule ("Base" :: nil) (s1;s2) nop <<ImmutableDictionary<string, Value>.Empty>> dt
 loopRules (r1::nil) (r1::nil) 100 dict <<ImmutableDictionary<string, Value>.Empty>> dt => res
 --------------------------------------------------------------------------------------------------
 run dt => res

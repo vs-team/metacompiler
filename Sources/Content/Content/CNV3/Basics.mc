@@ -7,7 +7,8 @@ import System.Collections.Immutable
 
 
 
-
+Data "$wrapperSet" -> << WrapperTest >> -> Expr : Value  Priority 10000
+Data "$wrapper" -> << WrapperTest >> : Value Priority 10000
 Data "$i" -> <<int>> : Value             Priority 10000
 Data "$s" -> <<string>> : Value          Priority 10000
 Data "$b" -> <<bool>> : Value            Priority 10000
@@ -19,7 +20,6 @@ Data "$first" -> Expr : Expr               Priority 10
 Data "$second" -> Expr : Expr               Priority 10
 
 Data "$" -> <<string>> : ID              Priority 10000
-
 Data Expr -> "+" -> Expr : Expr                       Priority 500
 Data Expr -> "-" -> Expr : Expr                       Priority 500
 Data Expr -> "*" -> Expr : Expr                       Priority 1000
@@ -49,12 +49,18 @@ Value is Expr
 Imported is Value
 ID is Expr
 
-<<locals.ContainsKey(a)>> == true
-<<locals.GetKey(a)>> => res
+
+<< locals.ContainsKey(a) >> == true
+<< locals.GetKey(a) >> => res
 --------------------------------------------
 eval $a (Context locals entity world) => res
 
-<<entity.GetKey(a)>> => res
+<< entity.GetKey(a) >> => r
+eval r (Context locals entity world) => res
+--------------------------------------------
+eval $a (Context locals entity world) => res
+
+<< entity.GetKey(a) >> => res
 --------------------------------------------
 eval $a (Context locals entity world) => res
 
@@ -253,13 +259,20 @@ eval v m => $Vector3 v1
 -----------------------------
 eval (vectorz v) m => $f res
 
+<< x.Position >> => v
+-------------------------------------
+eval ($wrapper x) m => $Vector3 v
+
+---------------------------------------------
+eval ($wrapperSet x e) m => $wrapperSet x e
 
 
-v1 := $Vector3 << new Vector3(1.0,-3.0,0.0) >>
-v2 := $Vector3 << new Vector3(0.5,1.5,0.0) >>
+
 << new Vector3(1.0,-3.0,0.0) >> => vx
+<< new Vector3(0.0,1.0,0.0) >> => p
+<< WrapperTest.Instantiate(p) >> => wt
 m := Context <<ImmutableDictionary<string, Value>.Empty>> <<ImmutableDictionary<string, Value>.Empty>> <<ImmutableDictionary<string, Value>.Empty>>
-eval ((vectorz v1) lt ($f 0.0)) m => res
+eval ($wrapper wt + $Vector3 vx) m => res
 --------------------------------------
 test => res
 

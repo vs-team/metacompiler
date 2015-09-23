@@ -20,8 +20,9 @@ let main argv =
   let samples = 
     [
 //      "CNV3/Statements.mc", "run"
-//        "CNV3/Traverse.mc", "run 0.1"
-        "CNV3/Imported.mc", "testImported"
+        "CNV3/Traverse.mc", "run 0.1"
+//        "CNV3/Statements.mc", "testStatement"
+//        "CNV3/Imported.mc", "testImported"
 //      "Sequence/seq.mc", "evals bb"
 //      "CNV3/Tuples.mc", "fst (1.0,2.0)"
 //      "Test/test.mc", "debug"
