@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System;
 using System;
-using Vectors;
+using UnityEngine;
 using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +19,7 @@ public interface Expr {}
 public interface ID : Expr {}
 public interface ctxt {}
 public interface Evaluator {}
+public interface Utility {}
 public interface Test {}
 
 
@@ -32,7 +33,7 @@ public static _opDollar Create(string P1) { return new _opDollar(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " $ "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+ res += " $ "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -136,7 +137,7 @@ public static _opDollarfirst Create(Expr P1) { return new _opDollarfirst(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " $first "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+ res += " $first "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -214,7 +215,7 @@ public static _opDollars Create(string P1) { return new _opDollars(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " $s "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+ res += " $s "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -240,7 +241,7 @@ public static _opDollarsecond Create(Expr P1) { return new _opDollarsecond(P1); 
 public override string ToString() {
  var res = "("; 
 
- res += " $second "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+ res += " $second "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -266,7 +267,7 @@ public static _opDollart Create(Tuple<Value, Value> P1) { return new _opDollart(
 public override string ToString() {
  var res = "("; 
 
- res += " $t "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+ res += " $t "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -275,6 +276,60 @@ public override string ToString() {
 public override bool Equals(object other) {
  var tmp = other as _opDollart;
  if(tmp != null) return this.P1.Equals(tmp.P1); 
+ else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
+}
+
+public class _opDollarwrapper : Value  {
+public WrapperTest P1;
+
+public _opDollarwrapper(WrapperTest P1) {this.P1 = P1;}
+public static _opDollarwrapper Create(WrapperTest P1) { return new _opDollarwrapper(P1); }
+
+public override string ToString() {
+ var res = "("; 
+
+ res += " $wrapper "; res += P1.ToString(); 
+
+ res += ")";
+ return res;
+}
+
+public override bool Equals(object other) {
+ var tmp = other as _opDollarwrapper;
+ if(tmp != null) return this.P1.Equals(tmp.P1); 
+ else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
+}
+
+public class _opDollarwrapperSet : Value  {
+public WrapperTest P1;
+public Vector3 P2;
+
+public _opDollarwrapperSet(WrapperTest P1, Vector3 P2) {this.P1 = P1; this.P2 = P2;}
+public static _opDollarwrapperSet Create(WrapperTest P1, Vector3 P2) { return new _opDollarwrapperSet(P1, P2); }
+
+public override string ToString() {
+ var res = "("; 
+
+ res += " $wrapperSet "; res += P1.ToString(); 
+res += P2.ToString(); 
+
+ res += ")";
+ return res;
+}
+
+public override bool Equals(object other) {
+ var tmp = other as _opDollarwrapperSet;
+ if(tmp != null) return this.P1.Equals(tmp.P1) && this.P2.Equals(tmp.P2); 
  else return false; }
 
 public override int GetHashCode() {
@@ -292,9 +347,9 @@ public static _opAnd Create(Expr P1, Expr P2) { return new _opAnd(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
- res += " && "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " && "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -320,9 +375,9 @@ public static _opMultiplication Create(Expr P1, Expr P2) { return new _opMultipl
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
- res += " * "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " * "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -348,9 +403,9 @@ public static _opAddition Create(Expr P1, Expr P2) { return new _opAddition(P1, 
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
- res += " + "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " + "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -376,9 +431,9 @@ public static _opAddition_opAddition Create(Expr P1, Expr P2) { return new _opAd
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
- res += " ++ "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " ++ "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -404,9 +459,9 @@ public static _Comma<a, b> Create(a P1, b P2) { return new _Comma<a, b>(P1, P2);
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
- res += " , "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " , "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -432,9 +487,9 @@ public static _opSubtraction Create(Expr P1, Expr P2) { return new _opSubtractio
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
- res += " - "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " - "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -460,9 +515,9 @@ public static _opDivision Create(Expr P1, Expr P2) { return new _opDivision(P1, 
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
- res += " / "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " / "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -488,7 +543,7 @@ public static _Colon_Colon<a> Create(a P1, List<a> P2) { return new _Colon_Colon
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
  res += " :: "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
 
@@ -516,9 +571,9 @@ public static _opAt Create(Expr P1, Expr P2) { return new _opAt(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
- res += " @ "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " @ "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -631,6 +686,37 @@ public override int GetHashCode() {
 
 }
 
+public class createArgString : Utility  {
+public List<Expr> P1;
+
+public createArgString(List<Expr> P1) {this.P1 = P1;}
+public static createArgString Create(List<Expr> P1) { return new createArgString(P1); }
+
+
+public static Value StaticRun(List<Expr> P1) { 
+throw new System.Exception("Error evaluating: createArgString no result returned."); }
+public Value Run(){ return StaticRun(P1); }
+
+public override string ToString() {
+ var res = "("; 
+
+ res += " createArgString "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+
+ res += ")";
+ return res;
+}
+
+public override bool Equals(object other) {
+ var tmp = other as createArgString;
+ if(tmp != null) return this.P1.Equals(tmp.P1); 
+ else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
+}
+
 public class eval : Evaluator  {
 public Expr P1;
 public ctxt P2;
@@ -640,971 +726,1132 @@ public static eval Create(Expr P1, ctxt P2) { return new eval(P1, P2); }
 
   public static Value StaticRun(Expr P1, ctxt P2) {    
  { 
- #line 48 "Content\CNV3/Basics.mc"
+ #line 54 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opDollar; 
- #line 48 "Content\CNV3/Basics.mc"
+ #line 54 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var tmp_1 = P2 as Context; 
- #line 48 "Content\CNV3/Basics.mc"
+ #line 54 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_1 != null) { 
  var locals = tmp_1.P1; var entity = tmp_1.P2; var world = tmp_1.P3; 
- #line 48 "Content\CNV3/Basics.mc"
+ #line 54 "../../../Content/Content\CNV3/Basics.mc"
 if((locals.ContainsKey(a)).Equals(true)) { var res = (locals.GetKey(a)); 
- #line 48 "Content\CNV3/Basics.mc"
+ #line 54 "../../../Content/Content\CNV3/Basics.mc"
 var result = res;
- #line 48 "Content\CNV3/Basics.mc"
+ #line 54 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 53 "Content\CNV3/Basics.mc"
+ #line 59 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opDollar; 
- #line 53 "Content\CNV3/Basics.mc"
+ #line 59 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var tmp_1 = P2 as Context; 
- #line 53 "Content\CNV3/Basics.mc"
+ #line 59 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_1 != null) { 
  var locals = tmp_1.P1; var entity = tmp_1.P2; var world = tmp_1.P3; var res = (entity.GetKey(a)); 
- #line 53 "Content\CNV3/Basics.mc"
+ #line 59 "../../../Content/Content\CNV3/Basics.mc"
 var result = res;
- #line 53 "Content\CNV3/Basics.mc"
+ #line 59 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } }
  } 
 
   
  { 
- #line 57 "Content\CNV3/Basics.mc"
+ #line 63 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opDollarb; 
- #line 57 "Content\CNV3/Basics.mc"
+ #line 63 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var m = P2; 
- #line 57 "Content\CNV3/Basics.mc"
+ #line 63 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarb.Create(a);
- #line 57 "Content\CNV3/Basics.mc"
+ #line 63 "../../../Content/Content\CNV3/Basics.mc"
  return result;  }
  } 
 
   
  { 
- #line 60 "Content\CNV3/Basics.mc"
+ #line 66 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opDollari; 
- #line 60 "Content\CNV3/Basics.mc"
+ #line 66 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var m = P2; 
- #line 60 "Content\CNV3/Basics.mc"
+ #line 66 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollari.Create(a);
- #line 60 "Content\CNV3/Basics.mc"
+ #line 66 "../../../Content/Content\CNV3/Basics.mc"
  return result;  }
  } 
 
   
  { 
- #line 63 "Content\CNV3/Basics.mc"
+ #line 69 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opDollars; 
- #line 63 "Content\CNV3/Basics.mc"
+ #line 69 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var s = tmp_0.P1; var m = P2; 
- #line 63 "Content\CNV3/Basics.mc"
+ #line 69 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollars.Create(s);
- #line 63 "Content\CNV3/Basics.mc"
+ #line 69 "../../../Content/Content\CNV3/Basics.mc"
  return result;  }
  } 
 
   
  { 
- #line 66 "Content\CNV3/Basics.mc"
+ #line 72 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opDollarf; 
- #line 66 "Content\CNV3/Basics.mc"
+ #line 72 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var f = tmp_0.P1; var m = P2; 
- #line 66 "Content\CNV3/Basics.mc"
+ #line 72 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarf.Create(f);
- #line 66 "Content\CNV3/Basics.mc"
+ #line 72 "../../../Content/Content\CNV3/Basics.mc"
  return result;  }
  } 
 
   
  { 
- #line 69 "Content\CNV3/Basics.mc"
+ #line 75 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opDollart; 
- #line 69 "Content\CNV3/Basics.mc"
+ #line 75 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var t = tmp_0.P1; var m = P2; 
- #line 69 "Content\CNV3/Basics.mc"
+ #line 75 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollart.Create(t);
- #line 69 "Content\CNV3/Basics.mc"
+ #line 75 "../../../Content/Content\CNV3/Basics.mc"
  return result;  }
  } 
 
   
  { 
- #line 72 "Content\CNV3/Basics.mc"
+ #line 78 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opDollarVector3; 
- #line 72 "Content\CNV3/Basics.mc"
+ #line 78 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var v = tmp_0.P1; var m = P2; 
- #line 72 "Content\CNV3/Basics.mc"
+ #line 78 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarVector3.Create(v);
- #line 72 "Content\CNV3/Basics.mc"
+ #line 78 "../../../Content/Content\CNV3/Basics.mc"
  return result;  }
  } 
 
   
  { 
- #line 76 "Content\CNV3/Basics.mc"
+ #line 82 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opAddition; 
- #line 76 "Content\CNV3/Basics.mc"
+ #line 82 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 76 "Content\CNV3/Basics.mc"
+ #line 82 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 76 "Content\CNV3/Basics.mc"
+ #line 82 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarVector3; 
- #line 76 "Content\CNV3/Basics.mc"
+ #line 82 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var v1 = tmp_3.P1; 
- #line 76 "Content\CNV3/Basics.mc"
+ #line 82 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 76 "Content\CNV3/Basics.mc"
+ #line 82 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollarVector3; 
- #line 76 "Content\CNV3/Basics.mc"
+ #line 82 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var v2 = tmp_6.P1; var res = (v1+v2); 
- #line 76 "Content\CNV3/Basics.mc"
+ #line 82 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarVector3.Create(res);
- #line 76 "Content\CNV3/Basics.mc"
+ #line 82 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 82 "Content\CNV3/Basics.mc"
+ #line 88 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opSubtraction; 
- #line 82 "Content\CNV3/Basics.mc"
+ #line 88 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 82 "Content\CNV3/Basics.mc"
+ #line 88 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 82 "Content\CNV3/Basics.mc"
+ #line 88 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarVector3; 
- #line 82 "Content\CNV3/Basics.mc"
+ #line 88 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var v1 = tmp_3.P1; 
- #line 82 "Content\CNV3/Basics.mc"
+ #line 88 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 82 "Content\CNV3/Basics.mc"
+ #line 88 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollarVector3; 
- #line 82 "Content\CNV3/Basics.mc"
+ #line 88 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var v2 = tmp_6.P1; var res = (v1-v2); 
- #line 82 "Content\CNV3/Basics.mc"
+ #line 88 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarVector3.Create(res);
- #line 82 "Content\CNV3/Basics.mc"
+ #line 88 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 89 "Content\CNV3/Basics.mc"
+ #line 94 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_0 = P1 as _opMultiplication; 
+ #line 94 "../../../Content/Content\CNV3/Basics.mc"
+if (tmp_0 != null) { 
+ var v = tmp_0.P1; var s = tmp_0.P2; var m = P2; 
+ #line 94 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_2 = eval.StaticRun(v, m);
+ #line 94 "../../../Content/Content\CNV3/Basics.mc"
+
+var tmp_1 = tmp_2;
+
+var tmp_3 = tmp_1 as _opDollarVector3; 
+ #line 94 "../../../Content/Content\CNV3/Basics.mc"
+if (tmp_3 != null) { 
+ var v1 = tmp_3.P1; 
+ #line 94 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_5 = eval.StaticRun(s, m);
+ #line 94 "../../../Content/Content\CNV3/Basics.mc"
+
+var tmp_4 = tmp_5;
+
+var tmp_6 = tmp_4 as _opDollarf; 
+ #line 94 "../../../Content/Content\CNV3/Basics.mc"
+if (tmp_6 != null) { 
+ var s1 = tmp_6.P1; var res = (v1*s1); 
+ #line 94 "../../../Content/Content\CNV3/Basics.mc"
+var result = _opDollarVector3.Create(res);
+ #line 94 "../../../Content/Content\CNV3/Basics.mc"
+ return result;  } } }
+ } 
+
+  
+ { 
+ #line 100 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_0 = P1 as _opDivision; 
+ #line 100 "../../../Content/Content\CNV3/Basics.mc"
+if (tmp_0 != null) { 
+ var v = tmp_0.P1; var s = tmp_0.P2; var m = P2; 
+ #line 100 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_2 = eval.StaticRun(v, m);
+ #line 100 "../../../Content/Content\CNV3/Basics.mc"
+
+var tmp_1 = tmp_2;
+
+var tmp_3 = tmp_1 as _opDollarVector3; 
+ #line 100 "../../../Content/Content\CNV3/Basics.mc"
+if (tmp_3 != null) { 
+ var v1 = tmp_3.P1; 
+ #line 100 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_5 = eval.StaticRun(s, m);
+ #line 100 "../../../Content/Content\CNV3/Basics.mc"
+
+var tmp_4 = tmp_5;
+
+var tmp_6 = tmp_4 as _opDollarf; 
+ #line 100 "../../../Content/Content\CNV3/Basics.mc"
+if (tmp_6 != null) { 
+ var s1 = tmp_6.P1; var res = (v1/s1); 
+ #line 100 "../../../Content/Content\CNV3/Basics.mc"
+var result = _opDollarVector3.Create(res);
+ #line 100 "../../../Content/Content\CNV3/Basics.mc"
+ return result;  } } }
+ } 
+
+  
+ { 
+ #line 107 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opAddition; 
- #line 89 "Content\CNV3/Basics.mc"
+ #line 107 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 89 "Content\CNV3/Basics.mc"
+ #line 107 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 89 "Content\CNV3/Basics.mc"
+ #line 107 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollari; 
- #line 89 "Content\CNV3/Basics.mc"
+ #line 107 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var c = tmp_3.P1; 
- #line 89 "Content\CNV3/Basics.mc"
+ #line 107 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 89 "Content\CNV3/Basics.mc"
+ #line 107 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollari; 
- #line 89 "Content\CNV3/Basics.mc"
+ #line 107 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var d = tmp_6.P1; var res = (c+d); 
- #line 89 "Content\CNV3/Basics.mc"
+ #line 107 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollari.Create(res);
- #line 89 "Content\CNV3/Basics.mc"
+ #line 107 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 95 "Content\CNV3/Basics.mc"
+ #line 113 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opSubtraction; 
- #line 95 "Content\CNV3/Basics.mc"
+ #line 113 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 95 "Content\CNV3/Basics.mc"
+ #line 113 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 95 "Content\CNV3/Basics.mc"
+ #line 113 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollari; 
- #line 95 "Content\CNV3/Basics.mc"
+ #line 113 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var c = tmp_3.P1; 
- #line 95 "Content\CNV3/Basics.mc"
+ #line 113 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 95 "Content\CNV3/Basics.mc"
+ #line 113 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollari; 
- #line 95 "Content\CNV3/Basics.mc"
+ #line 113 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var d = tmp_6.P1; var res = (c-d); 
- #line 95 "Content\CNV3/Basics.mc"
+ #line 113 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollari.Create(res);
- #line 95 "Content\CNV3/Basics.mc"
+ #line 113 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 102 "Content\CNV3/Basics.mc"
+ #line 120 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opMultiplication; 
- #line 102 "Content\CNV3/Basics.mc"
+ #line 120 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 102 "Content\CNV3/Basics.mc"
+ #line 120 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 102 "Content\CNV3/Basics.mc"
+ #line 120 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollari; 
- #line 102 "Content\CNV3/Basics.mc"
+ #line 120 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var c = tmp_3.P1; 
- #line 102 "Content\CNV3/Basics.mc"
+ #line 120 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 102 "Content\CNV3/Basics.mc"
+ #line 120 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollari; 
- #line 102 "Content\CNV3/Basics.mc"
+ #line 120 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var d = tmp_6.P1; var res = (c*d); 
- #line 102 "Content\CNV3/Basics.mc"
+ #line 120 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollari.Create(res);
- #line 102 "Content\CNV3/Basics.mc"
+ #line 120 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 108 "Content\CNV3/Basics.mc"
+ #line 126 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opDivision; 
- #line 108 "Content\CNV3/Basics.mc"
+ #line 126 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 108 "Content\CNV3/Basics.mc"
+ #line 126 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 108 "Content\CNV3/Basics.mc"
+ #line 126 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollari; 
- #line 108 "Content\CNV3/Basics.mc"
+ #line 126 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var c = tmp_3.P1; 
- #line 108 "Content\CNV3/Basics.mc"
+ #line 126 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 108 "Content\CNV3/Basics.mc"
+ #line 126 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollari; 
- #line 108 "Content\CNV3/Basics.mc"
+ #line 126 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var d = tmp_6.P1; var res = (c/d); 
- #line 108 "Content\CNV3/Basics.mc"
+ #line 126 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollari.Create(res);
- #line 108 "Content\CNV3/Basics.mc"
+ #line 126 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 114 "Content\CNV3/Basics.mc"
+ #line 132 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opAddition; 
- #line 114 "Content\CNV3/Basics.mc"
+ #line 132 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 114 "Content\CNV3/Basics.mc"
+ #line 132 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 114 "Content\CNV3/Basics.mc"
+ #line 132 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarf; 
- #line 114 "Content\CNV3/Basics.mc"
+ #line 132 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var c = tmp_3.P1; 
- #line 114 "Content\CNV3/Basics.mc"
+ #line 132 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 114 "Content\CNV3/Basics.mc"
+ #line 132 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollarf; 
- #line 114 "Content\CNV3/Basics.mc"
+ #line 132 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var d = tmp_6.P1; var res = (c+d); 
- #line 114 "Content\CNV3/Basics.mc"
+ #line 132 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarf.Create(res);
- #line 114 "Content\CNV3/Basics.mc"
+ #line 132 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 120 "Content\CNV3/Basics.mc"
+ #line 138 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opMultiplication; 
- #line 120 "Content\CNV3/Basics.mc"
+ #line 138 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 120 "Content\CNV3/Basics.mc"
+ #line 138 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 120 "Content\CNV3/Basics.mc"
+ #line 138 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarf; 
- #line 120 "Content\CNV3/Basics.mc"
+ #line 138 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var c = tmp_3.P1; 
- #line 120 "Content\CNV3/Basics.mc"
+ #line 138 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 120 "Content\CNV3/Basics.mc"
+ #line 138 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollarf; 
- #line 120 "Content\CNV3/Basics.mc"
+ #line 138 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var d = tmp_6.P1; var res = (c*d); 
- #line 120 "Content\CNV3/Basics.mc"
+ #line 138 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarf.Create(res);
- #line 120 "Content\CNV3/Basics.mc"
+ #line 138 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 126 "Content\CNV3/Basics.mc"
+ #line 144 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opDivision; 
- #line 126 "Content\CNV3/Basics.mc"
+ #line 144 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 126 "Content\CNV3/Basics.mc"
+ #line 144 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 126 "Content\CNV3/Basics.mc"
+ #line 144 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarf; 
- #line 126 "Content\CNV3/Basics.mc"
+ #line 144 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var c = tmp_3.P1; 
- #line 126 "Content\CNV3/Basics.mc"
+ #line 144 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 126 "Content\CNV3/Basics.mc"
+ #line 144 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollarf; 
- #line 126 "Content\CNV3/Basics.mc"
+ #line 144 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var d = tmp_6.P1; var res = (c/d); 
- #line 126 "Content\CNV3/Basics.mc"
+ #line 144 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarf.Create(res);
- #line 126 "Content\CNV3/Basics.mc"
+ #line 144 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 132 "Content\CNV3/Basics.mc"
+ #line 150 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opSubtraction; 
- #line 132 "Content\CNV3/Basics.mc"
+ #line 150 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 132 "Content\CNV3/Basics.mc"
+ #line 150 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 132 "Content\CNV3/Basics.mc"
+ #line 150 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarf; 
- #line 132 "Content\CNV3/Basics.mc"
+ #line 150 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var c = tmp_3.P1; 
- #line 132 "Content\CNV3/Basics.mc"
+ #line 150 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 132 "Content\CNV3/Basics.mc"
+ #line 150 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollarf; 
- #line 132 "Content\CNV3/Basics.mc"
+ #line 150 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var d = tmp_6.P1; var res = (c-d); 
- #line 132 "Content\CNV3/Basics.mc"
+ #line 150 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarf.Create(res);
- #line 132 "Content\CNV3/Basics.mc"
+ #line 150 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 138 "Content\CNV3/Basics.mc"
+ #line 156 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opOr; 
- #line 138 "Content\CNV3/Basics.mc"
+ #line 156 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 138 "Content\CNV3/Basics.mc"
+ #line 156 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 138 "Content\CNV3/Basics.mc"
+ #line 156 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarb; 
- #line 138 "Content\CNV3/Basics.mc"
+ #line 156 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var c = tmp_3.P1; 
- #line 138 "Content\CNV3/Basics.mc"
+ #line 156 "../../../Content/Content\CNV3/Basics.mc"
 if(c.Equals(true)) { 
- #line 138 "Content\CNV3/Basics.mc"
+ #line 156 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarb.Create(c);
- #line 138 "Content\CNV3/Basics.mc"
+ #line 156 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 143 "Content\CNV3/Basics.mc"
+ #line 161 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opOr; 
- #line 143 "Content\CNV3/Basics.mc"
+ #line 161 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 143 "Content\CNV3/Basics.mc"
+ #line 161 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 143 "Content\CNV3/Basics.mc"
+ #line 161 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarb; 
- #line 143 "Content\CNV3/Basics.mc"
+ #line 161 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var c = tmp_3.P1; 
- #line 143 "Content\CNV3/Basics.mc"
+ #line 161 "../../../Content/Content\CNV3/Basics.mc"
 if(c.Equals(false)) { 
- #line 143 "Content\CNV3/Basics.mc"
+ #line 161 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 143 "Content\CNV3/Basics.mc"
+ #line 161 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollarb; 
- #line 143 "Content\CNV3/Basics.mc"
+ #line 161 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var d = tmp_6.P1; 
- #line 143 "Content\CNV3/Basics.mc"
+ #line 161 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarb.Create(d);
- #line 143 "Content\CNV3/Basics.mc"
+ #line 161 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } } }
  } 
 
   
  { 
- #line 149 "Content\CNV3/Basics.mc"
+ #line 167 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opAnd; 
- #line 149 "Content\CNV3/Basics.mc"
+ #line 167 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 149 "Content\CNV3/Basics.mc"
+ #line 167 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 149 "Content\CNV3/Basics.mc"
+ #line 167 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarb; 
- #line 149 "Content\CNV3/Basics.mc"
+ #line 167 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var c = tmp_3.P1; 
- #line 149 "Content\CNV3/Basics.mc"
+ #line 167 "../../../Content/Content\CNV3/Basics.mc"
 if(c.Equals(true)) { 
- #line 149 "Content\CNV3/Basics.mc"
+ #line 167 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 149 "Content\CNV3/Basics.mc"
+ #line 167 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollarb; 
- #line 149 "Content\CNV3/Basics.mc"
+ #line 167 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var d = tmp_6.P1; 
- #line 149 "Content\CNV3/Basics.mc"
+ #line 167 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarb.Create(d);
- #line 149 "Content\CNV3/Basics.mc"
+ #line 167 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } } }
  } 
 
   
  { 
- #line 155 "Content\CNV3/Basics.mc"
+ #line 173 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opAnd; 
- #line 155 "Content\CNV3/Basics.mc"
+ #line 173 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 155 "Content\CNV3/Basics.mc"
+ #line 173 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 155 "Content\CNV3/Basics.mc"
+ #line 173 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarb; 
- #line 155 "Content\CNV3/Basics.mc"
+ #line 173 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var c = tmp_3.P1; 
- #line 155 "Content\CNV3/Basics.mc"
+ #line 173 "../../../Content/Content\CNV3/Basics.mc"
 if(c.Equals(false)) { 
- #line 155 "Content\CNV3/Basics.mc"
+ #line 173 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarb.Create(c);
- #line 155 "Content\CNV3/Basics.mc"
+ #line 173 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 160 "Content\CNV3/Basics.mc"
+ #line 178 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as lt; 
- #line 160 "Content\CNV3/Basics.mc"
+ #line 178 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 160 "Content\CNV3/Basics.mc"
+ #line 178 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 160 "Content\CNV3/Basics.mc"
+ #line 178 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollari; 
- #line 160 "Content\CNV3/Basics.mc"
+ #line 178 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var x = tmp_3.P1; 
- #line 160 "Content\CNV3/Basics.mc"
+ #line 178 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 160 "Content\CNV3/Basics.mc"
+ #line 178 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollari; 
- #line 160 "Content\CNV3/Basics.mc"
+ #line 178 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var y = tmp_6.P1; 
- #line 160 "Content\CNV3/Basics.mc"
+ #line 178 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarb.Create(x<y);
- #line 160 "Content\CNV3/Basics.mc"
+ #line 178 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 165 "Content\CNV3/Basics.mc"
+ #line 183 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as leq; 
- #line 165 "Content\CNV3/Basics.mc"
+ #line 183 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 165 "Content\CNV3/Basics.mc"
+ #line 183 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 165 "Content\CNV3/Basics.mc"
+ #line 183 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollari; 
- #line 165 "Content\CNV3/Basics.mc"
+ #line 183 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var x = tmp_3.P1; 
- #line 165 "Content\CNV3/Basics.mc"
+ #line 183 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 165 "Content\CNV3/Basics.mc"
+ #line 183 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollari; 
- #line 165 "Content\CNV3/Basics.mc"
+ #line 183 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var y = tmp_6.P1; 
- #line 165 "Content\CNV3/Basics.mc"
+ #line 183 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarb.Create(x<=y);
- #line 165 "Content\CNV3/Basics.mc"
+ #line 183 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 170 "Content\CNV3/Basics.mc"
+ #line 188 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as gt; 
- #line 170 "Content\CNV3/Basics.mc"
+ #line 188 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 170 "Content\CNV3/Basics.mc"
+ #line 188 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 170 "Content\CNV3/Basics.mc"
+ #line 188 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollari; 
- #line 170 "Content\CNV3/Basics.mc"
+ #line 188 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var x = tmp_3.P1; 
- #line 170 "Content\CNV3/Basics.mc"
+ #line 188 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 170 "Content\CNV3/Basics.mc"
+ #line 188 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollari; 
- #line 170 "Content\CNV3/Basics.mc"
+ #line 188 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var y = tmp_6.P1; 
- #line 170 "Content\CNV3/Basics.mc"
+ #line 188 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarb.Create(x>y);
- #line 170 "Content\CNV3/Basics.mc"
+ #line 188 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 175 "Content\CNV3/Basics.mc"
+ #line 193 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as geq; 
- #line 175 "Content\CNV3/Basics.mc"
+ #line 193 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 175 "Content\CNV3/Basics.mc"
+ #line 193 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 175 "Content\CNV3/Basics.mc"
+ #line 193 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollari; 
- #line 175 "Content\CNV3/Basics.mc"
+ #line 193 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var x = tmp_3.P1; 
- #line 175 "Content\CNV3/Basics.mc"
+ #line 193 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 175 "Content\CNV3/Basics.mc"
+ #line 193 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollari; 
- #line 175 "Content\CNV3/Basics.mc"
+ #line 193 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var y = tmp_6.P1; 
- #line 175 "Content\CNV3/Basics.mc"
+ #line 193 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarb.Create(x>=y);
- #line 175 "Content\CNV3/Basics.mc"
+ #line 193 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 180 "Content\CNV3/Basics.mc"
+ #line 198 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as lt; 
- #line 180 "Content\CNV3/Basics.mc"
+ #line 198 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 180 "Content\CNV3/Basics.mc"
+ #line 198 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 180 "Content\CNV3/Basics.mc"
+ #line 198 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarf; 
- #line 180 "Content\CNV3/Basics.mc"
+ #line 198 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var x = tmp_3.P1; 
- #line 180 "Content\CNV3/Basics.mc"
+ #line 198 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 180 "Content\CNV3/Basics.mc"
+ #line 198 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollarf; 
- #line 180 "Content\CNV3/Basics.mc"
+ #line 198 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var y = tmp_6.P1; 
- #line 180 "Content\CNV3/Basics.mc"
+ #line 198 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarb.Create(x<y);
- #line 180 "Content\CNV3/Basics.mc"
+ #line 198 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 185 "Content\CNV3/Basics.mc"
+ #line 203 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as leq; 
- #line 185 "Content\CNV3/Basics.mc"
+ #line 203 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 185 "Content\CNV3/Basics.mc"
+ #line 203 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 185 "Content\CNV3/Basics.mc"
+ #line 203 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarf; 
- #line 185 "Content\CNV3/Basics.mc"
+ #line 203 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var x = tmp_3.P1; 
- #line 185 "Content\CNV3/Basics.mc"
+ #line 203 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 185 "Content\CNV3/Basics.mc"
+ #line 203 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollarf; 
- #line 185 "Content\CNV3/Basics.mc"
+ #line 203 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var y = tmp_6.P1; 
- #line 185 "Content\CNV3/Basics.mc"
+ #line 203 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarb.Create(x<=y);
- #line 185 "Content\CNV3/Basics.mc"
+ #line 203 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 190 "Content\CNV3/Basics.mc"
+ #line 208 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as gt; 
- #line 190 "Content\CNV3/Basics.mc"
+ #line 208 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 190 "Content\CNV3/Basics.mc"
+ #line 208 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 190 "Content\CNV3/Basics.mc"
+ #line 208 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarf; 
- #line 190 "Content\CNV3/Basics.mc"
+ #line 208 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var x = tmp_3.P1; 
- #line 190 "Content\CNV3/Basics.mc"
+ #line 208 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 190 "Content\CNV3/Basics.mc"
+ #line 208 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollarf; 
- #line 190 "Content\CNV3/Basics.mc"
+ #line 208 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var y = tmp_6.P1; 
- #line 190 "Content\CNV3/Basics.mc"
+ #line 208 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarb.Create(x>y);
- #line 190 "Content\CNV3/Basics.mc"
+ #line 208 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 195 "Content\CNV3/Basics.mc"
+ #line 213 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as geq; 
- #line 195 "Content\CNV3/Basics.mc"
+ #line 213 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var a = tmp_0.P1; var b = tmp_0.P2; var m = P2; 
- #line 195 "Content\CNV3/Basics.mc"
+ #line 213 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(a, m);
- #line 195 "Content\CNV3/Basics.mc"
+ #line 213 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarf; 
- #line 195 "Content\CNV3/Basics.mc"
+ #line 213 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var x = tmp_3.P1; 
- #line 195 "Content\CNV3/Basics.mc"
+ #line 213 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(b, m);
- #line 195 "Content\CNV3/Basics.mc"
+ #line 213 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollarf; 
- #line 195 "Content\CNV3/Basics.mc"
+ #line 213 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var y = tmp_6.P1; 
- #line 195 "Content\CNV3/Basics.mc"
+ #line 213 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarb.Create(x>=y);
- #line 195 "Content\CNV3/Basics.mc"
+ #line 213 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 201 "Content\CNV3/Basics.mc"
+ #line 219 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opDollarl; 
- #line 201 "Content\CNV3/Basics.mc"
+ #line 219 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var li = tmp_0.P1; var m = P2; 
- #line 201 "Content\CNV3/Basics.mc"
+ #line 219 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarl.Create(li);
- #line 201 "Content\CNV3/Basics.mc"
+ #line 219 "../../../Content/Content\CNV3/Basics.mc"
  return result;  }
  } 
 
   
  { 
- #line 204 "Content\CNV3/Basics.mc"
+ #line 222 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opAddition_opAddition; 
- #line 204 "Content\CNV3/Basics.mc"
+ #line 222 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var e = tmp_0.P1; var el = tmp_0.P2; var m = P2; 
- #line 204 "Content\CNV3/Basics.mc"
+ #line 222 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(e, m);
- #line 204 "Content\CNV3/Basics.mc"
+ #line 222 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var v = tmp_1; 
- #line 204 "Content\CNV3/Basics.mc"
+ #line 222 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_4 = eval.StaticRun(el, m);
- #line 204 "Content\CNV3/Basics.mc"
+ #line 222 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_3 = tmp_4;
 
 var tmp_5 = tmp_3 as _opDollarl; 
- #line 204 "Content\CNV3/Basics.mc"
+ #line 222 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_5 != null) { 
  var li = tmp_5.P1; 
- #line 204 "Content\CNV3/Basics.mc"
+ #line 222 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarl.Create(_Colon_Colon<Value>.Create(v, li));
- #line 204 "Content\CNV3/Basics.mc"
+ #line 222 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } }
  } 
 
   
  { 
- #line 209 "Content\CNV3/Basics.mc"
+ #line 227 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opAt; 
- #line 209 "Content\CNV3/Basics.mc"
+ #line 227 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var ex = tmp_0.P1; var ey = tmp_0.P2; var m = P2; 
- #line 209 "Content\CNV3/Basics.mc"
+ #line 227 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(ex, m);
- #line 209 "Content\CNV3/Basics.mc"
+ #line 227 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollarl; 
- #line 209 "Content\CNV3/Basics.mc"
+ #line 227 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var xs = tmp_3.P1; 
- #line 209 "Content\CNV3/Basics.mc"
+ #line 227 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = eval.StaticRun(ey, m);
- #line 209 "Content\CNV3/Basics.mc"
+ #line 227 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var tmp_6 = tmp_4 as _opDollarl; 
- #line 209 "Content\CNV3/Basics.mc"
+ #line 227 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_6 != null) { 
  var ys = tmp_6.P1; 
- #line 209 "Content\CNV3/Basics.mc"
+ #line 227 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_8 = append<Value>.StaticRun(xs, ys);
- #line 209 "Content\CNV3/Basics.mc"
+ #line 227 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_7 = tmp_8;
 
 var zs = tmp_7; 
- #line 209 "Content\CNV3/Basics.mc"
+ #line 227 "../../../Content/Content\CNV3/Basics.mc"
 var result = _opDollarl.Create(zs);
- #line 209 "Content\CNV3/Basics.mc"
+ #line 227 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } } }
  } 
 
   
  { 
- #line 215 "Content\CNV3/Basics.mc"
+ #line 233 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opDollarfirst; 
- #line 215 "Content\CNV3/Basics.mc"
+ #line 233 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var expr = tmp_0.P1; var m = P2; 
- #line 215 "Content\CNV3/Basics.mc"
+ #line 233 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(expr, m);
- #line 215 "Content\CNV3/Basics.mc"
+ #line 233 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollart; 
- #line 215 "Content\CNV3/Basics.mc"
+ #line 233 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var t = tmp_3.P1; 
- #line 215 "Content\CNV3/Basics.mc"
+ #line 233 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = fst<Value, Value>.StaticRun(t);
- #line 215 "Content\CNV3/Basics.mc"
+ #line 233 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var res = tmp_4; 
- #line 215 "Content\CNV3/Basics.mc"
+ #line 233 "../../../Content/Content\CNV3/Basics.mc"
 var result = res;
- #line 215 "Content\CNV3/Basics.mc"
+ #line 233 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } }
  } 
 
   
  { 
- #line 220 "Content\CNV3/Basics.mc"
+ #line 238 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_0 = P1 as _opDollarsecond; 
- #line 220 "Content\CNV3/Basics.mc"
+ #line 238 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_0 != null) { 
  var expr = tmp_0.P1; var m = P2; 
- #line 220 "Content\CNV3/Basics.mc"
+ #line 238 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_2 = eval.StaticRun(expr, m);
- #line 220 "Content\CNV3/Basics.mc"
+ #line 238 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_1 = tmp_2;
 
 var tmp_3 = tmp_1 as _opDollart; 
- #line 220 "Content\CNV3/Basics.mc"
+ #line 238 "../../../Content/Content\CNV3/Basics.mc"
 if (tmp_3 != null) { 
  var t = tmp_3.P1; 
- #line 220 "Content\CNV3/Basics.mc"
+ #line 238 "../../../Content/Content\CNV3/Basics.mc"
 var tmp_5 = snd<Value, Value>.StaticRun(t);
- #line 220 "Content\CNV3/Basics.mc"
+ #line 238 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_4 = tmp_5;
 
 var res = tmp_4; 
- #line 220 "Content\CNV3/Basics.mc"
+ #line 238 "../../../Content/Content\CNV3/Basics.mc"
 var result = res;
- #line 220 "Content\CNV3/Basics.mc"
+ #line 238 "../../../Content/Content\CNV3/Basics.mc"
  return result;  } }
+ } 
+
+  
+ { 
+ #line 243 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_0 = P1 as vectorx; 
+ #line 243 "../../../Content/Content\CNV3/Basics.mc"
+if (tmp_0 != null) { 
+ var v = tmp_0.P1; var m = P2; 
+ #line 243 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_2 = eval.StaticRun(v, m);
+ #line 243 "../../../Content/Content\CNV3/Basics.mc"
+
+var tmp_1 = tmp_2;
+
+var tmp_3 = tmp_1 as _opDollarVector3; 
+ #line 243 "../../../Content/Content\CNV3/Basics.mc"
+if (tmp_3 != null) { 
+ var v1 = tmp_3.P1; var res = (v1.x); 
+ #line 243 "../../../Content/Content\CNV3/Basics.mc"
+var result = _opDollarf.Create(res);
+ #line 243 "../../../Content/Content\CNV3/Basics.mc"
+ return result;  } }
+ } 
+
+  
+ { 
+ #line 248 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_0 = P1 as vectory; 
+ #line 248 "../../../Content/Content\CNV3/Basics.mc"
+if (tmp_0 != null) { 
+ var v = tmp_0.P1; var m = P2; 
+ #line 248 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_2 = eval.StaticRun(v, m);
+ #line 248 "../../../Content/Content\CNV3/Basics.mc"
+
+var tmp_1 = tmp_2;
+
+var tmp_3 = tmp_1 as _opDollarVector3; 
+ #line 248 "../../../Content/Content\CNV3/Basics.mc"
+if (tmp_3 != null) { 
+ var v1 = tmp_3.P1; var res = (v1.y); 
+ #line 248 "../../../Content/Content\CNV3/Basics.mc"
+var result = _opDollarf.Create(res);
+ #line 248 "../../../Content/Content\CNV3/Basics.mc"
+ return result;  } }
+ } 
+
+  
+ { 
+ #line 253 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_0 = P1 as vectorz; 
+ #line 253 "../../../Content/Content\CNV3/Basics.mc"
+if (tmp_0 != null) { 
+ var v = tmp_0.P1; var m = P2; 
+ #line 253 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_2 = eval.StaticRun(v, m);
+ #line 253 "../../../Content/Content\CNV3/Basics.mc"
+
+var tmp_1 = tmp_2;
+
+var tmp_3 = tmp_1 as _opDollarVector3; 
+ #line 253 "../../../Content/Content\CNV3/Basics.mc"
+if (tmp_3 != null) { 
+ var v1 = tmp_3.P1; var res = (v1.z); 
+ #line 253 "../../../Content/Content\CNV3/Basics.mc"
+var result = _opDollarf.Create(res);
+ #line 253 "../../../Content/Content\CNV3/Basics.mc"
+ return result;  } }
+ } 
+
+  
+ { 
+ #line 258 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_0 = P1 as _opDollarwrapper; 
+ #line 258 "../../../Content/Content\CNV3/Basics.mc"
+if (tmp_0 != null) { 
+ var x = tmp_0.P1; var m = P2; var v = (x.Position); 
+ #line 258 "../../../Content/Content\CNV3/Basics.mc"
+var result = _opDollarVector3.Create(v);
+ #line 258 "../../../Content/Content\CNV3/Basics.mc"
+ return result;  }
+ } 
+
+  
+ { 
+ #line 262 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_0 = P1 as _opDollarwrapperSet; 
+ #line 262 "../../../Content/Content\CNV3/Basics.mc"
+if (tmp_0 != null) { 
+ var x = tmp_0.P1; var v = tmp_0.P2; var m = P2; 
+ #line 262 "../../../Content/Content\CNV3/Basics.mc"
+var result = _opDollarwrapperSet.Create(x, v);
+ #line 262 "../../../Content/Content\CNV3/Basics.mc"
+ return result;  }
  } 
 
   
@@ -1615,8 +1862,8 @@ public Value Run() { return StaticRun(P1, P2); }
 public override string ToString() {
  var res = "("; 
 
- res += " eval "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
-if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " eval "; res += P1.ToString(); 
+res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -1660,7 +1907,7 @@ public a Run() { return StaticRun(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " fst "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+ res += " fst "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -1686,9 +1933,9 @@ public static geq Create(Expr P1, Expr P2) { return new geq(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
- res += " geq "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " geq "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -1714,9 +1961,9 @@ public static gt Create(Expr P1, Expr P2) { return new gt(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
- res += " gt "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " gt "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -1806,9 +2053,9 @@ public static leq Create(Expr P1, Expr P2) { return new leq(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
- res += " leq "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " leq "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -1834,9 +2081,9 @@ public static lt Create(Expr P1, Expr P2) { return new lt(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
- res += " lt "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " lt "; res += P2.ToString(); 
 
  res += ")";
  return res;
@@ -1987,7 +2234,7 @@ public b Run() { return StaticRun(P1); }
 public override string ToString() {
  var res = "("; 
 
- res += " snd "; if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+ res += " snd "; res += P1.ToString(); 
 
  res += ")";
  return res;
@@ -2011,18 +2258,18 @@ public static test Create() { return new test(); }
 
   public static Value StaticRun() {    
  { 
- #line 225 "Content\CNV3/Basics.mc"
-var v1 = _opDollarVector3.Create(Vector3.Zero); var v2 = _opDollarVector3.Create(Vector3.One); var m = Context.Create(ImmutableDictionary<string,Value>.Empty, ImmutableDictionary<string,Value>.Empty, ImmutableDictionary<string,Value>.Empty); 
- #line 225 "Content\CNV3/Basics.mc"
-var tmp_1 = eval.StaticRun(_opAddition.Create(v1, v2), m);
- #line 225 "Content\CNV3/Basics.mc"
+ #line 267 "../../../Content/Content\CNV3/Basics.mc"
+var vx = (new Vector3(1.000000f,-3.000000f,0.000000f)); var p = (new Vector3(0.000000f,1.000000f,0.000000f)); var wt = (WrapperTest.Instantiate(p)); var m = Context.Create(ImmutableDictionary<string,Value>.Empty, ImmutableDictionary<string,Value>.Empty, ImmutableDictionary<string,Value>.Empty); 
+ #line 267 "../../../Content/Content\CNV3/Basics.mc"
+var tmp_1 = eval.StaticRun(_opAddition.Create(_opDollarwrapper.Create(wt), _opDollarVector3.Create(vx)), m);
+ #line 267 "../../../Content/Content\CNV3/Basics.mc"
 
 var tmp_0 = tmp_1;
 
 var res = tmp_0; 
- #line 225 "Content\CNV3/Basics.mc"
+ #line 267 "../../../Content/Content\CNV3/Basics.mc"
 var result = res;
- #line 225 "Content\CNV3/Basics.mc"
+ #line 267 "../../../Content/Content\CNV3/Basics.mc"
  return result; 
  } 
 
@@ -2045,6 +2292,84 @@ public override int GetHashCode() {
 
 }
 
+public class vectorx : Expr  {
+public Expr P1;
+
+public vectorx(Expr P1) {this.P1 = P1;}
+public static vectorx Create(Expr P1) { return new vectorx(P1); }
+
+public override string ToString() {
+ var res = "("; 
+
+ res += " vectorx "; res += P1.ToString(); 
+
+ res += ")";
+ return res;
+}
+
+public override bool Equals(object other) {
+ var tmp = other as vectorx;
+ if(tmp != null) return this.P1.Equals(tmp.P1); 
+ else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
+}
+
+public class vectory : Expr  {
+public Expr P1;
+
+public vectory(Expr P1) {this.P1 = P1;}
+public static vectory Create(Expr P1) { return new vectory(P1); }
+
+public override string ToString() {
+ var res = "("; 
+
+ res += " vectory "; res += P1.ToString(); 
+
+ res += ")";
+ return res;
+}
+
+public override bool Equals(object other) {
+ var tmp = other as vectory;
+ if(tmp != null) return this.P1.Equals(tmp.P1); 
+ else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
+}
+
+public class vectorz : Expr  {
+public Expr P1;
+
+public vectorz(Expr P1) {this.P1 = P1;}
+public static vectorz Create(Expr P1) { return new vectorz(P1); }
+
+public override string ToString() {
+ var res = "("; 
+
+ res += " vectorz "; res += P1.ToString(); 
+
+ res += ")";
+ return res;
+}
+
+public override bool Equals(object other) {
+ var tmp = other as vectorz;
+ if(tmp != null) return this.P1.Equals(tmp.P1); 
+ else return false; }
+
+public override int GetHashCode() {
+ return 0; 
+}
+
+}
+
 public class _opOr : Expr  {
 public Expr P1;
 public Expr P2;
@@ -2054,9 +2379,9 @@ public static _opOr Create(Expr P1, Expr P2) { return new _opOr(P1, P2); }
 
 public override string ToString() {
  var res = "("; 
-if (P1 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P1 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P1.ToString(); } 
+res += P1.ToString(); 
 
- res += " || "; if (P2 is System.Collections.IEnumerable) { res += "{"; foreach(var x in P2 as System.Collections.IEnumerable) res += x.ToString(); res += "}";  } else { res += P2.ToString(); } 
+ res += " || "; res += P2.ToString(); 
 
  res += ")";
  return res;

@@ -1,4 +1,5 @@
 ﻿include Content.CNV3.Statements.mc
+include Content.CNV3.Imported.mc
 
 import UnityEngine
 import System.Collections.Immutable
@@ -8,7 +9,7 @@ Data "entity" -> List[<<string>>] -> <<ImmutableDictionary<string, Value> >> -> 
 Data "worldEntity" -> List[<<string>>] -> <<ImmutableDictionary<string, Value> >> -> List[Rule] -> List[Rule] : World                                  Priority 10
 Data "traverseResult" -> Value -> <<ImmutableDictionary<string, Value> >> : TraverseResult
 Func "traverse" -> Value -> <<ImmutableDictionary<string, Value> >> -> <<float>> : Traverse => TraverseResult                             Priority 10
-Func "run" : runnable => GameState
+Func "run" -> <<float>> : runnable => GameState
 
 Entity is Value
 World is Entity
@@ -59,10 +60,12 @@ traverse (worldEntity fieldNames fields original rs) <<ImmutableDictionary<strin
 
 vx := $Vector3 <<new Vector3(1.0,0.0,0.0)>>
 vy := $Vector3 << new Vector3(0.0,1.0,0.0) >>
-s1 := yield (($"Position" + vx)::nil)
-s2 := when ((vectorx $"Position") lt $f 30.0)
-<<ImmutableDictionary<string, Value>.Empty>> add "Position" ($Vector3 << new Vector3(0.0,0.0,1.0) >>) => dict
-r1 := rule ("Position" :: nil) (s1;s2) nop <<ImmutableDictionary<string, Value>.Empty>> 0.1
-loopRules (r1::nil) (r1::nil) 100 dict <<ImmutableDictionary<string, Value>.Empty>> 0.1 => res
+<< new Vector3(0.0,0.0,1.0) >> => p
+<< WrapperTest.Instantiate(p) >> => wt
+s1 := yield (($wrapperSet wt ($"Base" + vx))::nil)
+s2 := when ((vectorx $"Base") lt $f 30.0)
+<<ImmutableDictionary<string, Value>.Empty>> add "Base" ($wrapper wt) => dict
+r1 := rule ("Base" :: nil) (s1;s2) nop <<ImmutableDictionary<string, Value>.Empty>> dt
+loopRules (r1::nil) (r1::nil) 100 dict <<ImmutableDictionary<string, Value>.Empty>> dt => res
 --------------------------------------------------------------------------------------------------
-run => res
+run dt => res
