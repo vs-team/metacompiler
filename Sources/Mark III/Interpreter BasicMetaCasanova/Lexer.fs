@@ -3,10 +3,13 @@
 open Common
 open ParserMonad
 
+type Context = { IndentationDepth : int; NumIndents : int }
+  with static member Zero = { IndentationDepth = 0; NumIndents = 0 }
+
 type Keyword = 
   | Func | Data | DoubleArrow | HorizontalBar | OpenCurly | CloseCurly
-  | OpenSquare | CloseSquare | OpenRound | CloseRound | SingleArrow
-  | DoubleColon | NewLine | Spaces of int
+  | OpenSquare | CloseSquare | OpenRound | CloseRound | OpenIndent | CloseIndent
+  | SingleArrow | DoubleColon | Spaces of int
 
 type Token =
   | Id of Id * Position
@@ -58,6 +61,12 @@ let alpha_numeric : Parser<char,_,char> =
                  || (c >= 'A' && c <= 'Z')
                  || (c = '_') -> Done(c, cs, ctxt, pos.NextChar)
     | _ -> Error("Error: expected digit.", pos)
+
+let eof = 
+  fun (tokens,ctxt,pos) ->
+    match tokens with
+    | [] -> Done((), [], ctxt, pos)
+    | _ -> Error("Error: expected EOF", pos)  
 
 let digits = 
   prs{
@@ -121,7 +130,7 @@ let rec spaces =
     return 1 + (rest |> List.length)
   }
 
-let token : Parser<char,Unit,Token> = 
+let rec token : Parser<char,Context,Option<Token>> = 
   prs{
     let! pos = position
     let! t = (((int_literal .|. float_literal) .|. (string_literal .|. any_id)) 
@@ -129,32 +138,79 @@ let token : Parser<char,Unit,Token> =
              (((!"{" .|. !"}") .|. (!"(" .|. !")")) .|. ((!"[" .|. !"]") .|. (!"\r\n" .|. spaces)))
     let! pos1 = position
     match t with
-    | A(A(A(A i))) -> return ((i |> Int),pos) |> Literal
-    | A(A(A(B x))) -> return ((x |> Float),pos) |> Literal
-    | A(A(B(A s))) -> return ((s |> String),pos) |> Literal
-    | A(A(B(B s))) -> return (s,pos) |> Id
+    | A(A(A(A i))) -> return ((i |> Int),pos) |> Literal |> Some
+    | A(A(A(B x))) -> return ((x |> Float),pos) |> Literal |> Some
+    | A(A(B(A s))) -> return ((s |> String),pos) |> Literal |> Some
+    | A(A(B(B s))) -> return (s,pos) |> Id |> Some
 
-    | A(B(A(A ()))) -> return (Func,pos) |> Keyword
-    | A(B(A(B(A())))) -> return (Data,pos) |> Keyword
-    | A(B(A(B(B())))) -> return (DoubleArrow,pos) |> Keyword
+    | A(B(A(A ()))) -> return (Func,pos) |> Keyword |> Some
+    | A(B(A(B(A())))) -> return (Data,pos) |> Keyword |> Some
+    | A(B(A(B(B())))) -> return (DoubleArrow,pos) |> Keyword |> Some
 
-    | A(B(B(A ()))) -> return (DoubleColon,pos) |> Keyword
-    | A(B(B(B(A())))) -> return (SingleArrow,pos) |> Keyword
-    | A(B(B(B(B())))) -> return (HorizontalBar,pos) |> Keyword
+    | A(B(B(A ()))) -> return (DoubleColon,pos) |> Keyword |> Some
+    | A(B(B(B(A())))) -> return (SingleArrow,pos) |> Keyword |> Some
+    | A(B(B(B(B())))) -> return (HorizontalBar,pos) |> Keyword |> Some
 
-    | B(A(A(A()))) -> return (OpenCurly,pos) |> Keyword
-    | B(A(A(B()))) -> return (CloseCurly,pos) |> Keyword
-    | B(A(B(A()))) -> return (OpenRound,pos) |> Keyword
-    | B(A(B(B()))) -> return (CloseRound,pos) |> Keyword
-    | B(B(A(A()))) -> return (OpenSquare,pos) |> Keyword
-    | B(B(A(B()))) -> return (CloseSquare,pos) |> Keyword
-    | B(B(B(A()))) -> return (NewLine,pos) |> Keyword
-    | B(B(B(B n))) -> return (Spaces n,pos) |> Keyword
+    | B(A(A(A()))) -> return (OpenCurly,pos) |> Keyword |> Some
+    | B(A(A(B()))) -> return (CloseCurly,pos) |> Keyword |> Some
+    | B(A(B(A()))) -> return (OpenRound,pos) |> Keyword |> Some
+    | B(A(B(B()))) -> return (CloseRound,pos) |> Keyword |> Some
+    | B(B(A(A()))) -> return (OpenSquare,pos) |> Keyword |> Some
+    | B(B(A(B()))) -> return (CloseSquare,pos) |> Keyword |> Some
+    | B(B(B(A()))) -> return None
+    | B(B(B(B n))) -> return (Spaces n,pos) |> Keyword |> Some
   }
+
+let rec tokens_line() : Parser<char,Context,List<Token>> = 
+  prs{
+    let! hd = token
+    match hd with
+    | None -> return []
+    | Some hd ->
+      let! tl = tokens_line()
+      return hd :: tl
+  }
+
+let rec tokens_lines() : Parser<char,Context,List<List<Token>>> = 
+  prs{
+    let! context = getContext
+    let! position = position
+    let! indentation_depth = 
+      spaces .|| (nothing >> prs{ return 0 })
+    if context.IndentationDepth = indentation_depth then
+      let! line = tokens_line()
+      let! rest = tokens_lines()
+      return line :: rest
+    else
+      do! setContext { context with IndentationDepth = indentation_depth }
+      let! line = tokens_line()
+      match line with
+      | [] ->
+        do! setContext context
+        return! tokens_lines()
+      | _ ->
+        let! context' = getContext
+        let bracket,num_indents =
+          if context.IndentationDepth < indentation_depth then // open indentation bracket
+            OpenIndent,context'.NumIndents+1
+          else // close indentation bracket
+            CloseIndent,context'.NumIndents-1
+        do! setContext { context' with NumIndents = num_indents }
+        let! rest = tokens_lines()
+        return (Keyword(bracket,position) :: line) :: rest
+  } .|| 
+    (eof >> 
+      prs{ 
+        let! pos = position
+        let! ctxt = getContext
+        do! setContext { ctxt with NumIndents = 0 }
+        return [for i = 1 to ctxt.NumIndents do yield [Keyword(CloseIndent,pos)]] })
 
 let tokenize (path:string) = //: Result<char,Unit,List<Token>> =
   let source = System.IO.File.ReadAllText(path) |> Seq.toList
   let pos = Position.FromPath path
-  match (token |> repeat) (source,(),pos) with
-  | Done(tokens, _, _, _) -> Some tokens
-  | Error(_,_) -> None
+  match (tokens_lines()) (source,Context.Zero,pos) with
+  | Done(tokens, _, _, _) -> Some (tokens |> List.concat)
+  | Error(e,pos) -> 
+    printfn "%A at %A" e pos
+    None

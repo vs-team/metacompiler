@@ -13,7 +13,7 @@ type ParserBuilder() =
     fun (chars,ctxt,pos) ->
       Done(res, chars, ctxt, pos)
   member this.ReturnFrom p = p
-  member this.Zero() = fun (chars,ctxt,pos) -> Error("Error: unmatched construct.", pos)
+  member this.Zero() = fun (chars,ctxt,pos) -> Error("Error: unmatched if.", pos)
   member this.Bind(p:Parser<'char,'ctxt,'result>, k:'result->Parser<'char,'ctxt,'result'>) =
     fun (chars,ctxt,pos) ->
       match p (chars, ctxt, pos) with
@@ -37,6 +37,24 @@ let (.|.) (p1:Parser<_,_,'a>) (p2:Parser<_,_,'b>) : Parser<_,_,Or<'a,'b>> =
     | Done(res1,chars',ctxt',pos') ->
        (A(res1),chars',ctxt',pos') |> Done
 
+let (>>) p k = 
+  prs{
+    do! p
+    return! k
+  }
+
+let (.||) (p1:Parser<_,_,'a>) (p2:Parser<_,_,'a>) : Parser<_,_,'a> = 
+  fun (chars,ctxt,pos) ->
+    match p1(chars,ctxt,pos) with
+    | Error(e1,pos1) ->
+      match p2(chars,ctxt,pos) with
+      | Error(e2,pos2) ->
+        Error(e1+e2,pos1)
+      | Done(res2,chars',ctxt',pos') ->
+        (res2,chars',ctxt',pos') |> Done
+    | Done(res1,chars',ctxt',pos') ->
+       (res1,chars',ctxt',pos') |> Done
+
 let nothing : Parser<_,_,Unit> = 
   fun (chars,ctxt,pos) -> Done((),chars,ctxt,pos)
 
@@ -58,6 +76,13 @@ let ignore (p:Parser<_,_,'res>) : Parser<_,_,Unit> =
     | Done(res,chars',ctxt',pos') ->
       ((),chars',ctxt',pos') |> Done
 
+let lookahead (p:Parser<_,_,_>) : Parser<_,_,_> =
+  fun (chars,ctxt,pos) -> 
+    match p(chars,ctxt,pos) with
+    | Error(e,pos') -> Error(e,pos')
+    | Done(res,chars',ctxt',pos') ->
+      (res,chars,ctxt,pos) |> Done
+
 let fail (msg:string) : Parser<_,_,_> =
   fun (_,_,pos) ->
     Error(msg,pos)
@@ -68,5 +93,8 @@ let position =
 let chars =
   fun (chars,ctxt,pos) -> (chars,chars,ctxt,pos) |> Done
 
-let context =
+let getContext =
   fun (chars,ctxt,pos) -> (ctxt,chars,ctxt,pos) |> Done
+
+let setContext ctxt' =
+  fun (chars,ctxt,pos) -> ((),chars,ctxt',pos) |> Done

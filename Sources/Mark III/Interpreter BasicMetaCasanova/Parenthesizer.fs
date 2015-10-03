@@ -8,7 +8,7 @@ type Bracket = Curly | Round | Square | Indent | Implicit
 
 type Keyword = 
   | Func | Data | DoubleArrow | HorizontalBar 
-  | SingleArrow | DoubleColon | NewLine
+  | SingleArrow | DoubleColon
 
 type BasicExpression =
   | Id of Id * Position
@@ -16,9 +16,13 @@ type BasicExpression =
   | Literal of Literal * Position
   | Application of Bracket * List<BasicExpression>
 
+type Context = { IndentationDepth : int }
+  with static member Zero = { IndentationDepth = 0 }
+
 let close_bracket (b:Bracket) : Parser<Token, _, Unit> =
   let matches t b = 
     match t, b with
+    | CloseIndent, Indent
     | CloseCurly, Curly 
     | CloseRound, Round 
     | CloseSquare, Square -> true
@@ -31,6 +35,7 @@ let close_bracket (b:Bracket) : Parser<Token, _, Unit> =
 let open_bracket (b:Bracket) : Parser<Token, _, Unit> =
   let matches t b = 
     match t, b with
+    | OpenIndent, Indent
     | OpenCurly, Curly 
     | OpenRound, Round 
     | OpenSquare, Square -> true
@@ -51,9 +56,20 @@ let read_token : Parser<Token, _, BasicExpression> =
     | (Lexer.Keyword(Lexer.HorizontalBar,p))::ts -> Done(Keyword(HorizontalBar,p), ts, ctxt, Lexer.tryGetNextPosition ts pos)
     | (Lexer.Keyword(Lexer.SingleArrow,p))::ts -> Done(Keyword(SingleArrow,p), ts, ctxt, Lexer.tryGetNextPosition ts pos)
     | (Lexer.Keyword(Lexer.DoubleColon,p))::ts -> Done(Keyword(DoubleColon,p), ts, ctxt, Lexer.tryGetNextPosition ts pos)
-    | (Lexer.Keyword(Lexer.NewLine,p))::ts -> Done(Keyword(NewLine,p), ts, ctxt, Lexer.tryGetNextPosition ts pos)
     | t::ts -> Error(sprintf "Error: unsupported token %A." t, pos)
     | _ -> Error(sprintf "Error: unexpected end of file.", pos)
+
+let spaces =
+  fun (tokens,ctxt,pos) ->
+    match tokens with
+    | (Lexer.Keyword(Spaces n, _))::ts -> Done(n, ts, ctxt, Lexer.tryGetNextPosition ts pos)
+    | _ -> Done(0, tokens, ctxt, pos)
+
+let eof = 
+  fun (tokens,ctxt,pos) ->
+    match tokens with
+    | [] -> Done((), [], ctxt, pos)
+    | _ -> Error("Error: expected EOF", pos)  
 
 let rec skip_spaces : Parser<Token, _, Unit> =
   fun (tokens,ctxt,pos) ->
@@ -62,48 +78,37 @@ let rec skip_spaces : Parser<Token, _, Unit> =
       skip_spaces (ts,ctxt,pos)
     | ts -> Done((),tokens,ctxt,Lexer.tryGetNextPosition ts pos)
 
-let rec traverse() : Parser<Token, _, List<BasicExpression>> =
+let rec open_close_bracket bracket = 
   prs{
+    do! open_bracket bracket
+    let! args = traverse()
     do! skip_spaces
+    do! close_bracket bracket
+    let! rest = traverse()
+    return Application(bracket, args) :: rest
+  }
+
+and traverse() : Parser<Token, _, List<BasicExpression>> =
+  prs{
     let! pos = position
-    let! opening_bracket = 
-      ((open_bracket Indent .|. open_bracket Curly) .|.
-       (open_bracket Round .|. open_bracket Square)) .|. 
-       nothing
-    match opening_bracket with
-    | B() -> // we have found no open bracket, so we proceed on this level
-      do! skip_spaces
-      let! hd = read_token .|. nothing
-      match hd with
-      | A hd ->
-        let! tl = traverse()
-        return hd :: tl
-      | _ -> // end of file
-        return []
-    | A open_bracket -> // we have found an open bracket, so we recurse
-      let bracket = 
-        match open_bracket with
-        | A(A()) -> Indent
-        | A(B()) -> Curly
-        | B(A()) -> Round
-        | B(B()) -> Square
-      let! args = traverse()
-      do! skip_spaces
-      // look for a closing bracket
-      let! closing_bracket = 
-        ((close_bracket Indent .|. close_bracket Curly) .|.
-         (close_bracket Round .|. close_bracket Square)) .|. 
-         nothing
-      match closing_bracket with
-      | B() -> // we have found no closing bracket, so we return an error
-        return! fail (sprintf "Error: cannot find matching bracket for %A at %A" bracket pos)
-      | A close_bracket -> // we have found a closing bracket; open and close brackets must match
-        if open_bracket = close_bracket then
-          let! rest = traverse()
-          return Application(bracket, args) :: rest
-        else
-          return! fail (sprintf "Error: brackets %A and %A at %A do not match" open_bracket close_bracket pos)
+    return!
+      ((open_close_bracket Curly)
+      .|| (open_close_bracket Round)
+      .|| (open_close_bracket Square)
+      .|| (open_close_bracket Indent))
+      .|| (nothing >>
+            prs{
+                do! skip_spaces
+                let! hd = read_token .|. 
+                          (lookahead(close_bracket Indent .|. close_bracket Round .|. close_bracket Square .|. close_bracket Curly) .|. eof)
+                match hd with
+                | A(hd) ->
+                  let! tl = traverse()
+                  return hd :: tl
+                | _ -> // end of file, or closed bracket lookahead
+                  return []
+              })
   }
 
 let parenthesize (tokens:List<Token>) =
-  traverse() (tokens,(),Lexer.tryGetNextPosition tokens Position.Zero)
+  traverse() (tokens,Context.Zero,Lexer.tryGetNextPosition tokens Position.Zero)

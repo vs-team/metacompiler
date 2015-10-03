@@ -5,7 +5,7 @@ open Parenthesizer
 (*
 ISSUES: 
 - pos only makes sense within lexer; remove from monad
-- indentation bracket is missing
+- replace all instances of .|. with .||
 *)
 
 [<EntryPoint>]
@@ -15,6 +15,7 @@ let main argv =
   match tokens with
   | Some tokens ->
 //    printfn "%A" tokens
+//    System.Console.ReadLine() |> ignore
     let expression = parenthesize tokens
     printfn "%A" expression
   | _ ->
