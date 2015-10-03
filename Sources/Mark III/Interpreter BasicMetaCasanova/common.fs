@@ -9,3 +9,4 @@ type Position = { File : string; Line : int; Col : int }
 
 type Id = string
 type Literal = Int of int | String of string | Float of float
+type Bracket = Curly | Round | Square | Indent | Implicit

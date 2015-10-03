@@ -2,12 +2,6 @@
 open Lexer
 open Parenthesizer
 
-(*
-ISSUES: 
-- pos only makes sense within lexer; remove from monad
-- replace all instances of .|. with .||
-*)
-
 [<EntryPoint>]
 let main argv = 
   let input_path = @"..\..\..\Content\lexer bmc.mc"

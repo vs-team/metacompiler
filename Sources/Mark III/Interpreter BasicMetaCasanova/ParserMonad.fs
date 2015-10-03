@@ -1,41 +1,39 @@
 ﻿module ParserMonad
-open Common
 
 type Result<'char,'ctxt,'result> = 
-  | Done of 'result * List<'char> * 'ctxt * Position
-  | Error of string * Position
+  | Done of 'result * List<'char> * 'ctxt
+  | Error of string
 
 type Parser<'char,'ctxt,'result> =
-  List<'char> * 'ctxt * Position -> Result<'char,'ctxt,'result>
+  List<'char> * 'ctxt -> Result<'char,'ctxt,'result>
 
 type ParserBuilder() =
   member this.Return(res:'result) : Parser<'char,'ctxt,'result> =
-    fun (chars,ctxt,pos) ->
-      Done(res, chars, ctxt, pos)
+    fun (chars,ctxt) ->
+      Done(res, chars, ctxt)
   member this.ReturnFrom p = p
-  member this.Zero() = fun (chars,ctxt,pos) -> Error("Error: unmatched if.", pos)
   member this.Bind(p:Parser<'char,'ctxt,'result>, k:'result->Parser<'char,'ctxt,'result'>) =
-    fun (chars,ctxt,pos) ->
-      match p (chars, ctxt, pos) with
-      | Error(s,pos') -> Error(s,pos')
-      | Done(res,chars',ctxt',pos') ->
-        let out = k res (chars',ctxt',pos')
+    fun (chars,ctxt) ->
+      match p (chars, ctxt) with
+      | Error(s) -> Error(s)
+      | Done(res,chars',ctxt') ->
+        let out = k res (chars',ctxt')
         out
 
 let prs = ParserBuilder()
 
 type Or<'a,'b> = A of 'a | B of 'b
 let (.|.) (p1:Parser<_,_,'a>) (p2:Parser<_,_,'b>) : Parser<_,_,Or<'a,'b>> = 
-  fun (chars,ctxt,pos) ->
-    match p1(chars,ctxt,pos) with
-    | Error(e1,pos1) ->
-      match p2(chars,ctxt,pos) with
-      | Error(e2,pos2) ->
-        Error(e1+e2,pos1)
-      | Done(res2,chars',ctxt',pos') ->
-        (B(res2),chars',ctxt',pos') |> Done
-    | Done(res1,chars',ctxt',pos') ->
-       (A(res1),chars',ctxt',pos') |> Done
+  fun (chars,ctxt) ->
+    match p1(chars,ctxt) with
+    | Error(e1) ->
+      match p2(chars,ctxt) with
+      | Error(e2) ->
+        Error(e1+e2)
+      | Done(res2,chars',ctxt') ->
+        (B(res2),chars',ctxt') |> Done
+    | Done(res1,chars',ctxt') ->
+       (A(res1),chars',ctxt') |> Done
 
 let (>>) p k = 
   prs{
@@ -44,19 +42,19 @@ let (>>) p k =
   }
 
 let (.||) (p1:Parser<_,_,'a>) (p2:Parser<_,_,'a>) : Parser<_,_,'a> = 
-  fun (chars,ctxt,pos) ->
-    match p1(chars,ctxt,pos) with
-    | Error(e1,pos1) ->
-      match p2(chars,ctxt,pos) with
-      | Error(e2,pos2) ->
-        Error(e1+e2,pos1)
-      | Done(res2,chars',ctxt',pos') ->
-        (res2,chars',ctxt',pos') |> Done
-    | Done(res1,chars',ctxt',pos') ->
-       (res1,chars',ctxt',pos') |> Done
+  fun (chars,ctxt) ->
+    match p1(chars,ctxt) with
+    | Error(e1) ->
+      match p2(chars,ctxt) with
+      | Error(e2) ->
+        Error(e1+e2)
+      | Done(res2,chars',ctxt') ->
+        (res2,chars',ctxt') |> Done
+    | Done(res1,chars',ctxt') ->
+       (res1,chars',ctxt') |> Done
 
 let nothing : Parser<_,_,Unit> = 
-  fun (chars,ctxt,pos) -> Done((),chars,ctxt,pos)
+  fun (chars,ctxt) -> Done((),chars,ctxt)
 
 let rec repeat (p:Parser<_,_,'result>) : Parser<_,_,List<'result>> =
   prs{
@@ -69,32 +67,41 @@ let rec repeat (p:Parser<_,_,'result>) : Parser<_,_,List<'result>> =
       return []
   }
 
+let step = 
+  fun (chars,ctxt) ->
+    match chars with
+    | c::cs -> Done(c, cs, ctxt)
+    | _ -> Error(sprintf "Error: unexpected eof.")
+
+let eof = 
+  fun (chars,ctxt) ->
+    match chars with
+    | [] -> Done((), [], ctxt)
+    | _ -> Error(sprintf "Error: expected eof.")
+
 let ignore (p:Parser<_,_,'res>) : Parser<_,_,Unit> = 
-  fun (chars,ctxt,pos) -> 
-    match p(chars,ctxt,pos) with
-    | Error(e,pos') -> Error(e,pos')
-    | Done(res,chars',ctxt',pos') ->
-      ((),chars',ctxt',pos') |> Done
+  fun (chars,ctxt) -> 
+    match p(chars,ctxt) with
+    | Error(e) -> Error(e)
+    | Done(res,chars',ctxt') ->
+      ((),chars',ctxt') |> Done
 
 let lookahead (p:Parser<_,_,_>) : Parser<_,_,_> =
-  fun (chars,ctxt,pos) -> 
-    match p(chars,ctxt,pos) with
-    | Error(e,pos') -> Error(e,pos')
-    | Done(res,chars',ctxt',pos') ->
-      (res,chars,ctxt,pos) |> Done
+  fun (chars,ctxt) -> 
+    match p(chars,ctxt) with
+    | Error(e) -> Error(e)
+    | Done(res,chars',ctxt') ->
+      (res,chars,ctxt) |> Done
 
 let fail (msg:string) : Parser<_,_,_> =
-  fun (_,_,pos) ->
-    Error(msg,pos)
+  fun (_,_) ->
+    Error(msg)
 
-let position =
-  fun (chars,ctxt,pos) -> (pos,chars,ctxt,pos) |> Done
-
-let chars =
-  fun (chars,ctxt,pos) -> (chars,chars,ctxt,pos) |> Done
+let getBuffer =
+  fun (chars,ctxt) -> (chars,chars,ctxt) |> Done
 
 let getContext =
-  fun (chars,ctxt,pos) -> (ctxt,chars,ctxt,pos) |> Done
+  fun (chars,ctxt) -> (ctxt,chars,ctxt) |> Done
 
 let setContext ctxt' =
-  fun (chars,ctxt,pos) -> ((),chars,ctxt',pos) |> Done
+  fun (chars,ctxt) -> ((),chars,ctxt') |> Done
