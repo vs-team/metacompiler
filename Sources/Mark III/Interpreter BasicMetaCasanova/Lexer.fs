@@ -8,7 +8,7 @@ type Context = { IndentationDepth : int; NumIndents : int; Position : Position }
 
 type Keyword = 
   | Func | Data | DoubleArrow | HorizontalBar
-  | Open of Bracket| Close of Bracket
+  | Open of Bracket| Close of Bracket | NewLine
   | SingleArrow | DoubleColon | Spaces of int
 
 type Token =
@@ -121,81 +121,81 @@ let rec spaces =
 let getPosition = 
   fun (chars,ctxt) -> Done(ctxt.Position,chars,ctxt)
 
-let rec token : Parser<char,Context,Option<Token>> = 
+let rec token : Parser<char,Context,Token> = 
   prs{
     let! pos = getPosition
     return! 
       (prs{
         let! i = int_literal
-        return ((i |> Int),pos) |> Literal |> Some
+        return ((i |> Int),pos) |> Literal 
       }) .||
       (prs{
         let! x = float_literal
-        return ((x |> Float),pos) |> Literal |> Some
+        return ((x |> Float),pos) |> Literal 
       }) .||
       (prs{
         let! s = string_literal
-        return ((s |> String),pos) |> Literal |> Some
+        return ((s |> String),pos) |> Literal 
       }) .||
       (prs{
         do! !"Func"
-        return (Func,pos) |> Keyword |> Some
+        return (Func,pos) |> Keyword 
       }) .||
       (prs{
         do! !"Data"
-        return (Data,pos) |> Keyword |> Some
+        return (Data,pos) |> Keyword 
       }) .||
       (prs{
         do! !"=>"
-        return (DoubleArrow,pos) |> Keyword |> Some
+        return (DoubleArrow,pos) |> Keyword 
       }) .||
       (prs{
         do! !"::"
-        return (DoubleColon,pos) |> Keyword |> Some
+        return (DoubleColon,pos) |> Keyword 
       }) .||
       (prs{
         do! !"->"
-        return (SingleArrow,pos) |> Keyword |> Some
+        return (SingleArrow,pos) |> Keyword 
       }) .||
       (prs{
         do! horizontal_bar
-        return (HorizontalBar,pos) |> Keyword |> Some
+        return (HorizontalBar,pos) |> Keyword 
       }) .||
       (prs{
         do! !"{"
-        return (Open Curly,pos) |> Keyword |> Some
+        return (Open Curly,pos) |> Keyword 
       }) .||
       (prs{
         do! !"}"
-        return (Close Curly,pos) |> Keyword |> Some
+        return (Close Curly,pos) |> Keyword 
       }) .||
       (prs{
         do! !"["
-        return (Open Square,pos) |> Keyword |> Some
+        return (Open Square,pos) |> Keyword 
       }) .||
       (prs{
         do! !"]"
-        return (Close Square,pos) |> Keyword |> Some
+        return (Close Square,pos) |> Keyword 
       }) .||
       (prs{
         do! !"("
-        return (Open Round,pos) |> Keyword |> Some
+        return (Open Round,pos) |> Keyword 
       }) .||
       (prs{
         do! !")"
-        return (Close Round,pos) |> Keyword |> Some
+        return (Close Round,pos) |> Keyword 
       }) .||
       (prs{
         let! n = spaces
-        return (Spaces n,pos) |> Keyword |> Some
+        return (Spaces n,pos) |> Keyword 
       }) .||
       (prs{
         do! !"\r\n"
-        return None
+        return (NewLine,pos) |> Keyword
       }) .||
       (prs{
         let! s = any_id
-        return (s,pos) |> Id |> Some
+        return (s,pos) |> Id 
       })
   }
 
@@ -203,8 +203,8 @@ let rec tokens_line() : Parser<char,Context,List<Token>> =
   prs{
     let! hd = token
     match hd with
-    | None -> return []
-    | Some hd ->
+    | Keyword(NewLine,_) -> return [hd]
+    | _ ->
       let! tl = tokens_line()
       return hd :: tl
   }

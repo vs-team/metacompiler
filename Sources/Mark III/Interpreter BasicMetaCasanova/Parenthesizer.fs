@@ -5,7 +5,7 @@ open Common
 open Lexer
 
 type Keyword = 
-  | Func | Data | DoubleArrow | HorizontalBar | SingleArrow | DoubleColon
+  | Func | Data | DoubleArrow | HorizontalBar | SingleArrow | DoubleColon | NewLine
 
 type BasicExpression =
   | Id of Id * Position
@@ -70,6 +70,7 @@ let convert_token : Parser<Token, _, BasicExpression> =
     | Lexer.HorizontalBar -> return Keyword(HorizontalBar,pos)
     | Lexer.SingleArrow -> return Keyword(SingleArrow,pos)
     | Lexer.DoubleColon -> return Keyword(DoubleColon,pos)
+    | Lexer.NewLine -> return Keyword(NewLine,pos)
     | _ -> return! fail (sprintf "Error: expected keyword at %A." pos)
   } .||
   prs{
@@ -133,4 +134,8 @@ and traverse() : Parser<Token, _, List<BasicExpression>> =
   }
 
 let parenthesize (tokens:List<Token>) =
-  traverse() (tokens,())
+  match traverse() (tokens,()) with
+  | Done(parenthesization,_,_) -> Some parenthesization
+  | Error(e) ->
+    printfn "%A" e
+    None

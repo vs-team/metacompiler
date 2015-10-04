@@ -1,6 +1,7 @@
 ﻿open AST
 open Lexer
 open Parenthesizer
+open LineSplitter
 
 [<EntryPoint>]
 let main argv = 
@@ -10,8 +11,13 @@ let main argv =
   | Some tokens ->
 //    printfn "%A" tokens
 //    System.Console.ReadLine() |> ignore
-    let expression = parenthesize tokens
-    printfn "%A" expression
+    match parenthesize tokens with
+    | Some(parenthesization) ->
+  //    printfn "%A" parenthesization
+      let expression = split_lines parenthesization
+      printfn "%A" expression
+    | _ ->
+      printfn "No parenthesization returned. Parenthesizer failed."
   | _ ->
     printfn "No tokens returned. Tokenizer failed."
   0

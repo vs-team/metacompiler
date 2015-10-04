@@ -52,6 +52,7 @@
     <Compile Include="ParserMonad.fs" />
     <Compile Include="Lexer.fs" />
     <Compile Include="Parenthesizer.fs" />
+    <Compile Include="LineSplitter.fs" />
     <Compile Include="Parser.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
