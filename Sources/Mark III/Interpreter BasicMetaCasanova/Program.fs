@@ -5,7 +5,7 @@ open LineSplitter
 
 [<EntryPoint>]
 let main argv = 
-  let input_path = @"..\..\..\Content\lexer bmc.mc"
+  let input_path = @"..\..\..\Content\prelude.mc"
   let tokens = tokenize input_path
   match tokens with
   | Some tokens ->
