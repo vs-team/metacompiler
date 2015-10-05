@@ -60,7 +60,7 @@ let alpha_numeric : Parser<char,_,char> =
                  || (c >= '0' && c <= '9')
                  || (c >= 'A' && c <= 'Z')
                  || (c = '_') -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
-    | _ -> Error(sprintf "Error: expected digit at %A." ctxt.Position)
+    | _ -> Error(sprintf "Error: expected alpha numeric character at %A." ctxt.Position)
 
 let digits = 
   prs{
