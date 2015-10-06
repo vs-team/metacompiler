@@ -11,15 +11,19 @@ let main argv =
   let tokens = tokenize input_path
   match tokens with
   | Some tokens ->
-    t.Stop()
-    printfn "Done tokenization in %d ms." t.ElapsedMilliseconds
+    do t.Stop()
+    do printfn "Done tokenization in %d ms." t.ElapsedMilliseconds
+    do t.Restart()
 //    printfn "%A" tokens
-//    System.Console.ReadLine() |> ignore
     match parenthesize tokens with
     | Some(parenthesization) ->
   //    printfn "%A" parenthesization
+      do printfn "Done parenthesization in %d ms." t.ElapsedMilliseconds
+      do t.Restart()
       let expression = split_lines parenthesization
-      printfn "%A" expression
+      do printfn "Done line splitting in %d ms." t.ElapsedMilliseconds
+      //printfn "%A" expression
+      do printfn "Done parsing."
     | _ ->
       printfn "No parenthesization returned. Parenthesizer failed."
   | _ ->

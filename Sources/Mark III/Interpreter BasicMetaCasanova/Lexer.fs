@@ -38,145 +38,71 @@ let char (expected:char) : Parser<char,_,Unit> =
     | _ -> Error(sprintf "Unmatched char when %c expected at %A" expected ctxt.Position)
 
 let (!) (str:string) : Parser<char,_,Unit> =
-  let rec traverse_from  (s_i:int) : Parser<char,_,Unit> =
-// faster but less elegant:
-    fun (chars,ctxt) ->
-      if s_i = str.Length then
-        Done((), chars, ctxt)
-      else
-        match chars with
-        | c::cs when c = str.[s_i] -> 
-          traverse_from (s_i + 1) (cs,{ ctxt with Position = ctxt.Position.NextChar })
-        | _ -> Error(sprintf "Expected %s at %A" str ctxt.Position)
-// slower but more elegant:
-//    prs{
-//      match s with
-//      | c::cs -> 
-//        do! char c
-//        do! !!cs
-//        return ()
-//      | [] -> 
-//        return ()
-//    }
-  traverse_from 0
+  let rec traverse_from (s:List<char>) : Parser<char,_,Unit> =
+    prs{
+      match s with
+      | c::cs -> 
+        do! char c
+        do! traverse_from cs
+        return ()
+      | [] -> 
+        return ()
+    }
+  traverse_from (str |> Seq.toList)
 
-// less elegant but fast:
-let alpha_numeric_id(chars,ctxt) = 
-  let inline is_alpha_num c =
-    (c >= 'a' && c <= 'z')
-    || (c >= '0' && c <= '9')
-    || (c >= 'A' && c <= 'Z')
-    || (c = '_')
-  let rec alpha_num(chars,ctxt) = 
-      match chars with
-      | c::cs when is_alpha_num c -> 
-        let ds,cs,ctxt = alpha_num(cs,{ ctxt with Position = ctxt.Position.NextChar })
-        c::ds,cs,ctxt
-      | _ -> [],chars,ctxt
-  match chars with
-  | c::cs when is_alpha_num c -> 
-    let ds,cs,ctxt = alpha_num(cs,ctxt)
-    Done(new System.String((c::ds) |> Seq.toArray), cs, { ctxt with Position = ctxt.Position.NextChar })
-  | _ -> Error(sprintf "Error: expected digit at %A." ctxt.Position)
+let alpha_numeric : Parser<char,_,char> =
+  fun (chars,ctxt) ->
+    match chars with
+    | c::cs when (c >= 'a' && c <= 'z')
+                 || (c >= '0' && c <= '9')
+                 || (c >= 'A' && c <= 'Z')
+                 || (c = '_') -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
+    | _ -> Error(sprintf "Error: expected digit at %A." ctxt.Position)
+
+let alpha_numeric_id =
+  prs{
+    let! c = alpha_numeric
+    let! chars = alpha_numeric |> repeat
+    return new System.String((c::chars) |> Seq.toArray)
+  }
   
-// more elegant but slow:
-//let alpha_numeric : Parser<char,_,char> =
-//  fun (chars,ctxt) ->
-//    match chars with
-//    | c::cs when (c >= 'a' && c <= 'z')
-//                 || (c >= '0' && c <= '9')
-//                 || (c >= 'A' && c <= 'Z')
-//                 || (c = '_') -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
-//    | _ -> Error(sprintf "Error: expected digit at %A." ctxt.Position)
-//let alpha_numeric_id =
-//  prs{
-//    let! c = alpha_numeric
-//    let! chars = alpha_numeric |> repeat
-//    return new System.String((c::chars) |> Seq.toArray)
-//  }
+let symbol : Parser<char,_,char> =
+  fun (chars,ctxt) ->
+    match chars with
+    | (',' as c)::cs | (':' as c)::cs | (';' as c)::cs 
+    | ('+' as c)::cs | ('-' as c)::cs | ('*' as c)::cs 
+    | ('/' as c)::cs | ('#' as c)::cs | ('<' as c)::cs 
+    | ('^' as c)::cs | ('&' as c)::cs | ('|' as c)::cs 
+    | ('>' as c)::cs | ('=' as c)::cs | ('$' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
+    | _ -> Error(sprintf "Error: expected digit at %A." ctxt.Position)
 
-// less elegant but fast:
-let symbol_id(chars,ctxt) = 
-  let inline is_symbol c =
-    c = ',' || c = ':' || c = ';' 
-    || c = '+' || c = '-' || c = '*' 
-    || c = '/' || c = '#' || c = '<' 
-    || c = '^' || c = '&' || c = '|' 
-    || c = '>' || c = '=' || c = '$'  
-  let rec symbol(chars,ctxt) = 
-      match chars with
-      | c::cs when is_symbol c -> 
-        let ds,cs,ctxt = symbol(cs,{ ctxt with Position = ctxt.Position.NextChar })
-        c::ds,cs,ctxt
-      | _ -> [],chars,ctxt
-  match chars with
-  | c::cs when is_symbol c -> 
-    let ds,cs,ctxt = symbol(cs,ctxt)
-    Done(new System.String((c::ds) |> Seq.toArray), cs, { ctxt with Position = ctxt.Position.NextChar })
-  | _ -> Error(sprintf "Error: expected digit at %A." ctxt.Position)
+let symbol_id =
+  prs{
+    let! c = symbol
+    let! chars = symbol |> repeat
+    return new System.String((c::chars) |> Seq.toArray)
+  }
   
-// more elegant but slow:
-//let symbol : Parser<char,_,char> =
-//  fun (chars,ctxt) ->
-//    match chars with
-//    | (',' as c)::cs | (':' as c)::cs | (';' as c)::cs 
-//    | ('+' as c)::cs | ('-' as c)::cs | ('*' as c)::cs 
-//    | ('/' as c)::cs | ('#' as c)::cs | ('<' as c)::cs 
-//    | ('^' as c)::cs | ('&' as c)::cs | ('|' as c)::cs 
-//    | ('>' as c)::cs | ('=' as c)::cs | ('$' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
-//    | _ -> Error(sprintf "Error: expected digit at %A." ctxt.Position)
-//let symbol_id =
-//  prs{
-//    let! c = symbol
-//    let! chars = symbol |> repeat
-//    return new System.String((c::chars) |> Seq.toArray)
-//  }
+let digit : Parser<char,_,char> =
+  fun (chars,ctxt) ->
+    match chars with
+    | c::cs when c >= '0' && c <= '9' -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
+    | _ -> Error(sprintf "Error: expected digit at %A." ctxt.Position)
 
-// less elegant but fast:
-let digits(chars,ctxt) = 
-  let inline is_digit c = c >= '0' && c <= '9'
-  let rec digits(chars,ctxt) = 
-      match chars with
-      | c::cs when is_digit c -> 
-        let ds,cs,ctxt = digits(cs,{ ctxt with Position = ctxt.Position.NextChar })
-        c::ds,cs,ctxt
-      | _ -> [],chars,ctxt
-  match chars with
-  | c::cs when is_digit c -> 
-    let ds,cs,ctxt = digits(cs,ctxt)
-    Done(c::ds, cs, { ctxt with Position = ctxt.Position.NextChar })
-  | _ -> Error(sprintf "Error: expected digit at %A." ctxt.Position)
-  
-// more elegant but slow:
-//let digit : Parser<char,_,char> =
-//  fun (chars,ctxt) ->
-//    match chars with
-//    | c::cs when c >= '0' && c <= '9' -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
-//    | _ -> Error(sprintf "Error: expected digit at %A." ctxt.Position)
-//let digits = 
-//  prs{
-//    let! d = digit
-//    let! ds = digit |> repeat
-//    return d::ds
-//  }
+let digits = 
+  prs{
+    let! d = digit
+    let! ds = digit |> repeat
+    return d::ds
+  }
 
-// fast but inelegant
-let unsigned_int_literal(chars,ctxt) =
-  match digits (chars,ctxt) with
-  | Done(digits,chars,ctxt) ->
+let unsigned_int_literal =
+  prs{
+    let! digits = digits
     let mutable x = 0
     do for i in digits do x <- x * 10 + (int i - int '0')
-    Done(x,chars,ctxt)
-  | Error e -> Error e
-
-// slow but elegant
-//let unsigned_int_literal =
-//  prs{
-//    let! digits = digits
-//    let mutable x = 0
-//    do for i in digits do x <- x * 10 + (int i - int '0')
-//    return x
-//  }
+    return x
+  }
 
 let int_literal pos =
   prs{
@@ -224,70 +150,67 @@ let rec token : Parser<char,Context,Token> =
   prs{
     let! pos = getPosition
     return! 
-      first_successful
-        [
-          float_literal pos
-          int_literal pos
-          string_literal pos
-          (prs{
-            do! !"Instance"
-            return (Func,pos) |> Keyword 
-          })
-          (prs{
-            do! !"Class"
-            return (Func,pos) |> Keyword 
-          })
-          (prs{
-            do! !"Func"
-            return (Func,pos) |> Keyword 
-          })
-          (prs{
-            do! !"Data"
-            return (Data,pos) |> Keyword 
-          })
-          (prs{
-            do! !"=>"
-            return (DoubleArrow,pos) |> Keyword 
-          })
-          (prs{
-            do! !"->"
-            return (SingleArrow,pos) |> Keyword 
-          })
-          horizontal_bar pos
-          (prs{
-            do! !"{"
-            return (Open Curly,pos) |> Keyword 
-          })
-          (prs{
-            do! !"}"
-            return (Close Curly,pos) |> Keyword 
-          })
-          (prs{
-            do! !"["
-            return (Open Square,pos) |> Keyword 
-          })
-          (prs{
-            do! !"]"
-            return (Close Square,pos) |> Keyword 
-          })
-          (prs{
-            do! !"("
-            return (Open Round,pos) |> Keyword 
-          })
-          (prs{
-            do! !")"
-            return (Close Round,pos) |> Keyword 
-          })
-          spaces pos
-          (prs{
-            do! !"\r\n"
-            return (NewLine,pos) |> Keyword
-          })
-          (prs{
-            let! s = any_id
-            return (s,pos) |> Id 
-          })
-        ]
+        float_literal pos .||
+        int_literal pos .||
+        string_literal pos .||
+        (prs{
+          do! !"Instance"
+          return (Func,pos) |> Keyword 
+        }) .||
+        (prs{
+          do! !"Class"
+          return (Func,pos) |> Keyword 
+        }) .||
+        (prs{
+          do! !"Func"
+          return (Func,pos) |> Keyword 
+        }) .||
+        (prs{
+          do! !"Data"
+          return (Data,pos) |> Keyword 
+        }) .||
+        (prs{
+          do! !"=>"
+          return (DoubleArrow,pos) |> Keyword 
+        }) .||
+        (prs{
+          do! !"->"
+          return (SingleArrow,pos) |> Keyword 
+        }) .||
+        horizontal_bar pos .||
+        (prs{
+          do! !"{"
+          return (Open Curly,pos) |> Keyword 
+        }) .||
+        (prs{
+          do! !"}"
+          return (Close Curly,pos) |> Keyword 
+        }) .||
+        (prs{
+          do! !"["
+          return (Open Square,pos) |> Keyword 
+        }) .||
+        (prs{
+          do! !"]"
+          return (Close Square,pos) |> Keyword 
+        }) .||
+        (prs{
+          do! !"("
+          return (Open Round,pos) |> Keyword 
+        }) .||
+        (prs{
+          do! !")"
+          return (Close Round,pos) |> Keyword 
+        }) .||
+        spaces pos .||
+        (prs{
+          do! !"\r\n"
+          return (NewLine,pos) |> Keyword
+        }) .||
+        (prs{
+          let! s = any_id
+          return (s,pos) |> Id 
+        })
   }
 
 let rec tokens_line() : Parser<char,Context,List<Token>> = 
