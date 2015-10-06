@@ -5,10 +5,14 @@ open LineSplitter
 
 [<EntryPoint>]
 let main argv = 
+  let t = System.Diagnostics.Stopwatch()
   let input_path = @"..\..\..\Content\prelude.mc"
+  t.Start()
   let tokens = tokenize input_path
   match tokens with
   | Some tokens ->
+    t.Stop()
+    printfn "Done tokenization in %d ms." t.ElapsedMilliseconds
 //    printfn "%A" tokens
 //    System.Console.ReadLine() |> ignore
     match parenthesize tokens with

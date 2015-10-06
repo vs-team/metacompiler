@@ -5,7 +5,7 @@ open Common
 open Lexer
 
 type Keyword = 
-  | Func | Data | DoubleArrow | HorizontalBar | SingleArrow | DoubleColon | NewLine
+  | Func | Data | DoubleArrow | HorizontalBar | SingleArrow | NewLine | Class | Instance
 
 type BasicExpression =
   | Id of Id * Position
@@ -64,12 +64,13 @@ let convert_token : Parser<Token, _, BasicExpression> =
     let! pos = getPosition
     let! k = read_keyword
     match k with
+    | Lexer.Class -> return Keyword(Class,pos)
+    | Lexer.Instance -> return Keyword(Instance,pos)
     | Lexer.Func -> return Keyword(Func,pos)
     | Lexer.Data -> return Keyword(Data,pos)
     | Lexer.DoubleArrow -> return Keyword(DoubleArrow,pos)
     | Lexer.HorizontalBar -> return Keyword(HorizontalBar,pos)
     | Lexer.SingleArrow -> return Keyword(SingleArrow,pos)
-    | Lexer.DoubleColon -> return Keyword(DoubleColon,pos)
     | Lexer.NewLine -> return Keyword(NewLine,pos)
     | _ -> return! fail (sprintf "Error: expected keyword at %A." pos)
   } .||
@@ -115,6 +116,7 @@ let rec open_close_bracket bracket =
 
 and traverse() : Parser<Token, _, List<BasicExpression>> =
   prs{
+    do! skip_spaces
     return!
       ((open_close_bracket Curly)
       .|| (open_close_bracket Round)
@@ -122,7 +124,6 @@ and traverse() : Parser<Token, _, List<BasicExpression>> =
       .|| (open_close_bracket Indent))
       .|| (nothing >>
             prs{
-                do! skip_spaces
                 return! 
                   (eof >> prs{ return [] }) .||
                   (lookahead(close_bracket Indent .|| close_bracket Round .|| close_bracket Square .|| close_bracket Curly) >> prs{ return [] }) .||

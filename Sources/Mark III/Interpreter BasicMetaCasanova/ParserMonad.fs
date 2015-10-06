@@ -35,13 +35,23 @@ let (.|.) (p1:Parser<_,_,'a>) (p2:Parser<_,_,'b>) : Parser<_,_,Or<'a,'b>> =
     | Done(res1,chars',ctxt') ->
        (A(res1),chars',ctxt') |> Done
 
-let (>>) p k = 
+let inline (>>) p k = 
   prs{
     do! p
     return! k
   }
 
-let (.||) (p1:Parser<_,_,'a>) (p2:Parser<_,_,'a>) : Parser<_,_,'a> = 
+let rec first_successful (ps:List<Parser<_,_,'a>>) : Parser<_,_,'a> = 
+  fun (chars,ctxt) ->
+    match ps with
+    | [] -> Error("first_successful failed.")
+    | p :: ps ->
+      match p(chars,ctxt) with
+      | Error(e) ->
+        first_successful ps (chars,ctxt)
+      | res -> res 
+
+let inline (.||) (p1:Parser<_,_,'a>) (p2:Parser<_,_,'a>) : Parser<_,_,'a> = 
   fun (chars,ctxt) ->
     match p1(chars,ctxt) with
     | Error(e1) ->
