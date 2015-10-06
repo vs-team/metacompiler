@@ -265,11 +265,13 @@ let rec tokens_lines() : Parser<char,Context,List<List<Token>>> =
           return (Keyword(bracket,position) :: line) :: rest
   }
 
-let tokenize (path:string) = //: Result<char,Unit,List<Token>> =
-  let source = System.IO.File.ReadAllText(path) |> Seq.toList
-  let pos = Position.FromPath path
-  match (tokens_lines()) (source,Context.Zero pos) with
-  | Done(tokens, _, _) -> Some (tokens |> List.concat)
-  | Error(e) ->
-    printfn "%A" e
-    None
+let tokenize = //: Result<char,Unit,List<Token>> =
+  let regular_load path () = 
+    let source = System.IO.File.ReadAllText(path) |> Seq.toList
+    let pos = Position.FromPath path
+    match (tokens_lines()) (source,Context.Zero pos) with
+    | Done(tokens, _, _) -> Some (tokens |> List.concat)
+    | Error(e) ->
+      printfn "%A" e
+      None
+  Caching.cached_op regular_load

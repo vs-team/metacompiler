@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Common.fs" />
+    <Compile Include="Caching.fs" />
     <Compile Include="ParserMonad.fs" />
     <Compile Include="Lexer.fs" />
     <Compile Include="Parenthesizer.fs" />
