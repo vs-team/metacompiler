@@ -18,6 +18,7 @@ let deserializeBinary<'a> (path:string) =
   use stream = new StreamReader(path)
   binFormatter.Deserialize(stream.BaseStream) :?> 'a
 
+let mutable invalidate_cache = false
 
 let cached_op actual_op (path:string) (cache_path_suffix) args =
   let last_write = System.IO.File.GetLastWriteTime(path)
@@ -27,7 +28,7 @@ let cached_op actual_op (path:string) (cache_path_suffix) args =
     let result = actual_op path args
     do serializeBinary cache_path result
     result
-  if System.IO.File.Exists(cache_path) then
+  if System.IO.File.Exists(cache_path) && not(invalidate_cache) then
     let last_write_cache = System.IO.File.GetLastWriteTime(cache_path)
     if last_write_cache > last_write then
       deserializeBinary(cache_path)

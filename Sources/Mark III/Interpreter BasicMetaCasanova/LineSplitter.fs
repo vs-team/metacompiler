@@ -11,6 +11,21 @@ type BasicExpression =
   | Literal of Literal * Position
   | Block of List<Line>
   | Application of Bracket * List<BasicExpression>
+  with 
+    member this.Position =
+      match this with
+      | Id(_,pos) | Keyword(_,pos) | Literal(_,pos) -> pos
+      | Block(ls::_) | Application(_,ls) -> 
+        ls |> BasicExpression.tryGetNextPosition
+      | _ -> Position.Zero
+    static member tryGetNextPosition (ts:List<BasicExpression>) = 
+      match ts with
+      | t::_ -> t.Position
+      | _ -> Position.Zero
+    static member tryGetNextPosition (ts:List<List<BasicExpression>>) = 
+      match ts with
+      | t::_ -> BasicExpression.tryGetNextPosition t
+      | _ -> Position.Zero
 
 and Line = List<BasicExpression>
 

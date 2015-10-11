@@ -155,11 +155,11 @@ let rec token : Parser<char,Context,Token> =
         string_literal pos .||
         (prs{
           do! !"Instance"
-          return (Func,pos) |> Keyword 
+          return (Instance,pos) |> Keyword 
         }) .||
         (prs{
           do! !"Class"
-          return (Func,pos) |> Keyword 
+          return (Class,pos) |> Keyword 
         }) .||
         (prs{
           do! !"Func"

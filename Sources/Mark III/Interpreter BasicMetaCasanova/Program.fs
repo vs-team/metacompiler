@@ -1,12 +1,12 @@
-﻿open AST
-open Lexer
+﻿open Lexer
 open Parenthesizer
 open LineSplitter
+open ScopeBuilder
 
 [<EntryPoint>]
 let main argv = 
   let t = System.Diagnostics.Stopwatch()
-  let input_path = @"..\..\..\Content\prelude.mc"
+  let input_path = @"..\..\..\Content\rules_only.mc"
   t.Start()
   let tokens = tokenize input_path ".lex_cache" ()
   match tokens with
@@ -20,9 +20,16 @@ let main argv =
   //    printfn "%A" parenthesization
       do printfn "Done parenthesization in %d ms." t.ElapsedMilliseconds
       do t.Restart()
-      let expression = split_lines input_path ".split_cache" parenthesization
+      let line_blocks = split_lines input_path ".split_cache" parenthesization
       do printfn "Done line splitting in %d ms." t.ElapsedMilliseconds
-      printfn "%A" expression
+//      printfn "%A" line_blocks
+      do t.Restart()
+      match build_scopes line_blocks with
+      | Some scopes ->
+        do printfn "Done scope building in %d ms." t.ElapsedMilliseconds
+        printfn "%A" scopes        
+      | None ->
+        printfn "No scopes returned. Scope builder failed."
     | _ ->
       printfn "No parenthesization returned. Parenthesizer failed."
   | _ ->

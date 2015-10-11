@@ -5,7 +5,7 @@ Data "left" a b -> a => Either a b
 Data "right" a b -> b => Either a b
 Data a -> "," a b -> b => a * b
 
-Class "Monad" m => 
+Class "Monad" m =
   {
     Func m a -> ">>=" a b -> (a => m b) => m b
     Func "return" a -> m a
@@ -135,3 +135,8 @@ Instance Number a -> Number b => Number(a,b) =
     ---------------
     one => o_a,o_b
   }
+
+
+Func "run" => Unit
+
+run => unit
