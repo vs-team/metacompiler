@@ -2,7 +2,7 @@
 Data "None" a -> Option a
 Data a -> "," a b -> b -> a * b
 
-Func "tryPositive" int -> Option int
+Func "tryPositive" -> int -> Option int
 
 x < 0
 --
@@ -13,7 +13,7 @@ x >= 0
 tryPositive x -> None
 
 
-Func "tryNegative" int -> Option int
+Func "tryNegative" -> int -> Option int
 
 x < 0
 --
@@ -24,7 +24,7 @@ x >= 0
 tryNegative x -> None
 
 
-Func "run" int -> int -> (Option int) * (Option int)
+Func "run" -> int -> int -> (Option int) * (Option int)
 
 tryPositive x -> a
 tryNegative y -> b
