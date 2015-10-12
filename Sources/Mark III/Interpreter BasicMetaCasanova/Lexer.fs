@@ -57,7 +57,7 @@ let alpha_numeric : Parser<char,_,char> =
                  || (c >= '0' && c <= '9')
                  || (c >= 'A' && c <= 'Z')
                  || (c = '_') -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
-    | _ -> Error(sprintf "Error: expected digit at %A." ctxt.Position)
+    | _ -> Error(sprintf "Error: expected alpha/numeric-char at %A." ctxt.Position)
 
 let alpha_numeric_id =
   prs{
@@ -74,7 +74,7 @@ let symbol : Parser<char,_,char> =
     | ('/' as c)::cs | ('#' as c)::cs | ('<' as c)::cs 
     | ('^' as c)::cs | ('&' as c)::cs | ('|' as c)::cs 
     | ('>' as c)::cs | ('=' as c)::cs | ('$' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
-    | _ -> Error(sprintf "Error: expected digit at %A." ctxt.Position)
+    | _ -> Error(sprintf "Error: expected symbol at %A." ctxt.Position)
 
 let symbol_id =
   prs{
