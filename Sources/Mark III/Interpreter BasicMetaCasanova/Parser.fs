@@ -1,4 +1,4 @@
-﻿module Parenthesizer
+﻿module Parser
 
 open ParserMonad
 open Common

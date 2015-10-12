@@ -1,5 +1,5 @@
 ﻿open Lexer
-open Parenthesizer
+open Parser
 open LineSplitter
 open ScopeBuilder
 

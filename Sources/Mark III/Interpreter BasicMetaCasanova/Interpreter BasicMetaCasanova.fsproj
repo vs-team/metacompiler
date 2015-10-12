@@ -52,7 +52,7 @@
     <Compile Include="Caching.fs" />
     <Compile Include="ParserMonad.fs" />
     <Compile Include="Lexer.fs" />
-    <Compile Include="Parenthesizer.fs" />
+    <Compile Include="Parser.fs" />
     <Compile Include="LineSplitter.fs" />
     <Compile Include="ScopeBuilder.fs" />
     <Compile Include="Program.fs" />

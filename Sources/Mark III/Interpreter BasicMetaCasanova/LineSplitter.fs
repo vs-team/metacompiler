@@ -30,26 +30,26 @@ type BasicExpression =
 and Line = List<BasicExpression>
 
 let split_lines =
-  let rec split_lines (e:List<Parenthesizer.BasicExpression>) =
+  let rec split_lines (e:List<Parser.BasicExpression>) =
     let mutable lines = []
     let mutable line = []
     for x in e do
       match x with
-      | Parenthesizer.Keyword(Parenthesizer.NewLine,pos) ->
+      | Parser.Keyword(Parser.NewLine,pos) ->
         lines <- (line |> List.rev) :: lines
         line <- []
-      | Parenthesizer.Keyword(Parenthesizer.Class,pos) -> line <- Keyword(Class,pos) :: line
-      | Parenthesizer.Keyword(Parenthesizer.Instance,pos) -> line <- Keyword(Instance,pos) :: line
-      | Parenthesizer.Keyword(Parenthesizer.Func,pos) -> line <- Keyword(Func,pos) :: line
-      | Parenthesizer.Keyword(Parenthesizer.Data,pos) -> line <- Keyword(Data,pos) :: line
-      | Parenthesizer.Keyword(Parenthesizer.DoubleArrow,pos) -> line <- Keyword(DoubleArrow,pos) :: line
-      | Parenthesizer.Keyword(Parenthesizer.HorizontalBar,pos) -> line <- Keyword(HorizontalBar,pos) :: line
-      | Parenthesizer.Keyword(Parenthesizer.SingleArrow,pos) -> line <- Keyword(SingleArrow,pos) :: line
-      | Parenthesizer.Id(i,pos) ->
+      | Parser.Keyword(Parser.Class,pos) -> line <- Keyword(Class,pos) :: line
+      | Parser.Keyword(Parser.Instance,pos) -> line <- Keyword(Instance,pos) :: line
+      | Parser.Keyword(Parser.Func,pos) -> line <- Keyword(Func,pos) :: line
+      | Parser.Keyword(Parser.Data,pos) -> line <- Keyword(Data,pos) :: line
+      | Parser.Keyword(Parser.DoubleArrow,pos) -> line <- Keyword(DoubleArrow,pos) :: line
+      | Parser.Keyword(Parser.HorizontalBar,pos) -> line <- Keyword(HorizontalBar,pos) :: line
+      | Parser.Keyword(Parser.SingleArrow,pos) -> line <- Keyword(SingleArrow,pos) :: line
+      | Parser.Id(i,pos) ->
         line <- Id(i,pos) :: line
-      | Parenthesizer.Literal(l,pos) ->
+      | Parser.Literal(l,pos) ->
         line <- Literal(l,pos) :: line
-      | Parenthesizer.Application(b,es) ->
+      | Parser.Application(b,es) ->
         line <- Application(b,split_lines es) :: line
     let result = ((line |> List.rev) :: lines) |> List.rev |> List.filter (List.isEmpty >> not)
     match result with
