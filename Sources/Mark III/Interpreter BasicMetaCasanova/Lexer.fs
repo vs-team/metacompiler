@@ -149,7 +149,7 @@ let rec spaces pos =
 let rec token : Parser<char,Context,Token> = 
   prs{
     let! pos = getPosition
-    return! 
+    let! res = 
         float_literal pos .||
         int_literal pos .||
         string_literal pos .||
@@ -204,13 +204,16 @@ let rec token : Parser<char,Context,Token> =
         }) .||
         spaces pos .||
         (prs{
-          do! !"\r\n"
+          do! !"\r\n" .|| !"\n\r" .|| !"\n"
           return (NewLine,pos) |> Keyword
         }) .||
         (prs{
           let! s = any_id
           return (s,pos) |> Id 
         })
+    do printf "%A" res
+    do System.Console.ReadLine()
+    return res
   }
 
 let rec tokens_line() : Parser<char,Context,List<Token>> = 

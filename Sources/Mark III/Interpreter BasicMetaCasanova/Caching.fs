@@ -19,6 +19,7 @@ let deserializeBinary<'a> (path:string) =
   binFormatter.Deserialize(stream.BaseStream) :?> 'a
 
 let mutable invalidate_cache = false
+let mutable use_cache = false
 
 let cached_op actual_op (path:string) (cache_path_suffix) args =
   let last_write = System.IO.File.GetLastWriteTime(path)
@@ -26,11 +27,11 @@ let cached_op actual_op (path:string) (cache_path_suffix) args =
   let regular_load() = 
     let source = System.IO.File.ReadAllText(path) |> Seq.toList
     let result = actual_op path args
-    do serializeBinary cache_path result
+    do if use_cache then serializeBinary cache_path result
     result
   if System.IO.File.Exists(cache_path) && not(invalidate_cache) then
     let last_write_cache = System.IO.File.GetLastWriteTime(cache_path)
-    if last_write_cache > last_write then
+    if use_cache && last_write_cache > last_write then
       deserializeBinary(cache_path)
     else
       regular_load()
