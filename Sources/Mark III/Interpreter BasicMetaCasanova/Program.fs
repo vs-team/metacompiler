@@ -3,10 +3,38 @@ open Parser
 open LineSplitter
 open ScopeBuilder
 
+open Common
+
+type Namespace = {
+  Name     : string
+  Position : Position
+  Scope    : NamespaceScope
+}
+
+and NamespaceScope = {
+  Namespaces : List<Namespace>
+  FuncDecls  : List<SymbolDeclaration>
+  DataDecls  : List<SymbolDeclaration>
+  Rules      : List<Rule>
+  Modules    : List<Module>
+}
+
+and Module = {
+  Name     : string
+  Args     : List<Type>
+  Position : Position
+  Scope    : ModuleScope
+}
+
+and ModuleScope = {
+  FuncDecls : List<SymbolDeclaration>
+  DataDecls : List<SymbolDeclaration>
+}
+
 [<EntryPoint>]
 let main argv = 
   let t = System.Diagnostics.Stopwatch()
-  let input_path = @"..\..\..\Content\rules_only.mc"
+  let input_path = "../../../Content/parser_test_module.mc"
   t.Start()
   let tokens = tokenize input_path ".lex_cache" ()
   match tokens with

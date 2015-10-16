@@ -10,7 +10,7 @@ let getPosition =
   fun (chars,ctxt) -> Done(ctxt.Position,chars,ctxt)
 
 type Keyword = 
-  | Func | Data | DoubleArrow | HorizontalBar | Class | Instance
+  | Func | Data | DoubleArrow | HorizontalBar | Module | Instance
   | Open of Bracket| Close of Bracket | NewLine
   | SingleArrow | Spaces of int
 
@@ -158,8 +158,8 @@ let rec token : Parser<char,Context,Token> =
           return (Instance,pos) |> Keyword 
         }) .||
         (prs{
-          do! !"Class"
-          return (Class,pos) |> Keyword 
+          do! !"Module"
+          return (Module,pos) |> Keyword 
         }) .||
         (prs{
           do! !"Func"
@@ -208,11 +208,15 @@ let rec token : Parser<char,Context,Token> =
           return (NewLine,pos) |> Keyword
         }) .||
         (prs{
+          do! !"\t"
+          return! fail "Don't use tabs"
+        }) .||
+        (prs{
           let! s = any_id
           return (s,pos) |> Id 
         })
     do printf "%A" res
-    do System.Console.ReadLine()
+    //do System.Console.ReadLine()
     return res
   }
 

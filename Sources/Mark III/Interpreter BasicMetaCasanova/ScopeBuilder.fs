@@ -19,7 +19,7 @@ and SymbolDeclaration =
     Associativity     : Associativity
     Position          : Position
   }
-
+  
 and Type = List<BasicExpression>
 
 and Associativity = Left | Right
@@ -80,6 +80,12 @@ let data =
     match exprs with
     | LineSplitter.BasicExpression.Keyword(LineSplitter.Data,pos)::es -> Done((), es, ctxt)
     | _ -> Error (sprintf "Error: expected data at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+
+let module_ =
+  fun (exprs,ctxt) ->
+    match exprs with
+    | LineSplitter.BasicExpression.Keyword(LineSplitter.Module,pos)::es -> Done((), es, ctxt)
+    | _ -> Error (sprintf "Error: expected module at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let rec simple_expression : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
   fun (exprs,ctxt) ->
@@ -227,6 +233,14 @@ let rule : Parser<LineSplitter.Line, Scope, Unit> =
       } |> parse_first_line
     let! ctxt = getContext
     do! setContext { ctxt with Rules = { Premises = premises; Input = i; Output = o } :: ctxt.Rules }
+  }
+
+let module_definition =
+  prs{
+    do! module_
+    let! sym_decl = symbol_declaration_body
+    let! ctxt = getContext
+    do! setContext { ctxt with FunctionDeclarations = sym_decl :: ctxt.FunctionDeclarations }
   }
 
 let rec scope() : Parser<LineSplitter.Line, Scope, Scope> =
