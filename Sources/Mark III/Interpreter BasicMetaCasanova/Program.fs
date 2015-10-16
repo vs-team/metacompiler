@@ -43,12 +43,12 @@ let main argv =
     do printfn "Done tokenization in %d ms." t.ElapsedMilliseconds
     do t.Restart()
 //    printfn "%A" tokens
-    match parenthesize input_path ".paren_cache" tokens with
-    | Some(parenthesization) ->
-  //    printfn "%A" parenthesization
-      do printfn "Done parenthesization in %d ms." t.ElapsedMilliseconds
+    match parse input_path ".paren_cache" tokens with
+    | Some(parsing) ->
+  //    printfn "%A" parsing
+      do printfn "Done parsing in %d ms." t.ElapsedMilliseconds
       do t.Restart()
-      let line_blocks = split_lines input_path ".split_cache" parenthesization
+      let line_blocks = split_lines input_path ".split_cache" parsing
       do printfn "Done line splitting in %d ms." t.ElapsedMilliseconds
 //      printfn "%A" line_blocks
       do t.Restart()
@@ -59,7 +59,7 @@ let main argv =
       | None ->
         printfn "No scopes returned. Scope builder failed."
     | _ ->
-      printfn "No parenthesization returned. Parenthesizer failed."
+      printfn "No parsing returned. parser failed."
   | _ ->
     printfn "No tokens returned. Tokenizer failed."
   0

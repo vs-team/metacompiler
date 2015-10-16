@@ -134,10 +134,10 @@ and traverse() : Parser<Token, _, List<BasicExpression>> =
               })
   }
 
-let parenthesize =
+let parse =
   let regular_load path tokens = 
     match traverse() (tokens,()) with
-    | Done(parenthesization,_,_) -> Some parenthesization
+    | Done(parsing,_,_) -> Some parsing
     | Error(e) ->
       printfn "%A" e
       None
