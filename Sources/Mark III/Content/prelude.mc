@@ -1,17 +1,17 @@
 ﻿Data "unit" -> Unit
-Data "Some" -> 'a -> Option 'a
-Data "None" -> Option 'a
-Data "left"  -> 'a -> Either 'a 'b
-Data "right" -> 'b -> Either 'a 'b
-Data 'a -> "," -> 'b -> 'a * 'b
+Data "Some" a -> a -> Option a
+Data "None" a -> Option a
+Data "left" a b -> a -> Either a b
+Data "right" a b -> b -> Either a b
+Data a -> "," a b -> b -> a * b
 
-Module "Monad" m
-  [
+Class "Monad" m
+  {
     Func m a -> ">>=" a b -> (a -> m b) -> m b
     Func "return" a -> m a
-  ]
+  }
 
-Instance Monad Option
+Monad Option
   {
     None >>= k -> None
 
@@ -22,8 +22,8 @@ Instance Monad Option
     return x -> Some x
   }
 
-Module "Number" a
-  [
+Class "Number" a
+  {
     Func a -> "+" -> a -> a
     Func a -> "-" -> a -> a
     Func "zero" -> a
@@ -31,9 +31,9 @@ Module "Number" a
     Func a -> "*" -> a -> a
     Func a -> "/" -> a -> a
     Func "one" -> a
-  ]
+  }
 
-Instance Number Int
+Number Int
   {
     x + y -> <<x+y>>
 
@@ -48,7 +48,7 @@ Instance Number Int
     one -> <<1>>
   }
 
-Instance Number Float
+Number Float
   {
     x + y -> <<x+y>>
 
@@ -63,7 +63,7 @@ Instance Number Float
     one -> <<1.0>>
   }
 
-InstanceFunc "toOpt" a => Number a => Number(Option a)
+TypeFunc "toOpt" a => Number a => Number(Option a)
 
 toOpt n => Number(Option a)
   {
@@ -101,7 +101,7 @@ toOpt n => Number(Option a)
     one -> Some o
   }
 
-InstanceFunc "toPair" a b => Number a => Number b => Number(a,b)
+TypeFunc "toPair" a b => Number a => Number b => Number(a,b)
 
 toPair n_a => n_b => Number(a,b)
   {

@@ -3,8 +3,6 @@
 open Common
 open ParserMonad
 
-
-
 type BasicExpression =
   | Id of Id * Position
   | Literal of Literal * Position
@@ -33,50 +31,20 @@ and Rule =
     Premises  : List<Premise>
   }
 
-and Module = 
-  {
-    Name              : string 
-    GenericArguments  : List<string>
-    DeclarationScope  : DeclarationScope
-  }
-
-and Instance = 
-  {
-    Scope     : List<Scope>
-    Name      : string
-    Module    : Module
-  }
-
 and Premise = Conditional of List<BasicExpression> | Implication of List<BasicExpression> * List<BasicExpression>
 
-and DeclarationScope = 
-  {
-    FunctionDeclarations     : List<SymbolDeclaration>
-    DataDeclarations         : List<SymbolDeclaration>
-    TypeFuncDeclarations     : List<SymbolDeclaration>
-    TypeInstanceDeclarations : List<SymbolDeclaration>
-  } 
-  with 
-    static member Zero = 
-      {
-        FunctionDeclarations     = []
-        DataDeclarations         = []
-        TypeFuncDeclarations     = []
-        TypeInstanceDeclarations = []
-      }
-      
 and Scope = 
   {
-    DeclarationScope  : DeclarationScope
-    Rules             : List<Rule>
-    Instance          : List<Instance>
+    FunctionDeclarations    : List<SymbolDeclaration>
+    DataDeclarations        : List<SymbolDeclaration>
+    Rules                   : List<Rule>
   } 
   with 
     static member Zero = 
       {
-        DeclarationScope  = DeclarationScope.Zero
-        Rules             = []
-        Instance          = []
+        FunctionDeclarations    = []
+        DataDeclarations        = []
+        Rules                   = []
       }
 
 let getPosition : Parser<LineSplitter.BasicExpression, _, _> = 
