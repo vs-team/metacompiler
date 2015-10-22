@@ -4,9 +4,7 @@ Monad Option
   {
     None >>= k -> None
 
-    k x -> y
-    ------------------
-    Some x >>= k -> y
+    Some x >>= k -> k x
 
     return x -> Some x
   }

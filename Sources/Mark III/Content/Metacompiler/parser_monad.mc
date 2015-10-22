@@ -5,14 +5,11 @@ TypeName "Parser" 'char 'ctxt 'result = List 'char -> 'ctxt -> Result ('char * '
 
 Instance "prs" Monad (Parser 'char 'ctxt)
   {
-    return^res (res,chars,ctxt) >>= out
-    -----------------------------------
-    return res chars ctxt -> out
+    return res chars ctxt -> return^res (res,chars,ctxt)
 
     p chars ctxt >>=^res (res,chars',ctxt')
-    k res chars' ctxt' >>= out
-    ----------------------------------------
-    (p >>= k) chars ctxt -> out
+    ------------------------------------------
+    (p >>= k) chars ctxt -> k res chars' ctxt'
 
     Func "nothing" -> Parser 'a 'b Unit
     Func "fail" -> String -> Parser 'a 'b 'c
@@ -27,15 +24,24 @@ Instance "prs" Monad (Parser 'char 'ctxt)
     Func "getBuffer" -> Parser 'a 'b 'a
     Func "getContext" -> Parser 'a 'b 'b
     Func "setContext" -> 'b -> Parser 'a 'b Unit
+    Func "try" -> (Parser 'chars 'ctxt 'a) -> (a -> Parser 'chars 'ctxt 'b) -> (String -> Parser 'chars 'ctxt 'b) -> (Parser 'chars 'ctxt 'b)
 
     nothing chars ctxt -> Done((),chars,ctxt)
 
-    (try <- (p1 chars ctxt)) 
-      return^res 
-      (\e1 -> (try <- (p2 chars ctxt)) 
-      return^res (\e2 -> fail (e1+e2))) >>= out
-    --------------------------------------------------------------
-    (p1 \/ p2) chars ctxt -> out
+    (try^res (p chars ctxt)
+      (\(x,chars',ctxt') -> k x chars' ctxt')
+      (\e -> err e chars ctxt)) -> res
+    -------------------------------------------
+    (try p k err) chars ctxt -> res
+
+    (try p1
+      (\x -> return x)
+      (\e1 -> 
+        (try p2
+          (\y -> return y)
+          (\e2 -> fail (e1+e2)))) >>= res
+    --------------------------------------------
+    (p1 \/ p2) -> res
 
     fail msg chars ctxt -> Error(msg)
 
@@ -50,45 +56,38 @@ Instance "prs" Monad (Parser 'char 'ctxt)
     --
     p >> k -> out
 
-    { (try <- (p1 chars ctxt)) 
-      (\(chars',ctxt',res) -> return^res(A res,chars',ctxt')) 
-      (\e1 -> (try <- (p2 chars ctxt)) 
-      (\(chars',ctxt',res) -> return^res(B res,chars',ctxt')) 
-      (\e2 -> fail^res (e1+e2))) } >>= out
+    (try p1
+      (\x -> return (A(x)))
+      (\e1 -> 
+        (try p2
+          (\y -> return (B(y)))
+          (\e2 -> fail (e1+e2)))) >>= res
     --------------------------------------------------------------
-    (p1 \_/ p2) chars ctxt -> out
+    (p1 \_/ p2) chars ctxt -> res
 
-    { (p >>= x
+    ((p >>= x
       repeat p >>= xs
+      --
       return (x :: xs)) \/ 
-      (nothing >> (return empty)) } >>= out
-    --
+      (nothing >> (return empty))) >>= out
+    ---------------------------------------
     repeat p -> out
 
-    return c -> out
-    --
-    step (c :: cs) ctxt -> out
+    step (c :: cs) -> return c cs
 
-    fail "Error: unexpected eof." -> out
-    --
-    step (empty) ctxt-> out
+    step empty -> fail "Error: unexpected eof." empty
 
-    fail "Error: expected eof." -> out
-    --
-    eof (c :: cs) ctxt-> out
+    eof (c :: cs) -> fail "Error: expected eof." (c :: cs)
 
-    return unit >>= out
-    --
-    eof empty ctxt -> out
+    eof empty -> return unit empty
 
     p >>= x
-    return unit >>= out
     --
-    ignore p -> out
+    ignore p -> return unit
 
-    { (try <- (p chars ctxt)) 
+    ((try^res (p chars ctxt)) 
       (\(chars',ctxt',res) -> return^res(res,chars,ctxt)) 
-      (\e -> fail^res e) } >>= out
+      (\e -> fail^res e)) >>= res
     --
-    lookahead p chars ctxt -> out
+    lookahead p chars ctxt -> res
   }

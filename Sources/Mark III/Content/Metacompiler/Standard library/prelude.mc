@@ -6,11 +6,15 @@ Data "empty" -> List 'a
 Data 'a -> "," -> 'b -> 'a * 'b
 Data "A" -> 'a -> 'a | 'b
 Data "B" -> 'b -> 'a | 'b
+Func ('b->'c) -> "<.>" -> ('a->'b) -> ('a -> 'c)
+Data "then" -> Then
+Data "else" -> Else
+Func "if" -> Boolean -> Then -> ('a -> 'b) -> Else -> ('a -> 'b) -> ('a -> 'b)
 
 
-Func ('b->'c) -> "<-" -> ('a->'b) -> ('a -> 'c)
+(f <.> g) x -> g(f(x))
 
-f x -> y
-g y -> z
-----------------
-(f <- g) x -> z
+
+(if True then f else g) x -> f x
+
+(if False then f else g) x -> g x

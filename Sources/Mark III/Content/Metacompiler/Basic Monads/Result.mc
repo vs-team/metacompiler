@@ -7,23 +7,17 @@ Instance "res" Monad (Result 'a)
   {
     return x -> Done x
     
-    k x -> out
-    ----------------------
-    (Done x) >>= k -> out
+    (Done x) >>= k -> k x
 
     (Error s) >>= k -> Error s
 
 
     Func "fail" -> String -> Result 'a
-    Func "try" (Result 'a) ('a -> 'b) (String -> 'b)
+    Func "try" -> (Result 'a) -> ('a -> 'b) (String -> 'b)
 
     fail s -> Error(s)
 
-    p x -> y
-    --
-    try (Done x) p q -> y
+    try (Done x) p q -> p x
 
-    q e -> y
-    --
-    try (Error e) p q -> y
+    try (Error e) p q -> q e
   }
