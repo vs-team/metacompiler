@@ -1,5 +1,5 @@
 ﻿import Prelude
-import Monads
+import BasicMonads
 
 TypeName "Parser" 'char 'ctxt 'result = List 'char -> 'ctxt -> Result ('char * 'ctxt * 'result)
 
@@ -49,9 +49,9 @@ Instance "prs" Monad (Parser 'char 'ctxt)
 
     getContext chars ctxt -> Done(ctxt,chars,ctxt)
 
-    setContext ctxt' chars ctxt -> Done(unit,chars,ctxt')
+    setContext ctxt' chars ctxt -> Done(Unit,chars,ctxt')
 
-    p >>= unit
+    p >>= Unit
     k >>= out
     --
     p >> k -> out
@@ -79,11 +79,11 @@ Instance "prs" Monad (Parser 'char 'ctxt)
 
     eof (c :: cs) -> fail "Error: expected eof." (c :: cs)
 
-    eof empty -> return unit empty
+    eof empty -> return Unit empty
 
     p >>= x
     --
-    ignore p -> return unit
+    ignore p -> return Unit
 
     ((try^res (p chars ctxt)) 
       (\(chars',ctxt',res) -> return^res(res,chars,ctxt)) 

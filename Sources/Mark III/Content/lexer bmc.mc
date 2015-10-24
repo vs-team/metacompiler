@@ -2,9 +2,9 @@
 (100)
 
   {
-    [Data "unit" :: Unit]
+    [Data "Unit" :: Unit]
     Func "run" :: Unit
   }
 
 ------------
-  (run => unit)
+  (run => Unit)

@@ -68,27 +68,47 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Metacompiler\Standard library\prelude.mc">
+    <Content Include="Metacompiler\StandardLibrary\prelude.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Metacompiler\Standard library\monad.mc">
+    <Content Include="Metacompiler\StandardLibrary\monad.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Metacompiler\Basic Monads\option.mc">
+    <Content Include="Metacompiler\BasicMonads\result.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Metacompiler\Basic Monads\result.mc">
+    <Content Include="Metacompiler\BasicMonads\list.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Metacompiler\Basic Monads\list.mc">
+    <Content Include="Metacompiler\BasicMonads\state.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Metacompiler\BasicMonads\either.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Metacompiler\BasicMonads\id.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Metacompiler\sample_monads_usage.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Metacompiler\BasicMonads\option.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

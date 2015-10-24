@@ -1,4 +1,4 @@
-﻿Data "unit" -> Unit
+﻿Data "Unit" -> Unit
 Data "Some" a -> a -> Option a
 Data "None" a -> Option a
 Data "left" a b -> a -> Either a b
@@ -21,4 +21,4 @@ Module "Number" a {
 }
 
 Func "run" -> Unit
-run -> unit
+run -> Unit
