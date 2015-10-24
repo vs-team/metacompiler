@@ -22,7 +22,7 @@ sample_monads_usage N => Module {
 
   Func 'N -> "//" -> 'N -> Stmt 'N
 
-  match zero^N -> z
+  zero^N -> z
   (if y <> z then (return^opt (x /^N y))
    else fail^opt) -> res
   --
