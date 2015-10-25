@@ -1,7 +1,7 @@
-﻿import Prelude
+import Prelude
 import BasicMonads
 
-ModuleFunc "sample_monads_usage" => Number => Module
+TypeFunc "sample_monads_usage" => Number => Module
 
 option id => opt
 state opt (N*N) => s
