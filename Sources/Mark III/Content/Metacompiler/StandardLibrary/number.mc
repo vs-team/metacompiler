@@ -1,5 +1,5 @@
 Signature "Number" 'a {
-  TypeFunc "Num" => 'a
+  TypeFunc "Num" => *
 
   Func 'a -> "+" -> 'a -> 'a
   Func 'a -> "-" -> 'a -> 'a
