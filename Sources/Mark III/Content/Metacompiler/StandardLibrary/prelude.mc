@@ -16,9 +16,9 @@ if True then f else g => f
 if False then f else g => g
 
 
-ModuleFunc "int" => Number Int
+TypeFunc "int" => Number
 
-int => Module {
+int => Number Int {
   Num => Int
 
   x + y -> Primitives.IntPlus x y
