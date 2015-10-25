@@ -1,6 +1,8 @@
-﻿Data "with" => With
+Data "with" => With
 
-Signature "Match" 'a {
+TypeFunc "Match" => * => Signature
+
+Match 'a => Signature {
   TypeFunc Head => *
   TypeFunc Tail => *
 
@@ -8,9 +10,9 @@ Signature "Match" 'a {
 }
 
  
-ModuleFunc "match" => * => Match
+TypeFunc "match" => * => Match
 
-match ('a | 'b) => Module (Match ('a | 'b)) {
+match ('a | 'b) => Match ('a | 'b) {
   Head => 'a
   Tail => 'b
 
