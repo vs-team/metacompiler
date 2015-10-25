@@ -1,4 +1,4 @@
-﻿Module "Number" 'a {
+Signature "Number" 'a {
   TypeFunc "Num" => 'a
 
   Func 'a -> "+" -> 'a -> 'a
