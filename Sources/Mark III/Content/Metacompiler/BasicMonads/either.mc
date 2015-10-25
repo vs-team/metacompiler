@@ -1,4 +1,4 @@
-﻿import Prelude
+import Prelude
 
 TypeFunc "EitherT" => (* => *) => * => * => *
 EitherT 'M 'b 'a => 'b | ('M 'a)
@@ -6,8 +6,6 @@ EitherT 'M 'b 'a => 'b | ('M 'a)
 ModuleFunc "either" => Monad => * => Monad
 
 either M 'b => Module Monad (EitherT MCons^M 'b) {
-    MCons => EitherT MCons^M 'b
-
     (Left x) >>= k => (Left x)
 
     ym >>=^M y
