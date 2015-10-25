@@ -1,4 +1,4 @@
-﻿import Prelude
+import Prelude
 
 TypeFunc "List" => * => *
 List 'a => Unit | ('a * (List 'a))
@@ -35,11 +35,9 @@ filter (x :: xs) p -> res
 TypeFunc "ListT" => (* => *) => * => *
 ListT 'M 'a => 'M(List'a)
 
-ModuleFunc "list" => Monad => Monad 
+TypeFunc "list" => Monad => Monad 
 
-list M => Module (Monad(ListT MCons^M)) {
-    MCons => ListT MCons^M
-  
+list M => Monad(ListT MCons^M) {
     lm >>=^M l
     (match l with
      (\empty -> return^M empty)
