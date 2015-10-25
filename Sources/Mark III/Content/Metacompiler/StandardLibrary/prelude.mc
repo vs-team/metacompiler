@@ -11,9 +11,9 @@ Data "then" -> Then
 Data "else" -> Else
 TypeFunc "if" => Boolean => Then => 'a => Else => 'a => 'a
 
-(if True then f else g) x => f x
+if True then f else g => f
 
-(if False then f else g) x => g x
+if False then f else g => g
 
 
 ModuleFunc "int" => Number Int
