@@ -1,6 +1,8 @@
 import Prelude
 
-Signature "Monad" 'M {
+SignatureFunc "Monad" => (* => *) => Signature
+
+Monad 'M => Signature {
     TypeFunc "MCons" => *
     MCons => 'M
 
