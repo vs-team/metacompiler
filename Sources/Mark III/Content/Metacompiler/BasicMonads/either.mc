@@ -3,10 +3,10 @@
 TypeFunc "EitherT" => (* => *) => * => * => *
 EitherT 'M 'b 'a => 'b | ('M 'a)
 
-ModuleFunc "either" => Monad 'M => 'b => Monad (EitherT 'M 'b)
+ModuleFunc "either" => Monad => * => Monad
 
-either M 'b => Module {
-    MCons => EitherT 'M 'b
+either M 'b => Module Monad (EitherT MCons^M 'b) {
+    MCons => EitherT MCons^M 'b
 
     (Left x) >>= k => (Left x)
 
@@ -21,3 +21,12 @@ either M 'b => Module {
     try (Right y) p q => q y
   }
  
+ModuleFunc "match" => * => Match
+
+match ('a | 'b) => Module (Match ('a | 'b)) {
+  Head => 'a
+  Tail => 'b
+
+  match (Left x) f g => f x
+  match (Right y) f g => g y
+}

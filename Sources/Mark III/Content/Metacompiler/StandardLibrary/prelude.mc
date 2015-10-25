@@ -17,6 +17,8 @@ TypeFunc "if" => Boolean => Then => 'a => Else => 'a => 'a
 ModuleFunc "int" => Number Int
 
 int => Module {
+  Num => Int
+
   x + y -> Primitives.IntPlus x y
   x - y -> Primitives.IntMinus x y
   zero -> 0

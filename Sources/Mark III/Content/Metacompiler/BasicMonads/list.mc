@@ -35,10 +35,10 @@ filter (x :: xs) p -> res
 TypeFunc "ListT" => (* => *) => * => *
 ListT 'M 'a => List('M 'a)
 
-ModuleFunc "list" => Monad 'M => Monad (ListT 'M)
+ModuleFunc "list" => Monad => Monad 
 
-list M => Module {
-    MCons => ListT 'M
+list M => Module (Monad(ListT MCons^M)) {
+    MCons => ListT MCons^M
   
     empty >>= k => empty
 

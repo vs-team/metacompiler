@@ -3,10 +3,10 @@
 TypeFunc "StateT" => (* => *) => * => * => *
 StateT 'M 's 'a => ('s -> 'M('a*'s))
 
-ModuleFunc "state" => Monad 'M => 's => Monad(StateT 'M 's)
+ModuleFunc "state" => Monad => * => Monad
 
-state M 's => Module {
-    MCons => StateT 'M 's
+state M 's => Module (Monad(StateT MCons^M 's)) {
+    MCons => StateT MCons^M 's
 
     p s >>=^M (x,s')
     --
