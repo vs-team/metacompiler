@@ -1,30 +1,24 @@
-import Prelude
+﻿import Prelude
+import Match
 
 TypeFunc "EitherT" => (* => *) => * => * => *
-EitherT 'M 'b 'a => 'b | ('M 'a)
+EitherT 'M 'b 'a => 'M('b | 'a)
 
 ModuleFunc "either" => Monad => * => Monad
 
 either M 'b => Module Monad (EitherT MCons^M 'b) {
-    (Left x) >>= k => (Left x)
+    TypeFunc "try" => MCons 'a => ('a -> MCons^M 'c) => ('b -> MCons^M 'c) => MCons^M 'c
+    TypeFunc "fail" => 'b => MCons 'a
 
-    ym >>=^M y
+    return x => (return^M(Right x))
+    fail x => return^M(Left x)
+
+    pm >>=^M y
+    (match y with
+     (\Left x -> q x)
+     (\Right y -> p x)) => res
     --
-    (Right ym) >>= k => k y
+    try pm p q => res
 
-    return x => (Right(return^M x))
-
-    TypeFunc "try" => ('a | 'b) => ('a -> 'c) => ('b -> 'c) => 'c
-    try (Left x) p q => p x
-    try (Right y) p q => q y
+    pm >>= k => try pm k fail
   }
- 
-ModuleFunc "match" => * => Match
-
-match ('a | 'b) => Module (Match ('a | 'b)) {
-  Head => 'a
-  Tail => 'b
-
-  match (Left x) f g => f x
-  match (Right y) f g => g y
-}
