@@ -33,18 +33,22 @@ filter (x :: xs) p -> res
 
 
 TypeFunc "ListT" => (* => *) => * => *
-ListT 'M 'a => List('M 'a)
+ListT 'M 'a => 'M(List'a)
 
 ModuleFunc "list" => Monad => Monad 
 
 list M => Module (Monad(ListT MCons^M)) {
     MCons => ListT MCons^M
   
-    empty >>= k => empty
-
-    xm >>=^M x
+    lm >>=^M l
+    (match l with
+     (\empty -> return^M empty)
+     (\(x :: xs) -> 
+      k x >>=^M y
+      (xs >>= k) >>=^M ys
+      return^M (y @ ys))) => res
     --
-    (xm :: xms) >>= k => (k x) @ (xms >>= k)
+    lm >>= k => res
 
-    return x => x :: empty
+    return x => return^M(x :: empty)
   }
