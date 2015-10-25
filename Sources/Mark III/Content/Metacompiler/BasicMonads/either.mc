@@ -16,7 +16,7 @@ either M 'b => Module Monad (EitherT MCons^M 'b) {
     pm >>=^M y
     (match y with
      (\Left x -> q x)
-     (\Right y -> p x)) => res
+     (\Right y -> p y)) => res
     --
     try pm p q => res
 
