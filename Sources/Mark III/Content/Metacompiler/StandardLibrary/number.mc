@@ -1,4 +1,6 @@
-Signature "Number" 'a {
+TypeFunc "Number" => * => Signature
+
+Number 'a => Signature {
   TypeFunc "Num" => *
 
   Func 'a -> "+" -> 'a -> 'a
