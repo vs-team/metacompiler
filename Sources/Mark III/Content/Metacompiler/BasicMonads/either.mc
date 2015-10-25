@@ -6,7 +6,7 @@ EitherT 'M 'b 'a => 'M('b | 'a)
 
 ModuleFunc "either" => Monad => * => Monad
 
-either M 'b => Module Monad (EitherT MCons^M 'b) {
+either M 'b => Monad (EitherT MCons^M 'b) {
     TypeFunc "try" => MCons 'a => ('a -> MCons^M 'c) => ('b -> MCons^M 'c) => MCons^M 'c
     TypeFunc "fail" => 'b => MCons 'a
 
