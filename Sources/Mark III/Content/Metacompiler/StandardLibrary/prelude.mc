@@ -4,6 +4,8 @@ Data "Unit" -> Unit
 Data 'a -> "," -> 'b -> 'a * 'b
 Data "Left" -> 'a -> 'a | 'b
 Data "Right" -> 'b -> 'a | 'b
+Data "True" -> Boolean
+Data "False" -> Boolean
 
 Data "then" -> Then
 Data "else" -> Else
