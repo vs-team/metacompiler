@@ -1,6 +1,6 @@
-﻿import Prelude
+import Prelude
 
-Module "Monad" 'M {
+Signature "Monad" 'M {
     TypeFunc "MCons" => *
 
     TypeFunc 'M 'a => ">>=" => ('a => 'M 'b) => 'M 'b
