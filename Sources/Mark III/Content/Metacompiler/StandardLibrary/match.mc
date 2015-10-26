@@ -16,6 +16,6 @@ match ('a | 'b) => Match ('a | 'b) {
   Head => 'a
   Tail => 'b
 
-  match (Left x) f g => f x
-  match (Right y) f g => g y
+  match (Left x) with f g => f x
+  match (Right y) with f g => g y
 }

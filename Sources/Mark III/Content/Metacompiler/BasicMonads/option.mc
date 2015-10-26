@@ -9,13 +9,6 @@ Some x -> Right x
 Func "None" -> Option 'a
 None -> Left Unit
 
-TypeFunc "OptionT" => (*=>*) => * => *
-OptionT 'M 'a => 'M(Option 'a)
+TypeFunc "option" => Monad
 
-TypeFunc "option" => Monad => Monad
-
-either M Unit => e
---------------------------------------
-"option" M => Monad(OptionT MCons^M) {
-  inherit e
-}
+"option" => either id Unit

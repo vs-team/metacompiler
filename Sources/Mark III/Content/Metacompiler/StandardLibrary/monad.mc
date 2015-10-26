@@ -7,5 +7,5 @@ Monad 'M => Signature {
     MCons => 'M
 
     TypeFunc 'M 'a => ">>=" => ('a => 'M 'b) => 'M 'b
-    TypeFunc "return" 'a => 'M 'a
+    TypeFunc "return" => 'a => 'M 'a
   }

@@ -10,7 +10,7 @@ state M 's => Monad(StateT MCons^M 's) {
     --
     (p >>= k) s => k x s'
 
-    return x => return^M x
+    return x s => return^M(x,s)
 
     TypeFunc "getState" => MCons 's
     getState s => return^M(s,s)
