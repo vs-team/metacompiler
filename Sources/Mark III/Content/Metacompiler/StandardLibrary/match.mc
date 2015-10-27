@@ -1,4 +1,4 @@
-Data "with" => With
+Data "with" -> With
 
 TypeFunc "Match" => * => Signature
 
