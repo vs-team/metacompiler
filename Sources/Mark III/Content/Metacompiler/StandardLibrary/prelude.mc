@@ -18,14 +18,15 @@ if False then f else g => g
 
 TypeFunc "int" => Number
 
+---
 int => Number Int {
   Num => Int
 
-  x + y -> Primitives.IntPlus x y
-  x - y -> Primitives.IntMinus x y
+  x + y -> IntPlus^Primitives x y
+  x - y -> IntMinus^Primitives x y
   zero -> 0
 
-  x * y -> Primitives.IntTimes x y
-  x / y -> Primitives.IntDividedBy x y
+  x * y -> IntTimes^Primitives x y
+  x / y -> IntDividedBy^Primitives x y
   one -> 1
 }

@@ -10,10 +10,7 @@ open Common
 [<EntryPoint>]
 let main argv = 
   let t = System.Diagnostics.Stopwatch()
-  //let input_path = "../../../Content/parser_test_prelude.mc"
-  let input_path = "../../../Content/parser_test_def.mc"
-  //let input_path = "../../../Content/parser_test_module.mc"
-  //let input_path = "../../../Content/rules_only.mc"
+  let input_path = "../../../Content/Metacompiler/StandardLibrary/prelude.mc"
   t.Start()
   let tokens = tokenize input_path ".lex_cache" ()
   match tokens with

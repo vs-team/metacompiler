@@ -73,7 +73,8 @@ let symbol : Parser<char,_,char> =
     | ('+' as c)::cs | ('-' as c)::cs | ('*' as c)::cs 
     | ('/' as c)::cs | ('#' as c)::cs | ('<' as c)::cs 
     | ('^' as c)::cs | ('&' as c)::cs | ('|' as c)::cs 
-    | ('>' as c)::cs | ('=' as c)::cs | ('$' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
+    | ('>' as c)::cs | ('=' as c)::cs | ('$' as c)::cs 
+    | ('\'' as c)::cs | ('.' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
     | _ -> Error(sprintf "Error: expected symbol at %A." ctxt.Position)
 
 let symbol_id =
@@ -99,9 +100,12 @@ let digits =
 let unsigned_int_literal =
   prs{
     let! digits = digits
-    let mutable x = 0
-    do for i in digits do x <- x * 10 + (int i - int '0')
-    return x
+    if digits.Length = 0 then 
+      return! fail "" 
+    else 
+      let mutable x = 0
+      do for i in digits do x <- x * 10 + (int i - int '0')
+      return x
   }
 
 let int_literal pos =
