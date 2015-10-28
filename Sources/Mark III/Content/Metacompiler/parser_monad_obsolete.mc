@@ -3,6 +3,35 @@ import BasicMonads
 
 TypeName "Parser" 'char 'ctxt 'result = List 'char -> 'ctxt -> Result ('char * 'ctxt * 'result)
 
+TypeFunc "ParserT" => (* => * => *) => * => * => *
+
+ParserT 'M 'char 'ctxt 'res => 
+  (['char]) -> 'ctxt -> result( state( state( result(['char]) * 'ctxt) * 'ctxt))
+  (['char]) -> 'ctxt -> result( state( state( result(['char]) * 's1) * 's2))
+
+
+
+
+
+TypeFunc "parser" => state => state => result
+
+char' = 
+s1 = 
+s2 = 
+--
+parser M char ctxt => Monad( ResultT state( state( result(char') * s1) * s2) ) {
+  
+  return chars ctxt res -> return^result (chars,ctxt,res)
+
+
+  p chars ctxt >>=^res (res,chars',ctxt')
+  ------------------------------------------
+  (p >>= k) chars ctxt -> k res chars' ctxt'
+
+}
+
+  
+
 Instance "prs" Monad (Parser 'char 'ctxt)
   {
     return res chars ctxt -> return^res (res,chars,ctxt)
