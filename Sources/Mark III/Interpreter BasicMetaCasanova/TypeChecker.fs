@@ -2,25 +2,7 @@
 open Common
 open ScopeBuilder // Scope
 open LineSplitter // BasicExpression
-
-type DeclaredScope = {
-  Rules : List<Rule*SymbolDeclaration>
-  Datas : List<SymbolDeclaration>
-}
-(*
-let RankOperators (expr:BasicExpression) (scope:Scope) :List<SymbolDeclaration> =
-  let rec foo expr = 
-    match expr with
-    | Id (str,_) -> str
-  foo expr
-*)
-let DeclareScope (scope:ScopeBuilder.Scope) : DeclaredScope =
-  let matchrules (rules:List<Rule>) (declaration : SymbolDeclaration) : Rule*SymbolDeclaration = 
-    (rules.Head,declaration)
-  {
-    Rules = scope.FunctionDeclarations |> List.map (matchrules scope.Rules)
-    Datas = scope.DataDeclarations
-  }
+open DeclarationMatcher
 
 type TypeId      = string
 type NamespaceId = string
@@ -47,10 +29,4 @@ type TypedExpression =
 
 type TypedScope = TypedExpression * Env
 
-
-
 let EnvBuilder (scope:ScopeBuilder.Scope) : Env = Env.Zero()
-
-//let FindOperators (basic_expr:BasicExpression) (env:Env) :SymbolTable = Map.empty
-
-// let TypeExpression (basic_expr:BasicExpression) (env:Env) : TypedExpression
