@@ -3,7 +3,7 @@
 open Common
 
 type Keyword = 
-  | Func | Data | DoubleArrow | HorizontalBar | SingleArrow | Module | Instance
+  | Func | TypeFunc | Data | DoubleArrow | HorizontalBar | SingleArrow | Module | Instance
 
 type BasicExpression =
   | Id of Id * Position
@@ -41,6 +41,7 @@ let split_lines =
       | Parser.Keyword(Parser.Module,pos) -> line <- Keyword(Module,pos) :: line
       | Parser.Keyword(Parser.Instance,pos) -> line <- Keyword(Instance,pos) :: line
       | Parser.Keyword(Parser.Func,pos) -> line <- Keyword(Func,pos) :: line
+      | Parser.Keyword(Parser.TypeFunc,pos) -> line <- Keyword(TypeFunc,pos) :: line
       | Parser.Keyword(Parser.Data,pos) -> line <- Keyword(Data,pos) :: line
       | Parser.Keyword(Parser.DoubleArrow,pos) -> line <- Keyword(DoubleArrow,pos) :: line
       | Parser.Keyword(Parser.HorizontalBar,pos) -> line <- Keyword(HorizontalBar,pos) :: line
@@ -59,4 +60,10 @@ let split_lines =
     | _ ->
       [Block(result)]
 
-  Caching.cached_op (fun _ -> split_lines)
+  let cleanup_split_lines input =
+    match split_lines input with
+    | [Block(actual_result)] -> Some(actual_result)
+    | res -> do printfn "Unexpected non-single block at root: %A" res
+             None
+
+  Caching.cached_op (fun _ -> cleanup_split_lines)

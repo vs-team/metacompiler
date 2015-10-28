@@ -55,6 +55,7 @@
     <Compile Include="Parser.fs" />
     <Compile Include="LineSplitter.fs" />
     <Compile Include="ScopeBuilder.fs" />
+    <Compile Include="ModuleBuilder.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>

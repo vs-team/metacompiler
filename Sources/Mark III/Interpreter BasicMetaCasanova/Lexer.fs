@@ -10,7 +10,7 @@ let getPosition =
   fun (chars,ctxt) -> Done(ctxt.Position,chars,ctxt)
 
 type Keyword = 
-  | Func | Data | DoubleArrow | HorizontalBar | Module | Instance
+  | Func | TypeFunc | Data | DoubleArrow | HorizontalBar | Module | Instance
   | Open of Bracket| Close of Bracket | NewLine
   | SingleArrow | Spaces of int
 
@@ -166,6 +166,10 @@ let rec token : Parser<char,Context,Token> =
           return (Func,pos) |> Keyword 
         }) .||
         (prs{
+          do! !"TypeFunc"
+          return (TypeFunc,pos) |> Keyword 
+        }) .||
+        (prs{
           do! !"Data"
           return (Data,pos) |> Keyword 
         }) .||
@@ -215,8 +219,6 @@ let rec token : Parser<char,Context,Token> =
           let! s = any_id
           return (s,pos) |> Id 
         })
-    do printf "%A" res
-    //do System.Console.ReadLine()
     return res
   }
 
@@ -234,8 +236,18 @@ let indentationDepth =
   prs{
     let! fst = !" "
     let! rest = !" " |> repeat
-    return 1 + (rest |> List.length)
-  }
+    return! 
+      (lookahead(!"\n") >> 
+        prs{
+          let! ctxt = getContext 
+          return ctxt.IndentationDepth
+        }) .||
+      (prs{ return 1 + (rest |> List.length) })
+  } .|| (lookahead(!"\n") >> prs{
+          let! ctxt = getContext 
+          return ctxt.IndentationDepth
+        })
+
 
 let rec tokens_lines() : Parser<char,Context,List<List<Token>>> = 
   prs{
