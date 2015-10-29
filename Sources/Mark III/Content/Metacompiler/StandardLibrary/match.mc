@@ -9,7 +9,6 @@ Match 'a => Signature {
   TypeFunc "match" => 'a => With => (Head => 'b) => (Tail => 'b) => 'b
 }
 
- 
 TypeFunc "match" => * => Match
 
 match ('a | 'b) => Match ('a | 'b) {

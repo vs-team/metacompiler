@@ -153,6 +153,7 @@ let nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
   fun (exprs,ctxt) ->
   match exprs with
   | LineSplitter.Id(i,pos) :: es -> Done(Id(i,pos),es,ctxt)
+  | LineSplitter.Application(Curly,inner) :: es -> Done(Application(Curly,[]),es,ctxt)
   | LineSplitter.Application(b,inner) :: es -> 
     match (nested_id_application |> repeat) (inner,ctxt) with
     | Done(inner',[],ctxt) -> Done(Application(b,inner'),es,ctxt)
@@ -187,7 +188,8 @@ let rec typefunc_arguments() : Parser<_, _, List<Type>> =
     do! doublearrow
     let! rest = typefunc_arguments()
     return arg::rest
-  } .|| (prs {return []})
+  } .|| (prs { do! doublearrow
+               return []}) .|| (prs{return []})
 
 
 let symbol_declaration_body : Parser<_, _, SymbolDeclaration> =
@@ -346,6 +348,8 @@ let typefunc_definition_body : Parser<_, _, TypeFuncDefinition> =
     let! nameid  = id
     let! right_arguments = typefunc_arguments()
     let! return_type = type_expression
+    //let! lines = module_lines
+    //let inside_scope = (module_scope() (lines,Scope.Zero))
     let! priority = priority .|| (prs{ return 0 })
     let! associativity = associativity .|| (prs{ return Left })
     return{ 

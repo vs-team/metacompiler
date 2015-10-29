@@ -18,7 +18,6 @@ if False then f else g => g
 
 TypeFunc "int" => Number
 
----
 int => Number Int {
   Num => Int
 
