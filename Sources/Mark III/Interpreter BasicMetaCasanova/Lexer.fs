@@ -10,7 +10,7 @@ let getPosition =
   fun (chars,ctxt) -> Done(ctxt.Position,chars,ctxt)
 
 type Keyword = 
-  | Func | TypeFunc | Data | DoubleArrow | HorizontalBar | Module | Instance
+  | Func | TypeFunc | Data | DoubleArrow | HorizontalBar | Instance
   | Open of Bracket| Close of Bracket | NewLine
   | SingleArrow | Spaces of int
 
@@ -161,10 +161,6 @@ let rec token : Parser<char,Context,Token> =
         (prs{
           do! !"Instance"
           return (Instance,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"Module"
-          return (Module,pos) |> Keyword 
         }) .||
         (prs{
           do! !"Func"
