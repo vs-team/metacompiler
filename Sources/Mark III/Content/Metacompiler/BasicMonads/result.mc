@@ -9,8 +9,7 @@ either M String => e
 ----------------------
 result M => Monad (ResultT MCons^M) {
   inherit e
-
+  
   Func "fail" -> String -> ResultT MCons^M 'a
   fail msg -> fail^e msg
 }
- 
