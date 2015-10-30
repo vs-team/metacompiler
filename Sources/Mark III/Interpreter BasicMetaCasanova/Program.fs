@@ -49,16 +49,16 @@ let main argv =
             //let writer = File.CreateText ("parser_output.txt")
             File.WriteAllText ("parser_output.txt",(sprintf "%A" scopes)) 
             //fprintfn writer "%A" scopes
-            match MatchDeclarations scopes with
-            | Some x ->
-              do printfn "Done matching rules to its declarations %d ms." t.ElapsedMilliseconds
-              match TypeCheck x with
-              | Some x ->
-                do printfn "Done typechecking in %d ms." t.ElapsedMilliseconds
-              | None ->
-                do printfn "typechecking failed."                  
-            | None ->
-              do printfn "Failed to match rules with declarations."
+//            match MatchDeclarations scopes with
+//            | Some x ->
+//              do printfn "Done matching rules to its declarations %d ms." t.ElapsedMilliseconds
+//              match TypeCheck x with
+//              | Some x ->
+//                do printfn "Done typechecking in %d ms." t.ElapsedMilliseconds
+//              | None ->
+//                do printfn "typechecking failed."                  
+//            | None ->
+//              do printfn "Failed to match rules with declarations."
           | None ->
             printfn "No scopes returned. Scope builder failed."
         | _ ->

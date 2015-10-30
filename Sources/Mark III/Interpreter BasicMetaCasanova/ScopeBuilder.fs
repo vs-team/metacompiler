@@ -7,6 +7,7 @@ type BasicExpression =
   | Id of Id * Position
   | Literal of Literal * Position
   | Application of Bracket * List<BasicExpression>
+  | Scope of Scope 
 
 and SymbolDeclaration = 
   {
@@ -35,9 +36,12 @@ and Premise = Conditional of List<BasicExpression> | Implication of List<BasicEx
 
 and TypeFuncDefinition = 
   {
-    NameId      : Id
-    SymDec      : SymbolDeclaration
-    content     : Scope
+    NameId            : Id
+    RightArgs         : List<Type>
+    Return            : Type
+    Priority          : int
+    Associativity     : Associativity
+    Position          : Position
   }
 
 and Scope = 
@@ -363,24 +367,22 @@ and typefunc_definition_body : Parser<_, _, TypeFuncDefinition> =
     let! return_type = type_expression
 
     let! lines = module_lines .|| (prs{ return []})
-    let inside_scope = (module_scope() (lines,Scope.Zero))
+    let inside_scope =
+      match (scope() (lines,Scope.Zero)) with 
+      | Done (res,_,_) -> res
+      | _ -> Scope.Zero
+    let return_type = return_type@[Scope(inside_scope)]
+    
+
     let! priority = priority .|| (prs{ return 0 })
     let! associativity = associativity .|| (prs{ return Left })
     return{ 
             NameId = nameid 
-            SymDec = {
-                        Name              = ""
-                        GenericParameters = []
-                        LeftArgs          = []
-                        RightArgs         = right_arguments
-                        Return            = return_type
-                        Priority          = priority
-                        Associativity     = associativity
-                        Position          = position
-                    }
-            content = match inside_scope with 
-                      | Done (res,_,_) -> res
-                      | _ -> Scope.Zero
+            RightArgs         = right_arguments
+            Return            = return_type
+            Priority          = priority
+            Associativity     = associativity
+            Position          = position
          }
   }
 
