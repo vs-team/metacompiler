@@ -3,7 +3,7 @@
 open Common
 
 type Keyword = 
-  | Func | TypeFunc | Data | DoubleArrow | HorizontalBar | SingleArrow | Module | Instance
+  | Import | Func | TypeFunc | Data | DoubleArrow | HorizontalBar | SingleArrow | Instance
 
 type BasicExpression =
   | Id of Id * Position
@@ -38,8 +38,8 @@ let split_lines =
       | Parser.Keyword(Parser.NewLine,pos) ->
         lines <- (line |> List.rev) :: lines
         line <- []
-      | Parser.Keyword(Parser.Module,pos) -> line <- Keyword(Module,pos) :: line
       | Parser.Keyword(Parser.Instance,pos) -> line <- Keyword(Instance,pos) :: line
+      | Parser.Keyword(Parser.Import,pos) -> line <- Keyword(Import,pos) :: line
       | Parser.Keyword(Parser.Func,pos) -> line <- Keyword(Func,pos) :: line
       | Parser.Keyword(Parser.TypeFunc,pos) -> line <- Keyword(TypeFunc,pos) :: line
       | Parser.Keyword(Parser.Data,pos) -> line <- Keyword(Data,pos) :: line

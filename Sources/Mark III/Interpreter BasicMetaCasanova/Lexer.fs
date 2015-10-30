@@ -10,7 +10,7 @@ let getPosition =
   fun (chars,ctxt) -> Done(ctxt.Position,chars,ctxt)
 
 type Keyword = 
-  | Func | TypeFunc | Data | DoubleArrow | HorizontalBar | Module | Instance
+  | Import | Func | TypeFunc | Data | DoubleArrow | HorizontalBar | Instance
   | Open of Bracket| Close of Bracket | NewLine
   | SingleArrow | Spaces of int
 
@@ -74,7 +74,8 @@ let symbol : Parser<char,_,char> =
     | ('/' as c)::cs | ('#' as c)::cs | ('<' as c)::cs 
     | ('^' as c)::cs | ('&' as c)::cs | ('|' as c)::cs 
     | ('>' as c)::cs | ('=' as c)::cs | ('$' as c)::cs 
-    | ('\'' as c)::cs | ('.' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
+    | ('\'' as c)::cs | ('.' as c)::cs | ('@' as c)::cs
+    | ('\\' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
     | _ -> Error(sprintf "Error: expected symbol at %A." ctxt.Position)
 
 let symbol_id =
@@ -162,8 +163,8 @@ let rec token : Parser<char,Context,Token> =
           return (Instance,pos) |> Keyword 
         }) .||
         (prs{
-          do! !"Module"
-          return (Module,pos) |> Keyword 
+          do! !"import"
+          return (Import,pos) |> Keyword 
         }) .||
         (prs{
           do! !"Func"

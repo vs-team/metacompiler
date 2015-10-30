@@ -30,3 +30,5 @@ type TypedExpression =
 type TypedScope = TypedExpression * Env
 
 let EnvBuilder (scope:ScopeBuilder.Scope) : Env = Env.Zero()
+
+let TypeCheck (matched_scope:MatchedScope) = None

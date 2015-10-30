@@ -4,13 +4,26 @@ open LineSplitter
 open ScopeBuilder
 open System
 open System.IO
+open DeclarationMatcher
+open TypeChecker
 
 open Common
 
 [<EntryPoint>]
 let main argv = 
   let t = System.Diagnostics.Stopwatch()
-  let input_path = "../../../Content/Metacompiler/StandardLibrary/prelude.mc"
+  //let input_path = "../../../Content/Metacompiler/StandardLibrary/prelude.mc"
+  let input_path = "../../../Content/Metacompiler/StandardLibrary/number.mc"
+  //let input_path = "../../../Content/Metacompiler/StandardLibrary/monad.mc"
+  //let input_path = "../../../Content/Metacompiler/StandardLibrary/match.mc"
+  //let input_path = "../../../Content/Metacompiler/BasicMonads/id.mc"
+  //ModuleFunc? //let input_path = "../../../Content/Metacompiler/BasicMonads/either.mc"
+  //let input_path = "../../../Content/Metacompiler/BasicMonads/id.mc"
+  //parser fails//let input_path = "../../../Content/Metacompiler/BasicMonads/list.mc"
+  //let input_path = "../../../Content/Metacompiler/BasicMonads/option.mc"
+  //type func rules!!!//let input_path = "../../../Content/Metacompiler/BasicMonads/result.mc"
+  //let input_path = "../../../Content/Metacompiler/BasicMonads/state.mc"
+
   t.Start()
   let tokens = tokenize input_path ".lex_cache" ()
   match tokens with
@@ -36,6 +49,16 @@ let main argv =
             //let writer = File.CreateText ("parser_output.txt")
             File.WriteAllText ("parser_output.txt",(sprintf "%A" scopes)) 
             //fprintfn writer "%A" scopes
+//            match MatchDeclarations scopes with
+//            | Some x ->
+//              do printfn "Done matching rules to its declarations %d ms." t.ElapsedMilliseconds
+//              match TypeCheck x with
+//              | Some x ->
+//                do printfn "Done typechecking in %d ms." t.ElapsedMilliseconds
+//              | None ->
+//                do printfn "typechecking failed."                  
+//            | None ->
+//              do printfn "Failed to match rules with declarations."
           | None ->
             printfn "No scopes returned. Scope builder failed."
         | _ ->
