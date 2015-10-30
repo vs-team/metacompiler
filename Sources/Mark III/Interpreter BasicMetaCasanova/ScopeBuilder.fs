@@ -33,24 +33,13 @@ and Rule =
 
 and Premise = Conditional of List<BasicExpression> | Implication of List<BasicExpression> * List<BasicExpression>
 
-and TypeFuncDefinition = 
-  {
-    NameId            : Id
-    RightArgs         : List<Type>
-    Return            : Type
-    Priority          : int
-    Associativity     : Associativity
-    Position          : Position
-  }
-
 and Scope = 
   {
     ImportDeclaration       : List<Id>
     FunctionDeclarations    : List<SymbolDeclaration>
-    TypeFunctionDeclarations: List<SymbolDeclaration>
-    TypeFunctionDefinitions : List<TypeFuncDefinition>
-    TypeRules               : List<Rule>
+    TypeFunctionDeclarations: List<SymbolDeclaration> 
     DataDeclarations        : List<SymbolDeclaration>
+    TypeFunctionRules       : List<Rule>
     Rules                   : List<Rule>
   } 
   with 
@@ -59,9 +48,8 @@ and Scope =
         ImportDeclaration       = []
         FunctionDeclarations    = []
         TypeFunctionDeclarations= []
-        TypeFunctionDefinitions = []
-        TypeRules               = []
         DataDeclarations        = []
+        TypeFunctionRules       = []
         Rules                   = []
       }
 
@@ -305,7 +293,6 @@ let typefunc_premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
             })  
   }
 
-
 let premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
   prs{
     let! i = simple_expression |> repeat
@@ -352,37 +339,10 @@ let rec scope() : Parser<LineSplitter.Line, Scope, Scope> =
   prs{
     do! skip_empty_lines()
     do! (parse_first_line (import_declaration .|| func_declaration .|| typefunc_declaration .|| 
-                           typefunc_definition .|| data_declaration )) .|| rule
+                           data_declaration )) .|| typefunc_rule .|| rule
     return! scope()
   } .|| 
   (eof >> getContext)
-
-and typefunc_definition_body : Parser<_, _, TypeFuncDefinition> =
-  prs{
-    let! position = getPosition
-    let! nameid  = id
-    let! right_arguments = type_expression |> repeat
-    do! doublearrow
-    let! return_type = type_expression
-
-    
-    let! priority = priority .|| (prs{ return 0 })
-    let! associativity = associativity .|| (prs{ return Left })
-    return{ 
-            NameId            = nameid 
-            RightArgs         = right_arguments
-            Return            = return_type
-            Priority          = priority
-            Associativity     = associativity
-            Position          = position
-         }
-  }
-and typefunc_definition : Parser<LineSplitter.BasicExpression,Scope,Unit> =
-  prs{
-    let! typefunc_decl = typefunc_definition_body
-    let! ctxt = getContext
-    do! setContext { ctxt with TypeFunctionDefinitions = typefunc_decl :: ctxt.TypeFunctionDefinitions }
-  }
 
 and typefunc_rule : Parser<LineSplitter.Line, Scope, Unit> =
   prs{
@@ -391,12 +351,12 @@ and typefunc_rule : Parser<LineSplitter.Line, Scope, Unit> =
     do! horizontal_bar |> parse_first_line
     let! i,o = typefunc_io |> parse_first_line
     let! ctxt = getContext
-    do! setContext { ctxt with TypeRules = { Premises = premises; Input = i; Output = o } :: ctxt.TypeRules }
+    do! setContext { ctxt with TypeFunctionRules = { Premises = premises; Input = i; Output = o } :: ctxt.TypeFunctionRules }
   } .|| prs{
     do! skip_empty_lines()
     let! i,o = typefunc_io |> parse_first_line
     let! ctxt = getContext
-    do! setContext { ctxt with TypeRules = { Premises = []; Input = i; Output = o } :: ctxt.TypeRules }
+    do! setContext { ctxt with TypeFunctionRules = { Premises = []; Input = i; Output = o } :: ctxt.TypeFunctionRules }
   }
 and typefunc_io :Parser<LineSplitter.BasicExpression,Scope,_> = 
   prs{
