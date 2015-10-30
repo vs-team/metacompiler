@@ -129,6 +129,7 @@ let rec nested_id_application : Parser<LineSplitter.BasicExpression, Scope, Basi
   match exprs with
   | LineSplitter.Id(i,pos) :: es -> Done(Id(i,pos),es,ctxt)
   | LineSplitter.Keyword(k,pos) :: es -> Done(Id("Keyword__",pos),es,ctxt)
+  //| LineSplitter.Block(b) :: es -> Done(Application(Indent,[]),es,ctxt)
   | LineSplitter.Application(b,inner) :: es -> 
     match (nested_id_application |> repeat) (inner,ctxt) with
     | Done(inner',[],ctxt) -> Done(Application(b,inner'),es,ctxt)
@@ -355,7 +356,6 @@ let rec scope() : Parser<LineSplitter.Line, Scope, Scope> =
 
 and typefunc_rule : Parser<LineSplitter.Line, Scope, Unit> =
   prs{
-    do! skip_empty_lines()
     let! premises = typefunc_premise |> parse_first_line |> repeat
     do! horizontal_bar |> parse_first_line
     let! i,o = typefunc_io |> parse_first_line
