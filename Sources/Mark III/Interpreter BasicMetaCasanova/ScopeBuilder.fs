@@ -371,7 +371,10 @@ and typefunc_definition_body : Parser<_, _, TypeFuncDefinition> =
       match (scope() (lines,Scope.Zero)) with 
       | Done (res,_,_) -> res
       | _ -> Scope.Zero
-    let return_type = return_type@[Scope(inside_scope)]
+    let return_type = 
+      if inside_scope = Scope.Zero then
+        return_type
+      else return_type@[Scope(inside_scope)]
     
 
     let! priority = priority .|| (prs{ return 0 })

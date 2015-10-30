@@ -12,8 +12,8 @@ open Common
 [<EntryPoint>]
 let main argv = 
   let t = System.Diagnostics.Stopwatch()
-  let input_path = "../../../Content/Metacompiler/StandardLibrary/prelude.mc"
-  //let input_path = "../../../Content/Metacompiler/StandardLibrary/number.mc"
+  //let input_path = "../../../Content/Metacompiler/StandardLibrary/prelude.mc"
+  let input_path = "../../../Content/Metacompiler/StandardLibrary/number.mc"
   //let input_path = "../../../Content/Metacompiler/StandardLibrary/monad.mc"
   //let input_path = "../../../Content/Metacompiler/StandardLibrary/match.mc"
   //let input_path = "../../../Content/Metacompiler/BasicMonads/id.mc"
