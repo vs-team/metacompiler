@@ -5,7 +5,7 @@ open Common
 open Lexer
 
 type Keyword = 
-  | Func | TypeFunc | Data | DoubleArrow | HorizontalBar | SingleArrow | NewLine | Instance
+  | Import | Func | TypeFunc | Data | DoubleArrow | HorizontalBar | SingleArrow | NewLine | Instance
 
 type BasicExpression =
   | Id of Id * Position
@@ -65,6 +65,7 @@ let convert_token : Parser<Token, _, BasicExpression> =
     let! k = read_keyword
     match k with
     | Lexer.Instance -> return Keyword(Instance,pos)
+    | Lexer.Import -> return Keyword(Import,pos)
     | Lexer.Func -> return Keyword(Func,pos)
     | Lexer.TypeFunc -> return Keyword(TypeFunc,pos)
     | Lexer.Data -> return Keyword(Data,pos)
