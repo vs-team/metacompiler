@@ -7,11 +7,11 @@ type BasicExpression =
   | Id of Id * Position
   | Literal of Literal * Position
   | Application of Bracket * List<BasicExpression>
+  | Scope of Scope 
 
 and SymbolDeclaration = 
   {
     Name              : string
-    GenericParameters : List<Id>
     LeftArgs          : List<Type>
     RightArgs         : List<Type>
     Return            : Type
@@ -33,30 +33,25 @@ and Rule =
 
 and Premise = Conditional of List<BasicExpression> | Implication of List<BasicExpression> * List<BasicExpression>
 
-and TypeFuncDefinition = 
-  {
-    NameId      : Id
-    SymDec      : SymbolDeclaration
-    content     : Scope
-  }
-
 and Scope = 
   {
     ImportDeclaration       : List<Id>
+    InheritDeclaration       : List<Id>
     FunctionDeclarations    : List<SymbolDeclaration>
-    TypeFunctionDeclarations: List<SymbolDeclaration>
-    TypeFunctionDefinitions : List<TypeFuncDefinition>
+    TypeFunctionDeclarations: List<SymbolDeclaration> 
     DataDeclarations        : List<SymbolDeclaration>
+    TypeFunctionRules       : List<Rule>
     Rules                   : List<Rule>
   } 
   with 
     static member Zero = 
       {
         ImportDeclaration       = []
+        InheritDeclaration      = []
         FunctionDeclarations    = []
         TypeFunctionDeclarations= []
-        TypeFunctionDefinitions = []
         DataDeclarations        = []
+        TypeFunctionRules       = []
         Rules                   = []
       }
 
@@ -94,6 +89,12 @@ let import =
     | LineSplitter.BasicExpression.Keyword(LineSplitter.Import,pos)::es -> Done((), es, ctxt)
     | _ -> Error (sprintf "Error: expected import at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
+let inherit__ = 
+  fun (exprs,ctxt) ->
+    match exprs with
+    | LineSplitter.BasicExpression.Keyword(LineSplitter.Inherit,pos)::es -> Done((), es, ctxt)
+    | _ -> Error (sprintf "Error: expected inherit at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+
 let func = 
   fun (exprs,ctxt) ->
     match exprs with
@@ -128,6 +129,7 @@ let rec nested_id_application : Parser<LineSplitter.BasicExpression, Scope, Basi
   match exprs with
   | LineSplitter.Id(i,pos) :: es -> Done(Id(i,pos),es,ctxt)
   | LineSplitter.Keyword(k,pos) :: es -> Done(Id("Keyword__",pos),es,ctxt)
+  //| LineSplitter.Block(b) :: es -> Done(Application(Indent,[]),es,ctxt)
   | LineSplitter.Application(b,inner) :: es -> 
     match (nested_id_application |> repeat) (inner,ctxt) with
     | Done(inner',[],ctxt) -> Done(Application(b,inner'),es,ctxt)
@@ -181,7 +183,6 @@ let symbol_declaration_body : Parser<_, _, SymbolDeclaration> =
     let! position = getPosition
     let! left_arguments = arguments()
     let! name = string_literal
-    let! generic_parameters = id |> repeat
     do! arrow
     let! right_arguments = arguments()
     let! return_type = type_expression
@@ -189,7 +190,6 @@ let symbol_declaration_body : Parser<_, _, SymbolDeclaration> =
     let! associativity = associativity .|| (prs{ return Left })
     return  {
               Name              = name
-              GenericParameters = generic_parameters
               LeftArgs          = left_arguments
               RightArgs         = right_arguments
               Return            = return_type
@@ -201,9 +201,8 @@ let symbol_declaration_body : Parser<_, _, SymbolDeclaration> =
 let typefunc_declaration_body : Parser<_, _, SymbolDeclaration> =
   prs{
     let! position = getPosition
-    let! left_arguments = typefunc_arguments()
+    let! left_arguments = arguments()
     let! name = string_literal
-    let! generic_parameters = id |> repeat
     do! doublearrow
     let! right_arguments = typefunc_arguments()
     let! return_type = type_expression
@@ -211,7 +210,6 @@ let typefunc_declaration_body : Parser<_, _, SymbolDeclaration> =
     let! associativity = associativity .|| (prs{ return Left })
     return  {
               Name              = name
-              GenericParameters = generic_parameters
               LeftArgs          = left_arguments
               RightArgs         = right_arguments
               Return            = return_type
@@ -235,6 +233,14 @@ let import_declaration : Parser<LineSplitter.BasicExpression,Scope,Unit> =
     let! parameter = id
     let! ctxt = getContext
     do! setContext { ctxt with ImportDeclaration = parameter :: ctxt.ImportDeclaration}
+  }
+
+let inherit_declaration : Parser<LineSplitter.BasicExpression,Scope,Unit> = 
+  prs{
+    do! inherit__
+    let! parameter = id
+    let! ctxt = getContext
+    do! setContext { ctxt with InheritDeclaration = parameter :: ctxt.InheritDeclaration}
   }
 
 let func_declaration : Parser<LineSplitter.BasicExpression,Scope,Unit> = 
@@ -283,6 +289,20 @@ let rec skip_empty_lines() =
     do! skip_empty_lines()
   } .|| (prs{ return () })
 
+let typefunc_premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
+  prs{
+    let! i = nested_id |> repeat
+    return! (prs{
+              do! doublearrow
+              let! o = nested_id |> repeat
+              return Implication(i,o)
+            }) .||
+            (prs{
+              do! eof
+              return Conditional i
+            })  
+  }
+
 let premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
   prs{
     let! i = simple_expression |> repeat
@@ -296,99 +316,76 @@ let premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
               return Conditional i
             })  
   }
-
 let horizontal_bar : Parser<LineSplitter.BasicExpression,_,_> = 
   fun (exprs,ctxt) ->
     match exprs with
     | [LineSplitter.BasicExpression.Keyword(LineSplitter.HorizontalBar,pos)] -> Done((), [], ctxt)
     | _ -> Error (sprintf "Error: expected ---- at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
+let rule_io :Parser<LineSplitter.BasicExpression,Scope,_> = 
+  prs{
+    let! i = simple_expression |> repeat              
+    do! arrow
+    let! o = simple_expression |> repeat
+    return i,o
+  }
 let rule : Parser<LineSplitter.Line, Scope, Unit> =
   prs{
     do! skip_empty_lines()
     let! premises = premise |> parse_first_line |> repeat
     do! horizontal_bar |> parse_first_line
-    let! i,o = 
-      prs{
-        let! i = simple_expression |> repeat              
-        do! arrow
-        let! o = simple_expression |> repeat
-        return i,o
-      } |> parse_first_line
+    let! i,o = rule_io |> parse_first_line
     let! ctxt = getContext
     do! setContext { ctxt with Rules = { Premises = premises; Input = i; Output = o } :: ctxt.Rules }
-  } .|| 
-  prs{
-    let! i,o = 
-      prs{
-        let! i = simple_expression |> repeat              
-        do! arrow
-        let! o = simple_expression |> repeat
-        return i,o
-      } |> parse_first_line
+  } .|| prs{
+    do! skip_empty_lines()
+    let! i,o = rule_io |> parse_first_line
     let! ctxt = getContext
     do! setContext { ctxt with Rules = { Premises = []; Input = i; Output = o } :: ctxt.Rules }
   }
 
-let rec module_lines =
-  fun (exprs,ctxt) ->
-    match exprs with
-    | LineSplitter.Application(Curly,[LineSplitter.Application(Indent,[LineSplitter.Block(b)])]) :: rest -> Done(b,exprs,ctxt)
-    | _ -> Error (sprintf "Error: expected module_lines at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
-
-let rec module_scope() : Parser<LineSplitter.Line, Scope, Scope> =
-  prs{
-    do! skip_empty_lines()
-    do! (parse_first_line (func_declaration))
-    return! module_scope()
-  } .|| 
-  (eof >> getContext)
-
-
 let rec scope() : Parser<LineSplitter.Line, Scope, Scope> =
   prs{
     do! skip_empty_lines()
-    do! (parse_first_line (import_declaration .|| func_declaration .|| typefunc_declaration .|| 
-                           typefunc_definition .|| data_declaration )) .|| rule
+    do! (parse_first_line (import_declaration .|| inherit_declaration .|| func_declaration .|| 
+                           typefunc_declaration .|| data_declaration )) .|| 
+                           typefunc_rule .|| rule
     return! scope()
   } .|| 
   (eof >> getContext)
 
-and typefunc_definition_body : Parser<_, _, TypeFuncDefinition> =
+and typefunc_rule : Parser<LineSplitter.Line, Scope, Unit> =
   prs{
-    let! position = getPosition
-    let! nameid  = id
-    let! right_arguments = type_expression |> repeat
-    do! doublearrow
-    let! return_type = type_expression
-
-    let! lines = module_lines .|| (prs{ return []})
-    let inside_scope = (module_scope() (lines,Scope.Zero))
-    let! priority = priority .|| (prs{ return 0 })
-    let! associativity = associativity .|| (prs{ return Left })
-    return{ 
-            NameId = nameid 
-            SymDec = {
-                        Name              = ""
-                        GenericParameters = []
-                        LeftArgs          = []
-                        RightArgs         = right_arguments
-                        Return            = return_type
-                        Priority          = priority
-                        Associativity     = associativity
-                        Position          = position
-                    }
-            content = match inside_scope with 
-                      | Done (res,_,_) -> res
-                      | _ -> Scope.Zero
-         }
-  }
-
-and typefunc_definition : Parser<LineSplitter.BasicExpression,Scope,Unit> =
-  prs{
-    let! typefunc_decl = typefunc_definition_body
+    let! premises = typefunc_premise |> parse_first_line |> repeat
+    do! horizontal_bar |> parse_first_line
+    let! i,o = typefunc_io |> parse_first_line
     let! ctxt = getContext
-    do! setContext { ctxt with TypeFunctionDefinitions = typefunc_decl :: ctxt.TypeFunctionDefinitions }
+    do! setContext { ctxt with TypeFunctionRules = { Premises = premises; Input = i; Output = o } :: ctxt.TypeFunctionRules }
+  } .|| prs{
+    do! skip_empty_lines()
+    let! i,o = typefunc_io |> parse_first_line
+    let! ctxt = getContext
+    do! setContext { ctxt with TypeFunctionRules = { Premises = []; Input = i; Output = o } :: ctxt.TypeFunctionRules }
+  }
+and scope_lines =
+  fun (exprs,ctxt) ->
+    match exprs with
+    | LineSplitter.Application(Curly,[LineSplitter.Application(Indent,[LineSplitter.Block(b)])]) :: rest -> 
+      match (scope() (b,Scope.Zero)) with 
+      | Done (res,_,_) -> Done(res,exprs,ctxt)
+      | Error e -> Error e 
+    | _ -> Done(Scope.Zero,exprs,ctxt)
+
+and typefunc_io :Parser<LineSplitter.BasicExpression,Scope,_> = 
+  prs{
+    let! i = nested_id |> repeat              
+    do! doublearrow
+    let! o = nested_id |> repeat
+    let! inside_scope = scope_lines 
+    let o = 
+      if inside_scope = Scope.Zero then o
+      else o@[Scope(inside_scope)]
+    return i,o
   }
 
 let block : Parser<LineSplitter.BasicExpression, Unit, List<_>> = 

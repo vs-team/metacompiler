@@ -10,7 +10,7 @@ let getPosition =
   fun (chars,ctxt) -> Done(ctxt.Position,chars,ctxt)
 
 type Keyword = 
-  | Import | Func | TypeFunc | Data | DoubleArrow | HorizontalBar | Instance
+  | Import | Inherit | Func | TypeFunc | Data | DoubleArrow | HorizontalBar | Instance
   | Open of Bracket| Close of Bracket | NewLine
   | SingleArrow | Spaces of int
 
@@ -165,6 +165,10 @@ let rec token : Parser<char,Context,Token> =
         (prs{
           do! !"import"
           return (Import,pos) |> Keyword 
+        }) .||
+        (prs{
+          do! !"inherit"
+          return (Inherit,pos) |> Keyword 
         }) .||
         (prs{
           do! !"Func"

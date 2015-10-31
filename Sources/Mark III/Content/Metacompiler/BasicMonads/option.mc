@@ -5,7 +5,6 @@ Option 'a => Unit | 'a
 
 Func "Some" -> 'a -> Option 'a
 
-
 Some x -> Right x
 
 Func "None" -> Option 'a

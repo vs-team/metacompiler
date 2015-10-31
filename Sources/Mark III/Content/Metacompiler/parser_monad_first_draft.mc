@@ -1,37 +1,112 @@
 ﻿import Prelude
 import BasicMonads
 
-TypeName "Parser" 'char 'ctxt 'result = List 'char -> 'ctxt -> Result ('char * 'ctxt * 'result)
-
 TypeFunc "ParserT" => (* => * => *) => * => * => *
 
 ParserT 'M 'char 'ctxt 'res => 
-  (['char]) -> 'ctxt -> result( state( state( result(['char]) * 'ctxt) * 'ctxt))
-  (['char]) -> 'ctxt -> result( state( state( result(['char]) * 's1) * 's2))
+  (['char]) -> 'ctxt -> result( state( state( result('res) * ['char]) * 'ctxt))
 
 
+TypeFunc "parser" => * => * => result
 
-
-
-TypeFunc "parser" => state => state => result
-
-char' = 
-s1 = 
-s2 = 
---
-parser M char ctxt => Monad( ResultT state( state( result(char') * s1) * s2) ) {
+parser char ctxt => Monad( ResultT state( state( result(res) * [char'] ) * ctxt') ) {
   
-  return chars ctxt res -> return^result (chars,ctxt,res)
+  return chars ctxt res -> Done( return^state( return^state( return^Mcons^res( res ),chars),ctxt))
 
-
-  p chars ctxt >>=^res (res,chars',ctxt')
-  ------------------------------------------
+  p chars ctxt >>=^result (outM)
+  outM >>=^state (charsM,ctxt')
+  charsM >>=^state (chars',resM)
+  resM >>=^result (res)
+  --
   (p >>= k) chars ctxt -> k res chars' ctxt'
 
+  Func "nothing" -> Mcons^parser Unit
+  Func "fail" -> String -> Mcons^parser 'c
+  Func Mcons^parser 'c -> ">>" -> Mcons^parser 'd -> Mcons^parser 'd
+  Func (Mcons^parser 'a) -> "\/" -> (Mcons^parser 'a) -> (Mcons^parser 'a)
+  Func (Mcons^parser 'a) -> "\_/" -> (Mcons^parser 'b) -> (Mcons^parser ('a | 'b)
+  Func "repeat" -> Mcons^parser 'c -> Mcons^parser (List 'c)
+  Func "step" -> Mcons^parser 'a
+  Func "eof" -> Mcons^parser Unit
+  Func "ignore" -> Mcons^parser 'c -> Mcons^parser Unit
+  Func "lookahead" -> Mcons^parser 'c -> Mcons^parser 'c
+  Func "getBuffer" -> Mcons^parser 'a
+  Func "getContext" -> Mcons^parser 'b
+  Func "setContext" -> 'b -> Mcons^parser Unit
+  Func "try" -> (Mcons^parser 'a) -> (a -> Mcons^parser 'b) -> (String -> Mcons^parser 'b) -> (Mcons^parser 'b)
+
+  nothing chars ctxt -> Done( return^state( return^state( return^result(),chars),ctxt))
+
+  fail msg chars ctxt -> Error(msg)
+
+  (try^res (p chars ctxt)
+    (\Done(x) -> 
+	  x >>=^x (charsM,ctxt')
+      charsM >>=^state (chars',resM)
+      resM >>=^result (res)
+	  k res chars' ctxt')
+    (\e -> return^parser(chars,ctxt,(err+e)) ) -> res
+  --
+  (try p k err) chars ctxt -> res
+
+  (try p1
+    (\x -> return x)
+    (\e1 -> 
+      (try p2
+        (\y -> return y)
+        (\e2 -> fail (e1+e2)))) >>= res
+  --
+  (p1 \/ p2) -> res
+
+  getBuffer chars ctxt -> return^parser(chars,ctxt,chars)
+
+  getContext chars ctxt -> return^parser(chars,ctxt,ctxt)
+
+  setContext ctxt' chars ctxt -> Done(Unit,chars,ctxt')
+
+  p >>= Unit
+  k >>= out
+  --
+  p >> k -> out
+
+  (try p1
+    (\x -> return^parser(A(x)))
+    (\e1 -> 
+      (try p2
+        (\y -> return^parser(B(y)))
+        (\e2 -> fail (e1+e2)))) >>= res
+  --
+  (p1 \_/ p2) chars ctxt -> res
+
+  ((p >>= x
+    repeat p >>= xs
+    --
+    return (x :: xs)) \/ 
+    (nothing >> (return empty))) >>= out
+  --
+  repeat p -> out
+
+  step (c :: cs) -> return c cs
+
+  step empty -> fail "Error: unexpected eof." empty
+
+  eof (c :: cs) -> fail "Error: expected eof." (c :: cs)
+
+  eof empty -> return^parser(Unit empty)
+
+  p >>= x
+  --
+  ignore p -> return Unit
+
+  ((try^res (p chars ctxt)) 
+    (\(Done(x) -> return^res(Done(x))) 
+    (\e -> fail^res e)) >>= res
+  --
+  lookahead p chars ctxt -> res
 }
 
   
-
+///////old parser\\\\\\\\\\\\\\\
 Instance "prs" Monad (Parser 'char 'ctxt)
   {
     return res chars ctxt -> return^res (res,chars,ctxt)
