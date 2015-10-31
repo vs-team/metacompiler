@@ -2,7 +2,7 @@
 open Common
 open ScopeBuilder // Scope
 open LineSplitter // BasicExpression
-open DeclarationMatcher
+open TreeExpression
 
 type TypeId      = string
 type NamespaceId = string
@@ -29,6 +29,4 @@ type TypedExpression =
 
 type TypedScope = TypedExpression * Env
 
-let EnvBuilder (scope:ScopeBuilder.Scope) : Env = Env.Zero()
-
-let TypeCheck (matched_scope:MatchedScope) = None
+let TypeCheck (scope:Scope) = None

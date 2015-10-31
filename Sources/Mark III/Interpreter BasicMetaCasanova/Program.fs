@@ -2,20 +2,20 @@
 open Parser
 open LineSplitter
 open ScopeBuilder
+open TypeChecker
 open System
 open System.IO
-open DeclarationMatcher
-open TypeChecker
 
 open Common
 
 [<EntryPoint>]
 let main argv = 
   let t = System.Diagnostics.Stopwatch()
-  let input_path = "../../../Content/Metacompiler/StandardLibrary/prelude.mc"
+  //let input_path = "../../../Content/Metacompiler/StandardLibrary/prelude.mc"
   //let input_path = "../../../Content/Metacompiler/StandardLibrary/number.mc"
   //let input_path = "../../../Content/Metacompiler/StandardLibrary/monad.mc"
   //let input_path = "../../../Content/Metacompiler/StandardLibrary/match.mc"
+  let input_path = "../../../Content/Metacompiler/BasicMonads/option.mc"
   //let input_path = "../../../Content/Metacompiler/BasicMonads/id.mc"
   //ModuleFunc? //let input_path = "../../../Content/Metacompiler/BasicMonads/either.mc"
   //let input_path = "../../../Content/Metacompiler/BasicMonads/id.mc"
@@ -43,22 +43,17 @@ let main argv =
     //      printfn "%A" line_blocks
           do t.Restart()
           match build_scopes line_blocks with
-          | Some scopes ->
+          | Some scope ->
             do printfn "Done scope building in %d ms." t.ElapsedMilliseconds
-            printfn "%A" scopes        
+            printfn "%A" scope        
             //let writer = File.CreateText ("parser_output.txt")
-            File.WriteAllText ("parser_output.txt",(sprintf "%A" scopes)) 
+            File.WriteAllText ("parser_output.txt",(sprintf "%A" scope)) 
             //fprintfn writer "%A" scopes
-            match MatchDeclarations scopes with
-            | Some x ->
-              do printfn "Done matching rules to its declarations %d ms." t.ElapsedMilliseconds
-              match TypeCheck x with
-              | Some x ->
-                do printfn "Done typechecking in %d ms." t.ElapsedMilliseconds
-              | None ->
-                do printfn "typechecking failed."                  
+            match TypeCheck scope with
+            | Some scope ->
+              do printfn "Done typechecking in %d ms." t.ElapsedMilliseconds
             | None ->
-              do printfn "Failed to match rules with declarations."
+              do printfn "typechecking failed."                  
           | None ->
             printfn "No scopes returned. Scope builder failed."
         | _ ->
