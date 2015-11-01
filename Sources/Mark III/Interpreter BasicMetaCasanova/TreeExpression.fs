@@ -75,8 +75,11 @@ let compare scope (acc:SymbolDeclaration*Position) (expr:BasicExpression) =
   | None   -> acc
   | Some x -> getPriorityOperator acc x
 
-// todo: also look inside parens to see if non-parenthesized expressions lurk there
 let rec addParens (scope:Scope) (exprs:List<BasicExpression>) :List<BasicExpression> =
+  let exprs = exprs |> List.map (fun x -> 
+    match x with
+    | Application(b,x) -> Application(b,addParens scope x)
+    | foo -> foo )
   let fromFirstId = exprs |> List.skipWhile ((getOperator scope)>>Option.isSome)
   if fromFirstId.IsEmpty then exprs
   else 
