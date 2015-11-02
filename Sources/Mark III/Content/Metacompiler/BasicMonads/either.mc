@@ -16,7 +16,9 @@ either M 'b => Monad (EitherT MCons^M 'b) {
   TypeFunc "BreakLineToStopTheTypeRuleBelowFromUsingTheRulesAboveAsPremises" => error
   
   pm >>=^M y
-  (match y with (\x -> q x) (\y -> p y)) => res
+  (match y with 
+  (\x -> q x) 
+  (\y -> p y)) => res
   --
   try pm p q => res
   

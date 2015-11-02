@@ -129,21 +129,34 @@ let rec nested_id_application : Parser<LineSplitter.BasicExpression, Scope, Basi
   match exprs with
   | LineSplitter.Id(i,pos) :: es -> Done(Id(i,pos),es,ctxt)
   | LineSplitter.Keyword(k,pos) :: es -> Done(Id("Keyword__",pos),es,ctxt)
-  //| LineSplitter.Block(b) :: es -> Done(Application(Indent,[]),es,ctxt)
-  | LineSplitter.Application(b,inner) :: es -> 
+  | LineSplitter.Block(b) :: es -> 
+    match (line_to_id_basicexpression |> repeat)(b,ctxt) with
+    | Done(inner',[],ctxt) -> Done(Application(Indent,inner'),es,ctxt)
+    | _ -> Error(sprintf "Error: expected indent at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+  | LineSplitter.Application(Round,inner) :: es -> 
     match (nested_id_application |> repeat) (inner,ctxt) with
-    | Done(inner',[],ctxt) -> Done(Application(b,inner'),es,ctxt)
+    | Done(inner',[],ctxt) -> Done(Application(Round,inner'),es,ctxt)
     | _ -> Error(sprintf "Error: expected id (also nested) inside brackets at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | _ -> Error(sprintf "Error: expected id (also nested) but could not find at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+
+and line_to_id_basicexpression =
+  fun (exprs,ctxt) ->
+    match exprs with
+    | x :: es -> 
+      match (nested_id_application |> repeat) (x,ctxt) with
+      | Done(inner',[],ctxt) -> Done(Application(Indent,inner'),es,ctxt)
+      | _ -> Error(sprintf "Error: expected indent at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error(sprintf "Error: expected another line in scope at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+
 
 let nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
   fun (exprs,ctxt) ->
   match exprs with
   | LineSplitter.Id(i,pos) :: es -> Done(Id(i,pos),es,ctxt)
   //| LineSplitter.Application(Curly,inner) :: es -> Done(Application(Curly,[]),es,ctxt)
-  | LineSplitter.Application(b,inner) :: es -> 
+  | LineSplitter.Application(Round,inner) :: es -> 
     match (nested_id_application |> repeat) (inner,ctxt) with
-    | Done(inner',[],ctxt) -> Done(Application(b,inner'),es,ctxt)
+    | Done(inner',[],ctxt) -> Done(Application(Round,inner'),es,ctxt)
     | _ -> Error(sprintf "Error: expected id (also nested) inside brackets at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | _ -> Error(sprintf "Error: expected id (also nested) but could not find at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
