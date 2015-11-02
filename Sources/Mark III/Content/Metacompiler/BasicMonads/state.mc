@@ -12,6 +12,15 @@ state M 's => Monad(StateT MCons^M 's) {
 
     return x s => return^M(x,s)
 
+    a >>=^Ma a'
+    --
+    lift f Ma => return^M(f a')
+
+    a >>=^Ma a'
+    b >>=^Mb b'
+    --
+    lift2 f Ma Mb => return^M(f a' b')
+
     TypeFunc "getState" => MCons 's
     getState s => return^M(s,s)
 
