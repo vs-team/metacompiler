@@ -53,7 +53,8 @@ let split_lines =
         line <- Literal(l,pos) :: line
       | Parser.Application(b,es) ->
         line <- Application(b,split_lines es) :: line
-    let result = ((line |> List.rev) :: lines) |> List.rev |> List.filter (List.isEmpty >> not)
+    let result = ((line |> List.rev) :: lines) 
+    let final_result = result |> List.rev |> List.filter (List.isEmpty >> not)
     match result with
     | [] -> []
     | [line] -> 

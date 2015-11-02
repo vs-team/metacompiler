@@ -381,10 +381,16 @@ and typefunc_rule : Parser<LineSplitter.Line, Scope, Unit> =
     do! setContext { ctxt with TypeFunctionRules = { Premises = []; Input = i; Output = o } :: ctxt.TypeFunctionRules }
   }
 and scope_lines =
+  let rec extract app :(LineSplitter.Line List) = 
+    match app with
+    | LineSplitter.Block([LineSplitter.Application(br,inner)]::xs) :: es -> extract inner
+    | LineSplitter.Application(br,inner) :: es -> extract inner
+    | LineSplitter.Block(lines) :: es -> lines
   fun (exprs,ctxt) ->
     match exprs with
-    | LineSplitter.Application(Curly,[LineSplitter.Application(Indent,[LineSplitter.Block(b)])]) :: rest -> 
-      match (scope() (b,Scope.Zero)) with 
+    | LineSplitter.Application(Curly,b) :: rest -> 
+      let lines = extract b
+      match (scope() (lines,Scope.Zero)) with 
       | Done (res,_,_) -> Done(res,exprs,ctxt)
       | Error e -> Error e 
     | _ -> Done(Scope.Zero,exprs,ctxt)
