@@ -1,4 +1,4 @@
-﻿module TreeExpression
+﻿module Parenthesizer
 open Common
 open ScopeBuilder
 
@@ -18,21 +18,20 @@ let rec tryExtractPosition(expr:BasicExpression) :Option<Position> =
   | Id          (_,pos) -> Some pos
   | Literal     (_,pos) -> Some pos
   | Application (_,lst) -> lst |> List.tryHead |> Option.bind tryExtractPosition
-  | Scope       (fdecls) -> None
+  | Scope       (scope) -> None
 
 let tryAny (f:'a->option<'b>) (lst:List<'a>) :Option<'b> =
   lst |> List.tryFind (f>>Option.isSome) |> Option.bind f
 
-type TreeExpression = Literal of Literal*Position
-                    | Symbol of List<TreeExpression>*SymbolDeclaration*List<TreeExpression>*Position
+let getOperator fdecls expr =
+  match expr with
+  | Id(str,pos) -> let symbol = findSymbol str fdecls
+                   if symbol.LeftArgs.IsEmpty && symbol.RightArgs.IsEmpty 
+                   then None else Some (symbol,pos) 
+  | _ -> None
 
-let extractOperators fdecls exprs= 
-  exprs |> List.choose (fun expr ->
-    match expr with
-    | Id(str,pos) -> let symbol = findSymbol str fdecls
-                     if symbol.LeftArgs.IsEmpty && symbol.RightArgs.IsEmpty 
-                     then None else Some(symbol,pos) 
-    | _           -> None )
+let extractOperators fdecls exprs = 
+  exprs |> List.choose (getOperator fdecls)
 
 let getHighestPriorityOperator operators = 
   operators |> List.reduce (fun (acc,acc_pos) (right,right_pos) ->
@@ -63,22 +62,15 @@ let getPriorityOperator (acc:SymbolDeclaration,acc_pos:Position) (right:SymbolDe
   elif acc.Associativity = Left then acc,acc_pos
   else right,right_pos 
 
-let getOperator fdecls expr =
-  match expr with
-  | Id(str,pos) -> let symbol = findSymbol str fdecls
-                   if symbol.LeftArgs.IsEmpty && symbol.RightArgs.IsEmpty 
-                   then None else Some (symbol,pos) 
-  | _ -> None
-
 let compare fdecls (acc:SymbolDeclaration*Position) (expr:BasicExpression) =
   match getOperator fdecls expr with
   | None   -> acc
   | Some x -> getPriorityOperator acc x
 
-let rec addParens (fdecls:List<SymbolDeclaration>) (exprs:List<BasicExpression>) :List<BasicExpression> =
+let rec Parenthesize (fdecls:List<SymbolDeclaration>) (exprs:List<BasicExpression>) :List<BasicExpression> =
   let exprs = exprs |> List.map (fun x -> 
     match x with
-    | Application(b,x) -> Application(b,addParens fdecls x)
+    | Application(b,x) -> Application(b,Parenthesize fdecls x)
     | foo -> foo )
   let fromFirstId = exprs |> List.skipWhile ((getOperator fdecls)>>Option.isSome)
   if fromFirstId.IsEmpty then exprs
@@ -103,4 +95,4 @@ let rec addParens (fdecls:List<SymbolDeclaration>) (exprs:List<BasicExpression>)
       let farRight = right |> takeBack  (right.Length-rightArgs.Length)
       let newExpr = Id(operatorSymbol.Name,operatorPosition)
       let newParen= Application(Round,leftArgs@(newExpr::rightArgs))
-      addParens fdecls farLeft@(newParen::farRight)
+      Parenthesize fdecls farLeft@(newParen::farRight)
