@@ -2,8 +2,8 @@
 open Common
 open ScopeBuilder
 
-let findSymbol (id:Id) (scope:Scope) :SymbolDeclaration =
-  scope.FunctionDeclarations |> List.find (fun x -> x.Name=id)
+let findSymbol (id:Id) (fdecls:List<SymbolDeclaration>) :SymbolDeclaration =
+  fdecls |> List.find (fun x -> x.Name=id)
 
 let pivot (f:'a -> bool) (lst:List<'a>) :List<'a>*'a*List<'a> =
   let left,pivot::right = lst |> List.splitAt (lst |> List.findIndex f)
@@ -18,7 +18,7 @@ let rec tryExtractPosition(expr:BasicExpression) :Option<Position> =
   | Id          (_,pos) -> Some pos
   | Literal     (_,pos) -> Some pos
   | Application (_,lst) -> lst |> List.tryHead |> Option.bind tryExtractPosition
-  | Scope       (scope) -> None
+  | Scope       (fdecls) -> None
 
 let tryAny (f:'a->option<'b>) (lst:List<'a>) :Option<'b> =
   lst |> List.tryFind (f>>Option.isSome) |> Option.bind f
@@ -26,10 +26,10 @@ let tryAny (f:'a->option<'b>) (lst:List<'a>) :Option<'b> =
 type TreeExpression = Literal of Literal*Position
                     | Symbol of List<TreeExpression>*SymbolDeclaration*List<TreeExpression>*Position
 
-let extractOperators scope exprs= 
+let extractOperators fdecls exprs= 
   exprs |> List.choose (fun expr ->
     match expr with
-    | Id(str,pos) -> let symbol = findSymbol str scope
+    | Id(str,pos) -> let symbol = findSymbol str fdecls
                      if symbol.LeftArgs.IsEmpty && symbol.RightArgs.IsEmpty 
                      then None else Some(symbol,pos) 
     | _           -> None )
@@ -63,28 +63,28 @@ let getPriorityOperator (acc:SymbolDeclaration,acc_pos:Position) (right:SymbolDe
   elif acc.Associativity = Left then acc,acc_pos
   else right,right_pos 
 
-let getOperator scope expr =
+let getOperator fdecls expr =
   match expr with
-  | Id(str,pos) -> let symbol = findSymbol str scope
+  | Id(str,pos) -> let symbol = findSymbol str fdecls
                    if symbol.LeftArgs.IsEmpty && symbol.RightArgs.IsEmpty 
                    then None else Some (symbol,pos) 
   | _ -> None
 
-let compare scope (acc:SymbolDeclaration*Position) (expr:BasicExpression) =
-  match getOperator scope expr with
+let compare fdecls (acc:SymbolDeclaration*Position) (expr:BasicExpression) =
+  match getOperator fdecls expr with
   | None   -> acc
   | Some x -> getPriorityOperator acc x
 
-let rec addParens (scope:Scope) (exprs:List<BasicExpression>) :List<BasicExpression> =
+let rec addParens (fdecls:List<SymbolDeclaration>) (exprs:List<BasicExpression>) :List<BasicExpression> =
   let exprs = exprs |> List.map (fun x -> 
     match x with
-    | Application(b,x) -> Application(b,addParens scope x)
+    | Application(b,x) -> Application(b,addParens fdecls x)
     | foo -> foo )
-  let fromFirstId = exprs |> List.skipWhile ((getOperator scope)>>Option.isSome)
+  let fromFirstId = exprs |> List.skipWhile ((getOperator fdecls)>>Option.isSome)
   if fromFirstId.IsEmpty then exprs
   else 
     let operatorSymbol,operatorPosition = 
-      fromFirstId |> List.fold (compare scope) (Option.get (getOperator scope fromFirstId.Head))
+      fromFirstId |> List.fold (compare fdecls) (Option.get (getOperator fdecls fromFirstId.Head))
     let left,_,right = pivotPosition operatorPosition exprs 
     let leftArgs     = left  |> takeBack  operatorSymbol.LeftArgs.Length
     let rightArgs    = right |> List.take operatorSymbol.RightArgs.Length
@@ -103,4 +103,4 @@ let rec addParens (scope:Scope) (exprs:List<BasicExpression>) :List<BasicExpress
       let farRight = right |> takeBack  (right.Length-rightArgs.Length)
       let newExpr = Id(operatorSymbol.Name,operatorPosition)
       let newParen= Application(Round,leftArgs@(newExpr::rightArgs))
-      addParens scope farLeft@(newParen::farRight)
+      addParens fdecls farLeft@(newParen::farRight)
