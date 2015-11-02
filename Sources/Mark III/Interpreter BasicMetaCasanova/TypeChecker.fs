@@ -2,7 +2,7 @@
 open Common
 open ScopeBuilder // Scope
 open LineSplitter // BasicExpression
-open TreeExpression
+open Parenthesizer
 
 type TypeId      = string
 type NamespaceId = string
