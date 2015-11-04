@@ -369,6 +369,7 @@ let rec scope() : Parser<LineSplitter.Line, Scope, Scope> =
 
 and typefunc_rule : Parser<LineSplitter.Line, Scope, Unit> =
   prs{
+    do! skip_empty_lines()
     let! premises = typefunc_premise |> parse_first_line |> repeat
     do! horizontal_bar |> parse_first_line
     let! i,o = typefunc_io |> parse_first_line
@@ -383,7 +384,9 @@ and typefunc_rule : Parser<LineSplitter.Line, Scope, Unit> =
 and scope_lines =
   let rec extract app :(LineSplitter.Line List) = 
     match app with
-    | LineSplitter.Block([LineSplitter.Application(br,inner)]::xs) :: es -> extract inner
+    | LineSplitter.Block([[LineSplitter.Application(br,inner)]]) :: es -> (extract inner)
+    | LineSplitter.Block([]::xs) :: es -> extract [LineSplitter.Block(xs)]
+    | LineSplitter.Block([LineSplitter.Application(br,inner)]::xs) :: es -> (extract inner) @ extract [LineSplitter.Block(xs)]
     | LineSplitter.Application(br,inner) :: es -> extract inner
     | LineSplitter.Block(lines) :: es -> lines
   fun (exprs,ctxt) ->
