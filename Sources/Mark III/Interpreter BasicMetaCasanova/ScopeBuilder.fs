@@ -214,7 +214,7 @@ let symbol_declaration_body : Parser<_, _, SymbolDeclaration> =
 let typefunc_declaration_body : Parser<_, _, SymbolDeclaration> =
   prs{
     let! position = getPosition
-    let! left_arguments = arguments()
+    let! left_arguments = typefunc_arguments()
     let! name = string_literal
     do! doublearrow
     let! right_arguments = typefunc_arguments()
@@ -363,6 +363,7 @@ let rec scope() : Parser<LineSplitter.Line, Scope, Scope> =
     do! (parse_first_line (import_declaration .|| inherit_declaration .|| func_declaration .|| 
                            typefunc_declaration .|| data_declaration )) .|| 
                            typefunc_rule .|| rule
+    do! skip_empty_lines()
     return! scope()
   } .|| 
   (eof >> getContext)

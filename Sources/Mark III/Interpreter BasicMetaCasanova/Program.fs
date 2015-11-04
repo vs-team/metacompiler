@@ -14,7 +14,7 @@ let main argv =
   let input_path = "../../../Content/Metacompiler/StandardLibrary/prelude.mc"
   //let input_path = "../../../Content/Metacompiler/StandardLibrary/number.mc"
   //let input_path = "../../../Content/Metacompiler/StandardLibrary/monad.mc"
-  //let input_path = "../../../Content/Metacompiler/StandardLibrary/match.mc"
+  let input_path = "../../../Content/Metacompiler/StandardLibrary/match.mc"
   //let input_path = "../../../Content/Metacompiler/BasicMonads/either.mc"
   //let input_path = "../../../Content/Metacompiler/BasicMonads/id.mc"
   //parser fails//

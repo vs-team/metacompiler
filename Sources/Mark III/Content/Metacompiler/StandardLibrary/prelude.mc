@@ -15,7 +15,6 @@ if True then f else g => f
 
 if False then f else g => g
 
-
 TypeFunc "int" => Number
 
 int => Number Int {
