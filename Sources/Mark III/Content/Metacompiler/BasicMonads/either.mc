@@ -21,13 +21,4 @@ either M 'b => Monad (EitherT MCons^M 'b) {
     try pm p q => res
     
     pm >>= k => try pm k fail
-  
-    Ma >>=^Ma a
-    --
-    lift f Ma => return^M(f a)
-
-    Ma >>=^Ma a
-    Mb >>=^Mb b
-    --
-    lift2 f Ma Mb => return^M(f a b)
   }

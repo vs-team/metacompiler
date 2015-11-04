@@ -51,13 +51,4 @@ list M => Monad(ListT MCons^M) {
     lm >>= k => res
     
     return x => return^M(x :: empty)
-
-    a >>=^Ma a'
-    --
-    lift f Ma => return^M(f a')
-
-    a >>=^Ma a'
-    b >>=^Mb b'
-    --
-    lift2 f Ma Mb => return^M(f a' b')
-}
+  }
