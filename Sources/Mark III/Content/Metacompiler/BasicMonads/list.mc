@@ -24,13 +24,11 @@ map (x :: xs) f -> (map (f x)) :: xs
 
 filter empty p -> empty
 
-
-
 (if p x then
 (x :: (filter xs p))
 else
 (filter xs p)) -> res
--- 
+--
 filter (x :: xs) p -> res
 
 
@@ -40,6 +38,7 @@ ListT 'M 'a => 'M(List 'a)
 TypeFunc "list" => Monad => Monad 
 
 list M => Monad(ListT MCons^M) {
+<<<<<<< HEAD
     lm >>=^M l
     (match l with
     (\empty -> return^M empty)
@@ -52,3 +51,26 @@ list M => Monad(ListT MCons^M) {
     
     return x => return^M(x :: empty)
   }
+=======
+  lm >>=^M l
+  (match l with
+  (\empty -> return^M empty)
+  (\(x :: xs) -> 
+  k x >>=^M y
+  ((return^M xs) >>= k) >>=^M ys
+  return^M (y @ ys))) => res
+  --
+  lm >>= k => res
+  
+  return x => return^M(x :: empty)
+  
+  a >>=^Ma a'
+  --
+  lift f Ma => return^M(f a')
+  
+  a >>=^Ma a'
+  b >>=^Mb b'
+  --
+  lift2 f Ma Mb => return^M(f a' b')
+}
+>>>>>>> db488f51831fc47fdf5ec9e6ff63400eabc5d77c

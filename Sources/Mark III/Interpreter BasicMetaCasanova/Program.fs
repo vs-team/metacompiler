@@ -14,14 +14,14 @@ let main argv =
   let input_path = "../../../Content/Metacompiler/StandardLibrary/prelude.mc"
   //let input_path = "../../../Content/Metacompiler/StandardLibrary/number.mc"
   //let input_path = "../../../Content/Metacompiler/StandardLibrary/monad.mc"
-  let input_path = "../../../Content/Metacompiler/StandardLibrary/match.mc"
+  //let input_path = "../../../Content/Metacompiler/StandardLibrary/match.mc"
   //let input_path = "../../../Content/Metacompiler/BasicMonads/either.mc"
   //let input_path = "../../../Content/Metacompiler/BasicMonads/id.mc"
   //parser fails//
   //let input_path = "../../../Content/Metacompiler/BasicMonads/list.mc"
   //let input_path = "../../../Content/Metacompiler/BasicMonads/option.mc"
   //let input_path = "../../../Content/Metacompiler/BasicMonads/result.mc"
-  //let input_path = "../../../Content/Metacompiler/BasicMonads/state.mc"
+  let input_path = "../../../Content/Metacompiler/BasicMonads/state.mc"
 
   t.Start()
   let tokens = tokenize input_path ".lex_cache" ()
