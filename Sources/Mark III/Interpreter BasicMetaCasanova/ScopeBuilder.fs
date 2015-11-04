@@ -148,7 +148,6 @@ and line_to_id_basicexpression =
       | _ -> Error(sprintf "Error: expected indent at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
     | _ -> Error(sprintf "Error: expected another line in scope at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
-
 let nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
   fun (exprs,ctxt) ->
   match exprs with
