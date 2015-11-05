@@ -133,9 +133,9 @@ let rec nested_id_application : Parser<LineSplitter.BasicExpression, Scope, Basi
     match (line_to_id_basicexpression |> repeat)(b,ctxt) with
     | Done(inner',[],ctxt) -> Done(Application(Indent,inner'),es,ctxt)
     | _ -> Error(sprintf "Error: expected indent at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
-  | LineSplitter.Application(Round,inner) :: es -> 
+  | LineSplitter.Application(b,inner) :: es -> 
     match (nested_id_application |> repeat) (inner,ctxt) with
-    | Done(inner',[],ctxt) -> Done(Application(Round,inner'),es,ctxt)
+    | Done(inner',[],ctxt) -> Done(Application(b,inner'),es,ctxt)
     | _ -> Error(sprintf "Error: expected id (also nested) inside brackets at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | _ -> Error(sprintf "Error: expected id (also nested) but could not find at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
@@ -301,8 +301,15 @@ let rec skip_empty_lines() =
     do! skip_empty_lines()
   } .|| (prs{ return () })
 
+let not_empty : Parser<LineSplitter.BasicExpression, Scope, _> =
+  fun (exprs,ctxt) ->
+  match exprs with
+  | x::xs -> Done ((),exprs,ctxt)
+  | [] -> Error(sprintf "Error: cannot extract line at %A" (LineSplitter.BasicExpression.tryGetNextPosition exprs))
+
 let typefunc_premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
   prs{
+    do! not_empty
     let! i = nested_id |> repeat
     return! (prs{
               do! doublearrow
@@ -317,10 +324,11 @@ let typefunc_premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
 
 let premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
   prs{
-    let! i = simple_expression |> repeat
+    do! not_empty
+    let! i = nested_id |> repeat
     return! (prs{
               do! arrow
-              let! o = simple_expression |> repeat
+              let! o = nested_id |> repeat
               return Implication(i,o)
             }) .||
             (prs{
@@ -343,7 +351,6 @@ let rule_io :Parser<LineSplitter.BasicExpression,Scope,_> =
   }
 let rule : Parser<LineSplitter.Line, Scope, Unit> =
   prs{
-    do! skip_empty_lines()
     let! premises = premise |> parse_first_line |> repeat
     do! horizontal_bar |> parse_first_line
     let! i,o = rule_io |> parse_first_line

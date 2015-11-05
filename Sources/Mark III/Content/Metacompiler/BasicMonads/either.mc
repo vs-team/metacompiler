@@ -15,8 +15,9 @@ either M 'b => Monad (EitherT MCons^M 'b) {
     
     pm >>=^M y
     (match y with 
-    (\x -> q x) 
-    (\y -> p y)) => res
+      (\x -> q x) 
+      (\y -> p y)
+    ) => res
     --
     try pm p q => res
     

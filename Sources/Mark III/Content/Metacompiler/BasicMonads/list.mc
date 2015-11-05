@@ -24,10 +24,11 @@ map (x :: xs) f -> (map (f x)) :: xs
 
 filter empty p -> empty
 
-(if p x then
-(x :: (filter xs p))
-else
-(filter xs p)) -> res
+(if p x then 
+  (x :: (filter xs p)) 
+  else 
+  (filter xs p)
+) -> res
 --
 filter (x :: xs) p -> res
 
@@ -40,13 +41,15 @@ TypeFunc "list" => Monad => Monad
 list M => Monad(ListT MCons^M) {
     lm >>=^M l
     (match l with
-    (\empty -> return^M empty)
-    (\(x :: xs) -> 
-    k x >>=^M y
-    ((return^M xs) >>= k) >>=^M ys
-    return^M (y @ ys))) => res
+      (\empty -> return^M empty)
+      (\(x :: xs) -> 
+        k x >>=^M y
+        ((return^M xs) >>= k) >>=^M ys
+      return^M (y @ ys)
+      )
+    ) => res
     --
     lm >>= k => res
-    
+
     return x => return^M(x :: empty)
   }
