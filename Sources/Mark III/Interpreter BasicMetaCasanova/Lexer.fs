@@ -56,7 +56,7 @@ let alpha_numeric : Parser<char,_,char> =
     | c::cs when (c >= 'a' && c <= 'z')
                  || (c >= '0' && c <= '9')
                  || (c >= 'A' && c <= 'Z')
-                 || (c = '_') -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
+                 || (c = '_') || (c = '\'') -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
     | _ -> Error(sprintf "Error: expected alpha/numeric-char at %A." ctxt.Position)
 
 let alpha_numeric_id =
@@ -295,11 +295,13 @@ let rec tokens_lines() : Parser<char,Context,List<List<Token>>> =
 
 let tokenize = //: Result<char,Unit,List<Token>> =
   let regular_load path () = 
-    let source = System.IO.File.ReadAllText(path) |> Seq.toList
-    let pos = Position.FromPath path
-    match (tokens_lines()) (source,Context.Zero pos) with
-    | Done(tokens, _, _) -> Some (tokens |> List.concat)
-    | Error(e) ->
-      printfn "%A" e
-      None
+    if System.IO.File.Exists(path) then 
+      let source = System.IO.File.ReadAllText(path) |> Seq.toList
+      let pos = Position.FromPath path
+      match (tokens_lines()) (source,Context.Zero pos) with
+      | Done(tokens, _, _) -> Some (tokens |> List.concat)
+      | Error(e) ->
+        printfn "%A" e
+        None
+    else None
   Caching.cached_op regular_load
