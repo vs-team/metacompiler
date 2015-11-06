@@ -63,55 +63,55 @@ let id =
   fun (exprs,ctxt) ->
     match exprs with
     | LineSplitter.Id(i,pos)::es -> Done(i, es, ctxt)
-    | _ -> Error (sprintf "Error: expected id at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error (ScopeError ["Error: expected id at."], (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let string_literal = 
   fun (exprs,ctxt) ->
     match exprs with
     | LineSplitter.Literal(String s,pos)::es -> Done(s, es, ctxt)
-    | _ -> Error (sprintf "Error: expected string literal at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error (ScopeError ["Error: expected string literal at."],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let arrow = 
   fun (exprs,ctxt) ->
     match exprs with
     | LineSplitter.BasicExpression.Keyword(LineSplitter.SingleArrow,pos)::es -> Done((), es, ctxt)
-    | _ -> Error (sprintf "Error: expected -> at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error (ScopeError [",->"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let doublearrow = 
   fun (exprs,ctxt) ->
     match exprs with
     | LineSplitter.BasicExpression.Keyword(LineSplitter.DoubleArrow,pos)::es -> Done((), es, ctxt)
-    | _ -> Error (sprintf "Error: expected => at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error (ScopeError [",=>"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let import = 
   fun (exprs,ctxt) ->
     match exprs with
     | LineSplitter.BasicExpression.Keyword(LineSplitter.Import,pos)::es -> Done((), es, ctxt)
-    | _ -> Error (sprintf "Error: expected import at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error (ScopeError ["expected import"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let inherit__ = 
   fun (exprs,ctxt) ->
     match exprs with
     | LineSplitter.BasicExpression.Keyword(LineSplitter.Inherit,pos)::es -> Done((), es, ctxt)
-    | _ -> Error (sprintf "Error: expected inherit at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error (ScopeError[",inherit"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let func = 
   fun (exprs,ctxt) ->
     match exprs with
     | LineSplitter.BasicExpression.Keyword(LineSplitter.Func,pos)::es -> Done((), es, ctxt)
-    | _ -> Error (sprintf "Error: expected func at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error (ScopeError [",func"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let typefunc = 
   fun (exprs,ctxt) ->
     match exprs with
     | LineSplitter.BasicExpression.Keyword(LineSplitter.TypeFunc,pos)::es -> Done((), es, ctxt)
-    | _ -> Error (sprintf "Error: expected typefunc at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error (ScopeError [",typefunc"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let data = 
   fun (exprs,ctxt) ->
     match exprs with
     | LineSplitter.BasicExpression.Keyword(LineSplitter.Data,pos)::es -> Done((), es, ctxt)
-    | _ -> Error (sprintf "Error: expected data at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error (ScopeError [",data"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let rec simple_expression : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
   fun (exprs,ctxt) ->
@@ -121,8 +121,8 @@ let rec simple_expression : Parser<LineSplitter.BasicExpression, Scope, BasicExp
   | LineSplitter.Application(b,inner) :: es -> 
     match (simple_expression |> repeat) (inner,ctxt) with
     | Done(inner',[],ctxt) -> Done(Application(b,inner'),es,ctxt)
-    | _ -> Error(sprintf "Error: expected simple expression at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
-  | _ -> Error(sprintf "Error: expected simple expression at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error(ScopeError ["Error: expected simple expression at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+  | _ -> Error(ScopeError ["Error: expected simple expression at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let rec nested_id_application : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
   fun (exprs,ctxt) ->
@@ -132,12 +132,12 @@ let rec nested_id_application : Parser<LineSplitter.BasicExpression, Scope, Basi
   | LineSplitter.Block(b) :: es -> 
     match (line_to_id_basicexpression |> repeat)(b,ctxt) with
     | Done(inner',[],ctxt) -> Done(Application(Indent,inner'),es,ctxt)
-    | _ -> Error(sprintf "Error: expected indent at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error(ScopeError ["Error: expected indent at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | LineSplitter.Application(b,inner) :: es -> 
     match (nested_id_application |> repeat) (inner,ctxt) with
     | Done(inner',[],ctxt) -> Done(Application(b,inner'),es,ctxt)
-    | _ -> Error(sprintf "Error: expected id (also nested) inside brackets at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
-  | _ -> Error(sprintf "Error: expected id (also nested) but could not find at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error(ScopeError ["Error: expected id (also nested) inside brackets at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+  | _ -> Error(ScopeError ["Error: expected id (also nested) but could not find at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 and line_to_id_basicexpression =
   fun (exprs,ctxt) ->
@@ -145,8 +145,8 @@ and line_to_id_basicexpression =
     | x :: es -> 
       match (nested_id_application |> repeat) (x,ctxt) with
       | Done(inner',[],ctxt) -> Done(Application(Indent,inner'),es,ctxt)
-      | _ -> Error(sprintf "Error: expected indent at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
-    | _ -> Error(sprintf "Error: expected another line in scope at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+      | _ -> Error(ScopeError ["Error: expected indent at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error(ScopeError ["Error: expected another line in scope at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
   fun (exprs,ctxt) ->
@@ -156,8 +156,8 @@ let nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
   | LineSplitter.Application(Round,inner) :: es -> 
     match (nested_id_application |> repeat) (inner,ctxt) with
     | Done(inner',[],ctxt) -> Done(Application(Round,inner'),es,ctxt)
-    | _ -> Error(sprintf "Error: expected id (also nested) inside brackets at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
-  | _ -> Error(sprintf "Error: expected id (also nested) but could not find at %A" (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error(ScopeError ["Error: expected id (also nested) inside brackets at %A"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+  | _ -> Error(ScopeError["Error: expected id (also nested) but could not find at %A"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let type_expression : Parser<_, _, Type> = 
   prs{
@@ -168,10 +168,10 @@ let type_expression : Parser<_, _, Type> =
   }
 
 let rec priority : Parser<_, _, int> =
-  fail "Not implemented"
+  fail (ScopeError ["Not implemented"])
 
 let rec associativity : Parser<_, _, Associativity> =
-  fail "Not implemented"
+  fail (ScopeError ["Not implemented"])
 
 let rec arguments() : Parser<_, _, List<Type>> =
   prs{
@@ -278,21 +278,21 @@ let parse_first_line (p:Parser<LineSplitter.BasicExpression,_,'a>) : Parser<Line
       match p (line,ctxt) with
       | Done(res,_,ctxt') ->
         Done(res,lines,ctxt')
-      | Error e -> Error e
-    | [] -> Error(sprintf "Error: cannot extract leading line at %A" (LineSplitter.BasicExpression.tryGetNextPosition lines))
+      | Error(e,p) -> Error(e,p)
+    | [] -> Error(ScopeError ["Error: cannot extract leading line at"],(LineSplitter.BasicExpression.tryGetNextPosition lines))
 
 let line : Parser<LineSplitter.Line,_,_> = 
   fun (lines,ctxt) ->
     match lines with
     | l::ls -> Done(l,ls,ctxt)
-    | _ -> Error(sprintf "Error: cannot extract line at %A" (LineSplitter.BasicExpression.tryGetNextPosition lines))
+    | _ -> Error(ScopeError ["Error: cannot extract line at"],(LineSplitter.BasicExpression.tryGetNextPosition lines))
 
 let empty_line : Parser<LineSplitter.Line,_,_> = 
   prs{
     let! line = line
     match line with
     | [] -> return ()
-    | _ -> return! fail "Error: line is not empty!"
+    | _ -> return! fail (ScopeError["Error: line is not empty!"])
   }
 
 let rec skip_empty_lines() =
@@ -305,7 +305,7 @@ let not_empty : Parser<LineSplitter.BasicExpression, Scope, _> =
   fun (exprs,ctxt) ->
   match exprs with
   | x::xs -> Done ((),exprs,ctxt)
-  | [] -> Error(sprintf "Error: cannot extract line at %A" (LineSplitter.BasicExpression.tryGetNextPosition exprs))
+  | [] -> Error(ScopeError ["Error: cannot extract line at %A"],(LineSplitter.BasicExpression.tryGetNextPosition exprs))
 
 let typefunc_premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
   prs{
@@ -340,7 +340,7 @@ let horizontal_bar : Parser<LineSplitter.BasicExpression,_,_> =
   fun (exprs,ctxt) ->
     match exprs with
     | [LineSplitter.BasicExpression.Keyword(LineSplitter.HorizontalBar,pos)] -> Done((), [], ctxt)
-    | _ -> Error (sprintf "Error: expected ---- at %A." (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error (ScopeError [",----"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let rule_io :Parser<LineSplitter.BasicExpression,Scope,_> = 
   prs{
@@ -402,7 +402,7 @@ and scope_lines =
       let lines = extract b
       match (scope() (lines,Scope.Zero)) with 
       | Done (res,_,_) -> Done(res,exprs,ctxt)
-      | Error e -> Error e 
+      | Error (e,p) -> Error (e,p) 
     | _ -> Done(Scope.Zero,exprs,ctxt)
 
 and typefunc_io :Parser<LineSplitter.BasicExpression,Scope,_> = 
@@ -421,7 +421,7 @@ let block : Parser<LineSplitter.BasicExpression, Unit, List<_>> =
   fun (exprs,ctxt) ->
     match exprs with
     | LineSplitter.Block(b) :: es -> Done(b,es,ctxt)
-    | _ -> Error (sprintf "Error: expected block at %A" (LineSplitter.BasicExpression.tryGetNextPosition exprs))
+    | _ -> Error (ScopeError ["Error: expected block at %A"],(LineSplitter.BasicExpression.tryGetNextPosition exprs))
 
 let rec traverse() : Parser<LineSplitter.BasicExpression, Unit, List<Scope>> = 
   prs {
@@ -430,7 +430,7 @@ let rec traverse() : Parser<LineSplitter.BasicExpression, Unit, List<Scope>> =
     | Done(scope,_,_) ->
       let! rest = traverse()
       return scope :: rest
-    | Error e -> 
+    | Error (e,p) -> 
       return! fail e
   } .||
     (eof >>
@@ -439,6 +439,7 @@ let rec traverse() : Parser<LineSplitter.BasicExpression, Unit, List<Scope>> =
 let build_scopes (lines:List<LineSplitter.Line>) : Option<Scope> =
   match scope() (lines,Scope.Zero) with
   | Done (res,_,_) -> Some res
-  | Error e ->
-    do printfn "%s" e
+  | Error (e,p) ->
+    //let test = ErrorType.expand e 
+    do printfn "%A" (e,p)
     None

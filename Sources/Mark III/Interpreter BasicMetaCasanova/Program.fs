@@ -11,7 +11,7 @@ open Common
 
 [<EntryPoint>]
 let main argv = 
-  let input = [ "prelude.mc"
+  let input = ["prelude.mc"
                ;"number.mc"
                ;"monad.mc"
                ;"match.mc"
