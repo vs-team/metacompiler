@@ -57,6 +57,7 @@
     <Compile Include="ScopeBuilder.fs" />
     <Compile Include="Parenthesize.fs" />
     <Compile Include="TypeChecker.fs" />
+    <Compile Include="PipeLine.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>
