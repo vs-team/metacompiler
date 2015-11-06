@@ -18,8 +18,17 @@ type Scope =
     Tokens  : Lexer.Token list option
     Parsed  : List<Parser.BasicExpression> option
     Lines   : List<LineSplitter.Line> option
-    Scopes  : ScopeBuilder.Scope option list
+    Scopes  : ScopeBuilder.Scope list
   }
+  with 
+    static member Zero =
+      {
+        Input_files = []
+        Tokens      = None
+        Parsed      = None
+        Lines       = None
+        Scopes      = []     
+      }
 
 let file_paths = ["../../../Content/Metacompiler/StandardLibrary/";
                   "../../../Content/Metacompiler/BasicMonads/"]
@@ -33,6 +42,12 @@ let rec find_correct_path (paths:List<string>)(name:string) :Option<string> =
       find_correct_path xs name
   | [] -> None
 
+let next_input : Parser<string,Scope,_> = 
+  fun (paths,ctxt) ->
+  match paths with 
+  | x::xs -> Done((),xs,ctxt)
+  | [] -> Error ""
+
 let start_lexer : Parser<string,Scope,Token list option> = 
   fun (paths,ctxt) ->
   match paths with
@@ -44,6 +59,7 @@ let start_lexer : Parser<string,Scope,Token list option> =
       match tokens with
       | Some tok ->
         do t.Stop()
+        do printfn "%s" x
         do printfn "Done tokenization in %d ms." t.ElapsedMilliseconds
         do t.Restart()
         Done(tokens,paths,ctxt)
@@ -90,43 +106,59 @@ let start_line_splitter : Parser<string,Scope,LineSplitter.Line list option> =
     | _ -> Error ""
   | _ -> Error ""
 
-let start_scope_builder : Parser<string,Scope,ScopeBuilder.Scope option> = 
+let start_scope_builder : Parser<string,Scope,ScopeBuilder.Scope> = 
   fun (paths,ctxt) ->
     match ctxt.Lines with 
       | Some line_blocks ->
         match build_scopes line_blocks with
           | Some scope ->
             do printfn "Done scope building in %d ms." t.ElapsedMilliseconds
-            printfn "%A" scope        
-            File.WriteAllText ("parser_output.txt",(sprintf "%A" scope)) 
-            Done(Some(scope),paths,ctxt)
+            Done(scope,paths,ctxt)
           | _ -> Error ""
       | _ -> Error ""      
 
-let lexer_p : Parser<string,Scope,Unit> = 
+let lift_parser p mk_new_ctxt : Parser<string,Scope,Unit> =
   prs{
-    let! tokens = start_lexer
+    let! p_res = p
     let! ctxt = getContext
-    do! setContext { ctxt with Tokens = tokens}
+    do! setContext (ctxt |> mk_new_ctxt p_res)
   }
+
+let lexer_p : Parser<string,Scope,Unit> = 
+  lift_parser start_lexer
+    (fun tokens ctxt -> { ctxt with Tokens = tokens})
 
 let parser_p : Parser<string,Scope,Unit> = 
-  prs{
-    let! parsed = start_parser
-    let! ctxt = getContext
-    do! setContext { ctxt with Parsed = parsed}
-  }
+  lift_parser start_parser
+    (fun parsed ctxt -> { ctxt with Parsed = parsed})
 
 let line_splitter_p : Parser<string,Scope,Unit> = 
+  lift_parser start_line_splitter
+    (fun lines ctxt -> { ctxt with Lines = lines})
+
+let scope_builder_p : Parser<string,Scope,Unit> = 
+  lift_parser start_scope_builder 
+    (fun scope ctxt -> { ctxt with Scopes = scope :: ctxt.Scopes})
+
+let front_end : Parser<string,Scope,_> = 
   prs{
-    let! lines = start_line_splitter
-    let! ctxt = getContext
-    do! setContext { ctxt with Lines = lines}
+    do! lexer_p
+    do! parser_p
+    do! line_splitter_p
+    do! scope_builder_p
+    do! next_input
   }
 
-let scope_builder : Parser<string,Scope,Unit> = 
+let compiler : Parser<string,Scope,List<ScopeBuilder.Scope>> = 
+  t.Start()
   prs{
-    let! scope = start_scope_builder
-    let! ctxt = getContext
-    do! setContext { ctxt with Scopes = scope :: ctxt.Scopes}
+    let! u = front_end |> repeat
+    let! scope = getContext
+    return scope.Scopes
   }
+
+let start_compiler (input) =
+  match compiler (input,Scope.Zero) with
+  | Done(res,_,_) -> res
+  | Error e -> failwith ""
+  
