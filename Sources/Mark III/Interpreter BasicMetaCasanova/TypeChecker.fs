@@ -4,7 +4,7 @@ open ScopeBuilder // Scope
 open Parenthesizer
 
 (*
-Most Generic fit
+Most Generic Fit
 inline typefuncs
   order:
     typefuncs that return Signature
@@ -41,56 +41,52 @@ let listToMapOfLists (lst:List<'k*'v>) :Map<'k,List<'v>> =
     Map.empty
   |> Map.map (fun _ v -> List.rev v)
 
+// TODO: add caching
 let rec toUntypedScope (root:Scope) (scopes:Map<Id,Scope>) :UntypedScope = 
+  let matchRules rules =
+    rules
+    |> List.map (fun (rule:Rule) -> 
+       let bar = Parenthesize root.FunctionDeclarations rule.Input
+       let baz = bar |> List.find (fun x -> match x with
+                                            | Id (str,pos) -> root.FunctionDeclarations 
+                                                              |> List.tryFind (fun e->str=e.Name)
+                                                              |> Option.isSome
+                                            | _ -> false)
+       let name:Id = match baz with Id (str,_) -> str
+       name,rule)
   {
     Parents       = root.ImportDeclaration |> List.map (fun x -> toUntypedScope scopes.[x] scopes)
     FuncDecls     = root.FunctionDeclarations     |> List.map (fun x -> x.Name,x) |> Map.ofList
     TypeFuncDecls = root.TypeFunctionDeclarations |> List.map (fun x -> x.Name,x) |> Map.ofList
     DataDecls     = root.DataDeclarations         |> List.map (fun x -> x.Name,x) |> Map.ofList
-    TypeFuncRules = Map.empty
-    FuncRules     =
-      let foo = 
-        root.Rules 
-        |> List.map (fun (rule:Rule) -> 
-          let bar = Parenthesize root.FunctionDeclarations rule.Input
-          let baz = bar |> List.find (fun x -> match x with
-                                               | Id (str,pos) -> root.FunctionDeclarations 
-                                                                 |> List.tryFind (fun e->str=e.Name)
-                                                                 |> Option.isSome
-                                               | _ -> false)
-          let name:Id = match baz with Id (str,_) -> str
-          name,rule)
-      listToMapOfLists foo
+    TypeFuncRules = matchRules root.TypeFunctionRules |> listToMapOfLists
+    FuncRules     = matchRules root.Rules             |> listToMapOfLists
   }
-
-type TypeId      = string
-type NamespaceId = string
 
 type TypeConstructors = Map<Id,Type>
 type Type = Star       // type
           | Signature  // module
-          | TypeId     of TypeId
+          | TypeId     of Id
           | BigArrow   of Type*Type
           | SmallArrow of Type*Type
           | Union      of Type*TypeConstructors
 
-type SymbolTable = Map<Id,Type>
-type Env = {
-  Parents     : List<NamespaceId>
-  SymbolTable : SymbolTable
-} with static member Zero() = { Parents=[]; SymbolTable=Map.empty }
+let testObject : List<BasicExpression>*List<SymbolDeclaration> =
+  let pos:Position = { File="dummy";Line=1;Col=1; }
+  let lst = 
+    [
+      {Name="+";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=50;Associativity=Left;Position=pos}
+      {Name="*";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=40;Associativity=Left;Position=pos}
+      {Name="^";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=30;Associativity=Right;Position=pos}
+    ]
+  let expr = 
+    [
+      Literal(Int(2),pos)
+      Id("+",pos)
+      Literal(Int(3),pos)
+      Id("*",pos)
+      Literal(Int(5),pos)
+    ]
+  expr,lst
 
-type TypedExpression =
-  | Literal    of Literal * Type * Position
-  | Identifier of Identifier
-and Identifier = {
-  Id        :Id
-  Type      :Type
-  LeftArgs  :List<TypedExpression>
-  RightArgs :List<TypedExpression>
-  Position  :Position
-}
-
-type TypedScope = TypedExpression * Env
-
-let TypeCheck (scope:Map<Id,Scope>) = None
+let TypeCheck (root:Scope) (scopes:Map<Id,Scope>) = None
