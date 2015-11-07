@@ -72,7 +72,7 @@ type Type = Star       // type
           | Union      of Type*TypeConstructors
 
 let testObject : List<BasicExpression>*List<SymbolDeclaration> =
-  let pos:Position = { File="dummy";Line=1;Col=1; }
+  let pos:Position = { File="not_a_real_file.mc";Line=1;Col=1; }
   let lst = 
     [
       {Name="+";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=30;Associativity=Left;Position=pos}
@@ -82,14 +82,19 @@ let testObject : List<BasicExpression>*List<SymbolDeclaration> =
   let expr = 
     [
       Literal(Int(2),{pos with Col=1})
-      Id("+",{pos with Col=2})
-      Literal(Int(3),{pos with Col=3})
-      Id("*",{pos with Col=4})
-      Literal(Int(5),{pos with Col=5})
+      Id("^",{pos with Col=2})
+      Id("x",{pos with Col=3})
+      Id("+",{pos with Col=4})
+      Literal(Int(4),{pos with Col=5})
+      Id("*",{pos with Col=6})
+      Literal(Int(5),{pos with Col=7})
+      Id("^",{pos with Col=8})
+      Literal(Int(6),{pos with Col=9})
     ]
   expr,lst
 
 let TypeCheck (root:Scope) (scopes:Map<Id,Scope>) =
+  do printfn "starting type checker (using dummy data)"
   let exprs,decls = testObject
   let foo = exprs |> Parenthesize decls
   do printfn "INPUT:  %A" (prettyPrintExprs exprs)

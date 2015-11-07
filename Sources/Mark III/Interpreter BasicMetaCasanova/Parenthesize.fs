@@ -21,8 +21,8 @@ let rec prettyPrintExprs exprs =
     | Scope s -> "<scope>") |> List.toSeq |> String.concat " "
 
 
-let findSymbol (id:Id) (fdecls:List<SymbolDeclaration>) :SymbolDeclaration =
-  fdecls |> List.find (fun x -> x.Name=id)
+let tryFindSymbol (id:Id) (fdecls:List<SymbolDeclaration>) :Option<SymbolDeclaration> =
+  fdecls |> List.tryFind (fun x -> x.Name=id)
 
 let pivot (f:'a -> bool) (lst:List<'a>) :List<'a>*'a*List<'a> =
   let left,pivot::right = lst |> List.splitAt (lst |> List.findIndex f)
@@ -44,9 +44,12 @@ let tryAny (f:'a->option<'b>) (lst:List<'a>) :Option<'b> =
 
 let getOperator fdecls expr =
   match expr with
-  | Id(str,pos) -> let symbol = findSymbol str fdecls
-                   if symbol.LeftArgs.IsEmpty && symbol.RightArgs.IsEmpty 
-                   then None else Some (symbol,pos) 
+  | Id(str,pos) -> 
+    let symbol = tryFindSymbol str fdecls
+    match symbol with
+    | None -> None
+    | Some symbol -> if symbol.LeftArgs.IsEmpty && symbol.RightArgs.IsEmpty 
+                     then None else Some (symbol,pos) 
   | _ -> None
 
 let extractOperators fdecls exprs = 
