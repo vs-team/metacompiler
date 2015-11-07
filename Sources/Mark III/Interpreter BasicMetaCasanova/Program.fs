@@ -25,6 +25,6 @@ let main argv =
   let scope = start_compiler input
   //printfn "%A" scope        
   File.WriteAllText ("parser_output.txt",(sprintf "%A" scope)) 
-
+  let typecheck = TypeCheck {ImportDeclaration=[];InheritDeclaration=[];FunctionDeclarations=[];TypeFunctionDeclarations=[];DataDeclarations=[];TypeFunctionRules=[];Rules=[]} Map.empty 
   0
 
