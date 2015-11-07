@@ -72,7 +72,7 @@ type Type = Star       // type
           | Union      of Type*TypeConstructors
 
 let testObject : List<BasicExpression>*List<SymbolDeclaration> =
-  let pos:Position = { File="";Line=1;Col=1; }
+  let pos:Position = { File="dummy";Line=1;Col=1; }
   let lst = 
     [
       {Name="+";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=30;Associativity=Left;Position=pos}
@@ -81,31 +81,13 @@ let testObject : List<BasicExpression>*List<SymbolDeclaration> =
     ]
   let expr = 
     [
-      Literal(Int(2),pos)
-      Id("+",pos)
-      Literal(Int(3),pos)
-      Id("*",pos)
-      Literal(Int(5),pos)
+      Literal(Int(2),{pos with Col=1})
+      Id("+",{pos with Col=2})
+      Literal(Int(3),{pos with Col=3})
+      Id("*",{pos with Col=4})
+      Literal(Int(5),{pos with Col=5})
     ]
   expr,lst
-
-let rec prettyPrintExprs exprs =
-  exprs |> List.map (fun expr ->
-    match expr:BasicExpression with
-    | Id      (str,_) -> sprintf "%s" str
-    | Literal (l,_) ->
-      match l:Literal with
-      | Int     i -> sprintf "%d" i
-      | Float32 f -> sprintf "%f" f
-      | String  s -> sprintf "\"%s\"" s
-    | Application(b,e) ->
-      match b:Bracket with
-      | Curly  -> sprintf "{%s}" (prettyPrintExprs e)
-      | Round  -> sprintf "(%s)" (prettyPrintExprs e)
-      | Square -> sprintf "[%s]" (prettyPrintExprs e)
-      | Indent -> sprintf "<indent: %s>" (prettyPrintExprs e)
-      | Implicit -> sprintf "<implicit: %s>" (prettyPrintExprs e)
-    | Scope s -> "<scope>") |> List.toSeq |> String.concat " "
 
 let TypeCheck (root:Scope) (scopes:Map<Id,Scope>) =
   let exprs,decls = testObject

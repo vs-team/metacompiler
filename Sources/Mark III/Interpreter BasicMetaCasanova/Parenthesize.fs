@@ -2,6 +2,25 @@
 open Common
 open ScopeBuilder
 
+let rec prettyPrintExprs exprs =
+  exprs |> List.map (fun expr ->
+    match expr:BasicExpression with
+    | Id      (str,_) -> sprintf "%s" str
+    | Literal (l,_) ->
+      match l:Literal with
+      | Int     i -> sprintf "%d" i
+      | Float32 f -> sprintf "%f" f
+      | String  s -> sprintf "\"%s\"" s
+    | Application(b,e) ->
+      match b:Bracket with
+      | Curly  -> sprintf "{%s}" (prettyPrintExprs e)
+      | Round  -> sprintf "(%s)" (prettyPrintExprs e)
+      | Square -> sprintf "[%s]" (prettyPrintExprs e)
+      | Indent -> sprintf "<indent: %s>" (prettyPrintExprs e)
+      | Implicit -> sprintf "<implicit: %s>" (prettyPrintExprs e)
+    | Scope s -> "<scope>") |> List.toSeq |> String.concat " "
+
+
 let findSymbol (id:Id) (fdecls:List<SymbolDeclaration>) :SymbolDeclaration =
   fdecls |> List.find (fun x -> x.Name=id)
 
@@ -78,21 +97,25 @@ let rec Parenthesize (fdecls:List<SymbolDeclaration>) (exprs:List<BasicExpressio
     let operatorSymbol,operatorPosition = 
       fromFirstId |> List.fold (compare fdecls) (Option.get (getOperator fdecls fromFirstId.Head))
     let left,_,right = pivotPosition operatorPosition exprs 
-    let leftArgs     = left  |> takeBack  operatorSymbol.LeftArgs.Length
-    let rightArgs    = right |> List.take operatorSymbol.RightArgs.Length
-    if operatorSymbol.LeftArgs.Length < leftArgs.Length then
+    if operatorSymbol.LeftArgs.Length > left.Length then
       do printfn "Error in %s on line %d col %d: Left argument(s) expected." operatorPosition.File operatorPosition.Line operatorPosition.Col
-      do printfn "  Operator %s expects %d arguments to its left, but received %d." operatorSymbol.Name operatorSymbol.LeftArgs.Length leftArgs.Length
-      do printfn "  Add missing operand(s) to its left."
+      do printfn "  in expression: %s" (prettyPrintExprs exprs)
+      do printfn "  Operator %s expects %d arguments to its left, but received %d." operatorSymbol.Name operatorSymbol.LeftArgs.Length left.Length
       []
-    elif operatorSymbol.RightArgs.Length > rightArgs.Length then
+    elif operatorSymbol.RightArgs.Length > right.Length then
       do printfn "Error in %s on line %d col %d: Right argument(s) expected." operatorPosition.File operatorPosition.Line operatorPosition.Col
-      do printfn "  Operator %s expects %d arguments to its right, but received %d." operatorSymbol.Name operatorSymbol.RightArgs.Length rightArgs.Length
-      do printfn "  Add missing operand(s) to its right."
+      do printfn "  in expression: %s" (prettyPrintExprs exprs)
+      do printfn "  Operator %s expects %d arguments to its right, but received %d." operatorSymbol.Name operatorSymbol.RightArgs.Length right.Length
       []
     else 
-      let farLeft  = left  |> List.take (left.Length-leftArgs.Length)
-      let farRight = right |> takeBack  (right.Length-rightArgs.Length)
       let newExpr = Id(operatorSymbol.Name,operatorPosition)
-      let newParen= Application(Round,leftArgs@(newExpr::rightArgs))
-      Parenthesize fdecls farLeft@(newParen::farRight)
+      let leftArgs  = left  |> takeBack  operatorSymbol.LeftArgs.Length
+      let rightArgs = right |> List.take operatorSymbol.RightArgs.Length
+      if leftArgs.Length=left.Length && rightArgs.Length = right.Length then
+        leftArgs@(newExpr::rightArgs)
+      else
+        let farLeft   = left  |> List.take (left.Length-leftArgs.Length)
+        let farRight  = right |> takeBack  (right.Length-rightArgs.Length)
+        let newParen= Application(Round,leftArgs@(newExpr::rightArgs))
+        let newArgs = farLeft@(newParen::farRight)
+        Parenthesize fdecls newArgs
