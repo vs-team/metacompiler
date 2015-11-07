@@ -54,7 +54,7 @@ let pivotPosition pos exprs =
 let getPriorityOperator (acc:SymbolDeclaration,acc_pos:Position) (right:SymbolDeclaration,right_pos:Position) :SymbolDeclaration*Position =
   if   acc.Priority > right.Priority then acc,acc_pos
   elif acc.Priority < right.Priority then right,right_pos
-  elif acc.Associativity = right.Associativity then
+  elif acc.Associativity <> right.Associativity then
     do printfn "Warning in %s on line %d col %d: Ambiguous order of operations." acc_pos.File acc_pos.Line acc_pos.Col
     do printfn "  Operators %s and %s have the same priority, but different associativity." acc.Name right.Name
     do printfn "  Add parentheses to disambiguate. (will continue with left associativity)"
@@ -72,7 +72,7 @@ let rec Parenthesize (fdecls:List<SymbolDeclaration>) (exprs:List<BasicExpressio
     match x with
     | Application(b,x) -> Application(b,Parenthesize fdecls x)
     | foo -> foo )
-  let fromFirstId = exprs |> List.skipWhile ((getOperator fdecls)>>Option.isSome)
+  let fromFirstId = exprs |> List.skipWhile ((getOperator fdecls)>>Option.isNone)
   if fromFirstId.IsEmpty then exprs
   else 
     let operatorSymbol,operatorPosition = 

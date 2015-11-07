@@ -72,12 +72,12 @@ type Type = Star       // type
           | Union      of Type*TypeConstructors
 
 let testObject : List<BasicExpression>*List<SymbolDeclaration> =
-  let pos:Position = { File="dummy";Line=1;Col=1; }
+  let pos:Position = { File="";Line=1;Col=1; }
   let lst = 
     [
-      {Name="+";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=50;Associativity=Left;Position=pos}
+      {Name="+";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=30;Associativity=Left;Position=pos}
       {Name="*";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=40;Associativity=Left;Position=pos}
-      {Name="^";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=30;Associativity=Right;Position=pos}
+      {Name="^";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=50;Associativity=Right;Position=pos}
     ]
   let expr = 
     [
@@ -89,4 +89,27 @@ let testObject : List<BasicExpression>*List<SymbolDeclaration> =
     ]
   expr,lst
 
-let TypeCheck (root:Scope) (scopes:Map<Id,Scope>) = None
+let rec prettyPrintExprs exprs =
+  exprs |> List.map (fun expr ->
+    match expr:BasicExpression with
+    | Id      (str,_) -> sprintf "%s" str
+    | Literal (l,_) ->
+      match l:Literal with
+      | Int     i -> sprintf "%d" i
+      | Float32 f -> sprintf "%f" f
+      | String  s -> sprintf "\"%s\"" s
+    | Application(b,e) ->
+      match b:Bracket with
+      | Curly  -> sprintf "{%s}" (prettyPrintExprs e)
+      | Round  -> sprintf "(%s)" (prettyPrintExprs e)
+      | Square -> sprintf "[%s]" (prettyPrintExprs e)
+      | Indent -> sprintf "<indent: %s>" (prettyPrintExprs e)
+      | Implicit -> sprintf "<implicit: %s>" (prettyPrintExprs e)
+    | Scope s -> "<scope>") |> List.toSeq |> String.concat " "
+
+let TypeCheck (root:Scope) (scopes:Map<Id,Scope>) =
+  let exprs,decls = testObject
+  let foo = exprs |> Parenthesize decls
+  do printfn "INPUT:  %A" (prettyPrintExprs exprs)
+  do printfn "OUTPUT: %A" (prettyPrintExprs foo)
+  None
