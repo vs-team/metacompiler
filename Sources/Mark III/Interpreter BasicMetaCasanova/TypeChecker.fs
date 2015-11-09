@@ -71,32 +71,60 @@ type Type = Star       // type
           | SmallArrow of Type*Type
           | Union      of Type*TypeConstructors
 
-let testObject : List<BasicExpression>*List<SymbolDeclaration> =
-  let pos:Position = { File="not_a_real_file.mc";Line=1;Col=1; }
-  let lst = 
-    [
-      {Name="+";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=30;Associativity=Left;Position=pos}
-      {Name="*";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=40;Associativity=Left;Position=pos}
-      {Name="^";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=50;Associativity=Right;Position=pos}
-    ]
-  let expr = 
-    [
+
+let test_decls = 
+  let pos = { File="not_a_real_file.mc";Line=1;Col=1; }
+  [
+    {Name="+";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=30;Associativity=Left;Position=pos}
+    {Name="*";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=40;Associativity=Left;Position=pos}
+    {Name="^";LeftArgs=[[Id("int",pos)]];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=50;Associativity=Right;Position=pos}
+    {Name="sqrt";LeftArgs=[];RightArgs=[[Id("int",pos)]];Return=[Id("int",pos)];Priority=0;Associativity=Right;Position=pos}
+    {Name="mod";LeftArgs=[];RightArgs=[[Id("int",pos)];[Id("int",pos)]];Return=[Id("int",pos)];Priority=0;Associativity=Right;Position=pos}
+  ]
+
+let test_exprs = 
+  let pos = { File="not_a_real_file.mc";Line=1;Col=1; }
+  [ [
       Literal(Int(2),{pos with Col=1})
-      Id("^",{pos with Col=2})
-      Id("x",{pos with Col=3})
-      Id("+",{pos with Col=4})
-      Literal(Int(4),{pos with Col=5})
-      Id("*",{pos with Col=6})
+      Id("^",        {pos with Col=2})
+      Id("x",        {pos with Col=3})
+      Id("+",        {pos with Col=4})
+      Literal(Int(3),{pos with Col=5})
+      Id("*",        {pos with Col=6})
       Literal(Int(5),{pos with Col=7})
-      Id("^",{pos with Col=8})
-      Literal(Int(6),{pos with Col=9})
+      Id("^",        {pos with Col=8})
+      Literal(Int(7),{pos with Col=9})
+    ];[
+      Id("sqrt",     {pos with Col=1})
+      Id("mod",      {pos with Col=2})
+      Literal(Int(2),{pos with Col=3})
+      Id("+",        {pos with Col=4})
+      Id("x",        {pos with Col=5})
+      Literal(Int(3),{pos with Col=6})
+      Id("*",        {pos with Col=7})
+      Id("y",        {pos with Col=8})
+    ];[
+      Id("a",{pos with Col=1})
+      Id("+",{pos with Col=2})
+      Id("*",{pos with Col=3})
+      Id("b",{pos with Col=4})
+    ];[
+      Application(Round,[
+        Literal(Int(2),{pos with Col=1})
+        Id("^",        {pos with Col=2})
+      ])
+      Literal(Int(3),  {pos with Col=3})
+    ];[
+      Application(Round,[
+        Id("^",        {pos with Col=1})
+        Literal(Int(2),{pos with Col=2})
+      ])
+      Literal(Int(3),  {pos with Col=3})
     ]
-  expr,lst
+  ]
 
 let TypeCheck (root:Scope) (scopes:Map<Id,Scope>) =
   do printfn "starting type checker (using dummy data)"
-  let exprs,decls = testObject
-  let foo = exprs |> Parenthesize decls
-  do printfn "INPUT:  %A" (prettyPrintExprs exprs)
-  do printfn "OUTPUT: %A" (prettyPrintExprs foo)
+  do test_exprs |> List.iter (fun x-> do printfn "IN  %s" (prettyPrintExprs x)
+                                      do printfn "OUT %s" (Parenthesize test_decls x |> prettyPrintExprs))
   None
