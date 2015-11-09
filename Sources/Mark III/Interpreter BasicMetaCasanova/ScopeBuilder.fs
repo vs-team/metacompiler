@@ -128,6 +128,7 @@ let rec nested_id_application : Parser<LineSplitter.BasicExpression, Scope, Basi
   fun (exprs,ctxt) ->
   match exprs with
   | LineSplitter.Id(i,pos) :: es -> Done(Id(i,pos),es,ctxt)
+  | LineSplitter.Literal(l,pos) :: es -> Done(Literal(l,pos),es,ctxt)
   | LineSplitter.Keyword(k,pos) :: es -> Done(Id("Keyword__",pos),es,ctxt)
   | LineSplitter.Block(b) :: es -> 
     match (line_to_id_basicexpression |> repeat)(b,ctxt) with
@@ -148,11 +149,21 @@ and line_to_id_basicexpression =
       | _ -> Error(ScopeError ["Error: expected indent at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
     | _ -> Error(ScopeError ["Error: expected another line in scope at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
-let nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
+let left_nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
   fun (exprs,ctxt) ->
   match exprs with
   | LineSplitter.Id(i,pos) :: es -> Done(Id(i,pos),es,ctxt)
-  //| LineSplitter.Application(Curly,inner) :: es -> Done(Application(Curly,[]),es,ctxt)
+  | LineSplitter.Application(Round,inner) :: es -> 
+    match (nested_id_application |> repeat) (inner,ctxt) with
+    | Done(inner',[],ctxt) -> Done(Application(Round,inner'),es,ctxt)
+    | _ -> Error(ScopeError ["Error: expected id (also nested) inside brackets at %A"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+  | _ -> Error(ScopeError["Error: expected id (also nested) but could not find at %A"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+
+let right_nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
+  fun (exprs,ctxt) ->
+  match exprs with
+  | LineSplitter.Id(i,pos) :: es -> Done(Id(i,pos),es,ctxt)
+  | LineSplitter.Literal(l,pos) :: es -> Done(Literal(l,pos),es,ctxt)
   | LineSplitter.Application(Round,inner) :: es -> 
     match (nested_id_application |> repeat) (inner,ctxt) with
     | Done(inner',[],ctxt) -> Done(Application(Round,inner'),es,ctxt)
@@ -162,8 +173,8 @@ let nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
 let type_expression : Parser<_, _, Type> = 
   prs{
     let! pos = getPosition
-    let! i = nested_id
-    let! is = nested_id |> repeat // or recursive application of id's, converted
+    let! i = left_nested_id
+    let! is = left_nested_id |> repeat // or recursive application of id's, converted
     return i :: is
   }
 
@@ -310,10 +321,10 @@ let not_empty : Parser<LineSplitter.BasicExpression, Scope, _> =
 let typefunc_premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
   prs{
     do! not_empty
-    let! i = nested_id |> repeat
+    let! i = left_nested_id |> repeat
     return! (prs{
               do! doublearrow
-              let! o = nested_id |> repeat
+              let! o = right_nested_id |> repeat
               return Implication(i,o)
             }) .||
             (prs{
@@ -325,10 +336,10 @@ let typefunc_premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
 let premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
   prs{
     do! not_empty
-    let! i = nested_id |> repeat
+    let! i = left_nested_id |> repeat
     return! (prs{
               do! arrow
-              let! o = nested_id |> repeat
+              let! o = right_nested_id |> repeat
               return Implication(i,o)
             }) .||
             (prs{
@@ -342,26 +353,6 @@ let horizontal_bar : Parser<LineSplitter.BasicExpression,_,_> =
     | [LineSplitter.BasicExpression.Keyword(LineSplitter.HorizontalBar,pos)] -> Done((), [], ctxt)
     | _ -> Error (ScopeError [",----"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
-let rule_io :Parser<LineSplitter.BasicExpression,Scope,_> = 
-  prs{
-    let! i = simple_expression |> repeat              
-    do! arrow
-    let! o = simple_expression |> repeat
-    return i,o
-  }
-let rule : Parser<LineSplitter.Line, Scope, Unit> =
-  prs{
-    let! premises = premise |> parse_first_line |> repeat
-    do! horizontal_bar |> parse_first_line
-    let! i,o = rule_io |> parse_first_line
-    let! ctxt = getContext
-    do! setContext { ctxt with Rules = { Premises = premises; Input = i; Output = o } :: ctxt.Rules }
-  } .|| prs{
-    do! skip_empty_lines()
-    let! i,o = rule_io |> parse_first_line
-    let! ctxt = getContext
-    do! setContext { ctxt with Rules = { Premises = []; Input = i; Output = o } :: ctxt.Rules }
-  }
 
 let rec scope() : Parser<LineSplitter.Line, Scope, Scope> =
   prs{
@@ -374,20 +365,6 @@ let rec scope() : Parser<LineSplitter.Line, Scope, Scope> =
   } .|| 
   (eof >> getContext)
 
-and typefunc_rule : Parser<LineSplitter.Line, Scope, Unit> =
-  prs{
-    do! skip_empty_lines()
-    let! premises = typefunc_premise |> parse_first_line |> repeat
-    do! horizontal_bar |> parse_first_line
-    let! i,o = typefunc_io |> parse_first_line
-    let! ctxt = getContext
-    do! setContext { ctxt with TypeFunctionRules = { Premises = premises; Input = i; Output = o } :: ctxt.TypeFunctionRules }
-  } .|| prs{
-    do! skip_empty_lines()
-    let! i,o = typefunc_io |> parse_first_line
-    let! ctxt = getContext
-    do! setContext { ctxt with TypeFunctionRules = { Premises = []; Input = i; Output = o } :: ctxt.TypeFunctionRules }
-  }
 and scope_lines =
   let rec extract app :(LineSplitter.Line List) = 
     match app with
@@ -404,18 +381,53 @@ and scope_lines =
       | Done (res,_,_) -> Done(res,exprs,ctxt)
       | Error (e,p) -> Error (e,p) 
     | _ -> Done(Scope.Zero,exprs,ctxt)
-
+and typefunc_rule : Parser<LineSplitter.Line, Scope, Unit> =
+  prs{
+    let! premises = typefunc_premise |> parse_first_line |> repeat
+    do! horizontal_bar |> parse_first_line
+    let! i,o = typefunc_io |> parse_first_line
+    let! ctxt = getContext
+    do! setContext { ctxt with TypeFunctionRules = { Premises = premises; Input = i; Output = o } :: ctxt.TypeFunctionRules }
+  } .|| prs{
+    let! i,o = typefunc_io |> parse_first_line
+    let! ctxt = getContext
+    do! setContext { ctxt with TypeFunctionRules = { Premises = []; Input = i; Output = o } :: ctxt.TypeFunctionRules }
+  }
 and typefunc_io :Parser<LineSplitter.BasicExpression,Scope,_> = 
   prs{
-    let! i = nested_id |> repeat              
+    let! i = left_nested_id |> repeat              
     do! doublearrow
-    let! o = nested_id |> repeat
+    let! o = right_nested_id |> repeat
     let! inside_scope = scope_lines 
     let o = 
       if inside_scope = Scope.Zero then o
       else o@[Scope(inside_scope)]
     return i,o
   }
+and rule_io :Parser<LineSplitter.BasicExpression,Scope,_> = 
+  prs{
+    let! i = left_nested_id |> repeat              
+    do! arrow
+    let! o = right_nested_id |> repeat
+    let! inside_scope = scope_lines 
+    let o = 
+      if inside_scope = Scope.Zero then o
+      else o@[Scope(inside_scope)]
+    return i,o
+  }
+and rule : Parser<LineSplitter.Line, Scope, Unit> =
+  prs{
+    let! premises = premise |> parse_first_line |> repeat
+    do! horizontal_bar |> parse_first_line
+    let! i,o = rule_io |> parse_first_line
+    let! ctxt = getContext
+    do! setContext { ctxt with Rules = { Premises = premises; Input = i; Output = o } :: ctxt.Rules }
+  } .|| prs{
+    let! i,o = rule_io |> parse_first_line
+    let! ctxt = getContext
+    do! setContext { ctxt with Rules = { Premises = []; Input = i; Output = o } :: ctxt.Rules }
+  }
+
 
 let block : Parser<LineSplitter.BasicExpression, Unit, List<_>> = 
   fun (exprs,ctxt) ->

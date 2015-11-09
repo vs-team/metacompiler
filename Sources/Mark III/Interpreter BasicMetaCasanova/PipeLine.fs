@@ -44,12 +44,6 @@ let rec find_correct_path (paths:List<string>)(name:string) :Option<string> =
       find_correct_path xs name
   | [] -> None
 
-let next_input : Parser<string,Scope,_> = 
-  fun (paths,ctxt) ->
-  match paths with 
-  | x::xs -> Done((),xs,ctxt)
-  | [] -> Error (PipeLineError [""],Position.Zero)
-
 let update_paths : Parser<string,Scope,unit> =
   fun (paths,ctxt) ->
     let a,b = ctxt.Scopes.Head
@@ -165,10 +159,6 @@ let front_end : Parser<string,Scope,_> =
     do! scope_builder_p
     do! add_to_parsed_list
     do! update_paths
-    //do! next_input
-    //let! imports = retrive_last_import
-    //let! paths = getBuffer
-    //do! setBuffer (imports @ paths)
   }
 
 let compiler : Parser<string,Scope,List<string*ScopeBuilder.Scope>> = 
