@@ -1,4 +1,4 @@
-import Prelude
+import prelude
 
 TypeFunc "List" => * => *
 List 'a => Unit | ('a * (List 'a))

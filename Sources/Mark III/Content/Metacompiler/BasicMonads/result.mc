@@ -1,4 +1,4 @@
-import Prelude
+import prelude
 
 TypeFunc "ResultT" => (*=>*) => * => *
 ResultT 'M 'a => 'M(String | 'a)

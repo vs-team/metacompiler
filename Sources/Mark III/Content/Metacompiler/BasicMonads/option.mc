@@ -1,4 +1,4 @@
-import Prelude
+import prelude
 
 TypeFunc "Option" => * => *
 Option 'a => Unit | 'a

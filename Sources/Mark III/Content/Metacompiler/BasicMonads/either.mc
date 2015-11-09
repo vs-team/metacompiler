@@ -1,5 +1,5 @@
-﻿import Prelude
-import Match
+﻿import prelude
+import match
 
 TypeFunc "EitherT" => (* => *) => * => * => *
 EitherT 'M 'b 'a => 'M('b | 'a)

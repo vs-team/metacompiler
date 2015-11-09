@@ -139,5 +139,8 @@ let getBuffer =
 let getContext =
   fun (chars,ctxt) -> (ctxt,chars,ctxt) |> Done
 
+let setBuffer chars' =
+  fun (chars,ctxt) -> ((),chars',ctxt) |> Done
+
 let setContext ctxt' =
   fun (chars,ctxt) -> ((),chars,ctxt') |> Done

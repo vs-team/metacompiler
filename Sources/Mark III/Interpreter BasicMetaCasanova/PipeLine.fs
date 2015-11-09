@@ -15,15 +15,17 @@ let t = System.Diagnostics.Stopwatch()
 type Scope = 
   {
     Input_files : string list
+    Parsed_files : string list
     Tokens  : Lexer.Token list option
     Parsed  : List<Parser.BasicExpression> option
     Lines   : List<LineSplitter.Line> option
-    Scopes  : ScopeBuilder.Scope list
+    Scopes  : List<string*ScopeBuilder.Scope>
   }
   with 
     static member Zero =
       {
         Input_files = []
+        Parsed_files = []
         Tokens      = None
         Parsed      = None
         Lines       = None
@@ -36,8 +38,8 @@ let file_paths = ["../../../Content/Metacompiler/StandardLibrary/";
 let rec find_correct_path (paths:List<string>)(name:string) :Option<string> =
   match paths with
   | x::xs ->
-    if System.IO.File.Exists(x + name) then 
-      Some(x + name)
+    if System.IO.File.Exists(x + name + ".mc") then 
+      Some(x + name + ".mc")
     else 
       find_correct_path xs name
   | [] -> None
@@ -47,6 +49,14 @@ let next_input : Parser<string,Scope,_> =
   match paths with 
   | x::xs -> Done((),xs,ctxt)
   | [] -> Error (PipeLineError [""],Position.Zero)
+
+let update_paths : Parser<string,Scope,unit> =
+  fun (paths,ctxt) ->
+    let a,b = ctxt.Scopes.Head
+    let import_list = b.ImportDeclaration @ paths
+    let filterd_list = List.filter (fun s1 -> not (List.exists (fun s2 -> s1 = s2 ) ctxt.Parsed_files)) import_list
+    Done((),filterd_list,ctxt)
+
 
 let start_lexer : Parser<string,Scope,Token list option> = 
   fun (paths,ctxt) ->
@@ -106,14 +116,14 @@ let start_line_splitter : Parser<string,Scope,LineSplitter.Line list option> =
     | _ -> Error (PipeLineError [""],Position.Zero)
   | _ -> Error (PipeLineError [""],Position.Zero)
 
-let start_scope_builder : Parser<string,Scope,ScopeBuilder.Scope> = 
+let start_scope_builder : Parser<string,Scope,(string*ScopeBuilder.Scope)> = 
   fun (paths,ctxt) ->
     match ctxt.Lines with 
       | Some line_blocks ->
         match build_scopes line_blocks with
           | Some scope ->
             do printfn "Done scope building in %d ms." t.ElapsedMilliseconds
-            Done(scope,paths,ctxt)
+            Done((paths.Head,scope),paths,ctxt)
           | _ -> Error (PipeLineError [""],Position.Zero)
       | _ -> Error (PipeLineError [""],Position.Zero)
 
@@ -140,16 +150,28 @@ let scope_builder_p : Parser<string,Scope,Unit> =
   lift_parser start_scope_builder 
     (fun scope ctxt -> { ctxt with Scopes = scope :: ctxt.Scopes})
 
+let add_to_parsed_list : Parser<string,Scope,Unit> = 
+  prs{
+    let! ctxt = getContext
+    let! paths = getBuffer
+    do! setContext { ctxt with Parsed_files = paths.Head :: ctxt.Parsed_files}
+  }
+
 let front_end : Parser<string,Scope,_> = 
   prs{
     do! lexer_p
     do! parser_p
     do! line_splitter_p
     do! scope_builder_p
-    do! next_input
+    do! add_to_parsed_list
+    do! update_paths
+    //do! next_input
+    //let! imports = retrive_last_import
+    //let! paths = getBuffer
+    //do! setBuffer (imports @ paths)
   }
 
-let compiler : Parser<string,Scope,List<ScopeBuilder.Scope>> = 
+let compiler : Parser<string,Scope,List<string*ScopeBuilder.Scope>> = 
   t.Start()
   prs{
     let! u = front_end |> repeat

@@ -1,4 +1,4 @@
-﻿import Number
+﻿import number
 
 Data "Unit" -> Unit
 Data 'a -> "," -> 'b -> 'a * 'b
