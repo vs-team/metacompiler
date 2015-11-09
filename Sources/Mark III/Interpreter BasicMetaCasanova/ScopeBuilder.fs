@@ -161,13 +161,21 @@ and line_to_id_basicexpression =
       | _ -> Error(ScopeError ["Error: expected indent at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
     | _ -> Error(ScopeError ["Error: expected another line in scope at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
+let rec flatten_nested_id (exprs:List<BasicExpression>) :List<BasicExpression> =
+  match exprs with
+  | Application(Indent,inner) :: es -> (flatten_nested_id inner @ flatten_nested_id es)
+  | Application(b,inner) :: es -> Application(b,flatten_nested_id inner) :: flatten_nested_id es
+  | x::xs -> x :: flatten_nested_id xs
+  | [] -> []
+  
+
 let left_nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
   fun (exprs,ctxt) ->
   match exprs with
   | LineSplitter.Id(i,pos) :: es -> Done(Id(i,pos),es,ctxt)
   | LineSplitter.Application(Round,inner) :: es -> 
     match (nested_id_application |> repeat) (inner,ctxt) with
-    | Done(inner',[],ctxt) -> Done(Application(Round,inner'),es,ctxt)
+    | Done(inner',[],ctxt) -> Done(Application(Round,flatten_nested_id inner'),es,ctxt)
     | _ -> Error(ScopeError ["Error: expected id (also nested) inside brackets at %A"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | _ -> Error(ScopeError["Error: expected id (also nested) but could not find at %A"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
@@ -178,7 +186,7 @@ let right_nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpressio
   | LineSplitter.Literal(l,pos) :: es -> Done(Literal(l,pos),es,ctxt)
   | LineSplitter.Application(Round,inner) :: es -> 
     match (nested_id_application |> repeat) (inner,ctxt) with
-    | Done(inner',[],ctxt) -> Done(Application(Round,inner'),es,ctxt)
+    | Done(inner',[],ctxt) -> Done(Application(Round,flatten_nested_id inner'),es,ctxt)
     | _ -> Error(ScopeError ["Error: expected id (also nested) inside brackets at %A"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | _ -> Error(ScopeError["Error: expected id (also nested) but could not find at %A"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 

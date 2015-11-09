@@ -45,7 +45,7 @@ list M => Monad(ListT MCons^M) {
       (\(x :: xs) -> 
         k x >>=^M y
         ((return^M xs) >>= k) >>=^M ys
-      return^M (y @ ys)
+        return^M (y @ ys)
       )
     ) => res
     --

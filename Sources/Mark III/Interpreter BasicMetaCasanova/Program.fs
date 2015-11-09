@@ -11,16 +11,17 @@ open Common
 
 [<EntryPoint>]
 let main argv = 
-  let input = [ "prelude"
-               ;"number"
-               ;"monad"
-               ;"match"
-               ;"either"
-               ;"id"
-               ;"list"
-               ;"option"
-               ;"result"
-               ;"state"
+  let input = [// "prelude"
+               //;"number"
+               //;"monad"
+               //;"match"
+               //;"either"
+               //;"id"
+               //;
+               "list"
+               //;"option"
+               //;"result"
+               //;"state"
               ]
   let scope = start_compiler input
   //printfn "%A" scope        
