@@ -1,10 +1,10 @@
 ﻿import number
 
-Data "Unit" -> Unit
-Data 'a -> "," -> 'b -> 'a * 'b
-Data "Left" -> 'a -> 'a | 'b
-Data "Right" -> 'b -> 'a | 'b
-Data "True" -> Boolean
+Data "Unit" -> Unit                #> 12345 R
+Data 'a -> "," -> 'b -> 'a * 'b    #> 1234  R
+Data "Left" -> 'a -> 'a | 'b       #> 123   R
+Data "Right" -> 'b -> 'a | 'b      #> 12    R
+Data "True" -> Boolean             #> 1     R
 Data "False" -> Boolean
 
 Data "then" -> Then

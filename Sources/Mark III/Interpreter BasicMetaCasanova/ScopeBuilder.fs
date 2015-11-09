@@ -65,6 +65,12 @@ let id =
     | LineSplitter.Id(i,pos)::es -> Done(i, es, ctxt)
     | _ -> Error (ScopeError ["Error: expected id at."], (exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
+let int_literal = 
+  fun (exprs,ctxt) ->
+    match exprs with
+    | LineSplitter.Literal(Int s,pos)::es -> Done(s, es, ctxt)
+    | _ -> Error (ScopeError ["Error: expected int literal at."],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+
 let string_literal = 
   fun (exprs,ctxt) ->
     match exprs with
@@ -82,6 +88,12 @@ let doublearrow =
     match exprs with
     | LineSplitter.BasicExpression.Keyword(LineSplitter.DoubleArrow,pos)::es -> Done((), es, ctxt)
     | _ -> Error (ScopeError [",=>"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+
+let priorityarrow = 
+  fun (exprs,ctxt) ->
+    match exprs with
+    | LineSplitter.BasicExpression.Keyword(LineSplitter.PriorityArrow,pos)::es -> Done((), es, ctxt)
+    | _ -> Error (ScopeError [",#>"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let import = 
   fun (exprs,ctxt) ->
@@ -170,6 +182,12 @@ let right_nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpressio
     | _ -> Error(ScopeError ["Error: expected id (also nested) inside brackets at %A"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | _ -> Error(ScopeError["Error: expected id (also nested) but could not find at %A"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
+let string_to_associativivaty (s:string) : Parser<LineSplitter.BasicExpression, Scope, Associativity> =
+  fun (exprs,ctxt) ->
+    if   s = "L" then Done(Left ,exprs,ctxt)
+    elif s = "R" then Done(Right,exprs,ctxt)
+    else Error(ScopeError[",L or R"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+
 let type_expression : Parser<_, _, Type> = 
   prs{
     let! pos = getPosition
@@ -178,11 +196,14 @@ let type_expression : Parser<_, _, Type> =
     return i :: is
   }
 
-let rec priority : Parser<_, _, int> =
-  fail (ScopeError ["Not implemented"])
-
-let rec associativity : Parser<_, _, Associativity> =
-  fail (ScopeError ["Not implemented"])
+let rec priority : Parser<_, _, int*Associativity> =
+  prs{
+    do! priorityarrow
+    let! pri = int_literal 
+    let! str = id .|| (prs{return "L"})
+    let! ass = string_to_associativivaty str
+    return pri,ass
+  }
 
 let rec arguments() : Parser<_, _, List<Type>> =
   prs{
@@ -209,8 +230,8 @@ let symbol_declaration_body : Parser<_, _, SymbolDeclaration> =
     do! arrow
     let! right_arguments = arguments()
     let! return_type = type_expression
-    let! priority = priority .|| (prs{ return 0 })
-    let! associativity = associativity .|| (prs{ return Left })
+    let! priority,associativity = priority .|| (prs{ return 0,Left })
+    //let! associativity = associativity .|| (prs{ return Left })
     return  {
               Name              = name
               LeftArgs          = left_arguments
@@ -229,8 +250,8 @@ let typefunc_declaration_body : Parser<_, _, SymbolDeclaration> =
     do! doublearrow
     let! right_arguments = typefunc_arguments()
     let! return_type = type_expression
-    let! priority = priority .|| (prs{ return 0 })
-    let! associativity = associativity .|| (prs{ return Left })
+    let! priority,associativity = priority .|| (prs{ return 0,Left })
+    //let! associativity = associativity .|| (prs{ return Left })
     return  {
               Name              = name
               LeftArgs          = left_arguments
