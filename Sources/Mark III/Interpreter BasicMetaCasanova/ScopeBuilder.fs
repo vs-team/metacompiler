@@ -3,10 +3,12 @@
 open Common
 open ParserMonad
 
+type Arrow = SingleArrow | DoubleArrow 
+
 type BasicExpression =
   | Id of Id * Position
   | Literal of Literal * Position
-  | Arrow of Position
+  | Arrow of Arrow * Position
   | Application of Bracket * List<BasicExpression>
   | Scope of Scope 
 
@@ -142,7 +144,11 @@ let rec nested_id_application : Parser<LineSplitter.BasicExpression, Scope, Basi
   match exprs with
   | LineSplitter.Id(i,pos) :: es -> Done(Id(i,pos),es,ctxt)
   | LineSplitter.Literal(l,pos) :: es -> Done(Literal(l,pos),es,ctxt)
-  | LineSplitter.Keyword(k,pos) :: es -> Done(Arrow(pos),es,ctxt)
+  | LineSplitter.Keyword(k,pos) :: es -> 
+    match k with
+    | LineSplitter.SingleArrow -> Done(Arrow(SingleArrow,pos),es,ctxt)
+    | LineSplitter.DoubleArrow -> Done(Arrow(DoubleArrow,pos),es,ctxt)
+    | _ -> Error(ScopeError ["arrow"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | LineSplitter.Block(b) :: es -> 
     match (line_to_id_basicexpression |> repeat)(b,ctxt) with
     | Done(inner',[],ctxt) -> Done(Application(Indent,inner'),es,ctxt)
