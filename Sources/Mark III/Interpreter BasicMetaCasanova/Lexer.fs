@@ -72,17 +72,25 @@ let symbol : Parser<char,_,char> =
     | (',' as c)::cs | (':' as c)::cs | (';' as c)::cs 
     | ('+' as c)::cs | ('-' as c)::cs | ('*' as c)::cs 
     | ('/' as c)::cs | ('#' as c)::cs | ('<' as c)::cs 
-    | ('^' as c)::cs | ('&' as c)::cs | ('|' as c)::cs 
-    | ('>' as c)::cs | ('=' as c)::cs | ('$' as c)::cs 
-    | ('\'' as c)::cs | ('.' as c)::cs | ('@' as c)::cs
-    | ('\\' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
-    | _ -> Error(LexerError [(sprintf "Error: expected symbol at")],ctxt.Position)
+    | ('&' as c)::cs | ('|' as c)::cs | ('>' as c)::cs 
+    | ('=' as c)::cs | ('$' as c)::cs | ('\'' as c)::cs 
+    | ('.' as c)::cs | ('@' as c)::cs | ('\\' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
+    | _ -> Error(LexerError ["Error: expected symbol at"],ctxt.Position)
+
+let caret : Parser<char,_,char> =
+  fun (chars,ctxt) ->
+    match chars with
+    | ('^' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
+    | _ -> Error(LexerError ["Error: expected symbol at"],ctxt.Position)
 
 let symbol_id =
   prs{
     let! c = symbol
     let! chars = symbol |> repeat
     return new System.String((c::chars) |> Seq.toArray)
+  } .|| prs {
+    let! c = caret
+    return new System.String((c::[]) |> Seq.toArray)
   }
   
 let digit : Parser<char,_,char> =
