@@ -9,6 +9,8 @@ Data "entity" -> List[<<string>>] -> <<ImmutableDictionary<string, Value> >> -> 
 Data "worldEntity" -> List[<<string>>] -> <<ImmutableDictionary<string, Value> >> -> List[Rule] -> List[Rule] : World                                  Priority 10
 Data "traverseResult" -> Value -> <<ImmutableDictionary<string, Value> >> : TraverseResult
 Func "traverse" -> Value -> <<ImmutableDictionary<string, Value> >> -> <<float>> : Traverse => TraverseResult                             Priority 10
+Func "runTraverse" -> <<float>> : runnable => TraverseResult
+Func "loopTraverse" -> Value -> <<float>> -> <<int>> : runnable => TraverseResult
 Func "run" -> <<float>> : runnable => GameState
 
 Entity is Value
@@ -45,27 +47,53 @@ traverse (entity nil fields original rs) globals dt => traverseResult (entity ni
 
 
 tick original rs fields globals dt => State nrs newFields newGlobals
+debug := State nrs newFields newGlobals
 <<newFields.GetKey(f)>> => v
 traverse v newGlobals dt => traverseResult v1 g1
 newFields add f v1 => updatedFields
-traverse (entity fs updatedFields original rs) g1 dt => res
+traverse (entity fs updatedFields original nrs) g1 dt => res
 ------------------------------------------------------------------------------------
 traverse (entity f::fs fields original rs) globals dt => res
 
 
-traverse (entity fieldNames fields original rs) fields dt => traverseResult (entity updatedNames updatedFields updatedOriginal updatedRules) newGlobals
-traverse (worldEntity updatedNames newGlobals updatedOriginal updatedRules) <<ImmutableDictionary<string, Value>.Empty>> dt => res
---------------------------------------------------------------------------------------
+traverse (entity fieldNames fields original rs) fields dt => res
+------------------------------------------------------------------------------------------------------------
 traverse (worldEntity fieldNames fields original rs) <<ImmutableDictionary<string, Value>.Empty>> dt => res
 
+
+n > 0
+traverse w <<ImmutableDictionary<string, Value>.Empty>> dt => traverseResult w1 g1
+<<EntryPoint.Print(w1.ToString())>> => prn
+loopTraverse w1 dt <<n - 1>> => res
+-------------------------------------------
+loopTraverse w dt n => res
+
+traverse w <<ImmutableDictionary<string, Value>.Empty>> dt => res
+-------------------------------------
+loopTraverse w dt 0 => res
+
+<<ImmutableDictionary<string, Value>.Empty>> add "Position" ($f 3.5) => dict
+s1 := yield (($"Position" + ($f 0.5))::nil)
+r1 := rule ("Position"::nil) s1 nop <<ImmutableDictionary<string, Value>.Empty>> dt
+w := worldEntity ("Position"::nil) dict (r1::nil) (r1::nil)
+loopTraverse w dt 4 => res
+------------------------------------------------------------------------------------------
+runTraverse dt => res
+
+p := $Vector3 <<Vector3.one>>
 vx := $Vector3 <<new Vector3(1.0,0.0,0.0)>>
+vx1 := $Vector3 <<new Vector3(<<-1.0>>,0.0,0.0)>>
 vy := $Vector3 << new Vector3(0.0,1.0,0.0) >>
-<< new Vector3(0.0,0.0,1.0) >> => p
-<< WrapperTest.Instantiate(p) >> => wt
-s1 := yield (($wrapperSet wt ($"Base" + vx))::nil)
-s2 := when ((vectorx $"Base") lt $f 30.0)
-<<ImmutableDictionary<string, Value>.Empty>> add "Base" ($wrapper wt) => dict
-r1 := rule ("Base" :: nil) (s1;s2) nop <<ImmutableDictionary<string, Value>.Empty>> dt
-loopRules (r1::nil) (r1::nil) 100 dict <<ImmutableDictionary<string, Value>.Empty>> dt => res
+s1 := when ((vectorx $"Position") lt $f 30.0)
+s2 := yield (vx::nil)
+s3 := when ((vectorx $"Position") gt $f 0.0)
+s4 := yield (vx1::nil)
+s5 := yield (($"Position" + $"Velocity")::nil)
+<<ImmutableDictionary<string, Value>.Empty>> add "Position" p => dict1
+dict1 add "Velocity" vx => dict
+r1 := rule ("Velocity"::nil) (s1;s2) nop <<ImmutableDictionary<string, Value>.Empty>> dt
+r2 := rule ("Velocity"::nil) (s3;s4) nop <<ImmutableDictionary<string, Value>.Empty>> dt
+r3 := rule ("Position"::nil) s5 nop <<ImmutableDictionary<string, Value>.Empty>> dt
+loopRules (r1::r2::r3::nil) (r1::r2::r3::nil) 100 dict <<ImmutableDictionary<string, Value>.Empty>> dt => res
 --------------------------------------------------------------------------------------------------
 run dt => res
