@@ -36,6 +36,20 @@ type TypedScope = {
   FuncRules     : Map<Id,List<Rule>>
 }
 
+// BasicExpressions aren't going to cut it, we need a more restrictive type: TreeExpr
+// this models lambda calculus using De Bruijn indices
+and TreeExpr = Abs   of TreeExpr*MaybeType // lambda, because of De Bruijn indices, we won't need an identifier for the parameter
+             | App   of TreeExpr*TreeExpr*MaybeType // function application 
+             | Bound of int*MaybeType // bound lambda variable using De Bruijn indices
+             | Free  of Id*MaybeType  // free lambda variable
+
+and Rule = {
+  Input    :List<TreeExpr>
+  Output   :List<TreeExpr>
+  Premises :List<Premise>
+}and Premise = Assignment  of TreeExpr*TreeExpr
+             | Conditional of TreeExpr
+
 and Type = Star       // type
           | Signature  // module
           | TypeId     of Id
@@ -43,11 +57,6 @@ and Type = Star       // type
           | SmallArrow of Type*Type
           | Union      of Type*TypeConstructors
 and TypeConstructors = Map<Id,Type>
-
-and TreeExpr = Abs   of Id*TreeExpr*MaybeType // lambda
-             | App   of TreeExpr*TreeExpr*MaybeType // application 
-             | Bound of int*MaybeType
-             | Free  of Id*MaybeType
 
 and MaybeType = Conflict of List<TreeExpr*TreeExpr>
               | Known    of Type
@@ -63,6 +72,7 @@ let listToMapOfLists (lst:List<'k*'v>) :Map<'k,List<'v>> =
     Map.empty
   |> Map.map (fun _ v -> List.rev v)
 
+(*
 // TODO: add caching
 let rec toUntypedScope (root:Scope) (scopes:Map<Id,Scope>) :UntypedScope = 
   let matchRules rules =
@@ -84,7 +94,7 @@ let rec toUntypedScope (root:Scope) (scopes:Map<Id,Scope>) :UntypedScope =
     TypeFuncRules = matchRules root.TypeFunctionRules |> listToMapOfLists
     FuncRules     = matchRules root.Rules             |> listToMapOfLists
   }
-
+*)
 let test_decls = 
   let pos = { File="not_a_real_file.mc";Line=1;Col=1; }
   [
