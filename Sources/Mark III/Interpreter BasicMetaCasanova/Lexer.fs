@@ -239,7 +239,11 @@ let rec token : Parser<char,Context,Token> =
         (prs{
           let! s = any_id
           return (s,pos) |> Id 
-        })
+        }) .|| 
+        (prs{
+          let! ef = eof
+          return (NewLine,pos) |> Keyword
+        }) 
     return res
   }
 
