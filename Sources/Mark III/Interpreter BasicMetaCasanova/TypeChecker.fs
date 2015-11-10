@@ -21,16 +21,38 @@ typechecking algorithm
   treeify expressions
     symbol lookup
       find in scope, else find in parent (breadth-first, bottom import first)
+
+how to handle modules (signatures)
+  translate signatures to templated functions
+
 *)
 
-type UntypedScope = {
-  Parents       : List<UntypedScope>
-  FuncDecls     : Map<Id,SymbolDeclaration>
-  TypeFuncDecls : Map<Id,SymbolDeclaration>
-  DataDecls     : Map<Id,SymbolDeclaration>
+type TypedScope = {
+  Parents       : List<Id*TypedScope>
+  FuncDecls     : Map<Id,SymbolDeclaration*Type>
+  TypeFuncDecls : Map<Id,SymbolDeclaration*Type>
+  DataDecls     : Map<Id,SymbolDeclaration*Type>
   TypeFuncRules : Map<Id,List<Rule>>
   FuncRules     : Map<Id,List<Rule>>
 }
+
+and Type = Star       // type
+          | Signature  // module
+          | TypeId     of Id
+          | BigArrow   of Type*Type
+          | SmallArrow of Type*Type
+          | Union      of Type*TypeConstructors
+and TypeConstructors = Map<Id,Type>
+
+and TreeExpr = Abs   of Id*TreeExpr*MaybeType // lambda
+             | App   of TreeExpr*TreeExpr*MaybeType // application 
+             | Bound of int*MaybeType
+             | Free  of Id*MaybeType
+
+and MaybeType = Conflict of List<TreeExpr*TreeExpr>
+              | Known    of Type
+              | Unknown
+
 
 let listToMapOfLists (lst:List<'k*'v>) :Map<'k,List<'v>> =
   lst |> List.fold 
@@ -62,15 +84,6 @@ let rec toUntypedScope (root:Scope) (scopes:Map<Id,Scope>) :UntypedScope =
     TypeFuncRules = matchRules root.TypeFunctionRules |> listToMapOfLists
     FuncRules     = matchRules root.Rules             |> listToMapOfLists
   }
-
-type TypeConstructors = Map<Id,Type>
-type Type = Star       // type
-          | Signature  // module
-          | TypeId     of Id
-          | BigArrow   of Type*Type
-          | SmallArrow of Type*Type
-          | Union      of Type*TypeConstructors
-
 
 let test_decls = 
   let pos = { File="not_a_real_file.mc";Line=1;Col=1; }
