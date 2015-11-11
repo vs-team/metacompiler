@@ -12,17 +12,10 @@ parser M char ctxt => Monad( Mcons^st ) {
     inherit st 
 
     Func "try" -> Mcons 'a -> ('a -> Mcons 'b) -> (String -> Mcons 'b) -> Mcons 'b
-
-
-
-ArrowFunc Mcons 'a -> "\_/" -> Mcons 'b -> Mcons ('a | 'b)
-
-
-
-
-    ArrowFunc Mcons 'c -> ">>" -> Mcons 'd -> Mcons 'd
+    ArrowFunc Mcons 'a -> "\_/" -> Mcons 'b -> Mcons ('a | 'b)  #> 60
+    ArrowFunc Mcons 'c -> ">>" -> Mcons 'd -> Mcons 'd          #> 10
     Func "firstSuccesful" -> [Mcons 'a] -> Mcons 'a
-    ArrowFunc Mcons 'a -> "\/" -> Mcons 'a -> Mcons 'a
+    ArrowFunc Mcons 'a -> "\/" -> Mcons 'a -> Mcons 'a          #> 60
   ++Func "nothing" -> Mcons Unit
     Func "repeat" -> Mcons 'c -> Mcons ['c]
     Func "step" -> Mcons 'a

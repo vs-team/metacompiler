@@ -6,11 +6,11 @@ Monad 'M => Signature {
     TypeFunc "MCons" => *
     MCons => 'M
     
-    TypeFunc 'M 'a => ">>=" => ('a => 'M 'b) => 'M 'b
+    TypeFunc 'M 'a => ">>=" => ('a => 'M 'b) => 'M 'b   #> 10 L
     TypeFunc "return" => 'a => 'M 'a
     TypeFunc "returnFrom" => 'a => 'a
     TypeFunc "lift" => ('a => 'b ) => 'M 'a => 'M 'b
-    TypeFunc "lift2" => ('a => 'b => 'c) => 'M 'a => 'M 'b => 'M 'c
+    TypeFunc "lift2" => ('a => 'b => 'c) => 'M 'a => 'M 'b => 'M 'c 
 
     returnFrom a => a
     
