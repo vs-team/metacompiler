@@ -1,5 +1,6 @@
 ﻿import prelude
 
+
 TypeFunc "StateT" => (* => *) => * => * => *
 StateT 'M 's 'a => ('s -> 'M('a*'s))
 

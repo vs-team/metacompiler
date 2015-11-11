@@ -1,15 +1,15 @@
 ﻿import number
 
-Data "Unit" -> Unit                #> 12345 R
-Data 'a -> "," -> 'b -> 'a * 'b    #> 1234  R
-Data "Left" -> 'a -> 'a | 'b       #> 123   R
-Data "Right" -> 'b -> 'a | 'b      #> 12    R
-Data "True" -> Boolean             #> 1     R
-Data "False" -> Boolean
+Data "Unit" -> Unit                
+Data 'a -> "," -> 'b -> 'a * 'b    #> 5 
+Data "Left" -> 'a -> 'a | 'b       #> 5 
+Data "Right" -> 'b -> 'a | 'b      #> 5 
+Data "True" -> Boolean              
+Data "False" -> Boolean             
 
-Data "then" -> Then
-Data "else" -> Else
-TypeFunc "if" => Boolean => Then => 'a => Else => 'a => 'a
+Data "then" -> Then                
+Data "else" -> Else                
+TypeFunc "if" => Boolean => Then => 'a => Else => 'a => 'a  
 
 if True then f else g => f
 

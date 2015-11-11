@@ -15,11 +15,11 @@ either M 'b => Monad (EitherT MCons^M 'b) {
     
     pm >>=^M y
     (match y with 
-      (\x -> q x) 
-      (\y -> p y)
+      (\x -> k x) 
+      (\y -> err y)
     ) => res
     --
-    try pm p q => res
-    
+    try pm k err => res
+
     pm >>= k => try pm k fail
   }
