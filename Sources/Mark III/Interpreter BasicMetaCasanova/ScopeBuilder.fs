@@ -38,24 +38,26 @@ and Premise = Conditional of List<BasicExpression> | Implication of List<BasicEx
 
 and Scope = 
   {
-    ImportDeclaration       : List<Id>
+    ImportDeclaration        : List<Id>
     InheritDeclaration       : List<Id>
-    FunctionDeclarations    : List<SymbolDeclaration>
-    TypeFunctionDeclarations: List<SymbolDeclaration> 
-    DataDeclarations        : List<SymbolDeclaration>
-    TypeFunctionRules       : List<Rule>
-    Rules                   : List<Rule>
+    FunctionDeclarations     : List<SymbolDeclaration>
+    TypeFunctionDeclarations : List<SymbolDeclaration> 
+    ArrowFunctionDeclarations: List<SymbolDeclaration> 
+    DataDeclarations         : List<SymbolDeclaration>
+    TypeFunctionRules        : List<Rule>
+    Rules                    : List<Rule>
   } 
   with 
     static member Zero = 
       {
-        ImportDeclaration       = []
-        InheritDeclaration      = []
-        FunctionDeclarations    = []
-        TypeFunctionDeclarations= []
-        DataDeclarations        = []
-        TypeFunctionRules       = []
-        Rules                   = []
+        ImportDeclaration         = []
+        InheritDeclaration        = []
+        FunctionDeclarations      = []
+        TypeFunctionDeclarations  = []
+        ArrowFunctionDeclarations = []
+        DataDeclarations          = []
+        TypeFunctionRules         = []
+        Rules                     = []
       }
 
 let getPosition : Parser<LineSplitter.BasicExpression, _, _> = 
@@ -121,6 +123,12 @@ let typefunc =
     match exprs with
     | LineSplitter.BasicExpression.Keyword(LineSplitter.TypeFunc,pos)::es -> Done((), es, ctxt)
     | _ -> Error (ScopeError [",typefunc"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+
+let arrowfunc = 
+  fun (exprs,ctxt) ->
+    match exprs with
+    | LineSplitter.BasicExpression.Keyword(LineSplitter.ArrowFunc,pos)::es -> Done((), es, ctxt)
+    | _ -> Error (ScopeError [",arrowfunc"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
 let data = 
   fun (exprs,ctxt) ->
@@ -284,6 +292,14 @@ let typefunc_declaration : Parser<LineSplitter.BasicExpression,Scope,Unit> =
     let! sym_decl = typefunc_declaration_body
     let! ctxt = getContext
     do! setContext { ctxt with TypeFunctionDeclarations = sym_decl :: ctxt.TypeFunctionDeclarations }
+  }
+
+let Arrowfunc_declaration : Parser<LineSplitter.BasicExpression,Scope,Unit> = 
+  prs{
+    do! arrowfunc
+    let! sym_decl = symbol_declaration_body
+    let! ctxt = getContext
+    do! setContext { ctxt with ArrowFunctionDeclarations = sym_decl :: ctxt.ArrowFunctionDeclarations }
   }
 
 let import_declaration : Parser<LineSplitter.BasicExpression,Scope,Unit> = 
