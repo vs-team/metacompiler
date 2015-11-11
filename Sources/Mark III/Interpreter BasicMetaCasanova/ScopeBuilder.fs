@@ -10,6 +10,7 @@ type BasicExpression =
   | Literal of Literal * Position
   | Arrow of Arrow * Position
   | Application of Bracket * List<BasicExpression>
+  | Lamda of List<BasicExpression> * List<Premise>
   | Scope of Scope 
 
 and SymbolDeclaration = 
@@ -167,6 +168,10 @@ let rec nested_id_application : Parser<LineSplitter.BasicExpression, Scope, Basi
     | Done(inner',[],ctxt) -> Done(Application(b,inner'),es,ctxt)
     | _ -> Error(ScopeError ["Error: expected id (also nested) inside brackets at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | _ -> Error(ScopeError ["Error: expected id (also nested) but could not find at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+
+and lamda_id_basicexpression =
+  fun (exprs,ctxt) ->
+    ()
 
 and line_to_id_basicexpression =
   fun (exprs,ctxt) ->
