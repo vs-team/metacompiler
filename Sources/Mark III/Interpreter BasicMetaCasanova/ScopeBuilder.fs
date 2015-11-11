@@ -34,7 +34,8 @@ and Rule =
     Premises  : List<Premise>
   }
 
-and Premise = Conditional of List<BasicExpression> | Implication of List<BasicExpression> * List<BasicExpression>
+and Premise =   Conditional of List<BasicExpression> 
+              | Implication of List<BasicExpression> * List<BasicExpression>
 
 and Scope = 
   {

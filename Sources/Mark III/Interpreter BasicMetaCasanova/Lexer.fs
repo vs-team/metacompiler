@@ -224,6 +224,10 @@ let rec token : Parser<char,Context,Token> =
           return (Close Square,pos) |> Keyword 
         }) .||
         (prs{
+          do! !"(\\"
+          return (Open Lamda,pos) |> Keyword 
+        }) .||
+        (prs{
           do! !"("
           return (Open Round,pos) |> Keyword 
         }) .||

@@ -108,12 +108,17 @@ let rec skip_spaces : Parser<_,Unit,_> =
     | _ -> return ()
   } .|| (prs{ return () })
 
+let convert_bracket bracket =
+  match bracket with
+  | Lamda -> Round
+  | _ -> bracket
+
 let rec open_close_bracket bracket = 
   prs{
     do! open_bracket bracket
     let! args = traverse()
     do! skip_spaces
-    do! close_bracket bracket
+    do! close_bracket (convert_bracket bracket)
     let! rest = traverse()
     return Application(bracket, args) :: rest
   }
@@ -125,6 +130,7 @@ and traverse() : Parser<Token, _, List<BasicExpression>> =
       ((open_close_bracket Curly)
       .|| (open_close_bracket Round)
       .|| (open_close_bracket Square)
+      .|| (open_close_bracket Lamda)
       .|| (open_close_bracket Indent))
       .|| (nothing >>
             prs{
