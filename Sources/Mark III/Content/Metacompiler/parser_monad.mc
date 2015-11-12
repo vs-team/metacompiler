@@ -11,31 +11,44 @@ state(state^ctxt,[char]) => st
 parser M char ctxt => Monad( Mcons^st ) {
     inherit st 
 
+    Func "retRes" -> 'char -> 'ctxt -> 'result -> Mcons
     Func "try" -> Mcons 'a -> ('a -> Mcons 'b) -> (String -> Mcons 'b) -> Mcons 'b
     ArrowFunc Mcons 'a -> "\_/" -> Mcons 'b -> Mcons ('a | 'b)  #> 60
     ArrowFunc Mcons 'c -> ">>" -> Mcons 'd -> Mcons 'd          #> 10
     Func "firstSuccesful" -> [Mcons 'a] -> Mcons 'a
     ArrowFunc Mcons 'a -> "\/" -> Mcons 'a -> Mcons 'a          #> 60
-  ++Func "nothing" -> Mcons Unit
+    Func "nothing" -> 'char -> 'ctxt -> Mcons
     Func "repeat" -> Mcons 'c -> Mcons ['c]
     Func "step" -> Mcons 'a
     Func "eof" -> Mcons Unit
-
-  ++Func "ignore" -> Mcons 'c -> Mcons Unit
+    Func "ignore" -> Mcons 'c -> Mcons Unit
     Func "lookahead" -> Mcons 'c -> Mcons 'c
-  ++Func "fail" -> String -> Mcons 'c
-  ++Func "getBuffer" -> Mcons 'a
-  ++Func "getContext" -> Mcons 'b
-  ++Func "setContext" -> 'b -> Mcons Unit
+    Func "fail" -> 'char -> 'ctxt -> String  -> Mcons
+    Func "getBuffer" -> 'char -> 'ctxt -> Mcons
+    Func "getContext" -> 'char -> 'ctxt -> Mcons
+    Func "setContext" -> 'char -> 'ctxt -> Mcons
 
+
+ $*
+    lift^st(return^st(
+      lift^state^ctxt(return^state^ctxt(
+        lift^res(return^res(result)),
+      ctxt)),
+    chars)) => res'
+ *$
+    return^res result = result'
+    return^state^ctxt(result,ctxt) => ctxt'
+    return^st(ctxt',chars) => res'
+    --
+    retRes chars ctxt result -> res'
 
     lift^st( lift^ctxt( try^res (p chars ctxt) k err ) => res
     --
     (try p k err) chars ctxt -> res
 
 
-    --
-    try p1 p2 -> res
+  $$--
+  $$try p1 p2 -> res
 
     (match try p1 with
       (\x -> return(A(x)))
@@ -69,7 +82,7 @@ parser M char ctxt => Monad( Mcons^st ) {
     --
     (p1 \/ p2) -> res
 
-    ++nothing chars ctxt -> return chars ctxt
+    nothing chars ctxt -> retRes chars ctxt Unit
   
     ((p >>= x
       repeat p >>= xs
@@ -93,7 +106,7 @@ parser M char ctxt => Monad( Mcons^st ) {
   
     p >>= x
     --
-  ++ignore p -> return Unit
+    ignore p -> return Unit
 
     ((try^res (p chars ctxt)) 
       (\(Done(x) -> return^res(Done(x))) 
@@ -101,11 +114,11 @@ parser M char ctxt => Monad( Mcons^st ) {
     --
     lookahead p chars ctxt -> res
   
-  ++fail msg chars ctxt -> Error(msg)
+    fail chars ctxt msg -> retRes(chars,ctxt,msg)
 
-  ++getBuffer chars ctxt -> return^parser(chars,ctxt,chars)
+    getBuffer chars ctxt -> retRes(chars,ctxt,chars)
   
-  ++getContext chars ctxt -> return^parser(chars,ctxt,ctxt)
-  
-  ++setContext ctxt' chars ctxt -> Done(Unit,chars,ctxt')
+    getContext chars ctxt -> retRes(chars,ctxt,ctxt)
+
+    setContext chars ctxt -> retRes(chars,ctxt,Unit)
   }
