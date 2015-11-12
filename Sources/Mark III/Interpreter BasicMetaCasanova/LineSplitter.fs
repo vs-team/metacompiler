@@ -3,7 +3,9 @@
 open Common
 
 type Keyword = 
-  | Import | Inherit | Func | TypeFunc | ArrowFunc | Data | HorizontalBar | SingleArrow | DoubleArrow | PriorityArrow | Instance
+  | Import | Inherit | Func | TypeFunc 
+  | ArrowFunc | Data | HorizontalBar | CommentLine
+  | SingleArrow | DoubleArrow | PriorityArrow | Instance
 
 type BasicExpression =
   | Id of Id * Position
@@ -49,6 +51,7 @@ let split_lines =
       | Parser.Keyword(Parser.SingleArrow,pos) -> line <- Keyword(SingleArrow,pos) :: line
       | Parser.Keyword(Parser.DoubleArrow,pos) -> line <- Keyword(DoubleArrow,pos) :: line
       | Parser.Keyword(Parser.PriorityArrow,pos) -> line <- Keyword(PriorityArrow,pos) :: line
+      | Parser.Keyword(Parser.CommentLine,pos) -> line <- Keyword(CommentLine,pos) :: line
       | Parser.Id(i,pos) ->
         line <- Id(i,pos) :: line
       | Parser.Literal(l,pos) ->

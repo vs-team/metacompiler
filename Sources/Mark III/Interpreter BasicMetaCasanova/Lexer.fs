@@ -11,7 +11,7 @@ let getPosition =
 
 type Keyword = 
   | Import | Inherit | Func | TypeFunc | ArrowFunc | Data | HorizontalBar | Instance
-  | Open of Bracket| Close of Bracket | NewLine
+  | Open of Bracket| Close of Bracket | NewLine | CommentLine
   | SingleArrow | DoubleArrow | PriorityArrow | Spaces of int
 
 type Token =
@@ -189,6 +189,9 @@ let rec token : Parser<char,Context,Token> =
         token_discription !"(\\"       (Open Lamda,pos)    .||
         token_discription !"("         (Open Round,pos)    .||
         token_discription !")"         (Close Round,pos)   .||
+        token_discription !"$$"        (CommentLine,pos)   .||
+        token_discription !"$*"        (Open  Comment,pos) .||
+        token_discription !"*$"        (Close Comment,pos) .||
         horizontal_bar pos                                 .||
         spaces pos .||
         token_discription (!"\r\n" .|| !"\n\r" .|| !"\n") (NewLine,pos) .||

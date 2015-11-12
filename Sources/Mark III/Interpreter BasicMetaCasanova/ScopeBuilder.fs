@@ -138,6 +138,13 @@ let data =
     | LineSplitter.BasicExpression.Keyword(LineSplitter.Data,pos)::es -> Done((), es, ctxt)
     | _ -> Error (ScopeError [",data"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
+let comment =
+  fun (exprs,ctxt) ->
+    match exprs with
+    | LineSplitter.Application(Comment,inner) :: es -> Done((), es, ctxt)
+    | LineSplitter.BasicExpression.Keyword(LineSplitter.CommentLine,pos)::es -> Done((), es, ctxt)
+    | _ -> Error (ScopeError [",comment"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+
 let rec simple_expression : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
   fun (exprs,ctxt) ->
   match exprs with
@@ -340,6 +347,11 @@ let data_declaration : Parser<LineSplitter.BasicExpression,Scope,Unit> =
     do! setContext { ctxt with DataDeclarations = sym_decl :: ctxt.DataDeclarations }
   }
 
+let skip_comment : Parser<LineSplitter.BasicExpression,Scope,Unit> = 
+  prs{
+    do! comment
+  }
+
 let parse_first_line (p:Parser<LineSplitter.BasicExpression,_,'a>) : Parser<LineSplitter.Line,_,'a> = 
   fun (lines,ctxt) ->
     match lines with
@@ -411,11 +423,10 @@ let horizontal_bar : Parser<LineSplitter.BasicExpression,_,_> =
     | [LineSplitter.BasicExpression.Keyword(LineSplitter.HorizontalBar,pos)] -> Done((), [], ctxt)
     | _ -> Error (ScopeError [",----"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
-
 let rec scope() : Parser<LineSplitter.Line, Scope, Scope> =
   prs{
     do! skip_empty_lines()
-    do! (parse_first_line (import_declaration .|| inherit_declaration .|| func_declaration .|| 
+    do! (parse_first_line (skip_comment .|| import_declaration .|| inherit_declaration .|| func_declaration .|| 
                            typefunc_declaration .|| data_declaration )) .|| 
                            typefunc_rule .|| rule
     do! skip_empty_lines()

@@ -32,6 +32,14 @@ filter empty p -> empty
 --
 filter (x :: xs) p -> res
 
+$$ comment... this should skip
+$* test comment *$
+$* 
+multy 
+line 
+comment
+test
+*$
 
 TypeFunc "ListT" => (* => *) => * => *
 ListT 'M 'a => 'M(List 'a)

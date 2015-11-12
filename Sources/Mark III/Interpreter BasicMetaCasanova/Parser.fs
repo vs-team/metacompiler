@@ -5,7 +5,9 @@ open Common
 open Lexer
 
 type Keyword = 
-  | Import | Inherit | Func | TypeFunc | ArrowFunc | Data | HorizontalBar | SingleArrow | DoubleArrow | PriorityArrow | NewLine | Instance
+  | Import | Inherit | Func | TypeFunc | ArrowFunc 
+  | Data | HorizontalBar | SingleArrow | DoubleArrow 
+  | PriorityArrow | NewLine | Instance | CommentLine
 
 type BasicExpression =
   | Id of Id * Position
@@ -76,6 +78,7 @@ let convert_token : Parser<Token, _, BasicExpression> =
     | Lexer.DoubleArrow -> return Keyword(DoubleArrow,pos)
     | Lexer.PriorityArrow -> return Keyword(PriorityArrow,pos)
     | Lexer.NewLine -> return Keyword(NewLine,pos)
+    | Lexer.CommentLine -> return Keyword(CommentLine,pos)
     | _ -> return! fail (ParserError [(sprintf "Error: expected keyword at %A." pos)])
   } .||
   prs{
@@ -131,12 +134,17 @@ and traverse() : Parser<Token, _, List<BasicExpression>> =
       .|| (open_close_bracket Round)
       .|| (open_close_bracket Square)
       .|| (open_close_bracket Lamda)
-      .|| (open_close_bracket Indent))
+      .|| (open_close_bracket Indent)
+      .|| (open_close_bracket Comment))
       .|| (nothing >>
             prs{
                 return! 
                   (eof >> prs{ return [] }) .||
-                  (lookahead(close_bracket Indent .|| close_bracket Round .|| close_bracket Square .|| close_bracket Curly) >> prs{ return [] }) .||
+                  (lookahead(close_bracket Indent .|| 
+                             close_bracket Round  .|| 
+                             close_bracket Square .||
+                             close_bracket Comment .|| 
+                             close_bracket Curly) >> prs{ return [] }) .||
                   (prs{
                     let! hd = convert_token
                     let! tl = traverse()
