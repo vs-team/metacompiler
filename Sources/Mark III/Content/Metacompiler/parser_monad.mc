@@ -51,11 +51,14 @@ parser M char ctxt => Monad( Mcons^st ) {
   $$try p1 p2 -> res
 
     (match try p1 with
-      (\x -> return(A(x)))
-      (\e1 -> 
+      (\lift^st(lift^st_ctxt(e1,p1e)) -> 
         (match try p2 with
-          (\y -> return(B(y)))
-          (\e2 -> fail (e1+e2)))) >>= res
+          (\lift^st(lift^st_ctxt(e2,p2e)) ->
+	    fail (e1+e2))
+          (\y -> return(y))
+	)
+      (\x -> return(x))
+    ) >>= res
     --
     (p1 \_/ p2) chars ctxt -> res
     
