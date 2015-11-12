@@ -159,87 +159,39 @@ let rec spaces pos =
     return Keyword(Spaces(1 + (rest |> List.length)),pos)
   }
 
+let token_discription (s) (k:Keyword*Position) =
+   (prs{
+    do! s
+    return (k) |> Keyword 
+  })
+
 let rec token : Parser<char,Context,Token> = 
   prs{
     let! pos = getPosition
     let! res = 
-        float_literal pos .||
-        int_literal pos .||
+        float_literal pos  .||
+        int_literal pos    .||
         string_literal pos .||
-        (prs{
-          do! !"Instance"
-          return (Instance,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"import"
-          return (Import,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"inherit"
-          return (Inherit,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"Func"
-          return (Func,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"TypeFunc"
-          return (TypeFunc,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"ArrowFunc"
-          return (TypeFunc,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"Data"
-          return (Data,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"=>"
-          return (DoubleArrow,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"->"
-          return (SingleArrow,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"#>"
-          return (PriorityArrow,pos) |> Keyword 
-        }) .||
-        horizontal_bar pos .||
-        (prs{
-          do! !"{"
-          return (Open Curly,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"}"
-          return (Close Curly,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"["
-          return (Open Square,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"]"
-          return (Close Square,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"(\\"
-          return (Open Lamda,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"("
-          return (Open Round,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !")"
-          return (Close Round,pos) |> Keyword 
-        }) .||
+        token_discription !"Instance"  (Instance,pos)      .||
+        token_discription !"import"    (Import,pos)        .||
+        token_discription !"inherit"   (Inherit,pos)       .||
+        token_discription !"Func"      (Func,pos)          .||
+        token_discription !"TypeFunc"  (TypeFunc,pos)      .||
+        token_discription !"ArrowFunc" (TypeFunc,pos)      .||
+        token_discription !"Data"      (Data,pos)          .||
+        token_discription !"=>"        (DoubleArrow,pos)   .||
+        token_discription !"->"        (SingleArrow,pos)   .||
+        token_discription !"#>"        (PriorityArrow,pos) .||
+        token_discription !"{"         (Open Curly,pos)    .||
+        token_discription !"}"         (Close Curly,pos)   .||
+        token_discription !"["         (Open Square,pos)   .||
+        token_discription !"]"         (Close Square,pos)  .||
+        token_discription !"(\\"       (Open Lamda,pos)    .||
+        token_discription !"("         (Open Round,pos)    .||
+        token_discription !")"         (Close Round,pos)   .||
+        horizontal_bar pos                                 .||
         spaces pos .||
-        (prs{
-          do! !"\r\n" .|| !"\n\r" .|| !"\n"
-          return (NewLine,pos) |> Keyword
-        }) .||
+        token_discription (!"\r\n" .|| !"\n\r" .|| !"\n") (NewLine,pos) .||
         (prs{
           do! !"\t"
           return! fail (LexerError ["Don't use tabs"])
