@@ -17,5 +17,5 @@ state M 's => Monad(StateT MCons^M 's) {
     getState s => return^M(s,s)
 
     TypeFunc "setState" => 's => MCons Unit
-    setState s' s => return^M(Unit,s')
+    setState s' => return^M(Unit,s')
   }
