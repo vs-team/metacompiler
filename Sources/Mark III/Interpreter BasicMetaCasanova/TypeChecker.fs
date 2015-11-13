@@ -1,7 +1,7 @@
 ﻿module TypeChecker
 open Common
 open ScopeBuilder // Scope
-open Parenthesizer
+open Prioritizer
 
 (*
 Most Generic Fit
@@ -24,7 +24,6 @@ typechecking algorithm
 
 how to handle modules (signatures)
   translate signatures to templated functions
-
 *)
 
 type TypedScope = {
@@ -36,32 +35,51 @@ type TypedScope = {
   FuncRules     : Map<Id,List<Rule>>
 }
 
-// BasicExpressions aren't going to cut it, we need a more restrictive type: TreeExpr
-// this models lambda calculus using De Bruijn indices
-and TreeExpr = Abs   of TreeExpr*MaybeType // lambda, because of De Bruijn indices, we won't need an identifier for the parameter
-             | App   of TreeExpr*TreeExpr*MaybeType // function application 
-             | Bound of int*MaybeType // bound lambda variable using De Bruijn indices
-             | Free  of Id*MaybeType  // free lambda variable
+and TreeExpr = Abs of TreeExpr*MaybeType*Position
+             | App of TreeExpr*TreeExpr*MaybeType*Position
+             | Var of Id*MaybeType*Position
+             | Lit of Literal*Type*Position
 
 and Rule = {
-  Input    :List<TreeExpr>
-  Output   :List<TreeExpr>
+  Input    :TreeExpr
+  Output   :TreeExpr
   Premises :List<Premise>
 }and Premise = Assignment  of TreeExpr*TreeExpr
              | Conditional of TreeExpr
 
 and Type = Star       // type
-          | Signature  // module
-          | TypeId     of Id
-          | BigArrow   of Type*Type
-          | SmallArrow of Type*Type
-          | Union      of Type*TypeConstructors
+         | Signature  // module
+         | TypeId     of Id
+         | BigArrow   of Type*Type
+         | SmallArrow of Type*Type
+         | Union      of Type*TypeConstructors
 and TypeConstructors = Map<Id,Type>
 
 and MaybeType = Conflict of List<TreeExpr*TreeExpr>
               | Known    of Type
               | Unknown
 
+type Expr = Basic of BasicExpression | Tree of TreeExpr
+
+// Question: does this work correctly with shadowed identifiers?
+let rec selectDecls (exprs:List<BasicExpression>) (decls:List<SymbolDeclaration>) : List<SymbolDeclaration> =
+  // recursively find names of operators and add them to the set
+  let rec used_names exprs decls =
+    exprs |> List.fold (fun (acc:Set<string>) (next:BasicExpression) -> 
+      match next with 
+      | Id(str,_) -> acc.Add(str)
+      | Application(_,e) -> acc + (used_names e decls)
+      | _ -> acc) Set.empty
+  let set = used_names exprs decls
+  // sort the set into a list according to the order in decls
+  let lst = decls |> List.fold (fun acc next -> if set.Contains(next.Name) then next::acc else acc) []
+  List.rev lst
+
+let prioritize (exprs:List<BasicExpression>) (decls:List<SymbolDeclaration>) :List<Expr> =
+   let decls = selectDecls exprs decls
+   let exprs = exprs |> List.map Basic
+   let rec prioritize (exprs:List<Expr>) = []
+   prioritize exprs
 
 let listToMapOfLists (lst:List<'k*'v>) :Map<'k,List<'v>> =
   lst |> List.fold 
@@ -72,29 +90,6 @@ let listToMapOfLists (lst:List<'k*'v>) :Map<'k,List<'v>> =
     Map.empty
   |> Map.map (fun _ v -> List.rev v)
 
-(*
-// TODO: add caching
-let rec toUntypedScope (root:Scope) (scopes:Map<Id,Scope>) :UntypedScope = 
-  let matchRules rules =
-    rules
-    |> List.map (fun (rule:Rule) -> 
-       let bar = Parenthesize root.FunctionDeclarations rule.Input
-       let baz = bar |> List.find (fun x -> match x with
-                                            | Id (str,pos) -> root.FunctionDeclarations 
-                                                              |> List.tryFind (fun e->str=e.Name)
-                                                              |> Option.isSome
-                                            | _ -> false)
-       let name:Id = match baz with Id (str,_) -> str
-       name,rule)
-  {
-    Parents       = root.ImportDeclaration |> List.map (fun x -> toUntypedScope scopes.[x] scopes)
-    FuncDecls     = root.FunctionDeclarations     |> List.map (fun x -> x.Name,x) |> Map.ofList
-    TypeFuncDecls = root.TypeFunctionDeclarations |> List.map (fun x -> x.Name,x) |> Map.ofList
-    DataDecls     = root.DataDeclarations         |> List.map (fun x -> x.Name,x) |> Map.ofList
-    TypeFuncRules = matchRules root.TypeFunctionRules |> listToMapOfLists
-    FuncRules     = matchRules root.Rules             |> listToMapOfLists
-  }
-*)
 let test_decls = 
   let pos = { File="not_a_real_file.mc";Line=1;Col=1; }
   [
@@ -147,7 +142,5 @@ let test_exprs =
   ]
 
 let TypeCheck (root:Scope) (scopes:Map<Id,Scope>) =
-  do printfn "starting type checker (using dummy data)"
-  do test_exprs |> List.iter (fun x-> do printfn "IN  %s" (prettyPrintExprs x)
-                                      do printfn "OUT %s" (Parenthesize test_decls x |> prettyPrintExprs))
+  let test = test_exprs |> List.map (fun x-> prioritize x test_decls)
   None
