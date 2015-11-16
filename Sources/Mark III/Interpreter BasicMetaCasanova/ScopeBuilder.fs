@@ -2,6 +2,7 @@
 
 open Common
 open ParserMonad
+open ScopeBuilderId
 
 type Arrow = SingleArrow | DoubleArrow 
 
