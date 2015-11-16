@@ -10,7 +10,7 @@ type BasicExpression =
   | Literal of Literal * Position
   | Arrow of Arrow * Position
   | Application of Bracket * List<BasicExpression>
-  | Lamda of Rule
+  | Lambda of Rule
   | Scope of Scope 
 
 and SymbolDeclaration = 
@@ -193,26 +193,26 @@ let rec nested_id_application : Parser<LineSplitter.BasicExpression, Scope, Basi
     match (line_to_id_basicexpression |> repeat)(b,ctxt) with
     | Done(inner',[],ctxt) -> Done(Application(Indent,inner'),es,ctxt)
     | _ -> Error(ScopeError ["Error: expected indent at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
-  | LineSplitter.Application(Common.Lamda,inner) :: es -> 
-    match (lamda_id_basicexpression) (inner,ctxt) with
+  | LineSplitter.Application(Common.Lambda,inner) :: es -> 
+    match (lambda_id_basicexpression) (inner,ctxt) with
     | Done(inner',_,ctxt) -> Done(inner',es,ctxt)
-    | _ -> Error(ScopeError [",lamda"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+    | _ -> Error(ScopeError [",lambda"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | LineSplitter.Application(b,inner) :: es -> 
     match (nested_id_application |> repeat) (inner,ctxt) with
     | Done(inner',[],ctxt) -> Done(Application(b,inner'),es,ctxt)
     | _ -> Error(ScopeError ["Error: expected id (also nested) inside brackets at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | _ -> Error(ScopeError ["Error: expected id (also nested) but could not find at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
-and lamda_id_basicexpression =
+and lambda_id_basicexpression =
   let open_block block = 
     match block with
     | LineSplitter.Block(b) -> b
-  let getlamdainput lines =
+  let getlambdainput lines =
     match lines with
     | x :: xs ->
       match (left_nested_id |> repeat) (x,Scope.Zero) with
       |Done(inner,_,ctxt) -> inner,xs
-  let getlamdaoutput lines =
+  let getlambdaoutput lines =
     match lines with
     | x :: xs ->
       match x with
@@ -223,26 +223,26 @@ and lamda_id_basicexpression =
     | Done(p,_,ctxt) -> p
     | Error (e,p) -> []
 
-  let return_lamda =
+  let return_lambda =
     fun (exprs,ctxt) ->
       match exprs with
       | LineSplitter.Block(x) :: es -> 
-        let input,xs = getlamdainput x
-        let output   = getlamdaoutput xs 
+        let input,xs = getlambdainput x
+        let output   = getlambdaoutput xs 
         let prem = getpremise output
         let out::prem = List.rev prem
         let prem = List.rev prem
         match out with
         | Conditional(x) ->
-          Done(Lamda({Input = input; Output = x ; Premises = prem}),es,ctxt)
-        | _ -> Error (ScopeError ["no return in lamda"], Position.Zero)
+          Done(Lambda({Input = input; Output = x ; Premises = prem}),es,ctxt)
+        | _ -> Error (ScopeError ["no return in lambda"], Position.Zero)
   prs{
     let! argleft = left_nested_id |> repeat
     do! arrow
     let! dump = right_nested_id |> repeat
-    return Lamda({Input = argleft; Output = dump; Premises = []})
-  } .|| return_lamda
-  //prs{ return Lamda({Input = []; Output = []; Premises = []})}
+    return Lambda({Input = argleft; Output = dump; Premises = []})
+  } .|| return_lambda
+  //prs{ return Lambda({Input = []; Output = []; Premises = []})}
 
 and line_to_id_basicexpression =
   fun (exprs,ctxt) ->

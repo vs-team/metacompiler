@@ -186,7 +186,7 @@ let rec token : Parser<char,Context,Token> =
         token_discription !"}"         (Close Curly,pos)   .||
         token_discription !"["         (Open Square,pos)   .||
         token_discription !"]"         (Close Square,pos)  .||
-        token_discription !"(\\"       (Open Lamda,pos)    .||
+        token_discription !"(\\"       (Open Lambda,pos)    .||
         token_discription !"("         (Open Round,pos)    .||
         token_discription !")"         (Close Round,pos)   .||
         token_discription !"$$"        (CommentLine,pos)   .||

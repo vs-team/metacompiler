@@ -94,8 +94,8 @@ let rec prioritize (exprs:List<BasicExpression>) (decls:List<SymbolDeclaration>)
                           | Float32 _ -> Some(Tree(Lit(l,TypeId("float"),p)))
     | Id(s,p) when (decls|>List.exists(fun x->x.Name=s)|>not) -> Some(Tree(Var(s,Unknown,p)))
     | Id(s,p)          -> Some(Basic(Id(s,p)))
-    | Lamda(_)        -> do printfn "can't deal with lambdas."
-                         None // TODO
+    | Lambda(_)        -> do printfn "can't deal with lambdas."
+                          None // TODO
     | Scope(_)         -> do printfn "can't deal with scopes."
                           None
     | Arrow(_,_)       -> do printfn "can't deal with arrows."
