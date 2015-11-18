@@ -1,7 +1,7 @@
 ﻿module TypeChecker
 open Common
 open ScopeBuilder // Scope
-open Parenthesizer
+open Prioritizer
 
 (*
 Most Generic Fit
@@ -24,7 +24,6 @@ typechecking algorithm
 
 how to handle modules (signatures)
   translate signatures to templated functions
-
 *)
 
 type TypedScope = {
@@ -36,32 +35,78 @@ type TypedScope = {
   FuncRules     : Map<Id,List<Rule>>
 }
 
-// BasicExpressions aren't going to cut it, we need a more restrictive type: TreeExpr
-// this models lambda calculus using De Bruijn indices
-and TreeExpr = Abs   of TreeExpr*MaybeType // lambda, because of De Bruijn indices, we won't need an identifier for the parameter
-             | App   of TreeExpr*TreeExpr*MaybeType // function application 
-             | Bound of int*MaybeType // bound lambda variable using De Bruijn indices
-             | Free  of Id*MaybeType  // free lambda variable
+and TreeExpr = Abs of TreeExpr*MaybeType*Position
+             | App of TreeExpr*TreeExpr*MaybeType*Position
+             | Var of Id*MaybeType*Position
+             | Lit of Literal*Type*Position
 
 and Rule = {
-  Input    :List<TreeExpr>
-  Output   :List<TreeExpr>
+  Input    :TreeExpr
+  Output   :TreeExpr
   Premises :List<Premise>
 }and Premise = Assignment  of TreeExpr*TreeExpr
              | Conditional of TreeExpr
 
 and Type = Star       // type
-          | Signature  // module
-          | TypeId     of Id
-          | BigArrow   of Type*Type
-          | SmallArrow of Type*Type
-          | Union      of Type*TypeConstructors
+         | Signature  // module
+         | TypeId     of Id
+         | BigArrow   of Type*Type
+         | SmallArrow of Type*Type
+         | Union      of Type*TypeConstructors
 and TypeConstructors = Map<Id,Type>
 
 and MaybeType = Conflict of List<TreeExpr*TreeExpr>
               | Known    of Type
               | Unknown
 
+type Expr = Basic of BasicExpression | Tree of TreeExpr
+
+let rec selectDecls (exprs:List<BasicExpression>) (decls:List<SymbolDeclaration>) : List<SymbolDeclaration> =
+  // recursively find names of operators and add them to the set
+  let rec used_names exprs decls =
+    exprs |> List.fold (fun (acc:Set<string>) (next:BasicExpression) -> 
+      match next with 
+      | Id(str,_) -> acc.Add(str)
+      | Application(_,e) -> acc + (used_names e decls)
+      | _ -> acc) Set.empty
+  let set = used_names exprs decls
+  // sort them on priority
+  decls |> List.filter   (fun x-> set.Contains(x.Name))
+        |> List.sortWith (fun x y-> x.Priority - y.Priority)
+
+let capture (exprs:List<Expr>) (decls:List<SymbolDeclaration>) :List<Expr> = 
+  let foo = decls |> List.map (fun decl-> 
+    let idx = match decl.Associativity with 
+              | Left  -> exprs |> List.tryFindIndex     (fun x->"todo"=decl.Name)
+              | Right -> exprs |> List.tryFindIndexBack (fun x->"todo"=decl.Name)
+    idx)
+  []
+
+let rec prioritize (exprs:List<BasicExpression>) (decls:List<SymbolDeclaration>) :Option<TreeExpr> =
+  // first apply this function recursively to parens
+  let decls = selectDecls exprs decls
+  let exprs = exprs |> List.map (fun expr ->
+    match expr with
+    | Application(b,e) -> prioritize exprs decls |> Option.map (Tree)
+    | Literal(l,p)     -> match l:Literal with
+                          | Int     _ -> Some(Tree(Lit(l,TypeId("int"),p)))
+                          | String  _ -> Some(Tree(Lit(l,TypeId("string"),p)))
+                          | Float32 _ -> Some(Tree(Lit(l,TypeId("float"),p)))
+    | Id(s,p) when (decls|>List.exists(fun x->x.Name=s)|>not) -> Some(Tree(Var(s,Unknown,p)))
+    | Id(s,p)          -> Some(Basic(Id(s,p)))
+    | Lambda(_)        -> do printfn "can't deal with lambdas."
+                          None // TODO
+    | Scope(_)         -> do printfn "can't deal with scopes."
+                          None
+    | Arrow(_,_)       -> do printfn "can't deal with arrows."
+                          None )// what even are arrows?
+  if exprs |> List.contains None then None else
+  let exprs = exprs |> List.map Option.get
+  // then capture the parameters of the functions as declared in decls
+  match capture exprs decls with
+  | [Tree x] -> Some(x)
+  | _ -> do printfn "capturing failed."
+         None
 
 let listToMapOfLists (lst:List<'k*'v>) :Map<'k,List<'v>> =
   lst |> List.fold 
@@ -72,29 +117,6 @@ let listToMapOfLists (lst:List<'k*'v>) :Map<'k,List<'v>> =
     Map.empty
   |> Map.map (fun _ v -> List.rev v)
 
-(*
-// TODO: add caching
-let rec toUntypedScope (root:Scope) (scopes:Map<Id,Scope>) :UntypedScope = 
-  let matchRules rules =
-    rules
-    |> List.map (fun (rule:Rule) -> 
-       let bar = Parenthesize root.FunctionDeclarations rule.Input
-       let baz = bar |> List.find (fun x -> match x with
-                                            | Id (str,pos) -> root.FunctionDeclarations 
-                                                              |> List.tryFind (fun e->str=e.Name)
-                                                              |> Option.isSome
-                                            | _ -> false)
-       let name:Id = match baz with Id (str,_) -> str
-       name,rule)
-  {
-    Parents       = root.ImportDeclaration |> List.map (fun x -> toUntypedScope scopes.[x] scopes)
-    FuncDecls     = root.FunctionDeclarations     |> List.map (fun x -> x.Name,x) |> Map.ofList
-    TypeFuncDecls = root.TypeFunctionDeclarations |> List.map (fun x -> x.Name,x) |> Map.ofList
-    DataDecls     = root.DataDeclarations         |> List.map (fun x -> x.Name,x) |> Map.ofList
-    TypeFuncRules = matchRules root.TypeFunctionRules |> listToMapOfLists
-    FuncRules     = matchRules root.Rules             |> listToMapOfLists
-  }
-*)
 let test_decls = 
   let pos = { File="not_a_real_file.mc";Line=1;Col=1; }
   [
@@ -147,7 +169,5 @@ let test_exprs =
   ]
 
 let TypeCheck (root:Scope) (scopes:Map<Id,Scope>) =
-  do printfn "starting type checker (using dummy data)"
-  do test_exprs |> List.iter (fun x-> do printfn "IN  %s" (prettyPrintExprs x)
-                                      do printfn "OUT %s" (Parenthesize test_decls x |> prettyPrintExprs))
+  let test = test_exprs |> List.map (fun x-> prioritize x test_decls)
   None

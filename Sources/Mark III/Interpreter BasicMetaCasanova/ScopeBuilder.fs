@@ -2,6 +2,7 @@
 
 open Common
 open ParserMonad
+open ScopeBuilderId
 
 type Arrow = SingleArrow | DoubleArrow 
 
@@ -10,7 +11,7 @@ type BasicExpression =
   | Literal of Literal * Position
   | Arrow of Arrow * Position
   | Application of Bracket * List<BasicExpression>
-  | Lamda of List<BasicExpression> * List<Premise>
+  | Lambda of Rule
   | Scope of Scope 
 
 and SymbolDeclaration = 
@@ -145,6 +146,22 @@ let comment =
     | LineSplitter.BasicExpression.Keyword(LineSplitter.CommentLine,pos)::es -> Done((), es, ctxt)
     | _ -> Error (ScopeError [",comment"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
+let not_empty : Parser<LineSplitter.BasicExpression, Scope, _> =
+  fun (exprs,ctxt) ->
+  match exprs with
+  | x::xs -> Done ((),exprs,ctxt)
+  | [] -> Error(ScopeError ["Error: cannot extract line at %A"],(LineSplitter.BasicExpression.tryGetNextPosition exprs))
+
+let parse_first_line (p:Parser<LineSplitter.BasicExpression,_,'a>) : Parser<LineSplitter.Line,_,'a> = 
+  fun (lines,ctxt) ->
+    match lines with
+    | line::lines -> 
+      match p (line,ctxt) with
+      | Done(res,_,ctxt') ->
+        Done(res,lines,ctxt')
+      | Error(e,p) -> Error(e,p)
+    | [] -> Error(ScopeError ["Error: cannot extract leading line at"],(LineSplitter.BasicExpression.tryGetNextPosition lines))
+
 let rec simple_expression : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
   fun (exprs,ctxt) ->
   match exprs with
@@ -177,22 +194,56 @@ let rec nested_id_application : Parser<LineSplitter.BasicExpression, Scope, Basi
     match (line_to_id_basicexpression |> repeat)(b,ctxt) with
     | Done(inner',[],ctxt) -> Done(Application(Indent,inner'),es,ctxt)
     | _ -> Error(ScopeError ["Error: expected indent at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
-  | LineSplitter.Application(Common.Lamda,inner) :: es -> 
-    match (lamda_id_basicexpression) (inner,ctxt) with
-    | Done(inner',[],ctxt) -> Done(inner',es,ctxt)
-    | _ -> Error(ScopeError [",lamda"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+  | LineSplitter.Application(Common.Lambda,inner) :: es -> 
+    match (lambda_id_basicexpression) (inner,ctxt) with
+    | Done(inner',_,ctxt) -> Done(inner',es,ctxt)
+    | _ -> Error(ScopeError [",lambda"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | LineSplitter.Application(b,inner) :: es -> 
     match (nested_id_application |> repeat) (inner,ctxt) with
     | Done(inner',[],ctxt) -> Done(Application(b,inner'),es,ctxt)
     | _ -> Error(ScopeError ["Error: expected id (also nested) inside brackets at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | _ -> Error(ScopeError ["Error: expected id (also nested) but could not find at"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
-and lamda_id_basicexpression =
+and lambda_id_basicexpression =
+  let open_block block = 
+    match block with
+    | LineSplitter.Block(b) -> b
+  let getlambdainput lines =
+    match lines with
+    | x :: xs ->
+      match (left_nested_id |> repeat) (x,Scope.Zero) with
+      |Done(inner,_,ctxt) -> inner,xs
+  let getlambdaoutput lines =
+    match lines with
+    | x :: xs ->
+      match x with
+      | LineSplitter.Application(Indent,[LineSplitter.Block(x)]) :: xs -> x
+  
+  let getpremise lines = 
+    match (premise |> parse_first_line |> repeat) (lines,Scope.Zero) with
+    | Done(p,_,ctxt) -> p
+    | Error (e,p) -> []
+
+  let return_lambda =
+    fun (exprs,ctxt) ->
+      match exprs with
+      | LineSplitter.Block(x) :: es -> 
+        let input,xs = getlambdainput x
+        let output   = getlambdaoutput xs 
+        let prem = getpremise output
+        let out::prem = List.rev prem
+        let prem = List.rev prem
+        match out with
+        | Conditional(x) ->
+          Done(Lambda({Input = input; Output = x ; Premises = prem}),es,ctxt)
+        | _ -> Error (ScopeError ["no return in lambda"], Position.Zero)
   prs{
     let! argleft = left_nested_id |> repeat
-    let! dump = nested_id_application |> repeat
-    return Lamda(argleft,[])
-  }
+    do! arrow
+    let! dump = right_nested_id |> repeat
+    return Lambda({Input = argleft; Output = dump; Premises = []})
+  } .|| return_lambda
+  //prs{ return Lambda({Input = []; Output = []; Premises = []})}
 
 and line_to_id_basicexpression =
   fun (exprs,ctxt) ->
@@ -213,7 +264,7 @@ and left_nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpression
     | _ -> Error(ScopeError ["Error: expected id (also nested) inside brackets at %A"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | _ -> Error(ScopeError["Error: expected id (also nested) but could not find at %A"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
 
-let right_nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
+and right_nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpression> =
   fun (exprs,ctxt) ->
   match exprs with
   | LineSplitter.Id(i,pos) :: es -> Done(Id(i,pos),es,ctxt)
@@ -223,6 +274,22 @@ let right_nested_id : Parser<LineSplitter.BasicExpression, Scope, BasicExpressio
     | Done(inner',[],ctxt) -> Done(Application(Round,flatten_nested_id inner'),es,ctxt)
     | _ -> Error(ScopeError ["Error: expected id (also nested) inside brackets at %A"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
   | _ -> Error(ScopeError["Error: expected id (also nested) but could not find at %A"],(exprs |> LineSplitter.BasicExpression.tryGetNextPosition))
+
+and premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
+  prs{
+    do! not_empty
+    let! i = left_nested_id |> repeat
+    return! (prs{
+              do! arrow
+              let! o = right_nested_id |> repeat
+              return Implication(i,o)
+            }) .||
+            (prs{
+              do! eof
+              return Conditional i
+            })  
+  }
+
 
 let string_to_associativivaty (s:string) : Parser<LineSplitter.BasicExpression, Scope, Associativity> =
   fun (exprs,ctxt) ->
@@ -358,15 +425,6 @@ let skip_comment : Parser<LineSplitter.BasicExpression,Scope,Unit> =
     do! comment
   }
 
-let parse_first_line (p:Parser<LineSplitter.BasicExpression,_,'a>) : Parser<LineSplitter.Line,_,'a> = 
-  fun (lines,ctxt) ->
-    match lines with
-    | line::lines -> 
-      match p (line,ctxt) with
-      | Done(res,_,ctxt') ->
-        Done(res,lines,ctxt')
-      | Error(e,p) -> Error(e,p)
-    | [] -> Error(ScopeError ["Error: cannot extract leading line at"],(LineSplitter.BasicExpression.tryGetNextPosition lines))
 
 let line : Parser<LineSplitter.Line,_,_> = 
   fun (lines,ctxt) ->
@@ -388,11 +446,6 @@ let rec skip_empty_lines() =
     do! skip_empty_lines()
   } .|| (prs{ return () })
 
-let not_empty : Parser<LineSplitter.BasicExpression, Scope, _> =
-  fun (exprs,ctxt) ->
-  match exprs with
-  | x::xs -> Done ((),exprs,ctxt)
-  | [] -> Error(ScopeError ["Error: cannot extract line at %A"],(LineSplitter.BasicExpression.tryGetNextPosition exprs))
 
 let typefunc_premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
   prs{
@@ -409,20 +462,6 @@ let typefunc_premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
             })  
   }
 
-let premise : Parser<LineSplitter.BasicExpression, Scope, Premise> =
-  prs{
-    do! not_empty
-    let! i = left_nested_id |> repeat
-    return! (prs{
-              do! arrow
-              let! o = right_nested_id |> repeat
-              return Implication(i,o)
-            }) .||
-            (prs{
-              do! eof
-              return Conditional i
-            })  
-  }
 let horizontal_bar : Parser<LineSplitter.BasicExpression,_,_> = 
   fun (exprs,ctxt) ->
     match exprs with

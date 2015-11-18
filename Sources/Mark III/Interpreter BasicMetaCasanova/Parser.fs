@@ -113,7 +113,7 @@ let rec skip_spaces : Parser<_,Unit,_> =
 
 let convert_bracket bracket =
   match bracket with
-  | Lamda -> Round
+  | Lambda -> Round
   | _ -> bracket
 
 let rec open_close_bracket bracket = 
@@ -133,7 +133,7 @@ and traverse() : Parser<Token, _, List<BasicExpression>> =
       ((open_close_bracket Curly)
       .|| (open_close_bracket Round)
       .|| (open_close_bracket Square)
-      .|| (open_close_bracket Lamda)
+      .|| (open_close_bracket Lambda)
       .|| (open_close_bracket Indent)
       .|| (open_close_bracket Comment))
       .|| (nothing >>
