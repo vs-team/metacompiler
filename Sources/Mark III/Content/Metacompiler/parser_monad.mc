@@ -80,12 +80,15 @@ parser M char ctxt => Monad( Mcons^st ) {
     --
     firstSuccesful (p::ps) -> res
 
-    (try p1
-      (\x -> return x)
-      (\e1 ->
-	(try p2
-	  (\y -> return y)
-	  (\e2 -> fail (e1+e2)))) >>= res
+    (match try p1 with
+      (\lift^st(lift^st_ctxt(e1,e1ctxt))) ->
+	(match try p2 with
+	  (\lift^st(lift^st_ctxt(e2,e2ctxt))) ->
+	    fail (e1+e2))
+	  (\y -> y)
+	)
+      (\x -> x)
+    ) >>= res
     --
     (p1 \/ p2) -> res
 
