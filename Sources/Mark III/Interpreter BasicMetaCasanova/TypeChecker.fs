@@ -1,7 +1,7 @@
 ﻿module TypeChecker
 open Common
 open ScopeBuilder // Scope
-open Prioritizer
+//open Prioritizer
 
 (*
 Most Generic Fit

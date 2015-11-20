@@ -542,26 +542,6 @@ and rule : Parser<LineSplitter.Line, Scope, Unit> =
     do! setContext { ctxt with Rules = { Premises = []; Input = i; Output = o } :: ctxt.Rules }
   }
 
-
-let block : Parser<LineSplitter.BasicExpression, Unit, List<_>> = 
-  fun (exprs,ctxt) ->
-    match exprs with
-    | LineSplitter.Block(b) :: es -> Done(b,es,ctxt)
-    | _ -> Error (ScopeError ["Error: expected block at %A"],(LineSplitter.BasicExpression.tryGetNextPosition exprs))
-
-let rec traverse() : Parser<LineSplitter.BasicExpression, Unit, List<Scope>> = 
-  prs {
-    let! inner_lines = block
-    match scope () (inner_lines,Scope.Zero) with
-    | Done(scope,_,_) ->
-      let! rest = traverse()
-      return scope :: rest
-    | Error (e,p) -> 
-      return! fail e
-  } .||
-    (eof >>
-      prs{ return [] })
-
 let build_scopes (lines:List<LineSplitter.Line>) : Option<Scope> =
   match scope() (lines,Scope.Zero) with
   | Done (res,_,_) -> Some res
