@@ -4,6 +4,7 @@ open Lexer
 open Parser
 open LineSplitter
 open ScopeBuilder
+open Prioritizer
 open TypeChecker
 open System
 open System.IO
@@ -120,6 +121,13 @@ let start_scope_builder : Parser<string,Scope,(string*ScopeBuilder.Scope)> =
             Done((paths.Head,scope),paths,ctxt)
           | _ -> Error (PipeLineError [""],Position.Zero)
       | _ -> Error (PipeLineError [""],Position.Zero)
+
+let start_typecheck : Parser<string,Scope,Prioritizer.TypedScope> =
+  fun(paths,ctxt) ->
+    match ctxt.Scopes with 
+    | scopes ->
+      match (decls_check) (scopes,[]) with
+      | _ -> Done(Prioritizer.TypedScope.Zero,paths,ctxt) 
 
 let lift_parser p mk_new_ctxt : Parser<string,Scope,Unit> =
   prs{
