@@ -20,11 +20,11 @@ TypeFunc "int" => Number
 int => Number Int {
     Num => Int
     
-    x + y -> IntPlus^Primitives x y
-    x - y -> IntMinus^Primitives x y
+    x + y -> IntAdd^primitives x y
+    x - y -> IntSub^primitives x y
     zero -> 0
     
-    x * y -> IntTimes^Primitives x y
-    x / y -> IntDividedBy^Primitives x y
+    x * y -> IntMul^primitives x y
+    x / y -> IntDiv^primitives x y
     one -> 1
   }
