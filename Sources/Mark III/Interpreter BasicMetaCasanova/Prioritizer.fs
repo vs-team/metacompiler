@@ -1,66 +1,7 @@
 ﻿module Prioritizer
 open Common
+open ParserMonad
 open ScopeBuilder
-
-type Result<'scope,'typescope,'result> = 
-  | Done of 'result * 'scope * 'typescope
-  | Error of string * Position
-
-type TypeParser<'scope,'typescope,'result> = 
-  'scope * 'typescope -> Result<'scope,'typescope,'result>
-
-type TypeParserBuilder() =
-  member this.Return(res:'result) : TypeParser<'scope,'typescope,'result> =
-    fun (scope,typescope) ->
-      Done(res,scope,typescope)
-  member this.ReturnFrom p = p
-  member this.Bind(p:TypeParser<'scope,'typescope,'result>, k:'result->TypeParser<'scope,'typescope,'result'>) =
-    fun (scope,typescope) ->
-      match p (scope,typescope) with
-      | Error(e,p) -> Error(e,p)
-      | Done(res,scope',typescope') ->
-        let out = k res (scope',typescope')
-        out
-
-let typ = TypeParserBuilder()
-
-type Or<'a,'b> = A of 'a | B of 'b
-let (.|.) (p1:TypeParser<_,_,'a>) (p2:TypeParser<_,_,'b>) : TypeParser<_,_,Or<'a,'b>> = 
-  fun (chars,ctxt) ->
-    match p1(chars,ctxt) with
-    | Error(e1,p1) ->
-      match p2(chars,ctxt) with
-      | Error(e2,p2) ->
-        Error(e1,p1)
-      | Done(res2,chars',ctxt') ->
-        (B(res2),chars',ctxt') |> Done
-    | Done(res1,chars',ctxt') ->
-       (A(res1),chars',ctxt') |> Done
-let inline (.||) (p1:TypeParser<_,_,'a>) (p2:TypeParser<_,_,'a>) : TypeParser<_,_,'a> = 
-  fun (chars,ctxt) ->
-    match p1(chars,ctxt) with
-    | Error(e1,p1) ->
-      match p2(chars,ctxt) with
-      | Error(e2,p2) ->
-        Error((e1+e2),p1)
-      | Done(res2,chars',ctxt') ->
-        (res2,chars',ctxt') |> Done
-    | Done(res1,chars',ctxt') ->
-       (res1,chars',ctxt') |> Done
-let nothing : TypeParser<_,_,Unit> = 
-  fun (chars,ctxt) -> Done((),chars,ctxt)
-let rec repeat (p:TypeParser<_,_,'result>) : TypeParser<_,_,List<'result>> =
-  typ{
-    let! curr = p .|. nothing
-    match curr with
-    | A x -> 
-      let! xs = repeat p
-      return x :: xs
-    | B () -> 
-      return []
-  }
-let getContext =
-  fun (chars,ctxt) -> (ctxt,chars,ctxt) |> Done
 
 
 type TreeExpr = Abs of TreeExpr*MaybeType*Position
@@ -108,33 +49,35 @@ and TypedScope =
 
 type Expr = Basic of BasicExpression | Tree of TreeExpr
 
-let rec symdec_to_typedscope : TypeParser<List<SymbolDeclaration>,TypedScope,Id*(SymbolDeclaration*TypeSignature)> =
+let symdec_to_typedscope : Parser<SymbolDeclaration,TypedScope,Id*(SymbolDeclaration*TypeSignature)> =
   fun (sym,ctxt) ->
     match sym with 
     | x::xs -> Done((x.Name,(x,Nop)),xs,ctxt)
-    | [] -> Error (",symdec",Position.Zero)
+    | [] -> Error ((TypeError[",symdec"]),Position.Zero)
    
-let data_type : TypeParser<ScopeBuilder.Scope,TypedScope,_> =
+let data_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
   fun (scp,ctxt) ->
-    match (symdec_to_typedscope |> repeat) (scp.DataDeclarations,ctxt) with
+    match (symdec_to_typedscope |> repeat) (scp.Head.DataDeclarations,ctxt) with
     | Done(x,y,z) ->
       let ctxt' = {ctxt with DataDecls = (Map.ofList x)}
       Done((),scp,ctxt') 
     | Error (s,p) -> Error (s,p)   
 
-let typecheck() : TypeParser<ScopeBuilder.Scope,TypedScope,TypedScope> =
-  typ {
+let typecheck() : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
+  prs {
     do! data_type
     return! getContext
   }
 
-let rec decls_check : TypeParser<List<string*ScopeBuilder.Scope>,List<string*TypedScope>,List<string*TypedScope>> =
+let rec decls_check() : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,List<string*TypedScope>> =
   fun (scp,ctxt) ->
     match scp with
     |(st,sc)::xs -> 
-      match (typecheck()) (sc,TypedScope.Zero) with
-      | Done(res,y,z) -> 
-        
-      Done([],xs,ctxt)
-
+      match (typecheck()) ([sc],TypedScope.Zero) with
+      | Done(resa,y,z) ->  
+        match decls_check() (xs,ctxt) with
+        | Done(resb,y,z) -> Done((st,resa)::resb,xs,ctxt)
+        | Error (s,p) -> Error (s,p)
+      | Error (s,p) -> Error (s,p)
+    | [] -> Done([],[],[])
 (* -- see TypeChecker.fs -- *)

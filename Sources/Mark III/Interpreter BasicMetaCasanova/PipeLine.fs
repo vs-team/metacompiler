@@ -21,6 +21,7 @@ type Scope =
     Parsed  : List<Parser.BasicExpression> option
     Lines   : List<LineSplitter.Line> option
     Scopes  : List<string*ScopeBuilder.Scope>
+    TypedScopes : List<string*Prioritizer.TypedScope>
   }
   with 
     static member Zero =
@@ -31,6 +32,7 @@ type Scope =
         Parsed      = None
         Lines       = None
         Scopes      = []     
+        TypedScopes = []
       }
 
 let file_paths = ["../../../Content/Metacompiler/StandardLibrary/";
@@ -122,12 +124,13 @@ let start_scope_builder : Parser<string,Scope,(string*ScopeBuilder.Scope)> =
           | _ -> Error (PipeLineError [""],Position.Zero)
       | _ -> Error (PipeLineError [""],Position.Zero)
 
-let start_typecheck : Parser<string,Scope,Prioritizer.TypedScope> =
+let start_typecheck : Parser<string,Scope,List<string*Prioritizer.TypedScope>> =
   fun(paths,ctxt) ->
     match ctxt.Scopes with 
     | scopes ->
-      match (decls_check) (scopes,[]) with
-      | _ -> Done(Prioritizer.TypedScope.Zero,paths,ctxt) 
+      match (decls_check()) (scopes,[]) with
+      | Done(res,b,c) -> Done(res,paths,ctxt)
+      | Error (s,p) -> Error (s,p) 
 
 let lift_parser p mk_new_ctxt : Parser<string,Scope,Unit> =
   prs{
@@ -152,6 +155,10 @@ let scope_builder_p : Parser<string,Scope,Unit> =
   lift_parser start_scope_builder 
     (fun scope ctxt -> { ctxt with Scopes = scope :: ctxt.Scopes})
 
+let Type_checker_p : Parser<string,Scope,Unit> = 
+  lift_parser start_typecheck
+    (fun typecheck ctxt -> {ctxt with TypedScopes = typecheck})
+
 let add_to_parsed_list : Parser<string,Scope,Unit> = 
   prs{
     let! ctxt = getContext
@@ -169,12 +176,13 @@ let front_end : Parser<string,Scope,_> =
     do! update_paths
   }
 
-let compiler : Parser<string,Scope,List<string*ScopeBuilder.Scope>> = 
+let compiler : Parser<string,Scope,List<string*Prioritizer.TypedScope>> = 
   t.Start()
   prs{
     let! u = front_end |> repeat
+    do! Type_checker_p
     let! scope = getContext
-    return scope.Scopes
+    return scope.TypedScopes
   }
 
 let start_compiler (input) =

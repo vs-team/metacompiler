@@ -6,6 +6,7 @@ type ErrorType =  ParserMonadError   of string list
                 | ParserError        of string list
                 | LineSplitterError  of string list
                 | ScopeError         of string list
+                | TypeError          of string list
                 | PipeLineError      of string list
   with
     static member expand b =
@@ -15,6 +16,7 @@ type ErrorType =  ParserMonadError   of string list
       | ParserError(s)      -> s
       | LineSplitterError(s)-> s
       | ScopeError(s)       -> s
+      | TypeError(s)        -> s
       | PipeLineError(s)    -> s
     
     static member (+) (a,b) :ErrorType =  
@@ -24,6 +26,7 @@ type ErrorType =  ParserMonadError   of string list
       | ParserError(s)      -> ParserError(s@ErrorType.expand b)
       | LineSplitterError(s)-> LineSplitterError(s@ErrorType.expand b)
       | ScopeError(s)       -> ScopeError(s@ErrorType.expand b)
+      | TypeError(s)        -> TypeError(s@ErrorType.expand b)
       | PipeLineError(s)    -> PipeLineError(s@ErrorType.expand b)
                    
 type Result<'char,'ctxt,'result> = 
