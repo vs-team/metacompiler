@@ -124,4 +124,6 @@ let rec print_ast (ast:OutputAst) :string =
   | Namespace (name,body) -> print_namespace name body
   | NonNamespace body     -> print_body body
 
-let genCSharp (asts:seq<OutputAst>) = asts |> Seq.map print_ast |> String.concat "\n"
+let genCSharp (asts:seq<OutputAst>) :string = 
+  let preamble:string = System.IO.File.ReadAllText "primitives.cs"
+  asts |> Seq.map print_ast |> String.concat "\n" |> sprintf "%s\n%s" preamble
