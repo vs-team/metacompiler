@@ -27,10 +27,10 @@ let main argv =
 
 //      "CodegenTest/ListTest.mc", "length 5::(4::(3::(2::(1::nil))))"
 
-//      "Boolean expressions/transform.mc", "run"
+      "Boolean expressions/transform.mc", "run"
       "Boolean expressions fast/transform.mc", "run"
 
-//      "PeanoNumbers/transform.mc", "run"
+      "PeanoNumbers/transform.mc", "run"
 //      "Lists/transform.mc", "plus 0;1;2;3;nil 10"
 //      "Lists/transform.mc", "length 0;1;2;3;nil"
 //      "Lists/transform.mc", "contains 0;1;2;3;nil 2"
