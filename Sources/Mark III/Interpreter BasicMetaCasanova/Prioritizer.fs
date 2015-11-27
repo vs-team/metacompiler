@@ -22,17 +22,17 @@ and Type = Star       // type
          | Union      of Type*TypeConstructors
 and TypeConstructors = Map<Id,Type>
 and TypeSignature = Nop
-                  | Name of Id*TypeSignature*TypeSignature
-                  | Signature of Type*TypeSignature
+                  | Name of TypeSignature*TypeSignature
+                  | Sig  of Type*TypeSignature
 and MaybeType = Conflict of List<TreeExpr*TreeExpr>
               | Known    of Type
               | Unknown
 and TypedScope = 
   {
     Parents       : List<Id*TypedScope>
-    FuncDecls     : Map<Id,SymbolDeclaration*TypeSignature>
-    TypeFuncDecls : Map<Id,SymbolDeclaration*TypeSignature>
-    DataDecls     : Map<Id,SymbolDeclaration*TypeSignature>
+    FuncDecls     : Map<Id,TypeSignature>
+    TypeFuncDecls : Map<Id,TypeSignature>
+    DataDecls     : Map<Id,TypeSignature>
     TypeFuncRules : Map<Id,List<Rule>>
     FuncRules     : Map<Id,List<Rule>>
   }
@@ -49,10 +49,29 @@ and TypedScope =
 
 type Expr = Basic of BasicExpression | Tree of TreeExpr
 
-let symdec_to_typedscope : Parser<SymbolDeclaration,TypedScope,Id*(SymbolDeclaration*TypeSignature)> =
+let scopetype_to_type (typ:ScopeBuilder.Type) : Type =
+  match typ with
+  | [x] ->
+    match x with 
+    | Id (s,p) -> TypeId s
+    | _ -> Star
+  | x::xs -> Star
+  | [] -> Star
+
+let rec type_to_typesig (typ:List<ScopeBuilder.Type>) : TypeSignature =
+  match typ with
+  | x::xs -> Sig(scopetype_to_type x,(type_to_typesig xs))
+  | [] -> Nop
+
+let args_to_typesig (sym:SymbolDeclaration) : TypeSignature = 
+  let l = type_to_typesig sym.LeftArgs
+  let r = type_to_typesig sym.RightArgs
+  Name (l,r)
+
+let symdec_to_typedscope : Parser<SymbolDeclaration,TypedScope,Id*TypeSignature> =
   fun (sym,ctxt) ->
     match sym with 
-    | x::xs -> Done((x.Name,(x,Nop)),xs,ctxt)
+    | x::xs -> Done((x.Name,args_to_typesig x),xs,ctxt)
     | [] -> Error ((TypeError[",symdec"]),Position.Zero)
    
 let data_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
