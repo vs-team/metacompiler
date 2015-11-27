@@ -16,7 +16,7 @@ either M 'b => Monad (EitherT MCons^M 'b) {
     pm >>=^M y
     (match y with 
       (\x -> k x) 
-      (\y -> err y)
+      (\e -> err e)
     ) => res
     --
     try pm k err => res
