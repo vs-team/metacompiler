@@ -40,10 +40,18 @@ let genericMangle (name:string) :string =
     let bytes = System.Text.Encoding.Default.GetBytes(name)
     let str   = System.Text.Encoding.UTF8.GetString(bytes)
     System.String.Intern(str).Normalize(System.Text.NormalizationForm.FormKC)
+  let readables = 
+    Map.ofArray <| Array.zip "!#$%&'*+,-./\\:;<>=?@^_`|~"B [|
+      "bang";"hash";"cash";"perc";"amp";"prime";"star";"plus";"comma";
+      "dash"; "dot";"slash";"back";"colon";"semi";"less";"great";
+      "equal";"quest";"at";"caret";"under";"tick";"pipe";"tilde"|]
   let mangleChar c =
     if (c>='a'&&c<='z') || (c>='A'&&c<='Z') || (c>='0'&&c<='9')
     then sprintf "%c" c
-    else sprintf "_%02X" (System.Convert.ToByte(c))
+    else let lookup = readables |> Map.tryFind (System.Convert.ToByte c)
+         match lookup with
+         | None   -> sprintf "_%02X" (System.Convert.ToByte(c))
+         | Some x -> sprintf "_%s" x
   name |> normalize |> String.collect mangleChar
 
 let CSharpMangle (name:string) :string =
