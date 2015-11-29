@@ -47,12 +47,13 @@ and Rule = {
 }and Premise = Assignment  of TreeExpr*TreeExpr
              | Conditional of TreeExpr
 
-and Type = Star       // type
-         | Signature  // module
-         | TypeId     of Id
-         | BigArrow   of Type*Type
-         | SmallArrow of Type*Type
-         | Union      of Type*TypeConstructors
+and Kind = Star
+         | Arrow of Kind*Kind
+         | Signature
+
+and Type = TypeId of Id
+         | Arrow  of Type*Type
+         | Union  of Type*TypeConstructors
 and TypeConstructors = Map<Id,Type>
 
 and MaybeType = Conflict of List<TreeExpr*TreeExpr>
@@ -98,8 +99,8 @@ let rec prioritize (exprs:List<BasicExpression>) (decls:List<SymbolDeclaration>)
                           None // TODO
     | Scope(_)         -> do printfn "can't deal with scopes."
                           None
-    | Arrow(_,_)       -> do printfn "can't deal with arrows."
-                          None )// what even are arrows?
+    | BasicExpression.Arrow(_) -> do printfn "can't deal with arrows."
+                                  None )// what even are arrows?
   if exprs |> List.contains None then None else
   let exprs = exprs |> List.map Option.get
   // then capture the parameters of the functions as declared in decls

@@ -19,10 +19,10 @@ type InlinedScope = {
   FuncRules : Map<Id,List<Rule>>
 }
 
-let FindSignatures (decls:Map<Id,SymbolDeclaration*Type>) =
+let FindSignatures (decls:Map<Id,SymbolDeclaration*Kind>) =
   let rec hasSignature k (s,t) =
     match t with
-    | Signature -> true
-    | BigArrow (_,r) -> hasSignature k (s,r)
+    | Kind.Signature -> true
+    | Kind.Arrow(_,r) -> hasSignature k (s,r)
     | _ -> false
   decls |> Map.filter hasSignature 
