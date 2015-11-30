@@ -58,6 +58,7 @@
     <Compile Include="ScopeBuilder.fs" />
     <Compile Include="Prioritizer.fs" />
     <Compile Include="TypeChecker.fs" />
+    <Compile Include="Eval.fs" />
     <Compile Include="Inliner.fs" />
     <Compile Include="CodeGen.fs" />
     <Compile Include="PipeLine.fs" />
