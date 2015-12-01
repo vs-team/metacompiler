@@ -14,8 +14,10 @@ and Rule = {
 }and Premise = Assignment  of TreeExpr*TreeExpr
              | Conditional of TreeExpr
 and Type = Star       // type
-         | Signature  // module
+         | Signature  
+         | Module     of TypedScope
          | TypeId     of Id*Namespace
+         | TypeIdList of List<Type>
          | BigArrow   of Type*Type
          | SmallArrow of Type*Type
          | Bar        of Type*Type
@@ -47,14 +49,24 @@ and TypedScope =
         TypeFuncRules = Map.empty
         FuncRules     = Map.empty
       }
+let rec multiple_scopetype_to_type (typ:ScopeBuilder.Type) (carry:List<Type>) : Type =
+  match typ with
+  | x :: xs ->
+    match x with
+    | Id (s,p) -> multiple_scopetype_to_type xs ((TypeId (s,p.File))::carry)
+    | Arrow (SingleArrow,p) -> SmallArrow (TypeIdList(carry),(multiple_scopetype_to_type xs []))
+    | Arrow (DoubleArrow,p) -> BigArrow (TypeIdList(carry),(multiple_scopetype_to_type xs []))
+    | _ -> TypeIdList carry
+  | [] -> TypeIdList carry
 
-let scopetype_to_type (typ:ScopeBuilder.Type) : Type =
+let rec scopetype_to_type (typ:ScopeBuilder.Type) : Type =
   match typ with
   | [x] ->
     match x with 
     | Id (s,p) -> TypeId (s,p.File)
+    | Application (b,l) -> scopetype_to_type l
     | _ -> Star
-  | x::xs -> Star
+  | x::xs -> multiple_scopetype_to_type typ []
   | [] -> Star
 
 let rec type_to_typesig (typ:List<ScopeBuilder.Type>) : TypeSignature =
@@ -82,9 +94,36 @@ let data_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
       Done((),scp,ctxt') 
     | Error (s,p) -> Error (s,p)   
 
+let func_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
+  fun (scp,ctxt) ->
+    match (symdec_to_typedscope |> repeat) (scp.Head.FunctionDeclarations,ctxt) with
+    | Done(x,y,z) ->
+      let ctxt' = {ctxt with FuncDecls = (Map.ofList x)}
+      Done((),scp,ctxt') 
+    | Error (s,p) -> Error (s,p)   
+
+let typefunc_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
+  fun (scp,ctxt) ->
+    match (symdec_to_typedscope |> repeat) (scp.Head.TypeFunctionDeclarations,ctxt) with
+    | Done(x,y,z) ->
+      let ctxt' = {ctxt with TypeFuncDecls = (Map.ofList x)}
+      Done((),scp,ctxt') 
+    | Error (s,p) -> Error (s,p)   
+
+let arrowfunc_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
+  fun (scp,ctxt) ->
+    match (symdec_to_typedscope |> repeat) (scp.Head.ArrowFunctionDeclarations,ctxt) with
+    | Done(x,y,z) ->
+      let ctxt' = {ctxt with ArrowDecls = (Map.ofList x)}
+      Done((),scp,ctxt') 
+    | Error (s,p) -> Error (s,p)   
+
 let typecheck() : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
   prs {
     do! data_type
+    do! func_type
+    do! typefunc_type
+    do! arrowfunc_type
     return! getContext
   }
 
