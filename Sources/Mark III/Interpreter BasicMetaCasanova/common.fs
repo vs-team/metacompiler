@@ -8,6 +8,7 @@ type Position = { File : string; Line : int; Col : int }
     static member Zero = { File = ""; Line = 1; Col = 1 }
 
 type Id = string
+type Namespace = string
 type Literal = Int of int | String of string | Float32 of float32
 type Bracket = Curly | Round | Square | Indent | Lambda | Implicit | Comment
 

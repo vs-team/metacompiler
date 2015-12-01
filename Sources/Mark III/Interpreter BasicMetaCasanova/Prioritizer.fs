@@ -3,11 +3,10 @@ open Common
 open ParserMonad
 open ScopeBuilder
 
-
-type TreeExpr = Abs of TreeExpr*MaybeType*Position
-              | App of TreeExpr*TreeExpr*MaybeType*Position
-              | Var of Id*MaybeType*Position
-              | Lit of Literal*Type*Position
+type TreeExpr = Abs of TreeExpr*Type
+              | App of TreeExpr*TreeExpr*Type
+              | Var of Id*Type
+              | Lit of Literal*Type
 and Rule = {
   Input    :TreeExpr
   Output   :TreeExpr
@@ -16,44 +15,44 @@ and Rule = {
              | Conditional of TreeExpr
 and Type = Star       // type
          | Signature  // module
-         | TypeId     of Id
+         | TypeId     of Id*Namespace
          | BigArrow   of Type*Type
          | SmallArrow of Type*Type
+         | Bar        of Type*Type
          | Union      of Type*TypeConstructors
 and TypeConstructors = Map<Id,Type>
 and TypeSignature = Nop
-                  | Name of TypeSignature*TypeSignature
+                  | Name of TypeSignature*TypeSignature*TypeSignature
                   | Sig  of Type*TypeSignature
-and MaybeType = Conflict of List<TreeExpr*TreeExpr>
-              | Known    of Type
-              | Unknown
 and TypedScope = 
   {
-    Parents       : List<Id*TypedScope>
-    FuncDecls     : Map<Id,TypeSignature>
-    TypeFuncDecls : Map<Id,TypeSignature>
-    DataDecls     : Map<Id,TypeSignature>
-    TypeFuncRules : Map<Id,List<Rule>>
-    FuncRules     : Map<Id,List<Rule>>
+    ImportDecls           : List<Id>
+    InheritDecls          : List<Id>
+    FuncDecls             : Map<Id,TypeSignature>
+    TypeFuncDecls         : Map<Id,TypeSignature>
+    ArrowDecls            : Map<Id,TypeSignature>
+    DataDecls             : Map<Id,TypeSignature>
+    TypeFuncRules         : Map<Id,List<Rule>>
+    FuncRules             : Map<Id,List<Rule>>
   }
   with 
     static member Zero =
       {
-        Parents       = []
+        ImportDecls   = []
+        InheritDecls  = []
         FuncDecls     = Map.empty
         TypeFuncDecls = Map.empty
+        ArrowDecls    = Map.empty
         DataDecls     = Map.empty
         TypeFuncRules = Map.empty
         FuncRules     = Map.empty
       }
 
-type Expr = Basic of BasicExpression | Tree of TreeExpr
-
 let scopetype_to_type (typ:ScopeBuilder.Type) : Type =
   match typ with
   | [x] ->
     match x with 
-    | Id (s,p) -> TypeId s
+    | Id (s,p) -> TypeId (s,p.File)
     | _ -> Star
   | x::xs -> Star
   | [] -> Star
@@ -66,7 +65,8 @@ let rec type_to_typesig (typ:List<ScopeBuilder.Type>) : TypeSignature =
 let args_to_typesig (sym:SymbolDeclaration) : TypeSignature = 
   let l = type_to_typesig sym.LeftArgs
   let r = type_to_typesig sym.RightArgs
-  Name (l,r)
+  let ret = type_to_typesig [sym.Return]
+  Name (l,r,ret)
 
 let symdec_to_typedscope : Parser<SymbolDeclaration,TypedScope,Id*TypeSignature> =
   fun (sym,ctxt) ->
