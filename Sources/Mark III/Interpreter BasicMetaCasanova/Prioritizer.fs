@@ -15,8 +15,10 @@ and Rule = {
              | Conditional of TreeExpr
 and Type = Star       // type
          | Signature  
-         | Module     of TypedScope
-         | TypeId     of Id*Namespace
+         | ModuleDec  of TypedScope
+         | ModuleDef  of TypedScope
+         | TypeId     of Id
+         | TypeIdVar  of Id
          | TypeIdList of List<Type>
          | BigArrow   of Type*Type
          | SmallArrow of Type*Type
@@ -53,7 +55,9 @@ let rec multiple_scopetype_to_type (typ:ScopeBuilder.Type) (carry:List<Type>) : 
   match typ with
   | x :: xs ->
     match x with
-    | Id (s,p) -> multiple_scopetype_to_type xs ((TypeId (s,p.File))::carry)
+    | Id (s,p) -> 
+      if (s.Contains "'") then multiple_scopetype_to_type xs ((TypeIdVar (s))::carry)
+      else multiple_scopetype_to_type xs ((TypeId (s))::carry)
     | Arrow (SingleArrow,p) -> SmallArrow (TypeIdList(carry),(multiple_scopetype_to_type xs []))
     | Arrow (DoubleArrow,p) -> BigArrow (TypeIdList(carry),(multiple_scopetype_to_type xs []))
     | _ -> TypeIdList carry
@@ -63,7 +67,9 @@ let rec scopetype_to_type (typ:ScopeBuilder.Type) : Type =
   match typ with
   | [x] ->
     match x with 
-    | Id (s,p) -> TypeId (s,p.File)
+    | Id (s,p) -> 
+      if (s.Contains "'") then TypeIdVar (s)
+      else TypeId (s)
     | Application (b,l) -> scopetype_to_type l
     | _ -> Star
   | x::xs -> multiple_scopetype_to_type typ []
@@ -85,6 +91,13 @@ let symdec_to_typedscope : Parser<SymbolDeclaration,TypedScope,Id*TypeSignature>
     match sym with 
     | x::xs -> Done((x.Name,args_to_typesig x),xs,ctxt)
     | [] -> Error ((TypeError[",symdec"]),Position.Zero)
+
+//let rule_to_typerule : Parser<ScopeBuilder.Rule,TypedScope,Id*Rule> =
+//  fun (rule,ctxt) ->
+//    match rule with
+//    | x::xs -> 
+//    | [] -> Error ((TypeError[",rule"]),Position.Zero)
+
    
 let data_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
   fun (scp,ctxt) ->
@@ -118,7 +131,43 @@ let arrowfunc_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
       Done((),scp,ctxt') 
     | Error (s,p) -> Error (s,p)   
 
-let typecheck() : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
+//let typerule_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
+//  fun (scp,ctxt) ->
+//    match (rule_to_typerule |> repeat) (scp.Head.TypeFunctionRules,ctxt) with
+//    | Done(x,y,z) ->
+//      let ctxt' = {ctxt with TypeFuncRules = (Map.ofList x)}
+//      Done((),scp,ctxt') 
+//    | Error (s,p) -> Error (s,p)   
+
+let procces_scopes (p:Parser<ScopeBuilder.Scope,TypedScope,TypedScope>) 
+    : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,string*TypedScope> =
+  let filter_typescopes typscp st = List.filter (fun (s,t) -> if st = s then false else true) typscp
+  let find_typescope typscp st = 
+    let _,res = List.find (fun (s,t) -> if st = s then true else false) typscp
+    res
+  fun (scp,ctxt) ->
+    match scp with
+    |(st,sc)::xs -> 
+      match p ([sc],(find_typescope ctxt st)) with
+      | Done(typscp,_,_) ->
+        let res = ((st,typscp)::(filter_typescopes ctxt st)) 
+        Done((st,typscp),xs,res)
+      | Error (s,p) -> Error (s,p)
+    | [] -> Error (TypeError ["nothing to procces"],Position.Zero)
+
+let build_empty_typescope_list : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,_> =
+  fun (scp,ctxt) ->
+    match scp with
+    | (s,x)::xs -> Done((),xs,(s,TypedScope.Zero)::ctxt)
+    | [] -> Error (TypeError ["no scopes left"],Position.Zero)
+
+let use_new_scope p =
+  fun (scp,ctxt) ->
+    match p (scp,ctxt) with
+    | Done(res,_,ctxt') -> Done(res,scp,ctxt')
+    | Error (s,p) -> Error (s,p)
+
+let declcheck : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
   prs {
     do! data_type
     do! func_type
@@ -127,15 +176,16 @@ let typecheck() : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
     return! getContext
   }
 
-let rec decls_check() : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,List<string*TypedScope>> =
-  fun (scp,ctxt) ->
-    match scp with
-    |(st,sc)::xs -> 
-      match (typecheck()) ([sc],TypedScope.Zero) with
-      | Done(resa,y,z) ->  
-        match decls_check() (xs,ctxt) with
-        | Done(resb,y,z) -> Done((st,resa)::resb,xs,ctxt)
-        | Error (s,p) -> Error (s,p)
-      | Error (s,p) -> Error (s,p)
-    | [] -> Done([],[],[])
-(* -- see TypeChecker.fs -- *)
+let rulecheck() : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
+  prs {
+    //do! typerule_type
+    return! getContext
+  }
+
+let decls_check() : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,List<string*TypedScope>> =
+  prs{
+    let! dump = use_new_scope (build_empty_typescope_list |> repeat) 
+    let! res = (procces_scopes declcheck) |> repeat |> use_new_scope
+    return res
+  }
+
