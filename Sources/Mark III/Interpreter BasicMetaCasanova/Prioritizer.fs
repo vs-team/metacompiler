@@ -109,54 +109,32 @@ let import_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
   fun (scp,ctxt) ->
     let ctxt' = {ctxt with ImportDecls = scp.Head.ImportDeclaration}
     Done((),scp,ctxt') 
-   
+
+let lift_type p i o : Parser<ScopeBuilder.Scope,TypedScope,_> =
+  fun (scp,ctxt) ->
+    match (p |> repeat) (i scp ctxt) with
+    | Done(x,y,z) -> Done((),scp,(o ctxt x)) 
+    | Error (s,p) -> Error (s,p)   
+
 let data_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
-  fun (scp,ctxt) ->
-    match (symdec_to_typedscope |> repeat) (scp.Head.DataDeclarations,ctxt) with
-    | Done(x,y,z) ->
-      let ctxt' = {ctxt with DataDecls = (Map.ofList x)}
-      Done((),scp,ctxt') 
-    | Error (s,p) -> Error (s,p)   
-
+  lift_type symdec_to_typedscope (fun scp ctxt -> (scp.Head.DataDeclarations,ctxt))
+    (fun ctxt x -> {ctxt with DataDecls = (Map.ofList x)})
 let func_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
-  fun (scp,ctxt) ->
-    match (symdec_to_typedscope |> repeat) (scp.Head.FunctionDeclarations,ctxt) with
-    | Done(x,y,z) ->
-      let ctxt' = {ctxt with FuncDecls = (Map.ofList x)}
-      Done((),scp,ctxt') 
-    | Error (s,p) -> Error (s,p)   
-
+  lift_type symdec_to_typedscope (fun scp ctxt -> (scp.Head.FunctionDeclarations,ctxt))
+    (fun ctxt x -> {ctxt with FuncDecls = (Map.ofList x)})
 let typefunc_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
-  fun (scp,ctxt) ->
-    match (symdec_to_typedscope |> repeat) (scp.Head.TypeFunctionDeclarations,ctxt) with
-    | Done(x,y,z) ->
-      let ctxt' = {ctxt with TypeFuncDecls = (Map.ofList x)}
-      Done((),scp,ctxt') 
-    | Error (s,p) -> Error (s,p)   
-
+  lift_type symdec_to_typedscope (fun scp ctxt -> (scp.Head.TypeFunctionDeclarations,ctxt))
+    (fun ctxt x -> {ctxt with TypeFuncDecls = (Map.ofList x)})
 let arrowfunc_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
-  fun (scp,ctxt) ->
-    match (symdec_to_typedscope |> repeat) (scp.Head.ArrowFunctionDeclarations,ctxt) with
-    | Done(x,y,z) ->
-      let ctxt' = {ctxt with ArrowDecls = (Map.ofList x)}
-      Done((),scp,ctxt') 
-    | Error (s,p) -> Error (s,p)   
+  lift_type symdec_to_typedscope (fun scp ctxt -> (scp.Head.ArrowFunctionDeclarations,ctxt))
+    (fun ctxt x -> {ctxt with ArrowDecls = (Map.ofList x)})
 
 let rule_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
-  fun (scp,ctxt) ->
-    match (rule_to_typerule |> repeat) (scp.Head.Rules,ctxt) with
-    | Done(x,y,z) ->
-      let ctxt' = {ctxt with FuncRules = (Map.ofList x)}
-      Done((),scp,ctxt') 
-    | Error (s,p) -> Error (s,p)   
-
+  lift_type rule_to_typerule (fun scp ctxt -> (scp.Head.Rules,ctxt))
+    (fun ctxt x -> {ctxt with FuncRules = (Map.ofList x)})
 let typerule_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
-  fun (scp,ctxt) ->
-    match (rule_to_typerule |> repeat) (scp.Head.TypeFunctionRules,ctxt) with
-    | Done(x,y,z) ->
-      let ctxt' = {ctxt with TypeFuncRules = (Map.ofList x)}
-      Done((),scp,ctxt') 
-    | Error (s,p) -> Error (s,p)   
+  lift_type rule_to_typerule (fun scp ctxt -> (scp.Head.TypeFunctionRules,ctxt))
+    (fun ctxt x -> {ctxt with TypeFuncRules = (Map.ofList x)})
 
 let procces_scopes (p:Parser<ScopeBuilder.Scope,TypedScope,TypedScope>) 
     : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,string*TypedScope> =
@@ -207,7 +185,7 @@ let typerulecheck : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
 
 let decls_check() : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,List<string*TypedScope>> =
   prs{
-    let! dump = use_new_scope (build_empty_typescope_list |> repeat) 
+    let! dump = (build_empty_typescope_list |> repeat) |> use_new_scope
     let! res = (procces_scopes declcheck) |> repeat |> use_new_scope
     let! res = (procces_scopes typerulecheck) |> repeat |> use_new_scope
     return res
