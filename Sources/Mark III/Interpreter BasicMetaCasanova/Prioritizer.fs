@@ -97,12 +97,16 @@ let symdec_to_typedscope : Parser<SymbolDeclaration,TypedScope,Id*TypeSignature>
     | x::xs -> Done((x.Name,args_to_typesig x),xs,ctxt)
     | [] -> Error ((TypeError[",symdec"]),Position.Zero)
 
+
 let rule_to_typerule : Parser<ScopeBuilder.Rule,TypedScope,Id*List<Rule>> =
+  let make_rule (r:ScopeBuilder.Rule) =
+    let inputsig = type_to_typesig [r.Input]
+    ("",[{Input    = inputsig; 
+          Output   = type_to_typesig [r.Output]; 
+          Premises = []}])
   fun (rule,ctxt) ->
     match rule with
-    | x::xs -> Done(("",[{Input    = type_to_typesig [x.Input]; 
-                          Output   = type_to_typesig [x.Output]; 
-                          Premises = []}]),xs,ctxt)
+    | x::xs -> Done((make_rule x),xs,ctxt)
     | [] -> Error ((TypeError[",rule"]),Position.Zero)
 
 let import_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
