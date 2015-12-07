@@ -1,12 +1,13 @@
-﻿TypeFunc "Rules" => 'w => 'f => 'r => Signature
+﻿TypeFunc "Rules" => 'w => 'c => 'r => Signature
 
 Rules 'w 'c 'r => Signature{
+	
 	TypeFunc "apply" -> 'w -> 'c -> float -> 'r -> 'c
 }
 
 TypeFunc "rules" => 'w => 'c => 'r => Rules
 
-TypeFunc "rule" => ('f, 'fs) => ('w -> 'f -> float -> 'f) => Rule
+TypeFunc Rule => ('fields) => (\'values, 'world, float -> 'values) => Signature
 
 
 rules 'w 'c Unit => Rules{
@@ -24,3 +25,4 @@ rules 'w 'c (Rule, Rules) => Rules{
 	apply w c dt ((rule fields func), rs) => res
 }
 
+TypeFunc SuspendableRule => 'w 'f 'r

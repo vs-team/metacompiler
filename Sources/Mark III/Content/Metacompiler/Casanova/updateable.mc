@@ -1,10 +1,4 @@
-﻿import System
-import UnityEngine
-
-import Prelude
-import List
-
-TypeFunc "Updateable" => 'w => 'a => Signature
+﻿TypeFunc "Updateable" => 'w => 'a => Signature
 
 Updateable 'w 'a => Signature{
 	TypeFunc "update" => ('w * 'a) => float => 'a

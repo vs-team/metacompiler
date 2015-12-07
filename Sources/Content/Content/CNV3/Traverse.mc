@@ -1,9 +1,12 @@
 ﻿include Content.CNV3.Statements.mc
 include Content.CNV3.Imported.mc
+include Content.CNV3.Basics.mc
 
 import UnityEngine
 import System.Collections.Immutable
 import System.Collections.Generic
+import System.Threading
+
 
 Data "entity" -> List[<<string>>] -> <<ImmutableDictionary<string, Value> >> -> List[Rule] -> List[Rule] : Entity                  Priority 10
 Data "worldEntity" -> List[<<string>>] -> <<ImmutableDictionary<string, Value> >> -> List[Rule] -> List[Rule] : World                                  Priority 10
