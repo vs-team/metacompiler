@@ -12,7 +12,7 @@ empty -> Left Unit
 
 Func "map" -> List 'a -> ('a -> 'b) -> List 'b
 Func "filter" -> List 'a -> ('a -> Boolean) -> List 'a
-Func List 'a -> "@" -> List 'a -> List 'a
+Func List 'a -> "@" -> List 'a -> List 'a  #> 200
 
 empty @ l -> l
 (x :: xs) @ l -> x :: (xs @ l)
