@@ -3,6 +3,8 @@ open Common
 open ParserMonad
 open ScopeBuilder
 
+type Priority = int*Associativity
+
 type TreeExpr = Abs of TreeExpr*Type
               | App of TreeExpr*TreeExpr*Type
               | Var of Id*Type
