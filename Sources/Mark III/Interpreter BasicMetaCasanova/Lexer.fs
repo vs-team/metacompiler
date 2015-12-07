@@ -10,9 +10,9 @@ let getPosition =
   fun (chars,ctxt) -> Done(ctxt.Position,chars,ctxt)
 
 type Keyword = 
-  | Func | Data | DoubleArrow | HorizontalBar | Module | Instance
-  | Open of Bracket| Close of Bracket | NewLine
-  | SingleArrow | Spaces of int
+  | Import | Inherit | Func | TypeFunc | ArrowFunc | Data | HorizontalBar | Instance
+  | Open of Bracket| Close of Bracket | NewLine | CommentLine
+  | SingleArrow | DoubleArrow | PriorityArrow | Spaces of int
 
 type Token =
   | Id of Id * Position
@@ -35,7 +35,7 @@ let char (expected:char) : Parser<char,_,Unit> =
     match chars with
     | c::cs when expected = c -> 
       Done((), cs, { ctxt with Position = if c = '\n' then ctxt.Position.NextLine else ctxt.Position.NextChar })
-    | _ -> Error(sprintf "Unmatched char when %c expected at %A" expected ctxt.Position)
+    | _ -> Error(LexerError [(sprintf "Unmatched char when %c expected at" expected)],ctxt.Position)
 
 let (!) (str:string) : Parser<char,_,Unit> =
   let rec traverse_from (s:List<char>) : Parser<char,_,Unit> =
@@ -56,8 +56,8 @@ let alpha_numeric : Parser<char,_,char> =
     | c::cs when (c >= 'a' && c <= 'z')
                  || (c >= '0' && c <= '9')
                  || (c >= 'A' && c <= 'Z')
-                 || (c = '_') -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
-    | _ -> Error(sprintf "Error: expected alpha/numeric-char at %A." ctxt.Position)
+                 || (c = '_') || (c = '\'') -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
+    | _ -> Error(LexerError [(sprintf "Error: expected alpha/numeric-char at")],ctxt.Position)
 
 let alpha_numeric_id =
   prs{
@@ -72,22 +72,32 @@ let symbol : Parser<char,_,char> =
     | (',' as c)::cs | (':' as c)::cs | (';' as c)::cs 
     | ('+' as c)::cs | ('-' as c)::cs | ('*' as c)::cs 
     | ('/' as c)::cs | ('#' as c)::cs | ('<' as c)::cs 
-    | ('^' as c)::cs | ('&' as c)::cs | ('|' as c)::cs 
-    | ('>' as c)::cs | ('=' as c)::cs | ('$' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
-    | _ -> Error(sprintf "Error: expected symbol at %A." ctxt.Position)
+    | ('&' as c)::cs | ('|' as c)::cs | ('>' as c)::cs 
+    | ('=' as c)::cs | ('$' as c)::cs | ('\'' as c)::cs 
+    | ('.' as c)::cs | ('@' as c)::cs | ('\\' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
+    | _ -> Error(LexerError ["Error: expected symbol at"],ctxt.Position)
+
+let caret : Parser<char,_,char> =
+  fun (chars,ctxt) ->
+    match chars with
+    | ('^' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
+    | _ -> Error(LexerError ["Error: expected symbol at"],ctxt.Position)
 
 let symbol_id =
   prs{
     let! c = symbol
     let! chars = symbol |> repeat
     return new System.String((c::chars) |> Seq.toArray)
+  } .|| prs {
+    let! c = caret
+    return new System.String((c::[]) |> Seq.toArray)
   }
   
 let digit : Parser<char,_,char> =
   fun (chars,ctxt) ->
     match chars with
     | c::cs when c >= '0' && c <= '9' -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
-    | _ -> Error(sprintf "Error: expected digit at %A." ctxt.Position)
+    | _ -> Error(LexerError [(sprintf "Error: expected digit at")],ctxt.Position)
 
 let digits = 
   prs{
@@ -99,9 +109,12 @@ let digits =
 let unsigned_int_literal =
   prs{
     let! digits = digits
-    let mutable x = 0
-    do for i in digits do x <- x * 10 + (int i - int '0')
-    return x
+    if digits.Length = 0 then 
+      return! fail (LexerError [""])
+    else 
+      let mutable x = 0
+      do for i in digits do x <- x * 10 + (int i - int '0')
+      return x
   }
 
 let int_literal pos =
@@ -146,77 +159,54 @@ let rec spaces pos =
     return Keyword(Spaces(1 + (rest |> List.length)),pos)
   }
 
+let token_discription (s) (k:Keyword*Position) =
+   (prs{
+    do! s
+    return (k) |> Keyword 
+  })
+
 let rec token : Parser<char,Context,Token> = 
   prs{
     let! pos = getPosition
     let! res = 
-        float_literal pos .||
-        int_literal pos .||
+        float_literal pos  .||
+        int_literal pos    .||
         string_literal pos .||
-        (prs{
-          do! !"Instance"
-          return (Instance,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"Module"
-          return (Module,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"Func"
-          return (Func,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"Data"
-          return (Data,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"=>"
-          return (DoubleArrow,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"->"
-          return (SingleArrow,pos) |> Keyword 
-        }) .||
-        horizontal_bar pos .||
-        (prs{
-          do! !"{"
-          return (Open Curly,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"}"
-          return (Close Curly,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"["
-          return (Open Square,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"]"
-          return (Close Square,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !"("
-          return (Open Round,pos) |> Keyword 
-        }) .||
-        (prs{
-          do! !")"
-          return (Close Round,pos) |> Keyword 
-        }) .||
+        token_discription !"Instance"  (Instance,pos)      .||
+        token_discription !"import"    (Import,pos)        .||
+        token_discription !"inherit"   (Inherit,pos)       .||
+        token_discription !"Func"      (Func,pos)          .||
+        token_discription !"TypeFunc"  (TypeFunc,pos)      .||
+        token_discription !"ArrowFunc" (TypeFunc,pos)      .||
+        token_discription !"Data"      (Data,pos)          .||
+        token_discription !"=>"        (DoubleArrow,pos)   .||
+        token_discription !"->"        (SingleArrow,pos)   .||
+        token_discription !"#>"        (PriorityArrow,pos) .||
+        token_discription !"{"         (Open Curly,pos)    .||
+        token_discription !"}"         (Close Curly,pos)   .||
+        token_discription !"["         (Open Square,pos)   .||
+        token_discription !"]"         (Close Square,pos)  .||
+        token_discription !"(\\"       (Open Lambda,pos)    .||
+        token_discription !"("         (Open Round,pos)    .||
+        token_discription !")"         (Close Round,pos)   .||
+        token_discription !"$$"        (CommentLine,pos)   .||
+        token_discription !"$*"        (Open  Comment,pos) .||
+        token_discription !"*$"        (Close Comment,pos) .||
+        horizontal_bar pos                                 .||
         spaces pos .||
-        (prs{
-          do! !"\r\n" .|| !"\n\r" .|| !"\n"
-          return (NewLine,pos) |> Keyword
-        }) .||
+        token_discription (!"\r\n" .|| !"\n\r" .|| !"\n") (NewLine,pos) .||
         (prs{
           do! !"\t"
-          return! fail "Don't use tabs"
+          return! fail (LexerError ["Don't use tabs"])
         }) .||
         (prs{
           let! s = any_id
           return (s,pos) |> Id 
-        })
-    do printf "%A" res
-    //do System.Console.ReadLine()
+        }) .|| 
+        (prs{
+          let! ef = eof
+          return (NewLine,pos) |> Keyword
+        }) 
     return res
   }
 
@@ -234,8 +224,18 @@ let indentationDepth =
   prs{
     let! fst = !" "
     let! rest = !" " |> repeat
-    return 1 + (rest |> List.length)
-  }
+    return! 
+      (lookahead(!"\n") >> 
+        prs{
+          let! ctxt = getContext 
+          return ctxt.IndentationDepth
+        }) .||
+      (prs{ return 1 + (rest |> List.length) })
+  } .|| (lookahead(!"\n") >> prs{
+          let! ctxt = getContext 
+          return ctxt.IndentationDepth
+        })
+
 
 let rec tokens_lines() : Parser<char,Context,List<List<Token>>> = 
   prs{
@@ -274,11 +274,13 @@ let rec tokens_lines() : Parser<char,Context,List<List<Token>>> =
 
 let tokenize = //: Result<char,Unit,List<Token>> =
   let regular_load path () = 
-    let source = System.IO.File.ReadAllText(path) |> Seq.toList
-    let pos = Position.FromPath path
-    match (tokens_lines()) (source,Context.Zero pos) with
-    | Done(tokens, _, _) -> Some (tokens |> List.concat)
-    | Error(e) ->
-      printfn "%A" e
-      None
+    if System.IO.File.Exists(path) then 
+      let source = System.IO.File.ReadAllText(path) |> Seq.toList
+      let pos = Position.FromPath path
+      match (tokens_lines()) (source,Context.Zero pos) with
+      | Done(tokens, _, _) -> Some (tokens |> List.concat)
+      | Error(e,p) ->
+        printfn "%A" (e,p)
+        None
+    else None
   Caching.cached_op regular_load

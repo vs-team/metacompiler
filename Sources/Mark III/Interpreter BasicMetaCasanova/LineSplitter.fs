@@ -3,7 +3,9 @@
 open Common
 
 type Keyword = 
-  | Func | Data | DoubleArrow | HorizontalBar | SingleArrow | Module | Instance
+  | Import | Inherit | Func | TypeFunc 
+  | ArrowFunc | Data | HorizontalBar | CommentLine
+  | SingleArrow | DoubleArrow | PriorityArrow | Instance
 
 type BasicExpression =
   | Id of Id * Position
@@ -38,20 +40,26 @@ let split_lines =
       | Parser.Keyword(Parser.NewLine,pos) ->
         lines <- (line |> List.rev) :: lines
         line <- []
-      | Parser.Keyword(Parser.Module,pos) -> line <- Keyword(Module,pos) :: line
       | Parser.Keyword(Parser.Instance,pos) -> line <- Keyword(Instance,pos) :: line
+      | Parser.Keyword(Parser.Import,pos) -> line <- Keyword(Import,pos) :: line
+      | Parser.Keyword(Parser.Inherit,pos) -> line <- Keyword(Inherit,pos) :: line
       | Parser.Keyword(Parser.Func,pos) -> line <- Keyword(Func,pos) :: line
+      | Parser.Keyword(Parser.TypeFunc,pos) -> line <- Keyword(TypeFunc,pos) :: line
+      | Parser.Keyword(Parser.ArrowFunc,pos) -> line <- Keyword(ArrowFunc,pos) :: line
       | Parser.Keyword(Parser.Data,pos) -> line <- Keyword(Data,pos) :: line
-      | Parser.Keyword(Parser.DoubleArrow,pos) -> line <- Keyword(DoubleArrow,pos) :: line
       | Parser.Keyword(Parser.HorizontalBar,pos) -> line <- Keyword(HorizontalBar,pos) :: line
       | Parser.Keyword(Parser.SingleArrow,pos) -> line <- Keyword(SingleArrow,pos) :: line
+      | Parser.Keyword(Parser.DoubleArrow,pos) -> line <- Keyword(DoubleArrow,pos) :: line
+      | Parser.Keyword(Parser.PriorityArrow,pos) -> line <- Keyword(PriorityArrow,pos) :: line
+      | Parser.Keyword(Parser.CommentLine,pos) -> line <- Keyword(CommentLine,pos) :: line
       | Parser.Id(i,pos) ->
         line <- Id(i,pos) :: line
       | Parser.Literal(l,pos) ->
         line <- Literal(l,pos) :: line
       | Parser.Application(b,es) ->
         line <- Application(b,split_lines es) :: line
-    let result = ((line |> List.rev) :: lines) |> List.rev |> List.filter (List.isEmpty >> not)
+    let result = ((line |> List.rev) :: lines) |> List.rev
+    let final_result = result |> List.rev |> List.filter (List.isEmpty >> not)
     match result with
     | [] -> []
     | [line] -> 
@@ -59,4 +67,10 @@ let split_lines =
     | _ ->
       [Block(result)]
 
-  Caching.cached_op (fun _ -> split_lines)
+  let cleanup_split_lines input =
+    match split_lines input with
+    | [Block(actual_result)] -> Some(actual_result)
+    | res -> do printfn "Unexpected non-single block at root: %A" res
+             None
+
+  Caching.cached_op (fun _ -> cleanup_split_lines)

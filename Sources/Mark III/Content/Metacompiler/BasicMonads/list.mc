@@ -1,4 +1,4 @@
-import Prelude
+import prelude
 
 TypeFunc "List" => * => *
 List 'a => Unit | ('a * (List 'a))
@@ -24,13 +24,22 @@ map (x :: xs) f -> (map (f x)) :: xs
 
 filter empty p -> empty
 
-(if p x then
-   (x :: (filter xs p))
- else
-  (filter xs p)) -> res
--- 
+(if p x then 
+  (x :: (filter xs p)) 
+  else 
+  (filter xs p)
+) -> res
+--
 filter (x :: xs) p -> res
 
+$$ comment... this should skip
+$* test comment *$
+$* 
+multy 
+line 
+comment
+test
+*$
 
 TypeFunc "ListT" => (* => *) => * => *
 ListT 'M 'a => 'M(List 'a)
@@ -40,11 +49,13 @@ TypeFunc "list" => Monad => Monad
 list M => Monad(ListT MCons^M) {
     lm >>=^M l
     (match l with
-     (\empty -> return^M empty)
-     (\(x :: xs) -> 
-      k x >>=^M y
-      ((return^M xs) >>= k) >>=^M ys
-      return^M (y @ ys))) => res
+      (\empty -> return^M empty)
+      (\(x :: xs) -> 
+        k x >>=^M y
+        ((return^M xs) >>= k) >>=^M ys
+        return^M (y @ ys)
+      )
+    ) => res
     --
     lm >>= k => res
 

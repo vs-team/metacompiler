@@ -144,7 +144,10 @@ type WPFWindow(samples, runDeduction) =
   let runDeductionBtn = new Button()
   do runDeductionBtn.Content <- "Run deduction"
   let onRunDeduction _ = 
-    deductionOutput.Text <- runDeduction (deductionList.SelectedItem :?> string) programToRun.Text
+    deductionOutput.Text <- 
+      runDeduction 
+        (System.IO.Path.Combine(deductionList.SelectedItem :?> string, "transform.mc")) 
+        programToRun.Text
     ()
   do runDeductionBtn.Click.Add onRunDeduction
   do runDeductionBtn.Width <- 90.0

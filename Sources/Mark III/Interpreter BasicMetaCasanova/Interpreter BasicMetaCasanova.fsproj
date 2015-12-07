@@ -54,8 +54,14 @@
     <Compile Include="Lexer.fs" />
     <Compile Include="Parser.fs" />
     <Compile Include="LineSplitter.fs" />
+    <Compile Include="ScopeBuilderId.fs" />
     <Compile Include="ScopeBuilder.fs" />
+    <Compile Include="Prioritizer.fs" />
     <Compile Include="TypeChecker.fs" />
+    <Compile Include="Eval.fs" />
+    <Compile Include="Inliner.fs" />
+    <Compile Include="CodeGen.fs" />
+    <Compile Include="PipeLine.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>
