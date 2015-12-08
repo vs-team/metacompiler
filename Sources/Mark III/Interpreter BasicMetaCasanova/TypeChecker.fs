@@ -46,7 +46,7 @@ and Kind = Star
 
 and Type = TypeId of Id
          | Arrow  of Type*Type
-         | Union  of Type*TypeConstructors
+         | Union  of Id*TypeConstructors
          | Generic of Id
          | Application of Type * Type
 and TypeConstructors = Map<Id,Type>
