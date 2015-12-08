@@ -26,19 +26,10 @@ how to handle modules (signatures)
   translate signatures to templated functions
 *)
 
-type TypedScope = {
-  Parents       : List<Id*TypedScope>
-  FuncDecls     : Map<Id,SymbolDeclaration*Type>
-  TypeFuncDecls : Map<Id,SymbolDeclaration*Type>
-  DataDecls     : Map<Id,SymbolDeclaration*Type>
-  TypeFuncRules : Map<Id,List<Rule>>
-  FuncRules     : Map<Id,List<Rule>>
-}
-
-and TreeExpr = Abs of TreeExpr*MaybeType*Position
-             | App of TreeExpr*TreeExpr*MaybeType*Position
-             | Var of Id*MaybeType*Position
-             | Lit of Literal*Type*Position
+type TreeExpr = Abs of TreeExpr*MaybeType*Position
+              | App of TreeExpr*TreeExpr*MaybeType*Position
+              | Var of Id*MaybeType*Position
+              | Lit of Literal*Type*Position
 
 and Rule = {
   Input    :TreeExpr
@@ -50,10 +41,14 @@ and Rule = {
 and Kind = Star
          | Arrow of Kind*Kind
          | Signature
+         | SmallArrow of Kind*Type
+         | TypeId of Id
 
 and Type = TypeId of Id
          | Arrow  of Type*Type
          | Union  of Type*TypeConstructors
+         | Generic of Id
+         | Application of Type * Type
 and TypeConstructors = Map<Id,Type>
 
 and MaybeType = Conflict of List<TreeExpr*TreeExpr>
@@ -68,7 +63,7 @@ let rec selectDecls (exprs:List<BasicExpression>) (decls:List<SymbolDeclaration>
     exprs |> List.fold (fun (acc:Set<string>) (next:BasicExpression) -> 
       match next with 
       | Id(str,_) -> acc.Add(str)
-      | Application(_,e) -> acc + (used_names e decls)
+      | BasicExpression.Application(_,e) -> acc + (used_names e decls)
       | _ -> acc) Set.empty
   let set = used_names exprs decls
   // sort them on priority
@@ -88,7 +83,7 @@ let rec prioritize (exprs:List<BasicExpression>) (decls:List<SymbolDeclaration>)
   let decls = selectDecls exprs decls
   let exprs = exprs |> List.map (fun expr ->
     match expr with
-    | Application(b,e) -> prioritize exprs decls |> Option.map (Tree)
+    | BasicExpression.Application(b,e) -> prioritize exprs decls |> Option.map (Tree)
     | Literal(l,p)     -> match l:Literal with
                           | Int     _ -> Some(Tree(Lit(l,TypeId("int"),p)))
                           | String  _ -> Some(Tree(Lit(l,TypeId("string"),p)))
@@ -155,13 +150,13 @@ let test_exprs =
       Id("*",{pos with Col=3})
       Id("b",{pos with Col=4})
     ];[
-      Application(Round,[
+      BasicExpression.Application(Round,[
         Literal(Int(2),{pos with Col=1})
         Id("^",        {pos with Col=2})
       ])
       Literal(Int(3),  {pos with Col=3})
     ];[
-      Application(Round,[
+      BasicExpression.Application(Round,[
         Id("^",        {pos with Col=1})
         Literal(Int(2),{pos with Col=2})
       ])
