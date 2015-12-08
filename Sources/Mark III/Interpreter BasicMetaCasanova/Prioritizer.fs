@@ -187,7 +187,27 @@ let procces_scopes (p:Parser<ScopeBuilder.Scope,TypedScope,TypedScope>)
       | Error (s,p) -> Error (s,p)
     | [] -> Error (TypeError ["nothing to procces"],Position.Zero)
 
+let procces_table (p:Parser<string*TypedScope,List<string*TypedScope>,_>) 
+    : Parser<string*TypedScope,List<string*TypedScope>,_> =
+  fun (typscp,ctxt) ->
+    match typscp with
+    | x::xs ->
+      match p([x],ctxt) with
+      | Done (res,_,ctxt') -> Done(res,xs,ctxt')
+      | Error (s,p) -> Error (s,p)
+    | [] -> Error (TypeError ["noting to table"],Position.Zero)
 
+let get_import_list :Parser<string*TypedScope,List<string*TypedScope>,List<Id>>=
+  fun (typscp,ctxt) ->
+    match typscp with
+    | [(st,_)] -> Done ([],[],[])
+    
+
+
+let build_symbol_table : Parser<string*TypedScope,List<string*TypedScope>,_>=
+  prs{
+    return ()
+  }
 
 let declcheck : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
   prs {
@@ -209,6 +229,7 @@ let typerulecheck : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
 let decls_check() : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,List<string*TypedScope>> =
   prs{
     let! dump = (build_empty_typescope_list |> repeat) |> use_new_scope
+    let! res = (procces_table build_symbol_table) |> repeat |> move_ctxt_to_scp |> use_new_scope
     let! res = (procces_scopes declcheck) |> repeat |> use_new_scope
     let! res = (procces_scopes typerulecheck) |> repeat |> use_new_scope
     return res
