@@ -1,4 +1,5 @@
 import prelude
+import either
 
 TypeFunc "Option" => * => *
 Option 'a => Unit | 'a
