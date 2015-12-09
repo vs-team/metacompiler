@@ -207,15 +207,49 @@ let get_import_list :Parser<string*TypedScope,List<string*TypedScope>,List<Id>>=
     | [] -> (find@found)
   fun (typscp,ctxt) ->
     match typscp with
-    | [(st,_)] -> Done ((get_imports [st] [] ctxt),[],ctxt)
+    | [(st,_)] -> Done ((get_imports [st] [] ctxt),typscp,ctxt)
     | _ -> Error TypeError
     
+let lift_build_table (idlist:List<Id>) sym decls =
+  let rec decls_to_table (typlist:List<Id*TypeSignature>) =
+    match typlist with
+    | x::xs -> (sym x) :: decls_to_table xs
+    | [] -> []
+  let rec build_table idlist ctxt =
+    match idlist with
+    | x::xs -> 
+      match find_typescope ctxt x with
+      | Done(res,_,_) -> (Map.toList (decls res)) @ build_table xs ctxt
+      | Error _ -> []
+    | [] -> []
+  fun (typscp,(ctxt:List<string*TypedScope>)) -> 
+    Done((decls_to_table (build_table idlist ctxt)),typscp,ctxt)
 
+let build_data_table  (id:List<Id>) = lift_build_table id (fun x -> DataSym(x))  (fun x -> x.DataDecls)
+let build_func_table  (id:List<Id>) = lift_build_table id (fun x -> FuncSym(x))  (fun x -> x.FuncDecls)
+let build_type_table  (id:List<Id>) = lift_build_table id (fun x -> TypeSym(x))  (fun x -> x.TypeFuncDecls)
+let build_arrow_table (id:List<Id>) = lift_build_table id (fun x -> ArrowSym(x)) (fun x -> x.ArrowDecls)
 
+let set_table_in_ctxt (table:List<TableSymbols>) : Parser<string*TypedScope,List<string*TypedScope>,_>=
+  fun (typscp,ctxt) ->
+    match typscp with
+    | [(st,_)] -> 
+      match find_typescope ctxt st with
+      | Done (res,_,_) -> 
+        let ctxt' = (st,{res with SymbolTable = table}) :: (filter_typescopes ctxt st)
+        Done((),[],ctxt')
+      | Error e -> Error e
+    | _ -> Error TypeError
+    
 let build_symbol_table : Parser<string*TypedScope,List<string*TypedScope>,_>=
   prs{
     let! importlist = get_import_list
-    printfn "%A" importlist
+    let! data     = build_data_table  importlist
+    let! func     = build_func_table  importlist
+    let! typefunc = build_type_table  importlist
+    let! arrow    = build_arrow_table importlist
+    do! set_table_in_ctxt (data@typefunc@arrow@func)
+    //printfn "%A" importlist
     return ()
   }
 
