@@ -1,6 +1,5 @@
 ﻿import prelude
 
-
 TypeFunc "StateT" => (* => *) => * => * => *
 StateT 'M 's 'a => ('s -> 'M('a*'s))
 
@@ -16,6 +15,7 @@ state M 's => Monad(StateT MCons^M 's) {
     TypeFunc "getState" => MCons 's
     TypeFunc "setState" => 's => MCons Unit
     TypeFunc "liftM" => (M 'a -> M 'b) => state M 'a => state M 'b
+    TypeFunc "state_tryable" => TryableMonad => * => TryableMonad
 
     getState s => return^M(s,s)
 
