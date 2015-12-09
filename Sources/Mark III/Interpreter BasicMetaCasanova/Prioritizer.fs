@@ -64,25 +64,25 @@ let find_typescope typscp st =
   if List.exists (fun (s,t) -> if st = s then true else false) typscp then
     let _,res = List.find (fun (s,t) -> if st = s then true else false) typscp
     Done(res,[],())
-  else Error (TypeError["typescope does not exist"],Position.Zero)
+  else Error TypeError 
 
 let move_ctxt_to_scp p  =
   fun (scp,ctxt) ->
     match p (ctxt,ctxt) with
     | Done(res,_,ctxt') -> Done(res,scp,ctxt')
-    | Error (s,p) -> Error (s,p)
+    | Error (p) -> Error (p)
 
 let build_empty_typescope_list : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,_> =
   fun (scp,ctxt) ->
     match scp with
     | (s,x)::xs -> Done((),xs,(s,TypedScope.Zero)::ctxt)
-    | [] -> Error (TypeError ["no scopes left"],Position.Zero)
+    | [] -> Error TypeError 
 
 let use_new_scope p =
   fun (scp,ctxt) ->
     match p (scp,ctxt) with
     | Done(res,_,ctxt') -> Done(res,scp,ctxt')
-    | Error (s,p) -> Error (s,p)
+    | Error (p) -> Error (p)
 
 let rec multiple_scopetype_to_type (typ:ScopeBuilder.Type) (carry:List<Type>) : Type =
   match typ with
@@ -123,7 +123,7 @@ let symdec_to_typedscope : Parser<SymbolDeclaration,TypedScope,Id*TypeSignature>
   fun (sym,ctxt) ->
     match sym with 
     | x::xs -> Done((x.Name,args_to_typesig x),xs,ctxt)
-    | [] -> Error ((TypeError[",symdec"]),Position.Zero)
+    | [] -> Error TypeError
 
 
 let make_rule =
@@ -133,7 +133,7 @@ let make_rule =
       Done (("",[{Input    = type_to_typesig [r.Input]
                   Output   = type_to_typesig [r.Output]
                   Premises = []}]),xs,ctxt)
-    |[] -> Error (TypeError[",rule"],Position.Zero)
+    |[] -> Error TypeError
   
 let rule_to_typedrule : Parser<ScopeBuilder.Rule,TypedScope,Id*List<Rule>> =
   prs{
@@ -150,7 +150,7 @@ let lift_type p i o : Parser<ScopeBuilder.Scope,TypedScope,_> =
   fun (scp,ctxt) ->
     match (p |> repeat) (i scp ctxt) with
     | Done(x,y,z) -> Done((),scp,(o ctxt x)) 
-    | Error (s,p) -> Error (s,p)   
+    | Error (p) -> Error (p)   
 
 let data_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
   lift_type symdec_to_typedscope (fun scp ctxt -> (scp.Head.DataDeclarations,ctxt))
@@ -183,9 +183,9 @@ let procces_scopes (p:Parser<ScopeBuilder.Scope,TypedScope,TypedScope>)
         | Done(typscp,_,_) ->
           let res = ((st,typscp)::(filter_typescopes ctxt st)) 
           Done((st,typscp),xs,res)
-        | Error (s,p) -> Error (s,p)
-      | Error (s,p) -> Error (s,p)
-    | [] -> Error (TypeError ["nothing to procces"],Position.Zero)
+        | Error (p) -> Error (p)
+      | Error (p) -> Error (p)
+    | [] -> Error TypeError 
 
 let procces_table (p:Parser<string*TypedScope,List<string*TypedScope>,_>) 
     : Parser<string*TypedScope,List<string*TypedScope>,_> =
@@ -194,18 +194,62 @@ let procces_table (p:Parser<string*TypedScope,List<string*TypedScope>,_>)
     | x::xs ->
       match p([x],ctxt) with
       | Done (res,_,ctxt') -> Done(res,xs,ctxt')
-      | Error (s,p) -> Error (s,p)
-    | [] -> Error (TypeError ["noting to table"],Position.Zero)
+      | Error (p) -> Error (p)
+    | [] -> Error TypeError 
 
 let get_import_list :Parser<string*TypedScope,List<string*TypedScope>,List<Id>>=
+  let rec get_imports find found (ctxt:List<string*TypedScope>) =
+    match find with
+    |x::xs ->
+      match find_typescope ctxt x with
+      | Done(res,_,_) -> get_imports res.ImportDecls (find@found) ctxt
+      | Error _ -> []
+    | [] -> (find@found)
   fun (typscp,ctxt) ->
     match typscp with
-    | [(st,_)] -> Done ([],[],[])
+    | [(st,_)] -> Done ((get_imports [st] [] ctxt),typscp,ctxt)
+    | _ -> Error TypeError
     
+let lift_build_table (idlist:List<Id>) sym decls =
+  let rec decls_to_table (typlist:List<Id*TypeSignature>) =
+    match typlist with
+    | x::xs -> (sym x) :: decls_to_table xs
+    | [] -> []
+  let rec build_table idlist ctxt =
+    match idlist with
+    | x::xs -> 
+      match find_typescope ctxt x with
+      | Done(res,_,_) -> (Map.toList (decls res)) @ build_table xs ctxt
+      | Error _ -> []
+    | [] -> []
+  fun (typscp,(ctxt:List<string*TypedScope>)) -> 
+    Done((decls_to_table (build_table idlist ctxt)),typscp,ctxt)
 
+let build_data_table  (id:List<Id>) = lift_build_table id (fun x -> DataSym(x))  (fun x -> x.DataDecls)
+let build_func_table  (id:List<Id>) = lift_build_table id (fun x -> FuncSym(x))  (fun x -> x.FuncDecls)
+let build_type_table  (id:List<Id>) = lift_build_table id (fun x -> TypeSym(x))  (fun x -> x.TypeFuncDecls)
+let build_arrow_table (id:List<Id>) = lift_build_table id (fun x -> ArrowSym(x)) (fun x -> x.ArrowDecls)
 
+let set_table_in_ctxt (table:List<TableSymbols>) : Parser<string*TypedScope,List<string*TypedScope>,_>=
+  fun (typscp,ctxt) ->
+    match typscp with
+    | [(st,_)] -> 
+      match find_typescope ctxt st with
+      | Done (res,_,_) -> 
+        let ctxt' = (st,{res with SymbolTable = table}) :: (filter_typescopes ctxt st)
+        Done((),[],ctxt')
+      | Error e -> Error e
+    | _ -> Error TypeError
+    
 let build_symbol_table : Parser<string*TypedScope,List<string*TypedScope>,_>=
   prs{
+    let! importlist = get_import_list
+    let! data     = build_data_table  importlist
+    let! func     = build_func_table  importlist
+    let! typefunc = build_type_table  importlist
+    let! arrow    = build_arrow_table importlist
+    do! set_table_in_ctxt (data@typefunc@arrow@func)
+    //printfn "%A" importlist
     return ()
   }
 
@@ -229,8 +273,8 @@ let typerulecheck : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
 let decls_check() : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,List<string*TypedScope>> =
   prs{
     let! dump = (build_empty_typescope_list |> repeat) |> use_new_scope
-    let! res = (procces_table build_symbol_table) |> repeat |> move_ctxt_to_scp |> use_new_scope
     let! res = (procces_scopes declcheck) |> repeat |> use_new_scope
+    let! res = (procces_table build_symbol_table) |> repeat |> move_ctxt_to_scp |> use_new_scope
     let! res = (procces_scopes typerulecheck) |> repeat |> use_new_scope
     return res
   }

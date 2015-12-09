@@ -23,19 +23,19 @@ let read_keyword =
   fun (tokens,ctxt) ->
     match tokens with
     | (Lexer.Keyword(t, _))::ts -> Done(t,ts,ctxt)
-    | _ -> Error(ParserError ["Error: expected keyword at"],(Lexer.tryGetNextPosition tokens))
+    | _ -> Error(ParserError (Lexer.tryGetNextPosition tokens))
 
 let read_id =
   fun (tokens,ctxt) ->
     match tokens with
     | (Lexer.Id(i, _))::ts -> Done(i,ts,ctxt)
-    | _ -> Error(ParserError ["Error: expected id at"],(Lexer.tryGetNextPosition tokens))
+    | _ -> Error(ParserError (Lexer.tryGetNextPosition tokens))
   
 let read_literal =
   fun (tokens,ctxt) ->
     match tokens with
     | (Lexer.Literal(l, _))::ts -> Done(l,ts,ctxt)
-    | _ -> Error(ParserError ["Error: expected literal at"],(Lexer.tryGetNextPosition tokens))
+    | _ -> Error(ParserError (Lexer.tryGetNextPosition tokens))
 
 let matching_bracket matches (b:Bracket) : Parser<Token, _, Unit> =
   prs{
@@ -44,7 +44,7 @@ let matching_bracket matches (b:Bracket) : Parser<Token, _, Unit> =
       return ()
     else
       let! pos = getPosition
-      return! fail (ParserError [(sprintf "Error: expected closed bracket %A at %A" b pos)])
+      return! fail (ParserError Position.Zero)
   }
 
 let close_bracket (b:Bracket) : Parser<Token, _, Unit> =
@@ -79,7 +79,7 @@ let convert_token : Parser<Token, _, BasicExpression> =
     | Lexer.PriorityArrow -> return Keyword(PriorityArrow,pos)
     | Lexer.NewLine -> return Keyword(NewLine,pos)
     | Lexer.CommentLine -> return Keyword(CommentLine,pos)
-    | _ -> return! fail (ParserError [(sprintf "Error: expected keyword at %A." pos)])
+    | _ -> return! fail (ParserError Position.Zero)
   } .||
   prs{
     let! pos = getPosition
@@ -156,7 +156,7 @@ let parse =
   let regular_load path tokens = 
     match traverse() (tokens,()) with
     | Done(parsing,_,_) -> Some parsing
-    | Error(e,p) ->
-      printfn "%A" (e,p)
+    | Error(p) ->
+      printfn "%A" (p)
       None
   Caching.cached_op regular_load 

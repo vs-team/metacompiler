@@ -73,9 +73,9 @@ let start_lexer : Parser<string,Scope,Token list option> =
       | _ ->
         printfn "No tokens returned. Tokenizer failed."
         failwith ""
-        Error (PipeLineError [""],Position.Zero)
-    | None -> Error (PipeLineError [""],Position.Zero)
-  | [] -> Error (PipeLineError [""],Position.Zero)
+        Error PipeLineError
+    | None -> Error PipeLineError 
+  | [] -> Error PipeLineError
 
 let start_parser : Parser<string,Scope,Parser.BasicExpression list option> = 
   fun (paths,ctxt) ->
@@ -90,10 +90,10 @@ let start_parser : Parser<string,Scope,Parser.BasicExpression list option> =
           do printfn "Done parsing in %d ms." t.ElapsedMilliseconds
           do t.Restart()
           Done(Some(parsing),paths,ctxt)
-        | _ -> Error (PipeLineError [""],Position.Zero)
-      | _ -> Error (PipeLineError [""],Position.Zero)
-    | _ -> Error (PipeLineError [""],Position.Zero)
-  | _ -> Error (PipeLineError [""],Position.Zero)
+        | _ -> Error PipeLineError
+      | _ -> Error PipeLineError
+    | _ -> Error PipeLineError 
+  | _ -> Error PipeLineError
 
 let start_line_splitter : Parser<string,Scope,LineSplitter.Line list option> = 
   fun (paths,ctxt) ->
@@ -108,10 +108,10 @@ let start_line_splitter : Parser<string,Scope,LineSplitter.Line list option> =
             do printfn "Done line splitting in %d ms." t.ElapsedMilliseconds
             do t.Restart()
             Done (Some(line_blocks),paths,ctxt)
-        | _ -> Error (PipeLineError [""],Position.Zero)
-      | _ -> Error (PipeLineError [""],Position.Zero)
-    | _ -> Error (PipeLineError [""],Position.Zero)
-  | _ -> Error (PipeLineError [""],Position.Zero)
+        | _ -> Error PipeLineError
+      | _ -> Error PipeLineError
+    | _ -> Error PipeLineError
+  | _ -> Error PipeLineError
 
 let start_scope_builder : Parser<string,Scope,(string*ScopeBuilder.Scope)> = 
   fun (paths,ctxt) ->
@@ -121,8 +121,8 @@ let start_scope_builder : Parser<string,Scope,(string*ScopeBuilder.Scope)> =
           | Some scope ->
             do printfn "Done scope building in %d ms." t.ElapsedMilliseconds
             Done((paths.Head,scope),paths,ctxt)
-          | _ -> Error (PipeLineError [""],Position.Zero)
-      | _ -> Error (PipeLineError [""],Position.Zero)
+          | _ -> Error PipeLineError
+      | _ -> Error PipeLineError
 
 let start_typecheck : Parser<string,Scope,List<string*Prioritizer.TypedScope>> =
   fun(paths,ctxt) ->
@@ -130,7 +130,7 @@ let start_typecheck : Parser<string,Scope,List<string*Prioritizer.TypedScope>> =
     | scopes ->
       match (decls_check()) (scopes,[]) with
       | Done(res,b,c) -> Done(res,paths,ctxt)
-      | Error (s,p) -> Error (s,p) 
+      | Error (p) -> Error (p) 
 
 let lift_parser p mk_new_ctxt : Parser<string,Scope,Unit> =
   prs{
@@ -188,5 +188,5 @@ let compiler : Parser<string,Scope,List<string*Prioritizer.TypedScope>> =
 let start_compiler (input) =
   match compiler (input,Scope.Zero) with
   | Done(res,_,_) -> res
-  | Error (e,p) -> failwith ""
+  | Error (p) -> failwith ""
   
