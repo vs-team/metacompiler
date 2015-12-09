@@ -2,9 +2,9 @@ import prelude
 
 Data "with" -> With
 
-TypeFunc "Match" => * => Signature
+TypeFunc "Match" => * => Module
 
-Match 'a => Signature {
+MatchT 'a => Module {
     TypeFunc "Head" => *
     TypeFunc "Tail" => *
     
@@ -13,9 +13,9 @@ Match 'a => Signature {
 
 TypeFunc "match" => * => Match
 
-match ('a | 'b) => Match ('a | 'b) {
-    Head => 'a
-    Tail => 'b
+match (a | b) => MatchT (a | b) {
+    Head => a
+    Tail => b
     
     match (Left x) with f g => f x
     match (Right y) with f g => g y
