@@ -35,7 +35,7 @@ let char (expected:char) : Parser<char,_,Unit> =
     match chars with
     | c::cs when expected = c -> 
       Done((), cs, { ctxt with Position = if c = '\n' then ctxt.Position.NextLine else ctxt.Position.NextChar })
-    | _ -> Error(LexerError [(sprintf "Unmatched char when %c expected at" expected)],ctxt.Position)
+    | _ -> Error(LexerError ctxt.Position)
 
 let (!) (str:string) : Parser<char,_,Unit> =
   let rec traverse_from (s:List<char>) : Parser<char,_,Unit> =
@@ -57,7 +57,7 @@ let alpha_numeric : Parser<char,_,char> =
                  || (c >= '0' && c <= '9')
                  || (c >= 'A' && c <= 'Z')
                  || (c = '_') || (c = '\'') -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
-    | _ -> Error(LexerError [(sprintf "Error: expected alpha/numeric-char at")],ctxt.Position)
+    | _ -> Error(LexerError ctxt.Position)
 
 let alpha_numeric_id =
   prs{
@@ -75,13 +75,13 @@ let symbol : Parser<char,_,char> =
     | ('&' as c)::cs | ('|' as c)::cs | ('>' as c)::cs 
     | ('=' as c)::cs | ('$' as c)::cs | ('\'' as c)::cs 
     | ('.' as c)::cs | ('@' as c)::cs | ('\\' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
-    | _ -> Error(LexerError ["Error: expected symbol at"],ctxt.Position)
+    | _ -> Error(LexerError ctxt.Position)
 
 let caret : Parser<char,_,char> =
   fun (chars,ctxt) ->
     match chars with
     | ('^' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
-    | _ -> Error(LexerError ["Error: expected symbol at"],ctxt.Position)
+    | _ -> Error(LexerError ctxt.Position)
 
 let symbol_id =
   prs{
@@ -97,7 +97,7 @@ let digit : Parser<char,_,char> =
   fun (chars,ctxt) ->
     match chars with
     | c::cs when c >= '0' && c <= '9' -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
-    | _ -> Error(LexerError [(sprintf "Error: expected digit at")],ctxt.Position)
+    | _ -> Error(LexerError ctxt.Position)
 
 let digits = 
   prs{
@@ -110,7 +110,7 @@ let unsigned_int_literal =
   prs{
     let! digits = digits
     if digits.Length = 0 then 
-      return! fail (LexerError [""])
+      return! fail (LexerError Position.Zero)
     else 
       let mutable x = 0
       do for i in digits do x <- x * 10 + (int i - int '0')
@@ -197,7 +197,7 @@ let rec token : Parser<char,Context,Token> =
         token_discription (!"\r\n" .|| !"\n\r" .|| !"\n") (NewLine,pos) .||
         (prs{
           do! !"\t"
-          return! fail (LexerError ["Don't use tabs"])
+          return! fail (LexerError Position.Zero)
         }) .||
         (prs{
           let! s = any_id
@@ -279,8 +279,8 @@ let tokenize = //: Result<char,Unit,List<Token>> =
       let pos = Position.FromPath path
       match (tokens_lines()) (source,Context.Zero pos) with
       | Done(tokens, _, _) -> Some (tokens |> List.concat)
-      | Error(e,p) ->
-        printfn "%A" (e,p)
+      | Error(p) ->
+        printfn "%A" (p)
         None
     else None
   Caching.cached_op regular_load
