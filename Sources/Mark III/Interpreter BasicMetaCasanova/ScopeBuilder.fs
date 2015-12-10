@@ -468,6 +468,27 @@ let horizontal_bar : Parser<LineSplitter.BasicExpression,_,_> =
     | [LineSplitter.BasicExpression.Keyword(LineSplitter.HorizontalBar,pos)] -> Done((), [], ctxt)
     | _ -> Error (ScopeError (",----",(exprs |> LineSplitter.BasicExpression.tryGetNextPosition)))
 
+let rule_io :Parser<LineSplitter.BasicExpression,Scope,_> = 
+  prs{
+    let! i = left_nested_id |> repeat              
+    do! arrow
+    let! o = right_nested_id |> repeat
+    return i,o
+  }
+
+let rule : Parser<LineSplitter.Line, Scope, Unit> =
+  prs{
+    let! premises = premise |> parse_first_line |> repeat
+    do! horizontal_bar |> parse_first_line
+    let! i,o = rule_io |> parse_first_line
+    let! ctxt = getContext
+    do! setContext { ctxt with Rules = { Premises = premises; Input = i; Output = o } :: ctxt.Rules }
+  } .|| prs{
+    let! i,o = rule_io |> parse_first_line
+    let! ctxt = getContext
+    do! setContext { ctxt with Rules = { Premises = []; Input = i; Output = o } :: ctxt.Rules }
+  }
+
 let rec scope() : Parser<LineSplitter.Line, Scope, Scope> =
   prs{
     do! skip_empty_lines()
@@ -518,29 +539,7 @@ and typefunc_io :Parser<LineSplitter.BasicExpression,Scope,_> =
       else o@[Scope(inside_scope)]
     return i,o
   }
-and rule_io :Parser<LineSplitter.BasicExpression,Scope,_> = 
-  prs{
-    let! i = left_nested_id |> repeat              
-    do! arrow
-    let! o = right_nested_id |> repeat
-    let! inside_scope = scope_lines 
-    let o = 
-      if inside_scope = Scope.Zero then o
-      else o@[Scope(inside_scope)]
-    return i,o
-  }
-and rule : Parser<LineSplitter.Line, Scope, Unit> =
-  prs{
-    let! premises = premise |> parse_first_line |> repeat
-    do! horizontal_bar |> parse_first_line
-    let! i,o = rule_io |> parse_first_line
-    let! ctxt = getContext
-    do! setContext { ctxt with Rules = { Premises = premises; Input = i; Output = o } :: ctxt.Rules }
-  } .|| prs{
-    let! i,o = rule_io |> parse_first_line
-    let! ctxt = getContext
-    do! setContext { ctxt with Rules = { Premises = []; Input = i; Output = o } :: ctxt.Rules }
-  }
+
 
 let build_scopes (lines:List<LineSplitter.Line>) : Option<Scope> =
   match scope() (lines,Scope.Zero) with
