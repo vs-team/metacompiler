@@ -81,11 +81,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Metacompiler\BasicMonads\tryable.mc">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Metacompiler\sample_monads_usage.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

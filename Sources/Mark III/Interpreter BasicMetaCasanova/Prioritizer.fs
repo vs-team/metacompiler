@@ -25,15 +25,15 @@ and Type = Star       // type
          | BigArrow   of Type*Type
          | SmallArrow of Type*Type
          | Bar        of Type*Type
-         | Union      of Type*TypeConstructors
+         | Tuple      of Type*Type
 and TypeConstructors = Map<Id,Type>
 and TypeSignature = Nop
-                  | Name of TypeSignature*TypeSignature*TypeSignature
+                  | Name of Priority*TypeSignature*TypeSignature*TypeSignature
                   | Sig  of Type*TypeSignature
-and TableSymbols = DataSym  of Id*TypeSignature
-                 | FuncSym  of Id*TypeSignature
-                 | TypeSym  of Id*TypeSignature
-                 | ArrowSym of Id*TypeSignature
+and TableSymbols = DataSym  of Id*Namespace*TypeSignature
+                 | FuncSym  of Id*Namespace*TypeSignature
+                 | TypeSym  of Id*Namespace*TypeSignature
+                 | ArrowSym of Id*Namespace*TypeSignature
 and TypedScope = 
   {
     ImportDecls           : List<Id>
@@ -117,7 +117,7 @@ let args_to_typesig (sym:SymbolDeclaration) : TypeSignature =
   let l = type_to_typesig sym.LeftArgs
   let r = type_to_typesig sym.RightArgs
   let ret = type_to_typesig [sym.Return]
-  Name (l,r,ret)
+  Name ((sym.Priority,sym.Associativity),l,r,ret)
 
 let symdec_to_typedscope : Parser<SymbolDeclaration,TypedScope,Id*TypeSignature> =
   fun (sym,ctxt) ->
@@ -211,15 +211,19 @@ let get_import_list :Parser<string*TypedScope,List<string*TypedScope>,List<Id>>=
     | _ -> Error TypeError
     
 let lift_build_table (idlist:List<Id>) sym decls =
-  let rec decls_to_table (typlist:List<Id*TypeSignature>) =
+  let rec add_namespace_to_list symlist ns =
+    match symlist with
+    | (st,sign)::xs -> (st,ns,sign) :: add_namespace_to_list xs ns
+    | [] -> []
+  let rec decls_to_table (typlist:List<Id*Namespace*TypeSignature>) =
     match typlist with
     | x::xs -> (sym x) :: decls_to_table xs
     | [] -> []
   let rec build_table idlist ctxt =
-    match idlist with
+    match (idlist:List<Id>) with
     | x::xs -> 
       match find_typescope ctxt x with
-      | Done(res,_,_) -> (Map.toList (decls res)) @ build_table xs ctxt
+      | Done(res,_,_) -> (add_namespace_to_list (Map.toList (decls res)) x) @ build_table xs ctxt
       | Error _ -> []
     | [] -> []
   fun (typscp,(ctxt:List<string*TypedScope>)) -> 
