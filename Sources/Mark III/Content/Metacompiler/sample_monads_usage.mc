@@ -1,6 +1,8 @@
 import Prelude
 import BasicMonads
 
+$$ssh key test for windows
+
 TypeFunc "sample_monads_usage" => Number => Module
 
 option id => opt
