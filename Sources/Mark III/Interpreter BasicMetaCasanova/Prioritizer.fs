@@ -16,7 +16,7 @@ and Rule = {
 }and Premise = Assignment  of TreeExpr*TreeExpr
              | Conditional of TreeExpr
 and Type = Star       // type
-         | Signature  
+         | Module 
          | ModuleDec  of TypedScope
          | ModuleDef  of TypedScope
          | TypeId     of Id
@@ -84,17 +84,24 @@ let use_new_scope p =
     | Done(res,_,ctxt') -> Done(res,scp,ctxt')
     | Error (p) -> Error (p)
 
+let rec check_size_carry carry =
+  match (List.rev carry) with
+  | [x] -> x
+  | x::xs -> TypeIdList(x::xs)
+  | [] -> TypeIdList([])
+
 let rec multiple_scopetype_to_type (typ:ScopeBuilder.Type) (carry:List<Type>) : Type =
   match typ with
   | x :: xs ->
     match x with
     | Id (s,p) -> 
-      if (s.Contains "'") then multiple_scopetype_to_type xs ((TypeIdVar (s))::carry)
+      if (s.StartsWith "'") then multiple_scopetype_to_type xs ((TypeIdVar (s))::carry)
+      elif (s.StartsWith "|") then Bar ((check_size_carry carry),(multiple_scopetype_to_type xs []))
       else multiple_scopetype_to_type xs ((TypeId (s))::carry)
-    | Arrow (SingleArrow,p) -> SmallArrow (TypeIdList(List.rev carry),(multiple_scopetype_to_type xs []))
-    | Arrow (DoubleArrow,p) -> BigArrow (TypeIdList(List.rev carry),(multiple_scopetype_to_type xs []))
-    | _ -> TypeIdList (List.rev carry)
-  | [] -> TypeIdList (List.rev carry)
+    | Arrow (SingleArrow,p) -> SmallArrow ((check_size_carry carry),(multiple_scopetype_to_type xs []))
+    | Arrow (DoubleArrow,p) -> BigArrow ((check_size_carry carry),(multiple_scopetype_to_type xs []))
+    | _ -> (check_size_carry carry)
+  | [] -> (check_size_carry carry)
 
 let rec scopetype_to_type (typ:ScopeBuilder.Type) : Type =
   match typ with
