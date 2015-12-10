@@ -1,23 +1,23 @@
 import prelude
 
-TypeFunc "Monad" => (* => *) => Signature
+TypeFunc "Monad" => (* => *) => Module
 
-Monad 'M => Signature {
-    TypeFunc "MCons" => *
-    MCons => 'M
-
-    TypeFunc 'M 'a => ">>=" => ('a => 'M 'b) => 'M 'b   #> 10 L
+Monad M => Module {
+    TypeArrowFunc 'M 'a => ">>=" => ('a => 'M 'b) => 'M 'b   #> 10 L
     TypeFunc "return" => 'a => 'M 'a
-    TypeFunc "returnFrom" => 'a => 'a
-    TypeFunc "lift" => ('a => 'b ) => 'M 'a => 'M 'b
-    TypeFunc "lift2" => ('a => 'b => 'c) => 'M 'a => 'M 'b => 'M 'c
 
+    TypeFunc "MCons" => *
+    MCons => M
+
+    TypeFunc "returnFrom" => 'a => 'a
     returnFrom a => a
 
+    TypeFunc "lift" => ('a => 'b ) => 'M 'a => 'M 'b
     a >>= a'
     --
     lift f a => return(f a')
 
+    TypeFunc "lift2" => ('a => 'b => 'c) => 'M 'a => 'M 'b => 'M 'c
     a >>= a'
     b >>= b'
     --
@@ -25,7 +25,6 @@ Monad 'M => Signature {
 
     $$ TypeFunc "liftM" => (M' 'a -> M' 'b) => M M' 'a => M M' 'b
     TypeFunc "liftM" => (* -> *) => * => *
-
     Na >>= a
     f a => b
     lift^Na(return^Na b) => res
