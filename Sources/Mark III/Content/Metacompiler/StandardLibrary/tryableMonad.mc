@@ -2,9 +2,7 @@ import Prelude
 
 TypeFunc "TryableMonad" => ( * => * ) => Signature
 
-$$ Monad M => in
-$$ ---------------
-TryableMonad M => Signature {
+TryableMonad M => Monad(MCons^M) {
     inherit M
 
     TypeFunc "try" ('a -> MCons^M 'b) => ('e -> MCons^M 'b) => MCons^M 'a => MCons^M 'b
