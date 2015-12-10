@@ -84,9 +84,11 @@ let use_new_scope p =
     | Done(res,_,ctxt') -> Done(res,scp,ctxt')
     | Error (p) -> Error (p)
 
-let rec check_size_carry carry =
+let rec check_size_carry (carry:List<Type>) =
   match (List.rev carry) with
+  | [TypeId("*")] -> Star
   | [x] -> x
+  | x::TypeId("*")::xs -> Tuple (x,(check_size_carry xs))
   | x::xs -> TypeIdList(x::xs)
   | [] -> TypeIdList([])
 
@@ -109,6 +111,7 @@ let rec scopetype_to_type (typ:ScopeBuilder.Type) : Type =
     match x with 
     | Id (s,p) -> 
       if (s.Contains "'") then TypeIdVar (s)
+      elif (s.Equals "*") then Star
       else TypeId (s)
     | Application (b,l) -> scopetype_to_type l
     | _ -> Star
