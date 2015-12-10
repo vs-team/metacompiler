@@ -113,7 +113,7 @@ let start_line_splitter : Parser<string,Scope,LineSplitter.Line list option> =
     | _ -> Error PipeLineError
   | _ -> Error PipeLineError
 
-let start_scope_builder : Parser<string,Scope,(string*ScopeBuilder.Scope)> = 
+let start_scope_builder : Parser<string,Scope,List<string*ScopeBuilder.Scope>> = 
   fun (paths,ctxt) ->
     match ctxt.Lines with 
       | Some line_blocks ->
@@ -121,7 +121,7 @@ let start_scope_builder : Parser<string,Scope,(string*ScopeBuilder.Scope)> =
         match build_scopes line_blocks start_scope with
           | Some scope ->
             do printfn "Done scope building in %d ms." t.ElapsedMilliseconds
-            Done((paths.Head,scope),paths,ctxt)
+            Done(((paths.Head,scope)::scope.Modules),paths,ctxt)
           | _ -> Error PipeLineError
       | _ -> Error PipeLineError
 
@@ -154,7 +154,7 @@ let line_splitter_p : Parser<string,Scope,Unit> =
 
 let scope_builder_p : Parser<string,Scope,Unit> = 
   lift_parser start_scope_builder 
-    (fun scope ctxt -> { ctxt with Scopes = scope :: ctxt.Scopes})
+    (fun scope ctxt -> { ctxt with Scopes = scope @ ctxt.Scopes})
 
 let Type_checker_p : Parser<string,Scope,Unit> = 
   lift_parser start_typecheck

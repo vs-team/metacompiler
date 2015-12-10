@@ -504,7 +504,7 @@ let rec scope() : Parser<LineSplitter.Line, Scope, Scope> =
   } .|| 
   (eof >> getContext)
 
-and scope_lines =
+and scope_lines (pos:Position) :Parser<LineSplitter.BasicExpression,Scope,List<BasicExpression>> = 
   let rec extract app :(LineSplitter.Line List) = 
     match app with
     | LineSplitter.Block([[LineSplitter.Application(br,inner)]]) :: es -> (extract inner)
@@ -516,10 +516,14 @@ and scope_lines =
     match exprs with
     | LineSplitter.Application(Curly,b) :: rest -> 
       let lines = extract b
-      match (scope() (lines,Scope.Zero)) with 
-      | Done (res,_,_) -> Done(res,exprs,ctxt)
+      let modulename = (sprintf "mod-%s-r:%dc:%d" ctxt.CurrentNamespace pos.Line pos.Col)
+      let newscp = {Scope.Zero with CurrentNamespace = modulename ; ImportDeclaration = [ctxt.CurrentNamespace]}
+      match (scope() (lines,newscp)) with 
+      | Done (res,_,_) -> 
+        let ctxt' = {ctxt with Modules = (modulename,res)::ctxt.Modules }
+        Done([(Module modulename)],exprs,ctxt')
       | Error (p) -> Error (p) 
-    | _ -> Done(Scope.Zero,exprs,ctxt)
+    | _ -> Done(([]),exprs,ctxt)
 and typefunc_rule : Parser<LineSplitter.Line, Scope, Unit> =
   prs{
     let! premises = typefunc_premise |> parse_first_line |> repeat
@@ -538,8 +542,8 @@ and typefunc_io :Parser<LineSplitter.BasicExpression,Scope,_> =
     let! i = left_nested_id |> repeat              
     do! doublearrow
     let! o = right_nested_id |> repeat
-    let! inside_scope = scope_lines     
-    return i,o
+    let! inside_scope = scope_lines pos   
+    return i,(o@inside_scope)
   }
 
 
