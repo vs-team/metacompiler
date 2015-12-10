@@ -12,7 +12,7 @@ type BasicExpression =
   | Arrow of Arrow * Position
   | Application of Bracket * List<BasicExpression>
   | Lambda of Rule
-  | Scope of Scope 
+  | Module of Id
 
 and SymbolDeclaration = 
   {
@@ -41,6 +41,7 @@ and Premise =   Conditional of List<BasicExpression>
 
 and Scope = 
   {
+    CurrentNamespace         : Namespace
     ImportDeclaration        : List<Id>
     InheritDeclaration       : List<Id>
     FunctionDeclarations     : List<SymbolDeclaration>
@@ -49,10 +50,12 @@ and Scope =
     DataDeclarations         : List<SymbolDeclaration>
     TypeFunctionRules        : List<Rule>
     Rules                    : List<Rule>
+    Modules                  : List<Id*Scope>
   } 
   with 
     static member Zero = 
       {
+        CurrentNamespace          = ""
         ImportDeclaration         = []
         InheritDeclaration        = []
         FunctionDeclarations      = []
@@ -61,6 +64,7 @@ and Scope =
         DataDeclarations          = []
         TypeFunctionRules         = []
         Rules                     = []
+        Modules                   = []
       }
 
 let getPosition : Parser<LineSplitter.BasicExpression, _, _> = 
@@ -530,19 +534,17 @@ and typefunc_rule : Parser<LineSplitter.Line, Scope, Unit> =
   }
 and typefunc_io :Parser<LineSplitter.BasicExpression,Scope,_> = 
   prs{
+    let! pos = getPosition
     let! i = left_nested_id |> repeat              
     do! doublearrow
     let! o = right_nested_id |> repeat
-    let! inside_scope = scope_lines 
-    let o = 
-      if inside_scope = Scope.Zero then o
-      else o@[Scope(inside_scope)]
+    let! inside_scope = scope_lines     
     return i,o
   }
 
 
-let build_scopes (lines:List<LineSplitter.Line>) : Option<Scope> =
-  match scope() (lines,Scope.Zero) with
+let build_scopes (lines:List<LineSplitter.Line>) (scp:Scope) : Option<Scope> =
+  match scope() (lines,scp) with
   | Done (res,_,_) -> Some res
   | Error (p) ->
     //let test = ErrorType.expand e 

@@ -1,4 +1,5 @@
 import prelude
+import match
 
 TypeFunc "List" => * => *
 List 'a => Unit | ('a * (List 'a))

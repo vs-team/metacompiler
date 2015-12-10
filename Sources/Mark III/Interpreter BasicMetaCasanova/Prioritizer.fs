@@ -65,6 +65,10 @@ let find_typescope typscp st =
     let _,res = List.find (fun (s,t) -> if st = s then true else false) typscp
     Done(res,[],())
   else Error TypeError 
+let rec filter_lists (l1:List<'a>) (l2:List<'a>) =
+  match l1 with
+  | x::xs -> filter_lists xs (List.filter (fun st -> if x = st then false else true) l2)
+  | [] -> l2
 
 let move_ctxt_to_scp p  =
   fun (scp,ctxt) ->
@@ -208,16 +212,18 @@ let procces_table (p:Parser<string*TypedScope,List<string*TypedScope>,_>)
     | [] -> Error TypeError 
 
 let get_import_list :Parser<string*TypedScope,List<string*TypedScope>,List<Id>>=
-  let rec get_imports find found (ctxt:List<string*TypedScope>) =
+  let rec get_imports find (ctxt:List<string*TypedScope>) :List<Id> =
     match find with
     |x::xs ->
       match find_typescope ctxt x with
-      | Done(res,_,_) -> get_imports res.ImportDecls (find@found) ctxt
+      | Done(res,_,_) -> 
+        let l1 = (get_imports res.ImportDecls ctxt) 
+        x :: l1 @ (filter_lists l1 (get_imports xs ctxt))
       | Error _ -> []
-    | [] -> (find@found)
+    | [] -> []
   fun (typscp,ctxt) ->
     match typscp with
-    | [(st,_)] -> Done ((get_imports [st] [] ctxt),typscp,ctxt)
+    | [(st,_)] -> Done ((get_imports [st] ctxt),typscp,ctxt)
     | _ -> Error TypeError
     
 let lift_build_table (idlist:List<Id>) sym decls =
@@ -263,7 +269,7 @@ let build_symbol_table : Parser<string*TypedScope,List<string*TypedScope>,_>=
     let! typefunc = build_type_table  importlist
     let! arrow    = build_arrow_table importlist
     do! set_table_in_ctxt (data@typefunc@arrow@func)
-    //printfn "%A" importlist
+    printfn "%A" importlist
     return ()
   }
 

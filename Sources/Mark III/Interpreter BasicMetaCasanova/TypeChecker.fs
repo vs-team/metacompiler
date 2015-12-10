@@ -92,7 +92,7 @@ let rec prioritize (exprs:List<BasicExpression>) (decls:List<SymbolDeclaration>)
     | Id(s,p)          -> Some(Basic(Id(s,p)))
     | Lambda(_)        -> do printfn "can't deal with lambdas."
                           None // TODO
-    | Scope(_)         -> do printfn "can't deal with scopes."
+    | Module(_)        -> do printfn "can't deal with scopes."
                           None
     | BasicExpression.Arrow(_) -> do printfn "can't deal with arrows."
                                   None )// what even are arrows?
