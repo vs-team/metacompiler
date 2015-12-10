@@ -6,7 +6,7 @@ EitherT 'M 'e 'a => 'M('a | 'e)
 
 TypeFunc "either" => Monad => * => TryableMonad
 
-either M e => TryableMonad(EitherT MCons^M e) {
+either M e => TryableMonad(EitherT MCons^M 'e) {
     TypeFunc "fail" => 'e => MCons 'b
     fail x => return^M(Right (e + x))
     
