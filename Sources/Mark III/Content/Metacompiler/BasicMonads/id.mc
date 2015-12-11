@@ -3,9 +3,9 @@ import prelude
 TypeAlias "Id" => * => *
 Id 'a => 'a
 
-TypeFunc "id" => Monad
+TypeFunc "id" => Monad Id
 
-id => Monad Id {
+id => {
     x >>= k => k x
     return x => x
   }

@@ -15,7 +15,7 @@ if True then f else g => f
 
 if False then f else g => g
 
-TypeFunc "int" => Number
+TypeFunc "int" => Number Int^primitives
 
 int => Number Int^primitives {
     x + y -> IntAdd^primitives x y
