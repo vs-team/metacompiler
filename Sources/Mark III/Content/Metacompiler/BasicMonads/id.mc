@@ -1,6 +1,6 @@
 import prelude
 
-TypeFunc "Id" => * => *
+TypeAlias "Id" => * => *
 Id 'a => 'a
 
 TypeFunc "id" => Monad

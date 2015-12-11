@@ -1,7 +1,7 @@
 import prelude
 import match
 
-TypeFunc "List" => * => *
+TypeAlias "List" => * => *
 List 'a => Unit | ('a * (List 'a))
 
 Func 'a -> "::" -> List 'a -> List 'a
