@@ -2,21 +2,15 @@ import prelude
 
 Data "with" -> With
 
-TypeFunc "Match" => * => Module
+TypeFunc "matchOr" => * => Module
 
-MatchT 'a => Module {
+matchOr ('a | 'b) => MatchT ('a | 'b) {
     TypeFunc "Head" => *
+    Head => 'a
     TypeFunc "Tail" => *
+    Tail => 'b
     
-    TypeFunc "match" => 'a => With => (Head => 'b) => (Tail => 'b) => 'b
-  }
-
-TypeFunc "match" => * => Match
-
-match (a | b) => MatchT (a | b) {
-    Head => a
-    Tail => b
-    
-    match (Left x) with f g => f x
-    match (Right y) with f g => g y
+    Func "matchOr" => 'a => With => (Head => 'b) => (Tail => 'b) => 'b
+    do (Left x) with f g => f x
+    do (Right y) with f g => g y
   }
