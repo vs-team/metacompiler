@@ -6,8 +6,8 @@ Monad 'M => Module {
     ArrowFunc 'M 'a -> ">>=" -> ('a -> 'M 'b) -> 'M 'b   #> 10 L
     Func "return" -> 'a -> 'M 'a
 
-    Func "MCons" => *
-    MCons => 'M
+    Func "MCons" -> *
+    MCons -> 'M
 
     Func "returnFrom" -> 'a -> 'a
     returnFrom a -> a
@@ -15,13 +15,13 @@ Monad 'M => Module {
     Func "lift" -> ('a -> 'b ) -> 'M 'a -> 'M 'b
     a >>= a'
     --
-    lift f a => return(f a')
+    lift f a -> return(f a')
 
     Func "lift2" -> ('a -> 'b -> 'c) -> 'M 'a -> 'M 'b -> 'M 'c
     a >>= a'
     b >>= b'
     --
-    lift2 f a b => return(f a' b')
+    lift2 f a b -> return(f a' b')
 
     $$ TypeFunc "liftM" => (M' 'a -> M' 'b) => M M' 'a => M M' 'b
     TypeFunc "liftM" => (* -> *) => * => *
