@@ -10,7 +10,7 @@ matchOr ('a | 'b) => MatchT ('a | 'b) {
     TypeFunc "Tail" => *
     Tail => 'b
     
-    Func "matchOr" => 'a => With => (Head => 'b) => (Tail => 'b) => 'b
-    do (Left x) with f g => f x
-    do (Right y) with f g => g y
+    Func "do" -> 'a -> With -> (Head -> 'b) -> (Tail -> 'b) -> 'b
+    do (Left x) with f g -> f x
+    do (Right y) with f g -> g y
   }
