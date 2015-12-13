@@ -9,11 +9,11 @@ Data "False" -> Boolean
 
 Data "then" -> Then                
 Data "else" -> Else                
-Func "if" => Boolean => Then => 'a => Else => 'a => 'a  
+Func "if" -> Boolean -> Then -> 'a -> Else -> 'a -> 'a  
 
-if True then f else g => f
+if True then f else g -> f
 
-if False then f else g => g
+if False then f else g -> g
 
 TypeFunc "int" => Number Int^primitive
 
