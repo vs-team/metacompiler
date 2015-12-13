@@ -47,6 +47,7 @@ and Scope =
     FunctionDeclarations     : List<SymbolDeclaration>
     TypeFunctionDeclarations : List<SymbolDeclaration> 
     ArrowFunctionDeclarations: List<SymbolDeclaration> 
+    TypeAliasDeclarations    : List<SymbolDeclaration> 
     DataDeclarations         : List<SymbolDeclaration>
     TypeFunctionRules        : List<Rule>
     Rules                    : List<Rule>
@@ -61,6 +62,7 @@ and Scope =
         FunctionDeclarations      = []
         TypeFunctionDeclarations  = []
         ArrowFunctionDeclarations = []
+        TypeAliasDeclarations     = []
         DataDeclarations          = []
         TypeFunctionRules         = []
         Rules                     = []
@@ -136,6 +138,12 @@ let arrowfunc =
     match exprs with
     | LineSplitter.BasicExpression.Keyword(LineSplitter.ArrowFunc,pos)::es -> Done((), es, ctxt)
     | _ -> Error (ScopeError (",arrowfunc",(exprs |> LineSplitter.BasicExpression.tryGetNextPosition)))
+
+let typealias = 
+  fun (exprs,ctxt) ->
+    match exprs with
+    | LineSplitter.BasicExpression.Keyword(LineSplitter.TypeAlias,pos)::es -> Done((), es, ctxt)
+    | _ -> Error (ScopeError (",typealias",(exprs |> LineSplitter.BasicExpression.tryGetNextPosition)))
 
 let data = 
   fun (exprs,ctxt) ->
@@ -344,7 +352,6 @@ let symbol_declaration_body : Parser<_, _, SymbolDeclaration> =
     let! right_arguments = arguments()
     let! return_type = type_expression
     let! priority,associativity = priority .|| (prs{ return 0,Left })
-    //let! associativity = associativity .|| (prs{ return Left })
     return  {
               Name              = name
               LeftArgs          = left_arguments
@@ -364,7 +371,6 @@ let typefunc_declaration_body : Parser<_, _, SymbolDeclaration> =
     let! right_arguments = typefunc_arguments()
     let! return_type = type_expression
     let! priority,associativity = priority .|| (prs{ return 0,Left })
-    //let! associativity = associativity .|| (prs{ return Left })
     return  {
               Name              = name
               LeftArgs          = left_arguments
@@ -390,6 +396,14 @@ let Arrowfunc_declaration : Parser<LineSplitter.BasicExpression,Scope,Unit> =
     let! sym_decl = symbol_declaration_body
     let! ctxt = getContext
     do! setContext { ctxt with ArrowFunctionDeclarations = sym_decl :: ctxt.ArrowFunctionDeclarations }
+  }
+
+let TypeAlias_declaration : Parser<LineSplitter.BasicExpression,Scope,Unit> = 
+  prs{
+    do! typealias
+    let! sym_decl = typefunc_declaration_body
+    let! ctxt = getContext
+    do! setContext { ctxt with TypeAliasDeclarations = sym_decl :: ctxt.TypeAliasDeclarations }
   }
 
 let import_declaration : Parser<LineSplitter.BasicExpression,Scope,Unit> = 
@@ -428,7 +442,6 @@ let skip_comment : Parser<LineSplitter.BasicExpression,Scope,Unit> =
   prs{
     do! comment
   }
-
 
 let line : Parser<LineSplitter.Line,_,_> = 
   fun (lines,ctxt) ->
@@ -497,7 +510,7 @@ let rec scope() : Parser<LineSplitter.Line, Scope, Scope> =
   prs{
     do! skip_empty_lines()
     do! (parse_first_line (skip_comment .|| import_declaration .|| inherit_declaration .|| func_declaration .|| 
-                           typefunc_declaration .|| data_declaration )) .|| 
+                           typefunc_declaration .|| TypeAlias_declaration .|| data_declaration )) .|| 
                            typefunc_rule .|| rule
     do! skip_empty_lines()
     return! scope()

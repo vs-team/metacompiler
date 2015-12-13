@@ -3,7 +3,7 @@
 open Common
 
 type Keyword = 
-  | Import | Inherit | Func | TypeFunc 
+  | Import | Inherit | Func | TypeFunc | TypeAlias
   | ArrowFunc | Data | HorizontalBar | CommentLine
   | SingleArrow | DoubleArrow | PriorityArrow | Instance
 
@@ -46,6 +46,7 @@ let split_lines =
       | Parser.Keyword(Parser.Func,pos) -> line <- Keyword(Func,pos) :: line
       | Parser.Keyword(Parser.TypeFunc,pos) -> line <- Keyword(TypeFunc,pos) :: line
       | Parser.Keyword(Parser.ArrowFunc,pos) -> line <- Keyword(ArrowFunc,pos) :: line
+      | Parser.Keyword(Parser.TypeAlias,pos) -> line <- Keyword(TypeAlias,pos) :: line
       | Parser.Keyword(Parser.Data,pos) -> line <- Keyword(Data,pos) :: line
       | Parser.Keyword(Parser.HorizontalBar,pos) -> line <- Keyword(HorizontalBar,pos) :: line
       | Parser.Keyword(Parser.SingleArrow,pos) -> line <- Keyword(SingleArrow,pos) :: line
