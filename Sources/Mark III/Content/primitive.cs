@@ -36,7 +36,7 @@
 	}
 
 	struct FloatAdd {
-		public static System.Int32 static_eval(System.Int32 l, System.Int32 r) {
+		public static System.Single static_eval(System.Single l, System.Single r) {
 			return l + r;
 		}
 		public System.Single l;
@@ -45,7 +45,7 @@
 	}
 
 	struct FloatSub {
-		public static System.Int32 static_eval(System.Int32 l, System.Int32 r) {
+		public static System.Single static_eval(System.Single l, System.Single r) {
 			return l - r;
 		}
 		public System.Single l;
@@ -54,7 +54,7 @@
 	}
 
 	struct FloatMul {
-		public static System.Int32 static_eval(System.Int32 l, System.Int32 r) {
+		public static System.Single static_eval(System.Single l, System.Single r) {
 			return l * r;
 		}
 		public System.Single l;
@@ -63,7 +63,7 @@
 	}
 
 	struct FloatDiv {
-		public static System.Int32 static_eval(System.Int32 l, System.Int32 r) {
+		public static System.Single static_eval(System.Single l, System.Single r) {
 			return l / r;
 		}
 		public System.Single l;
