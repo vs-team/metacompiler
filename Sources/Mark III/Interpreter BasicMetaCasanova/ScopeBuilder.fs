@@ -509,7 +509,7 @@ let rule : Parser<LineSplitter.Line, Scope, Unit> =
 let rec scope() : Parser<LineSplitter.Line, Scope, Scope> =
   prs{
     do! skip_empty_lines()
-    do! (parse_first_line (skip_comment .|| import_declaration .|| inherit_declaration .|| func_declaration .|| 
+    do! (parse_first_line (Arrowfunc_declaration .|| skip_comment .|| import_declaration .|| inherit_declaration .|| func_declaration .|| 
                            typefunc_declaration .|| TypeAlias_declaration .|| data_declaration )) .|| 
                            typefunc_rule .|| rule
     do! skip_empty_lines()
@@ -535,7 +535,9 @@ and scope_lines (pos:Position) :Parser<LineSplitter.BasicExpression,Scope,List<B
       | Done (res,_,_) -> 
         let ctxt' = {ctxt with Modules = (modulename,res)::ctxt.Modules }
         Done([(Module modulename)],exprs,ctxt')
-      | Error (p) -> Error (p) 
+      | Error (p) -> 
+        printfn "%A" p
+        Error (p) 
     | _ -> Done(([]),exprs,ctxt)
 and typefunc_rule : Parser<LineSplitter.Line, Scope, Unit> =
   prs{
@@ -557,6 +559,7 @@ and typefunc_io :Parser<LineSplitter.BasicExpression,Scope,_> =
     let! o = right_nested_id |> repeat
     let! inside_scope = scope_lines pos   
     return i,(o@inside_scope)
+    //return i,o
   }
 
 

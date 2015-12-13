@@ -177,8 +177,8 @@ let rec token : Parser<char,Context,Token> =
         token_discription !"inherit"   (Inherit,pos)       .||
         token_discription !"Func"      (Func,pos)          .||
         token_discription !"TypeFunc"  (TypeFunc,pos)      .||
-        token_discription !"ArrowFunc" (TypeFunc,pos)      .||
-        token_discription !"TypeAlias" (TypeFunc,pos)      .||
+        token_discription !"ArrowFunc" (ArrowFunc,pos)     .||
+        token_discription !"TypeAlias" (TypeAlias,pos)     .||
         token_discription !"Data"      (Data,pos)          .||
         token_discription !"=>"        (DoubleArrow,pos)   .||
         token_discription !"->"        (SingleArrow,pos)   .||
@@ -187,7 +187,7 @@ let rec token : Parser<char,Context,Token> =
         token_discription !"}"         (Close Curly,pos)   .||
         token_discription !"["         (Open Square,pos)   .||
         token_discription !"]"         (Close Square,pos)  .||
-        token_discription !"(\\"       (Open Lambda,pos)    .||
+        token_discription !"(\\"       (Open Lambda,pos)   .||
         token_discription !"("         (Open Round,pos)    .||
         token_discription !")"         (Close Round,pos)   .||
         token_discription !"$$"        (CommentLine,pos)   .||
