@@ -40,7 +40,7 @@ TypeFunc "list" => Monad => Monad
 
 list 'M => Monad(ListT MCons^'M) {
     lm >>=^'M l
-    (do^(matchOr(MCons 'a)) l with
+    (do^(match(MCons 'a)) l with
       (\empty -> return^'M empty)
       (\(x :: xs) -> 
         k x >>=^'M y
