@@ -40,7 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="primitives.cs">
+    <Content Include="Metacompiler\primitive.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -77,11 +77,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Metacompiler\BasicMonads\id.mc">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Metacompiler\BasicMonads\tryable.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

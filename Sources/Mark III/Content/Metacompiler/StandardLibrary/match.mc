@@ -2,21 +2,15 @@ import prelude
 
 Data "with" -> With
 
-TypeFunc "Match" => * => Signature
+TypeFunc "matchOr" => * => Module
 
-Match 'a => Signature {
+matchOr ('a | 'b) => MatchT ('a | 'b) {
     TypeFunc "Head" => *
-    TypeFunc "Tail" => *
-    
-    TypeFunc "match" => 'a => With => (Head => 'b) => (Tail => 'b) => 'b
-  }
-
-TypeFunc "match" => * => Match
-
-match ('a | 'b) => Match ('a | 'b) {
     Head => 'a
+    TypeFunc "Tail" => *
     Tail => 'b
     
-    match (Left x) with f g => f x
-    match (Right y) with f g => g y
+    Func "do" -> 'a -> With -> (Head -> 'b) -> (Tail -> 'b) -> 'b
+    do (Left x) with f g -> f x
+    do (Right y) with f g -> g y
   }

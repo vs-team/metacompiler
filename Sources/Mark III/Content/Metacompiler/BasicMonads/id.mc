@@ -1,11 +1,11 @@
 import prelude
 
-TypeFunc "Id" => * => *
+TypeAlias "Id" => * => *
 Id 'a => 'a
 
-TypeFunc "id" => Monad
+TypeFunc "id" => Monad 
 
-id => Monad Id {
-    x >>= k => k x
-    return x => x
+id => Monad(Id) {
+    x >>= k -> k x
+    return x -> x
   }

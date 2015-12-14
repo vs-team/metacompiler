@@ -1,6 +1,8 @@
 import prelude
+import match
+import monad
 
-TypeFunc "List" => * => *
+TypeAlias "List" => * => *
 List 'a => Unit | ('a * (List 'a))
 
 Func 'a -> "::" -> List 'a -> List 'a
@@ -10,18 +12,17 @@ Func "empty" -> List 'a
 empty -> Left Unit
 
 
-Func "map" -> List 'a -> ('a -> 'b) -> List 'b
-Func "filter" -> List 'a -> ('a -> Boolean) -> List 'a
-Func List 'a -> "@" -> List 'a -> List 'a
-
+Func List 'a -> "@" -> List 'a -> List 'a  #> 200
 empty @ l -> l
 (x :: xs) @ l -> x :: (xs @ l)
 
 
+Func "map" -> List 'a -> ('a -> 'b) -> List 'b
 map empty f -> empty
 map (x :: xs) f -> (map (f x)) :: xs
 
 
+Func "filter" -> List 'a -> ('a -> Boolean) -> List 'a
 filter empty p -> empty
 
 (if p x then 
@@ -32,32 +33,24 @@ filter empty p -> empty
 --
 filter (x :: xs) p -> res
 
-$$ comment... this should skip
-$* test comment *$
-$* 
-multy 
-line 
-comment
-test
-*$
 
-TypeFunc "ListT" => (* => *) => * => *
+TypeAlias "ListT" => (* => *) => * => *
 ListT 'M 'a => 'M(List 'a)
 
 TypeFunc "list" => Monad => Monad 
 
-list M => Monad(ListT MCons^M) {
-    lm >>=^M l
-    (match l with
-      (\empty -> return^M empty)
+list 'M => Monad(ListT MCons^'M) {
+    lm >>=^'M l
+    (do^(matchOr(MCons 'a)) l with
+      (\empty -> return^'M empty)
       (\(x :: xs) -> 
-        k x >>=^M y
-        ((return^M xs) >>= k) >>=^M ys
-        return^M (y @ ys)
+        k x >>=^'M y
+        ((return^'M xs) >>= k) >>=^'M ys
+        return^'M (y @ ys)
       )
     ) => res
     --
     lm >>= k => res
 
-    return x => return^M(x :: empty)
+    return x => return^'M(x :: empty)
   }

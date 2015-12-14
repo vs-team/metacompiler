@@ -1,39 +1,7 @@
 ﻿module CodeGen
-
-type VarId  = string
-type TypeId = string
-
-type OutputAstType = Int8 | Int16 | Int32 | Int64 | Float | Double | TypeId of TypeId
-
-type OutputAstVar  = VarId      of VarId
-                   | Temporary  of int
-                   | Argument   of int
-
-type OutputAstExpr = Call of string*seq<OutputAstExpr>
-                   | Var       of OutputAstVar
-                   | IntLit    of int
-                   | StringLit of string
-                   | FloatLit  of double
-
-type OutputAstStatement = Assignment  of OutputAstVar*OutputAstExpr
-                        | UnionSwitch of OutputAstVar*seq<seq<OutputAstStatement>>
-                        | Return      of OutputAstExpr
-
-type OutputAstBody = 
-  | Struct       of VarId*seq<OutputAstBody>
-  | TaggedUnion  of VarId*seq<OutputAstBody>
-  | Data         of OutputAstType*VarId
-  | Func         of OutputAstFunc
-and OutputAstFunc = {
-  Static     : bool
-  Name       : string
-  ReturnType : OutputAstType
-  Args       : seq<OutputAstType*VarId>
-  Body       : seq<OutputAstStatement>
-}
-
-type OutputAst = Namespace    of VarId*seq<OutputAst>
-               | NonNamespace of OutputAstBody
+open Common
+open TypeChecker
+open OutputAst
 
 let genericMangle (name:string) :string =
   let normalize (name:string) :string =

@@ -4,27 +4,25 @@ Data "Unit" -> Unit
 Data 'a -> "," -> 'b -> 'a * 'b    #> 5 
 Data "Left" -> 'a -> 'a | 'b       #> 5 
 Data "Right" -> 'b -> 'a | 'b      #> 5 
-Data "True" -> Boolean              
+Data "True" -> Boolean             
 Data "False" -> Boolean             
 
 Data "then" -> Then                
 Data "else" -> Else                
-TypeFunc "if" => Boolean => Then => 'a => Else => 'a => 'a  
+Func "if" -> Boolean -> Then -> 'a -> Else -> 'a -> 'a  
 
-if True then f else g => f
+if True then f else g -> f
 
-if False then f else g => g
+if False then f else g -> g
 
-TypeFunc "int" => Number
+TypeFunc "int" => Number Int^primitive
 
-int => Number Int {
-    Num => Int
-    
-    x + y -> IntAdd^primitives x y
-    x - y -> IntSub^primitives x y
+int => Number Int^primitives {
+    x + y -> IntAdd^primitive x y
+    x - y -> IntSub^primitive x y
     zero -> 0
     
-    x * y -> IntMul^primitives x y
-    x / y -> IntDiv^primitives x y
+    x * y -> IntMul^primitive x y
+    x / y -> IntDiv^primitive x y
     one -> 1
   }

@@ -1,15 +1,17 @@
 import prelude
+import tryableMonad
+import Monad
 
-TypeFunc "ResultT" => (*=>*) => * => *
-ResultT 'M 'a => 'M(String | 'a)
+TypeAlias "ResultT" => (*=>*) => * => *
+ResultT 'M 'a => M('a | String )
 
-TypeFunc "result" => Monad => Monad
+TypeFunc "result" => Monad => TryableMonad
 
-either M String => e
+either 'M msg => e
 ----------------------
-result M => Monad (ResultT MCons^M) {
+result 'M => TryableMonad (ResultT MCons^'M) {
     inherit e
-    
-    Func "fail" -> String -> ResultT MCons^M 'a
+
+    Func "fail" -> String -> ResultT MCons^'M 'a
     fail msg -> fail^e msg
   }
