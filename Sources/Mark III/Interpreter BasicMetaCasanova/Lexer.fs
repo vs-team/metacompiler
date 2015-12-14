@@ -74,7 +74,8 @@ let symbol : Parser<char,_,char> =
     | ('/' as c)::cs | ('#' as c)::cs | ('<' as c)::cs 
     | ('&' as c)::cs | ('|' as c)::cs | ('>' as c)::cs 
     | ('=' as c)::cs | ('$' as c)::cs | ('\'' as c)::cs 
-    | ('.' as c)::cs | ('@' as c)::cs | ('\\' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
+    | ('.' as c)::cs | ('@' as c)::cs | ('!' as c)::cs 
+    | ('\\' as c)::cs -> Done(c, cs, { ctxt with Position = ctxt.Position.NextChar })
     | _ -> Error(LexerError ctxt.Position)
 
 let caret : Parser<char,_,char> =
