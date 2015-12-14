@@ -9,10 +9,9 @@ Data "False" -> Boolean
 
 Data "then" -> Then                
 Data "else" -> Else                
+
 Func "if" -> Boolean -> Then -> 'a -> Else -> 'a -> 'a  
-
 if True then f else g -> f
-
 if False then f else g -> g
 
 TypeFunc "int" => Number Int^primitive
@@ -24,5 +23,17 @@ int => Number Int^primitives {
     
     x * y -> IntMul^primitive x y
     x / y -> IntDiv^primitive x y
+    one -> 1
+  }
+
+TypeFunc "float" => Number Float^primitive
+
+float => Number Float^primitives {
+    x + y -> FloatAdd^primitive x y
+    x - y -> FloatSub^primitive x y
+    zero -> 0
+    
+    x * y -> FloatMul^primitive x y
+    x / y -> FloatDiv^primitive x y
     one -> 1
   }
