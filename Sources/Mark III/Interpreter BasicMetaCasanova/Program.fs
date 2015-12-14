@@ -23,7 +23,9 @@ let main argv =
                //;"result"
                //;"state"
               ]
-  let scope = start_compiler input
+  let file_paths = ["../../../Content/Metacompiler/StandardLibrary/";
+                    "../../../Content/Metacompiler/BasicMonads/"]
+  let scope = start_compiler input file_paths
   //printfn "%A" scope        
   File.WriteAllText ("parser_output.txt",(sprintf "%A" scope)) 
   //let typecheck = TypeCheck {ImportDeclaration=[];InheritDeclaration=[];FunctionDeclarations=[];TypeFunctionDeclarations=[];ArrowFunctionDeclarations=[];DataDeclarations=[];TypeFunctionRules=[];Rules=[]} Map.empty 
