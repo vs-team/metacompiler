@@ -5,8 +5,7 @@ import monad
 TypeAlias "List" => * => *
 List 'a => Unit | ('a * (List 'a))
 
-Func 'a -> "::" -> List 'a -> List 'a
-x :: xs -> Right(x,xs)
+Data 'a -> "::" -> List 'a -> ('a,List 'a)
 
 Func "empty" -> List 'a
 empty -> Left Unit
