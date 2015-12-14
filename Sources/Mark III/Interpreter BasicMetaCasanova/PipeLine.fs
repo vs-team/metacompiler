@@ -15,7 +15,8 @@ let t = System.Diagnostics.Stopwatch()
 
 type Scope = 
   {
-    Input_files : string list
+    File_paths   : string list
+    Input_files  : string list
     Parsed_files : string list
     Tokens  : Lexer.Token list option
     Parsed  : List<Parser.BasicExpression> option
@@ -26,6 +27,7 @@ type Scope =
   with 
     static member Zero =
       {
+        File_paths  = []
         Input_files = []
         Parsed_files = []
         Tokens      = None
@@ -34,9 +36,6 @@ type Scope =
         Scopes      = []     
         TypedScopes = []
       }
-
-let file_paths = ["../../../Content/Metacompiler/StandardLibrary/";
-                  "../../../Content/Metacompiler/BasicMonads/"]
 
 let rec find_correct_path (paths:List<string>)(name:string) :Option<string> =
   match paths with
@@ -59,7 +58,7 @@ let start_lexer : Parser<string,Scope,Token list option> =
   fun (paths,ctxt) ->
   match paths with
   | x::xs -> 
-    match (find_correct_path file_paths x) with 
+    match (find_correct_path ctxt.File_paths x) with 
     | Some path ->
       t.Restart()
       let tokens = tokenize path ".lex_cache" ()
@@ -81,7 +80,7 @@ let start_parser : Parser<string,Scope,Parser.BasicExpression list option> =
   fun (paths,ctxt) ->
   match paths with
   | x::xs -> 
-    match (find_correct_path file_paths x) with 
+    match (find_correct_path ctxt.File_paths x) with 
     | Some path ->
       match ctxt.Tokens with 
       | Some tok ->
@@ -99,7 +98,7 @@ let start_line_splitter : Parser<string,Scope,LineSplitter.Line list option> =
   fun (paths,ctxt) ->
   match paths with
   | x::xs -> 
-    match (find_correct_path file_paths x) with 
+    match (find_correct_path ctxt.File_paths x) with 
     | Some path ->
       match ctxt.Parsed with 
       | Some pars ->  
@@ -186,8 +185,9 @@ let compiler : Parser<string,Scope,List<string*Prioritizer.TypedScope>> =
     return scope.TypedScopes
   }
 
-let start_compiler (input) =
-  match compiler (input,Scope.Zero) with
+let start_compiler (input) (file_paths) =
+  let scp = {Scope.Zero with File_paths = file_paths}
+  match compiler (input,scp) with
   | Done(res,_,_) -> res
   | Error (p) -> failwith ""
   

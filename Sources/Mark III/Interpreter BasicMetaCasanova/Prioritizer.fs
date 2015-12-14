@@ -42,6 +42,7 @@ and TypedScope =
     FuncDecls             : Map<Id,TypeSignature>
     TypeFuncDecls         : Map<Id,TypeSignature>
     ArrowDecls            : Map<Id,TypeSignature>
+    AliasDecls            : Map<Id,TypeSignature>
     DataDecls             : Map<Id,TypeSignature>
     TypeFuncRules         : Map<Id,List<Rule>>
     FuncRules             : Map<Id,List<Rule>>
@@ -55,6 +56,7 @@ and TypedScope =
         FuncDecls       = Map.empty
         TypeFuncDecls   = Map.empty
         ArrowDecls      = Map.empty
+        AliasDecls      = Map.empty
         DataDecls       = Map.empty
         TypeFuncRules   = Map.empty
         FuncRules       = Map.empty
@@ -178,6 +180,9 @@ let typefunc_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
 let arrowfunc_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
   lift_type symdec_to_typedscope (fun scp ctxt -> (scp.Head.ArrowFunctionDeclarations,ctxt))
     (fun ctxt x -> {ctxt with ArrowDecls = (Map.ofList x)})
+let typealias_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
+  lift_type symdec_to_typedscope (fun scp ctxt -> (scp.Head.TypeAliasDeclarations,ctxt))
+    (fun ctxt x -> {ctxt with AliasDecls = (Map.ofList x)})
 
 let rule_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
   lift_type rule_to_typedrule (fun scp ctxt -> (scp.Head.Rules,ctxt))
@@ -279,6 +284,7 @@ let declcheck : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
     do! data_type
     do! func_type
     do! typefunc_type
+    do! typealias_type
     do! arrowfunc_type
     return! getContext
   }
