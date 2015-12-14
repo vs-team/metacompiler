@@ -11,3 +11,4 @@ entity (k, ks) (v, vs) r => Entity{
 	C => convertible (k, ks) (v, vs)
 	R => r
 }
+

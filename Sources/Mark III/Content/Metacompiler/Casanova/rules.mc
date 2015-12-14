@@ -9,6 +9,7 @@ TypeFunc "rules" => 'w => 'c => 'r => Rules
 
 TypeFunc Rule => ('fields) => (\'values, 'world, float -> 'values) => Signature
 
+TypeFunc "rule" => ('fields) => (\'values, 'world, float -> 'values) => Rule
 
 rules 'w 'c Unit => Rules{
 
@@ -25,4 +26,5 @@ rules 'w 'c (Rule, Rules) => Rules{
 	apply w c dt ((rule fields func), rs) => res
 }
 
-TypeFunc SuspendableRule => 'w 'f 'r
+TypeFunc SuspendableRule => 'w => 'f => 'r => Monad
+
