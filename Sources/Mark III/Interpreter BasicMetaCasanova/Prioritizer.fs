@@ -34,6 +34,7 @@ and TableSymbols = DataSym  of Id*Namespace*TypeSignature
                  | FuncSym  of Id*Namespace*TypeSignature
                  | TypeSym  of Id*Namespace*TypeSignature
                  | ArrowSym of Id*Namespace*TypeSignature
+                 | AliasSym of Id*Namespace*TypeSignature
 and TypedScope = 
   {
     ImportDecls           : List<Id>
@@ -254,6 +255,7 @@ let build_data_table  (id:List<Id>) = lift_build_table id (fun x -> DataSym(x)) 
 let build_func_table  (id:List<Id>) = lift_build_table id (fun x -> FuncSym(x))  (fun x -> x.FuncDecls)
 let build_type_table  (id:List<Id>) = lift_build_table id (fun x -> TypeSym(x))  (fun x -> x.TypeFuncDecls)
 let build_arrow_table (id:List<Id>) = lift_build_table id (fun x -> ArrowSym(x)) (fun x -> x.ArrowDecls)
+let build_alias_table (id:List<Id>) = lift_build_table id (fun x -> AliasSym(x)) (fun x -> x.AliasDecls)
 
 let set_table_in_ctxt (table:List<TableSymbols>) : Parser<string*TypedScope,List<string*TypedScope>,_>=
   fun (typscp,ctxt) ->
@@ -273,7 +275,8 @@ let build_symbol_table : Parser<string*TypedScope,List<string*TypedScope>,_>=
     let! func     = build_func_table  importlist
     let! typefunc = build_type_table  importlist
     let! arrow    = build_arrow_table importlist
-    do! set_table_in_ctxt (data@typefunc@arrow@func)
+    let! alias    = build_alias_table importlist
+    do! set_table_in_ctxt (data@typefunc@arrow@func@alias)
     printfn "%A" importlist
     return ()
   }
