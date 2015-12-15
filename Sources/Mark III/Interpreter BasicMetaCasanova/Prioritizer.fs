@@ -142,28 +142,12 @@ let symdec_to_typedscope : Parser<SymbolDeclaration,TypedScope,Id*TypeSignature>
     | x::xs -> Done((x.Name,args_to_typesig x),xs,ctxt)
     | [] -> Error TypeError
 
-
-let make_rule =
-  fun (rule:List<ScopeBuilder.Rule>,ctxt) ->
-    match rule with
-    | r::xs ->
-      Done (("",[{Input    = type_to_typesig [r.Input]
-                  Output   = type_to_typesig [r.Output]
-                  Premises = []}]),xs,ctxt)
-    |[] -> Error TypeError
-  
-let rule_to_typedrule : Parser<ScopeBuilder.Rule,TypedScope,Id*List<Rule>> =
-  prs{
-    let! r = make_rule
-    return r
-  }
-
 let import_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
   fun (scp,ctxt) ->
     let ctxt' = {ctxt with ImportDecls = scp.Head.ImportDeclaration}
     Done((),scp,ctxt') 
 
-let lift_type p i o : Parser<ScopeBuilder.Scope,TypedScope,_> =
+let lift_type p i o : Parser<ScopeBuilder.Scope,_,_> =
   fun (scp,ctxt) ->
     match (p |> repeat) (i scp ctxt) with
     | Done(x,y,z) -> Done((),scp,(o ctxt x)) 
@@ -185,15 +169,9 @@ let typealias_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
   lift_type symdec_to_typedscope (fun scp ctxt -> (scp.Head.TypeAliasDeclarations,ctxt))
     (fun ctxt x -> {ctxt with AliasDecls = (Map.ofList x)})
 
-let rule_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
-  lift_type rule_to_typedrule (fun scp ctxt -> (scp.Head.Rules,ctxt))
-    (fun ctxt x -> {ctxt with FuncRules = (Map.ofList x)})
-let typerule_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
-  lift_type rule_to_typedrule (fun scp ctxt -> (scp.Head.TypeFunctionRules,ctxt))
-    (fun ctxt x -> {ctxt with TypeFuncRules = (Map.ofList x)})
 
-let procces_scopes (p:Parser<ScopeBuilder.Scope,TypedScope,TypedScope>) 
-    : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,string*TypedScope> =
+let procces_scopes (p) 
+    : Parser<string*ScopeBuilder.Scope,List<string*_>,string*_> =
   fun (scp,ctxt) ->
     match scp with
     |(st,sc)::xs -> 
@@ -292,12 +270,7 @@ let declcheck : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
     return! getContext
   }
 
-let typerulecheck : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
-  prs {
-    do! rule_type
-    do! typerule_type
-    return! getContext
-  }
+
 
 let ctxtret  = 
   fun (scp,ctxt) -> Done(ctxt,scp,ctxt)
