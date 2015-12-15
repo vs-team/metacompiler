@@ -299,12 +299,15 @@ let typerulecheck : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
     return! getContext
   }
 
+let ctxtret  = 
+  fun (scp,ctxt) -> Done(ctxt,scp,ctxt)
+
 let decls_check() : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,List<string*TypedScope>> =
   prs{
     let! dump = (build_empty_typescope_list |> repeat) |> use_new_scope
     let! res = (procces_scopes declcheck) |> repeat |> use_new_scope
     let! res = (procces_table build_symbol_table) |> repeat |> move_ctxt_to_scp |> use_new_scope
-    let! res = (procces_scopes typerulecheck) |> repeat |> use_new_scope
+    let! res = ctxtret
     return res
   }
 
