@@ -129,9 +129,7 @@ let rec typedscp_to_ruletypedscp (scp:List<string*Prioritizer.TypedScope>) =
   match scp with
   | (st,ty)::xs -> 
     (st,({RuleTypedScope.Zero with InheritDecls  = ty.InheritDecls;
-                                   SymbolTable   = ty.SymbolTable;
-                                   TypeFuncRules = ty.TypeFuncRules
-                                   FuncRules     = ty.FuncRules})
+                                   SymbolTable   = ty.SymbolTable})
     ) :: typedscp_to_ruletypedscp xs
   | [] -> []
 

@@ -4,7 +4,15 @@ open ParserMonad
 open ScopeBuilder
 open Prioritizer
 
-type RuleTypedScope = 
+type Rule = {
+  Input    :TypeSignature
+  Output   :TypeSignature
+  Premises :List<Premise>}
+
+and Premise = Assignment  
+             | Conditional 
+
+and RuleTypedScope = 
   {
     InheritDecls          : List<Id>
     SymbolTable           : List<TableSymbols>
@@ -20,7 +28,7 @@ type RuleTypedScope =
         FuncRules       = Map.empty
       }
 
-let make_rule =
+let rule_to_typedrule : Parser<ScopeBuilder.Rule,RuleTypedScope,Id*List<Rule>> =
   fun (rule:List<ScopeBuilder.Rule>,ctxt) ->
     match rule with
     | r::xs ->
@@ -28,12 +36,6 @@ let make_rule =
                   Output   = type_to_typesig [r.Output]
                   Premises = []}]),xs,ctxt)
     |[] -> Error TypeError
-  
-let rule_to_typedrule : Parser<ScopeBuilder.Rule,RuleTypedScope,Id*List<Rule>> =
-  prs{
-    let! r = make_rule
-    return r
-  }
 
 let rec sort_rules sort sorted =
   let rule_exists st list = List.exists (fun (s,ru) -> if s = st then true else false) list

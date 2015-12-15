@@ -5,28 +5,17 @@ open ScopeBuilder
 
 type Priority = int*Associativity
 
-type TreeExpr = Abs of TreeExpr*Type
-              | App of TreeExpr*TreeExpr*Type
-              | Var of Id*Type
-              | Lit of Literal*Type
-and Rule = {
-  Input    :TypeSignature
-  Output   :TypeSignature
-  Premises :List<Premise>
-}and Premise = Assignment  of TreeExpr*TreeExpr
-             | Conditional of TreeExpr
-and Type = Star       // type
-         | Module 
-         | ModuleDec  of TypedScope
-         | ModuleDef  of TypedScope
-         | TypeId     of Id
-         | TypeIdVar  of Id
-         | TypeIdList of List<Type>
-         | BigArrow   of Type*Type
-         | SmallArrow of Type*Type
-         | Bar        of Type*Type
-         | Tuple      of Type*Type
-and TypeConstructors = Map<Id,Type>
+type Type = Star 
+          | Module 
+          | ModuleDec  of TypedScope
+          | ModuleDef  of TypedScope
+          | TypeId     of Id
+          | TypeIdVar  of Id
+          | TypeIdList of List<Type>
+          | BigArrow   of Type*Type
+          | SmallArrow of Type*Type
+          | Bar        of Type*Type
+          | Tuple      of Type*Type
 and TypeSignature = Nop
                   | Name of Priority*TypeSignature*TypeSignature*TypeSignature
                   | Sig  of Type*TypeSignature
@@ -45,8 +34,6 @@ and TypedScope =
     ArrowDecls            : Map<Id,TypeSignature>
     AliasDecls            : Map<Id,TypeSignature>
     DataDecls             : Map<Id,TypeSignature>
-    TypeFuncRules         : Map<Id,List<Rule>>
-    FuncRules             : Map<Id,List<Rule>>
   }
   with 
     static member Zero =
@@ -59,8 +46,6 @@ and TypedScope =
         ArrowDecls      = Map.empty
         AliasDecls      = Map.empty
         DataDecls       = Map.empty
-        TypeFuncRules   = Map.empty
-        FuncRules       = Map.empty
       }
 let filter_typescopes typscp st = List.filter (fun (s,t) -> if st = s then false else true) typscp
 let find_typescope typscp st = 
@@ -109,10 +94,11 @@ let rec multiple_scopetype_to_type (typ:ScopeBuilder.Type) (carry:List<Type>) : 
       else multiple_scopetype_to_type xs ((TypeId (s))::carry)
     | Arrow (SingleArrow,p) -> SmallArrow ((check_size_carry carry),(multiple_scopetype_to_type xs []))
     | Arrow (DoubleArrow,p) -> BigArrow ((check_size_carry carry),(multiple_scopetype_to_type xs []))
+    | Application (b,l) ->  multiple_scopetype_to_type xs ((scopetype_to_type l)::carry)
     | _ -> (check_size_carry carry)
   | [] -> (check_size_carry carry)
 
-let rec scopetype_to_type (typ:ScopeBuilder.Type) : Type =
+and scopetype_to_type (typ:ScopeBuilder.Type) : Type =
   match typ with
   | [x] ->
     match x with 
