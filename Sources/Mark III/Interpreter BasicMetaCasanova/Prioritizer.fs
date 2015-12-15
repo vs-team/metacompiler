@@ -7,7 +7,6 @@ type Priority = int*Associativity
 
 type Type = Star 
           | Module 
-          | ModuleDec  of TypedScope
           | ModuleDef  of TypedScope
           | TypeId     of Id
           | TypeIdVar  of Id
