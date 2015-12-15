@@ -35,14 +35,24 @@ let rule_to_typedrule : Parser<ScopeBuilder.Rule,RuleTypedScope,Id*List<Rule>> =
     return r
   }
 
+let rec sort_rules sort sorted =
+  let rule_exists st list = List.exists (fun (s,ru) -> if s = st then true else false) list
+  let rule_find st list = List.find (fun (s,ru) -> if s = st then true else false) list
+  let rule_filter st list = List.filter (fun (s,ru) -> if s = st then false else true) list 
+  match sort with
+  | (st,ru)::xs -> 
+    if rule_exists st sorted then
+      let st',found = rule_find st sorted
+      sort_rules xs ((st,(ru@found))::(rule_filter st sorted))
+    else sort_rules xs ((st,ru)::sorted)
+  | [] -> sorted
 
 let rule_type : Parser<ScopeBuilder.Scope,RuleTypedScope,_> =
   lift_type rule_to_typedrule (fun scp ctxt -> (scp.Head.Rules,ctxt))
-    (fun ctxt x -> {ctxt with FuncRules = (Map.ofList x)})
+    (fun ctxt x -> {ctxt with FuncRules = (Map.ofList (sort_rules x []))})
 let typerule_type : Parser<ScopeBuilder.Scope,RuleTypedScope,_> =
   lift_type rule_to_typedrule (fun scp ctxt -> (scp.Head.TypeFunctionRules,ctxt))
-    (fun ctxt x -> {ctxt with TypeFuncRules = (Map.ofList x)})
-
+    (fun ctxt x -> {ctxt with TypeFuncRules = (Map.ofList (sort_rules x []))})
 
 let typerulecheck : Parser<ScopeBuilder.Scope,RuleTypedScope,RuleTypedScope> =
   prs {

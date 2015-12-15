@@ -270,8 +270,6 @@ let declcheck : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
     return! getContext
   }
 
-
-
 let ctxtret  = 
   fun (scp,ctxt) -> Done(ctxt,scp,ctxt)
 
