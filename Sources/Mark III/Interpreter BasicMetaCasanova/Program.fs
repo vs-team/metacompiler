@@ -1,4 +1,5 @@
-﻿open Lexer
+﻿open ParserMonad
+open Lexer
 open Parser
 open LineSplitter
 open ScopeBuilder
@@ -25,9 +26,12 @@ let main argv =
               ]
   let file_paths = ["../../../Content/Metacompiler/StandardLibrary/";
                     "../../../Content/Metacompiler/BasicMonads/"]
-  let scope = start_compiler input file_paths
-  //printfn "%A" scope        
-  File.WriteAllText ("parser_output.txt",(sprintf "%A" scope)) 
-  //let typecheck = TypeCheck {ImportDeclaration=[];InheritDeclaration=[];FunctionDeclarations=[];TypeFunctionDeclarations=[];ArrowFunctionDeclarations=[];DataDeclarations=[];TypeFunctionRules=[];Rules=[]} Map.empty 
-  0
+  match start_compiler input file_paths with
+  | Done(scope,_,_) ->
+    File.WriteAllText ("parser_output.txt",(sprintf "%A" scope)) 
+    0
+  | Error e -> 
+    printfn "%A" e
+    0
+
 

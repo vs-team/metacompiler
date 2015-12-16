@@ -5,8 +5,7 @@ import monad
 TypeAlias "List" => * => *
 List 'a => Unit | ('a * (List 'a))
 
-Func 'a -> "::" -> List 'a -> List 'a
-x :: xs -> Right(x,xs)
+Data 'a -> "::" -> List 'a -> ('a,List 'a)
 
 Func "empty" -> List 'a
 empty -> Left Unit
@@ -41,7 +40,7 @@ TypeFunc "list" => Monad => Monad
 
 list 'M => Monad(ListT MCons^'M) {
     lm >>=^'M l
-    (do^(matchOr(MCons 'a)) l with
+    (do^(match(MCons 'a)) l with
       (\empty -> return^'M empty)
       (\(x :: xs) -> 
         k x >>=^'M y

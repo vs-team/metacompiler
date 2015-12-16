@@ -17,7 +17,7 @@ either 'M 'e => TryableMonad(EitherT MCons^'M 'e) {
     return x -> return^M(Left x)
     
     pm >>=^'M y
-    (do^(matchOr(MCons 'a)) y with 
+    (do^(match(MCons 'a)) y with 
       (\x -> k x) 
       (\e -> err e)
     ) => res

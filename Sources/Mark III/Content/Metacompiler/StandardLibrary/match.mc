@@ -2,11 +2,12 @@ import prelude
 
 Data "with" -> With
 
-TypeFunc "matchOr" => * => Module
+TypeFunc "match" => * => Module
 
-matchOr ('a | 'b) => MatchT ('a | 'b) {
+match ('a | 'b) => MatchT ('a | 'b) {
     TypeFunc "Head" => *
     Head => 'a
+
     TypeFunc "Tail" => *
     Tail => 'b
     

@@ -5,28 +5,16 @@ open ScopeBuilder
 
 type Priority = int*Associativity
 
-type TreeExpr = Abs of TreeExpr*Type
-              | App of TreeExpr*TreeExpr*Type
-              | Var of Id*Type
-              | Lit of Literal*Type
-and Rule = {
-  Input    :TypeSignature
-  Output   :TypeSignature
-  Premises :List<Premise>
-}and Premise = Assignment  of TreeExpr*TreeExpr
-             | Conditional of TreeExpr
-and Type = Star       // type
-         | Module 
-         | ModuleDec  of TypedScope
-         | ModuleDef  of TypedScope
-         | TypeId     of Id
-         | TypeIdVar  of Id
-         | TypeIdList of List<Type>
-         | BigArrow   of Type*Type
-         | SmallArrow of Type*Type
-         | Bar        of Type*Type
-         | Tuple      of Type*Type
-and TypeConstructors = Map<Id,Type>
+type Type = Star 
+          | Module 
+          | ModuleDef  of TypedScope
+          | TypeId     of Id
+          | TypeIdVar  of Id
+          | TypeIdList of List<Type>
+          | BigArrow   of Type*Type
+          | SmallArrow of Type*Type
+          | Bar        of Type*Type
+          | Tuple      of Type*Type
 and TypeSignature = Nop
                   | Name of Priority*TypeSignature*TypeSignature*TypeSignature
                   | Sig  of Type*TypeSignature
@@ -34,6 +22,7 @@ and TableSymbols = DataSym  of Id*Namespace*TypeSignature
                  | FuncSym  of Id*Namespace*TypeSignature
                  | TypeSym  of Id*Namespace*TypeSignature
                  | ArrowSym of Id*Namespace*TypeSignature
+                 | AliasSym of Id*Namespace*TypeSignature
 and TypedScope = 
   {
     ImportDecls           : List<Id>
@@ -44,8 +33,6 @@ and TypedScope =
     ArrowDecls            : Map<Id,TypeSignature>
     AliasDecls            : Map<Id,TypeSignature>
     DataDecls             : Map<Id,TypeSignature>
-    TypeFuncRules         : Map<Id,List<Rule>>
-    FuncRules             : Map<Id,List<Rule>>
   }
   with 
     static member Zero =
@@ -58,8 +45,6 @@ and TypedScope =
         ArrowDecls      = Map.empty
         AliasDecls      = Map.empty
         DataDecls       = Map.empty
-        TypeFuncRules   = Map.empty
-        FuncRules       = Map.empty
       }
 let filter_typescopes typscp st = List.filter (fun (s,t) -> if st = s then false else true) typscp
 let find_typescope typscp st = 
@@ -71,6 +56,22 @@ let rec filter_lists (l1:List<'a>) (l2:List<'a>) =
   match l1 with
   | x::xs -> filter_lists xs (List.filter (fun st -> if x = st then false else true) l2)
   | [] -> l2
+
+let end_of_list =
+  fun (li,ctxt) ->
+    match li with 
+    | x::xs -> Error TypeError
+    | [] -> Done((),li,ctxt)
+
+let rec itterate (p:Parser<_,_,'res>) :Parser<_,_,List<'res>> =
+  prs{
+    let! x = p
+    let! xs = itterate p
+    return x::xs
+  } .|| prs{
+    do! end_of_list
+    return []
+  }
 
 let move_ctxt_to_scp p  =
   fun (scp,ctxt) ->
@@ -108,10 +109,11 @@ let rec multiple_scopetype_to_type (typ:ScopeBuilder.Type) (carry:List<Type>) : 
       else multiple_scopetype_to_type xs ((TypeId (s))::carry)
     | Arrow (SingleArrow,p) -> SmallArrow ((check_size_carry carry),(multiple_scopetype_to_type xs []))
     | Arrow (DoubleArrow,p) -> BigArrow ((check_size_carry carry),(multiple_scopetype_to_type xs []))
+    | Application (b,l) ->  multiple_scopetype_to_type xs ((scopetype_to_type l)::carry)
     | _ -> (check_size_carry carry)
   | [] -> (check_size_carry carry)
 
-let rec scopetype_to_type (typ:ScopeBuilder.Type) : Type =
+and scopetype_to_type (typ:ScopeBuilder.Type) : Type =
   match typ with
   | [x] ->
     match x with 
@@ -141,30 +143,14 @@ let symdec_to_typedscope : Parser<SymbolDeclaration,TypedScope,Id*TypeSignature>
     | x::xs -> Done((x.Name,args_to_typesig x),xs,ctxt)
     | [] -> Error TypeError
 
-
-let make_rule =
-  fun (rule:List<ScopeBuilder.Rule>,ctxt) ->
-    match rule with
-    | r::xs ->
-      Done (("",[{Input    = type_to_typesig [r.Input]
-                  Output   = type_to_typesig [r.Output]
-                  Premises = []}]),xs,ctxt)
-    |[] -> Error TypeError
-  
-let rule_to_typedrule : Parser<ScopeBuilder.Rule,TypedScope,Id*List<Rule>> =
-  prs{
-    let! r = make_rule
-    return r
-  }
-
 let import_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
   fun (scp,ctxt) ->
     let ctxt' = {ctxt with ImportDecls = scp.Head.ImportDeclaration}
     Done((),scp,ctxt') 
 
-let lift_type p i o : Parser<ScopeBuilder.Scope,TypedScope,_> =
+let lift_type p i o : Parser<ScopeBuilder.Scope,_,_> =
   fun (scp,ctxt) ->
-    match (p |> repeat) (i scp ctxt) with
+    match (p |> itterate) (i scp ctxt) with
     | Done(x,y,z) -> Done((),scp,(o ctxt x)) 
     | Error (p) -> Error (p)   
 
@@ -184,15 +170,9 @@ let typealias_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
   lift_type symdec_to_typedscope (fun scp ctxt -> (scp.Head.TypeAliasDeclarations,ctxt))
     (fun ctxt x -> {ctxt with AliasDecls = (Map.ofList x)})
 
-let rule_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
-  lift_type rule_to_typedrule (fun scp ctxt -> (scp.Head.Rules,ctxt))
-    (fun ctxt x -> {ctxt with FuncRules = (Map.ofList x)})
-let typerule_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
-  lift_type rule_to_typedrule (fun scp ctxt -> (scp.Head.TypeFunctionRules,ctxt))
-    (fun ctxt x -> {ctxt with TypeFuncRules = (Map.ofList x)})
 
-let procces_scopes (p:Parser<ScopeBuilder.Scope,TypedScope,TypedScope>) 
-    : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,string*TypedScope> =
+let procces_scopes (p) 
+    : Parser<string*ScopeBuilder.Scope,List<string*_>,string*_> =
   fun (scp,ctxt) ->
     match scp with
     |(st,sc)::xs -> 
@@ -254,6 +234,7 @@ let build_data_table  (id:List<Id>) = lift_build_table id (fun x -> DataSym(x)) 
 let build_func_table  (id:List<Id>) = lift_build_table id (fun x -> FuncSym(x))  (fun x -> x.FuncDecls)
 let build_type_table  (id:List<Id>) = lift_build_table id (fun x -> TypeSym(x))  (fun x -> x.TypeFuncDecls)
 let build_arrow_table (id:List<Id>) = lift_build_table id (fun x -> ArrowSym(x)) (fun x -> x.ArrowDecls)
+let build_alias_table (id:List<Id>) = lift_build_table id (fun x -> AliasSym(x)) (fun x -> x.AliasDecls)
 
 let set_table_in_ctxt (table:List<TableSymbols>) : Parser<string*TypedScope,List<string*TypedScope>,_>=
   fun (typscp,ctxt) ->
@@ -273,7 +254,8 @@ let build_symbol_table : Parser<string*TypedScope,List<string*TypedScope>,_>=
     let! func     = build_func_table  importlist
     let! typefunc = build_type_table  importlist
     let! arrow    = build_arrow_table importlist
-    do! set_table_in_ctxt (data@typefunc@arrow@func)
+    let! alias    = build_alias_table importlist
+    do! set_table_in_ctxt (data@typefunc@arrow@func@alias)
     printfn "%A" importlist
     return ()
   }
@@ -289,19 +271,15 @@ let declcheck : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
     return! getContext
   }
 
-let typerulecheck : Parser<ScopeBuilder.Scope,TypedScope,TypedScope> =
-  prs {
-    do! rule_type
-    do! typerule_type
-    return! getContext
-  }
+let ctxtret  = 
+  fun (scp,ctxt) -> Done(ctxt,scp,ctxt)
 
 let decls_check() : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,List<string*TypedScope>> =
   prs{
-    let! dump = (build_empty_typescope_list |> repeat) |> use_new_scope
-    let! res = (procces_scopes declcheck) |> repeat |> use_new_scope
-    let! res = (procces_table build_symbol_table) |> repeat |> move_ctxt_to_scp |> use_new_scope
-    let! res = (procces_scopes typerulecheck) |> repeat |> use_new_scope
+    let! dump = (build_empty_typescope_list |> itterate) |> use_new_scope
+    let! res = (procces_scopes declcheck) |> itterate |> use_new_scope
+    let! res = (procces_table build_symbol_table) |> itterate |> move_ctxt_to_scp |> use_new_scope
+    let! res = ctxtret
     return res
   }
 

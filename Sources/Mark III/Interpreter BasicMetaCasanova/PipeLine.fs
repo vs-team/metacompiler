@@ -6,6 +6,7 @@ open LineSplitter
 open ScopeBuilder
 open Prioritizer
 open TypeChecker
+open RuleChecker
 open System
 open System.IO
 open ParserMonad
@@ -22,7 +23,7 @@ type Scope =
     Parsed  : List<Parser.BasicExpression> option
     Lines   : List<LineSplitter.Line> option
     Scopes  : List<string*ScopeBuilder.Scope>
-    TypedScopes : List<string*Prioritizer.TypedScope>
+    TypedScopes : List<string*RuleTypedScope>
   }
   with 
     static member Zero =
@@ -124,12 +125,24 @@ let start_scope_builder : Parser<string,Scope,List<string*ScopeBuilder.Scope>> =
           | _ -> Error PipeLineError
       | _ -> Error PipeLineError
 
-let start_typecheck : Parser<string,Scope,List<string*Prioritizer.TypedScope>> =
+let rec typedscp_to_ruletypedscp (scp:List<string*Prioritizer.TypedScope>) =
+  match scp with
+  | (st,ty)::xs -> 
+    (st,({RuleTypedScope.Zero with InheritDecls  = ty.InheritDecls;
+                                   SymbolTable   = ty.SymbolTable})
+    ) :: typedscp_to_ruletypedscp xs
+  | [] -> []
+
+let start_typecheck : Parser<string,Scope,List<string*_>> =
   fun(paths,ctxt) ->
     match ctxt.Scopes with 
     | scopes ->
       match (decls_check()) (scopes,[]) with
-      | Done(res,b,c) -> Done(res,paths,ctxt)
+      | Done(res,b,c) -> 
+        match Rules_check() (scopes,(typedscp_to_ruletypedscp res)) with
+        | Done(res',b,c) -> 
+          Done(res',paths,ctxt)
+        | Error e -> Error e
       | Error (p) -> Error (p) 
 
 let lift_parser p mk_new_ctxt : Parser<string,Scope,Unit> =
@@ -176,10 +189,10 @@ let front_end : Parser<string,Scope,_> =
     do! update_paths
   }
 
-let compiler : Parser<string,Scope,List<string*Prioritizer.TypedScope>> = 
+let compiler : Parser<string,Scope,List<string*_>> = 
   t.Start()
   prs{
-    let! u = front_end |> repeat
+    let! u = front_end |> itterate
     do! Type_checker_p
     let! scope = getContext
     return scope.TypedScopes
@@ -188,6 +201,6 @@ let compiler : Parser<string,Scope,List<string*Prioritizer.TypedScope>> =
 let start_compiler (input) (file_paths) =
   let scp = {Scope.Zero with File_paths = file_paths}
   match compiler (input,scp) with
-  | Done(res,_,_) -> res
-  | Error (p) -> failwith ""
+  | Done(res,x,ctxt) -> Done(res,x,ctxt)
+  | Error (p) -> Error p
   
