@@ -4,9 +4,6 @@ open TypeChecker
 
 type TypedScope = {
   Parents       : List<Id*TypedScope>
-  FuncDecls     : Map<Id,Type>
-  DataDecls     : Map<Id,Type>
-  TypeFuncDecls : Map<Id,Kind>
   FuncRules     : Map<Id,List<Rule>>
   TypeFuncRules : Map<Id,List<Id>>
 }

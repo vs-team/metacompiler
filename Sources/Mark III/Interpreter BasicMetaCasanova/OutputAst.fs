@@ -20,6 +20,7 @@ type OutputAstExpr = Call of string*seq<OutputAstExpr>
 type OutputAstStatement = Assignment  of OutputAstVar*OutputAstExpr
                         | UnionSwitch of OutputAstVar*seq<seq<OutputAstStatement>>
                         | Return      of OutputAstExpr
+                        | InlineCode  of string
 
 type OutputAstBody = 
   | Struct       of VarId*seq<OutputAstBody>
@@ -38,17 +39,17 @@ and OutputAstFunc = {
 type OutputAst = Namespace    of VarId*seq<OutputAst>
                | NonNamespace of OutputAstBody
 
-
+(*
 let extractType (tree:TreeExpr) : Option<Type> =
   match tree with
-  | TreeExpr.Abs (_,MaybeType.Known(r),_)   -> Some(r)
+  | TreeExpr.Abs (_,_,MaybeType.Known(r),_)   -> Some(r)
   | TreeExpr.App (_,_,MaybeType.Known(r),_) -> Some(r)
   | TreeExpr.Var (_,MaybeType.Known(r),_)   -> Some(r)
   | TreeExpr.Lit (_,r,_)                    -> Some(r)
   | _ -> None
 
-let getGenerics (t:Type) :Set<Id> = 
-  let rec fn (t:Type) (m:Set<Id>) :Set<Id> =
+let getGenerics (t:Type) :Set<int> = 
+  let rec fn (t:Type) (m:Set<int>) :Set<int> =
     match t with
     | Type.Generic a        -> m |> Set.add a
     | Type.Arrow(l,r)       -> m |> fn l |> fn r
@@ -56,15 +57,24 @@ let getGenerics (t:Type) :Set<Id> =
     | _                     -> m
   fn t Set.empty
 
-(* WORK IN PROGRESS
+let rec find_func_calls (expr:TreeExpr) : Option<Id*TreeExpr> =
+  match expr with
+  | TreeExpr.Abs (_,e,_,_) -> find_func_calls e
+  | TreeExpr.App (TreeExpr.Var(id,_,_),r,_,_) -> Some(id,r)
+  | None
+
 let TemplateExpantion (scope :Eval.CodeGenScope) :Eval.CodeGenScope =
+  // the only generics in a rule are present in input/output
   let templates :Map<Id,Type*Set<Id>> = 
-    scope.FuncDecls |> Map.map (fun k v -> v,getGenerics(v)) 
-                    |> Map.filter (fun _ (_,m) -> not <| Set.isEmpty m)
-                    |> Map.map (fun templated_func_name (functype,generics) -> 
-                      let occurences = 
-                        scope.FuncRules |> Map.map (fun _ rules ->
-                          rules |> List.map (fun rule -> 
+    scope.FuncDecls
+    |> Map.map (fun k v -> v,getGenerics(v)) 
+    |> Map.filter (fun _ (_,m) -> not <| Set.isEmpty m)
+    |> Map.map (fun templated_func_name (functype,generics) -> 
+        scope.FuncRules |> Map.map (fun _ rules ->
+          rules |> List.map (fun rule ->
+            let i = rule.Input )))
+
+              
 
 
 let buildOutputAst (scope :Eval.CodeGenScope) =
@@ -79,4 +89,5 @@ let buildOutputAst (scope :Eval.CodeGenScope) =
     | Type.Generic _ -> fail "can't deal with generics"
     | Type.Application _ -> fail "can't deal with type-applications"
   let data = scope.DataDecls |> Map.toSeq |> Seq.map (fun (k,v) -> realizeType k v)
-*)                      
+  nil
+*)
