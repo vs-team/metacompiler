@@ -95,7 +95,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-   <ItemGroup>
+  <ItemGroup>
     <Content Include="Metacompiler\Casanova\updateable.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -122,6 +122,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Metacompiler\parser_monad.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Metacompiler\StandardLibrary\tryableMonad.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

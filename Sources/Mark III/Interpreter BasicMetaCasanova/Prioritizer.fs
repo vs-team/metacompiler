@@ -15,6 +15,7 @@ type Type = Star
           | SmallArrow of Type*Type
           | Bar        of Type*Type
           | Tuple      of Type*Type
+          | Call       of Type*Type
 and TypeSignature = Nop
                   | Name of Priority*TypeSignature*TypeSignature*TypeSignature
                   | Sig  of Type*TypeSignature
@@ -105,7 +106,7 @@ let rec multiple_scopetype_to_type (typ:ScopeBuilder.Type) (carry:List<Type>) : 
     match x with
     | Id (s,p) -> 
       if (s.StartsWith "'") then multiple_scopetype_to_type xs ((TypeIdVar (s))::carry)
-      elif (s.StartsWith "|") then Bar ((check_size_carry carry),(multiple_scopetype_to_type xs []))
+      elif (s.Equals "|") then Bar ((check_size_carry carry),(multiple_scopetype_to_type xs []))
       else multiple_scopetype_to_type xs ((TypeId (s))::carry)
     | Arrow (SingleArrow,p) -> SmallArrow ((check_size_carry carry),(multiple_scopetype_to_type xs []))
     | Arrow (DoubleArrow,p) -> BigArrow ((check_size_carry carry),(multiple_scopetype_to_type xs []))
@@ -118,7 +119,7 @@ and scopetype_to_type (typ:ScopeBuilder.Type) : Type =
   | [x] ->
     match x with 
     | Id (s,p) -> 
-      if (s.Contains "'") then TypeIdVar (s)
+      if (s.StartsWith "'") then TypeIdVar (s)
       elif (s.Equals "*") then Star
       else TypeId (s)
     | Application (b,l) -> scopetype_to_type l
