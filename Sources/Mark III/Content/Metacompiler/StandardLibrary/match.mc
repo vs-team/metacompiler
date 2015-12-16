@@ -7,6 +7,7 @@ TypeFunc "match" => * => Module
 match ('a | 'b) => MatchT ('a | 'b) {
     TypeFunc "Head" => *
     Head => 'a
+
     TypeFunc "Tail" => *
     Tail => 'b
     
