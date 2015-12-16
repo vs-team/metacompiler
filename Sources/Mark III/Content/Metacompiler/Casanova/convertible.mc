@@ -1,8 +1,8 @@
 ﻿import prelude
 
-TypeFunc "Convertible" => 'keys => 'values => Signature
+TypeFunc "Convertible" => 'keys => 'values => Module
 
-Convertible keys values => Signature{
+Convertible keys values => Module{
   TypeFunc "get" => keys => values
   TypeFunc "set" => k => av => bv
 }
