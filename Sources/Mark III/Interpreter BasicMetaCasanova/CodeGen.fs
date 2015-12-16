@@ -5,7 +5,7 @@ open OutputAst
 
 let genericMangle (name:string) :string =
   let normalize (name:string) :string =
-    let bytes = System.Text.Encoding.Default.GetBytes(name)
+    let bytes = System.Text.Encoding.Unicode.GetBytes(name)
     let str   = System.Text.Encoding.UTF8.GetString(bytes)
     System.String.Intern(str).Normalize(System.Text.NormalizationForm.FormKC)
   let readables = 
@@ -47,7 +47,7 @@ let rec print_ast (ast:OutputAst) :string =
     | Int32  -> "System.Int32"
     | Int64  -> "System.Int64"
     | Float  -> "System.Single"
-    | Double -> "System.Float"
+    | Double -> "System.Double"
     | TypeId s -> CSharpMangle s
 
   let print_var (x:OutputAstVar) =
@@ -71,6 +71,7 @@ let rec print_ast (ast:OutputAst) :string =
       let body d s = sprintf "case%d:%sbreak;" d (s|> Seq.map print_statement |> String.concat "")
       sprintf "switch(%s._id){%s};" (print_var var) (lst |> Seq.mapi body |> String.concat "")
     | Return x -> sprintf "return %s;" (print_expr x)
+    | InlineCode s -> s
 
   let print_namespace (name:VarId) (body:seq<OutputAst>) =
       let print_body (ast:OutputAst) = sprintf "public %s" (print_ast ast)
