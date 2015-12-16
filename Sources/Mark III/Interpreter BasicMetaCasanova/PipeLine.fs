@@ -192,7 +192,7 @@ let front_end : Parser<string,Scope,_> =
 let compiler : Parser<string,Scope,List<string*_>> = 
   t.Start()
   prs{
-    let! u = front_end |> repeat
+    let! u = front_end |> itterate
     do! Type_checker_p
     let! scope = getContext
     return scope.TypedScopes
@@ -201,6 +201,6 @@ let compiler : Parser<string,Scope,List<string*_>> =
 let start_compiler (input) (file_paths) =
   let scp = {Scope.Zero with File_paths = file_paths}
   match compiler (input,scp) with
-  | Done(res,_,_) -> res
-  | Error (p) -> failwith ""
+  | Done(res,x,ctxt) -> Done(res,x,ctxt)
+  | Error (p) -> Error p
   

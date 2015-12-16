@@ -70,7 +70,7 @@ let rec match_rule_to_decl : Parser<TableSymbols,List<BasicExpression>,TableSymb
     | x::xs -> 
       if find_id_in_basicexpresion (get_tablesymbol_name x) expr 
       then Done(x,xs,expr) else Error TypeError
-    | [] -> Error TypeError 
+    | [] -> Error (RuleError "match_rule_to_decl")
 
 let rule_to_ruleinput : Parser<ScopeBuilder.Rule,RuleTypedScope,Id*TreeExpr> =
   fun (rule,ctxt) ->
@@ -79,9 +79,9 @@ let rule_to_ruleinput : Parser<ScopeBuilder.Rule,RuleTypedScope,Id*TreeExpr> =
       match ((match_rule_to_decl |> collect_correct) (ctxt.SymbolTable,x.Input)) with
       | Done(res,a,b) ->
         match res with 
-        | x::xs ->
-          Done(((get_tablesymbol_name x),(Lit(String(""),Star))),rule,ctxt)
-        | [] -> Error TypeError
+        | ts::tsxs ->
+          Done(((get_tablesymbol_name ts),(Lit(String(""),Star))),rule,ctxt)
+        | [] -> Error (RuleError (sprintf "No symbol found in:%A" x.Input))
       | Error e -> Error e
     | [] -> Error TypeError
 
@@ -105,7 +105,7 @@ let rule_to_typedrule2 : Parser<ScopeBuilder.Rule,RuleTypedScope,Id*List<Rule>> 
       Done (("",[{Input    = Lit(String(""),Star)
                   Output   = Lit(String(""),Star)
                   Premises = []}]),xs,ctxt)
-    |[] -> Error TypeError
+    | [] -> Error TypeError
 
 let rec sort_rules sort sorted =
   let rule_exists st list = List.exists (fun (s,ru) -> if s = st then true else false) list
@@ -129,12 +129,12 @@ let typerule_type : Parser<ScopeBuilder.Scope,RuleTypedScope,_> =
 let typerulecheck : Parser<ScopeBuilder.Scope,RuleTypedScope,RuleTypedScope> =
   prs {
     do! rule_type
-    do! typerule_type
+    //do! typerule_type
     return! getContext
   }
 
 let Rules_check() : Parser<string*ScopeBuilder.Scope,List<string*RuleTypedScope>,List<string*RuleTypedScope>> =
   prs{
-    let! res = (procces_scopes typerulecheck) |> repeat |> use_new_scope
+    let! res = (procces_scopes typerulecheck) |> itterate |> use_new_scope
     return res
   }

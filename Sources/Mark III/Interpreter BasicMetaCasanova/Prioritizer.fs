@@ -57,6 +57,22 @@ let rec filter_lists (l1:List<'a>) (l2:List<'a>) =
   | x::xs -> filter_lists xs (List.filter (fun st -> if x = st then false else true) l2)
   | [] -> l2
 
+let end_of_list =
+  fun (li,ctxt) ->
+    match li with 
+    | x::xs -> Error TypeError
+    | [] -> Done((),li,ctxt)
+
+let rec itterate (p:Parser<_,_,'res>) :Parser<_,_,List<'res>> =
+  prs{
+    let! x = p
+    let! xs = itterate p
+    return x::xs
+  } .|| prs{
+    do! end_of_list
+    return []
+  }
+
 let move_ctxt_to_scp p  =
   fun (scp,ctxt) ->
     match p (ctxt,ctxt) with
@@ -134,7 +150,7 @@ let import_type : Parser<ScopeBuilder.Scope,TypedScope,_> =
 
 let lift_type p i o : Parser<ScopeBuilder.Scope,_,_> =
   fun (scp,ctxt) ->
-    match (p |> repeat) (i scp ctxt) with
+    match (p |> itterate) (i scp ctxt) with
     | Done(x,y,z) -> Done((),scp,(o ctxt x)) 
     | Error (p) -> Error (p)   
 
@@ -260,9 +276,9 @@ let ctxtret  =
 
 let decls_check() : Parser<string*ScopeBuilder.Scope,List<string*TypedScope>,List<string*TypedScope>> =
   prs{
-    let! dump = (build_empty_typescope_list |> repeat) |> use_new_scope
-    let! res = (procces_scopes declcheck) |> repeat |> use_new_scope
-    let! res = (procces_table build_symbol_table) |> repeat |> move_ctxt_to_scp |> use_new_scope
+    let! dump = (build_empty_typescope_list |> itterate) |> use_new_scope
+    let! res = (procces_scopes declcheck) |> itterate |> use_new_scope
+    let! res = (procces_table build_symbol_table) |> itterate |> move_ctxt_to_scp |> use_new_scope
     let! res = ctxtret
     return res
   }

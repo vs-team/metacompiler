@@ -6,7 +6,8 @@ type ErrorType =  ParserMonadError
                 | ParserError         of Position
                 | LineSplitterError   of Position
                 | ScopeError          of string*Position
-                | TypeError           
+                | TypeError
+                | RuleError           of string           
                 | PipeLineError
                    
 type Result<'char,'ctxt,'result> = 
