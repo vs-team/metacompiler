@@ -26,9 +26,9 @@ int => Number Int^primitive {
     one -> 1
   }
 
-TypeFunc "float" => Number Float^primitive
+TypeFunc "float" => Number 
 
-float => Number Float^primitives {
+float => Number Float^primitive {
     x + y -> FloatAdd^primitive x y
     x - y -> FloatSub^primitive x y
     zero -> 0
