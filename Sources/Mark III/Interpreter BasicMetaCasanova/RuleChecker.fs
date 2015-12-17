@@ -4,10 +4,13 @@ open ParserMonad
 open ScopeBuilder
 open Prioritizer
 
-type TreeExpr = Name of Id*TreeExpr*TreeExpr
+type TreeExpr = Name of Id*TreeExpr*TreeExpr*TreeExpr
               | App  of TreeExpr*TreeExpr
               | Var  of Id*Type
               | Lit  of Literal*Type
+
+type ExprSig = Element     of TypeSignature*ScopeBuilder.BasicExpression
+             | ElementList of List<ExprSig>
 
 type Rule = {
   Input    :TreeExpr
@@ -64,6 +67,26 @@ let get_tablesymbol_name (ts:TableSymbols) :Id =
   | ArrowSym(id,_,_) -> id
   | AliasSym(id,_,_) -> id
 
+let get_tablesymbol_typesignature (ts:TableSymbols) =
+  match ts with
+  | DataSym (_,_,sign) -> sign
+  | FuncSym (_,_,sign) -> sign
+  | TypeSym (_,_,sign) -> sign
+  | ArrowSym(_,_,sign) -> sign
+  | AliasSym(_,_,sign) -> sign
+
+let get_priority_of_symbol (ts:TableSymbols) =
+  let pri sign =
+    match sign with
+    | Prioritizer.Name((i,a),_,_,_) -> i
+    | _ -> failwith "no name found"  
+  match ts with
+  | DataSym (x,y,z) -> pri z
+  | FuncSym (x,y,z) -> pri z
+  | TypeSym (x,y,z) -> pri z
+  | ArrowSym(x,y,z) -> pri z
+  | AliasSym(x,y,z) -> pri z
+
 let rec match_rule_to_decl : Parser<TableSymbols,List<BasicExpression>,TableSymbols> =
   fun (ts,expr) ->
     match ts with
@@ -72,6 +95,42 @@ let rec match_rule_to_decl : Parser<TableSymbols,List<BasicExpression>,TableSymb
       then Done(x,xs,expr) else Error TypeError
     | [] -> Error (RuleError "match_rule_to_decl")
 
+let order_tablesymbols (ts:List<TableSymbols>) = 
+  List.sortWith (fun x y -> (get_priority_of_symbol y) - (get_priority_of_symbol x)) ts 
+
+let table_symbol_exist (ts:List<TableSymbols>) (id:Id) =
+  List.exists (fun table -> if (get_tablesymbol_name table) = id then true else false) ts
+
+let get_typesignature_from_tablesym (ts:List<TableSymbols>) (id:Id) =
+  let table = List.find (fun table -> if (get_tablesymbol_name table) = id then true else false) ts
+  get_tablesymbol_typesignature table
+
+let build_symbol_tree : Parser<TableSymbols,List<ExprSig>,TreeExpr> =
+  let rec fill_exprsig (ts:List<TableSymbols>) (be:List<ExprSig>) : List<ExprSig> =
+    match be with
+    | Element(typsig,expr)::xs ->
+      match expr with
+      | Id(i,p) -> 
+        if table_symbol_exist ts i then 
+          Element((get_typesignature_from_tablesym ts i),expr)::(fill_exprsig ts xs)
+        else Element(Nop,expr)::(fill_exprsig ts xs)
+      | _ -> failwith "not implemented yet"
+    | ElementList(x)::xs -> 
+      ElementList(fill_exprsig ts x)::fill_exprsig ts xs
+    | [] -> []
+
+  fun (ts,be) -> 
+    let bla = fill_exprsig ts be
+    printfn "%A\n____________" (bla)
+    Done((Lit(String(""),Star)),ts,be)
+
+let rec build_exprsig_list (be:List<ScopeBuilder.BasicExpression>) : List<ExprSig> =
+  match be with
+  | Id(x,p)::xs -> Element(Nop,Id(x,p))::(build_exprsig_list xs)
+  | Application(_,x)::xs ->ElementList(build_exprsig_list x)::(build_exprsig_list xs)
+  | [] -> []
+  | _ -> failwith "not implemented yet"
+    
 let rule_to_ruleinput : Parser<ScopeBuilder.Rule,RuleTypedScope,Id*TreeExpr> =
   fun (rule,ctxt) ->
     match rule with
@@ -80,7 +139,11 @@ let rule_to_ruleinput : Parser<ScopeBuilder.Rule,RuleTypedScope,Id*TreeExpr> =
       | Done(res,a,b) ->
         match res with 
         | ts::tsxs ->
-          Done(((get_tablesymbol_name ts),(Lit(String(""),Star))),rule,ctxt)
+          match (build_symbol_tree) (res,(build_exprsig_list x.Input)) with
+          | Done (tree,_,_) -> 
+            //printfn "%A\n____________" (order_tablesymbols res)
+            Done(((get_tablesymbol_name ts),(Lit(String(""),Star))),rule,ctxt)
+          | Error e -> Error e
         | [] -> Error (RuleError (sprintf "No symbol found in:%A" x.Input))
       | Error e -> Error e
     | [] -> Error TypeError
@@ -98,14 +161,6 @@ let rule_to_typedrule : Parser<ScopeBuilder.Rule,RuleTypedScope,Id*Rule> =
     do! next_rule
     return (name,{Input = input; Output = output; Premises = []})
   }
-let rule_to_typedrule2 : Parser<ScopeBuilder.Rule,RuleTypedScope,Id*List<Rule>> =
-  fun (rule:List<ScopeBuilder.Rule>,ctxt) ->
-    match rule with
-    | r::xs ->
-      Done (("",[{Input    = Lit(String(""),Star)
-                  Output   = Lit(String(""),Star)
-                  Premises = []}]),xs,ctxt)
-    | [] -> Error TypeError
 
 let rec sort_rules sort sorted =
   let rule_exists st list = List.exists (fun (s,ru) -> if s = st then true else false) list

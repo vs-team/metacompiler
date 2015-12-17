@@ -5,7 +5,8 @@ open ScopeBuilder
 
 type Priority = int*Associativity
 
-type Type = Star 
+type Type = Unknown
+          | Star 
           | Module 
           | ModuleDef  of TypedScope
           | TypeId     of Id
@@ -123,9 +124,9 @@ and scopetype_to_type (typ:ScopeBuilder.Type) : Type =
       elif (s.Equals "*") then Star
       else TypeId (s)
     | Application (b,l) -> scopetype_to_type l
-    | _ -> Star
+    | _ -> Unknown
   | x::xs -> multiple_scopetype_to_type typ []
-  | [] -> Star
+  | [] -> Unknown
 
 let rec type_to_typesig (typ:List<ScopeBuilder.Type>) : TypeSignature =
   match typ with

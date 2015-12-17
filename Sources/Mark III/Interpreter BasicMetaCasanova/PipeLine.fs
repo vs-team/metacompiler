@@ -121,7 +121,7 @@ let start_scope_builder : Parser<string,Scope,List<string*ScopeBuilder.Scope>> =
         match build_scopes line_blocks start_scope with
           | Some scope ->
             do printfn "Done scope building in %d ms." t.ElapsedMilliseconds
-            Done(((paths.Head,scope)::scope.Modules),paths,ctxt)
+            Done([(paths.Head,scope)],paths,ctxt)
           | _ -> Error PipeLineError
       | _ -> Error PipeLineError
 
