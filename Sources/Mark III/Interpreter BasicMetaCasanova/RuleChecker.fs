@@ -4,12 +4,14 @@ open ParserMonad
 open ScopeBuilder
 open Prioritizer
 
-type TreeExpr = Name of Id*TreeExpr*TreeExpr*TreeExpr
-              | App  of TreeExpr*TreeExpr
+type TreeExpr = Name of Id*TreeExpr*TreeExpr*Type
+              | LeR  of TreeExpr*TreeExpr
+              | Lef  of TreeExpr*TreeExpr
+              | Rig  of TreeExpr*TreeExpr
               | Var  of Id*Type
               | Lit  of Literal*Type
 
-type ExprSig = Element     of TypeSignature*ScopeBuilder.BasicExpression
+type ExprSig = Element     of Id*TypeSignature*ScopeBuilder.BasicExpression
              | ElementList of List<ExprSig>
 
 type Rule = {
@@ -99,34 +101,56 @@ let order_tablesymbols (ts:List<TableSymbols>) =
   List.sortWith (fun x y -> (get_priority_of_symbol y) - (get_priority_of_symbol x)) ts 
 
 let table_symbol_exist (ts:List<TableSymbols>) (id:Id) =
-  List.exists (fun table -> if (get_tablesymbol_name table) = id then true else false) ts
+  List.exists (fun table -> (get_tablesymbol_name table) = id) ts
 
 let get_typesignature_from_tablesym (ts:List<TableSymbols>) (id:Id) =
-  let table = List.find (fun table -> if (get_tablesymbol_name table) = id then true else false) ts
+  let table = List.find (fun table -> (get_tablesymbol_name table) = id) ts
   get_tablesymbol_typesignature table
 
+let rec slot_check_symbol_tree : Parser<TableSymbols,List<ExprSig>,TreeExpr> =
+  let get_index id = 
+    List.tryFindIndex (fun x -> 
+      match x with 
+      | Element(i,typ,be) -> id = i
+      | ElementList(_) -> false 
+    )
+  fun (ts,expr) -> 
+    let rec split_list ts expr = 
+      match ts with
+      | x::xs -> 
+        match get_index (get_tablesymbol_name x) expr  with
+        | Some (i) -> List.splitAt i expr
+        | None -> split_list xs expr
+      | [] -> [],expr
+    let a,b = (split_list ts expr)
+    printfn "%A\n+++++++\n%A\n========" a b
+    Done((Lit(String(""),Star)),ts,expr)
+      
 let build_symbol_tree : Parser<TableSymbols,List<ExprSig>,TreeExpr> =
   let rec fill_exprsig (ts:List<TableSymbols>) (be:List<ExprSig>) : List<ExprSig> =
     match be with
-    | Element(typsig,expr)::xs ->
+    | Element(_,typsig,expr)::xs ->
       match expr with
       | Id(i,p) -> 
         if table_symbol_exist ts i then 
-          Element((get_typesignature_from_tablesym ts i),expr)::(fill_exprsig ts xs)
-        else Element(Nop,expr)::(fill_exprsig ts xs)
+          Element(i,(get_typesignature_from_tablesym ts i),expr)::(fill_exprsig ts xs)
+        else Element(i,Nop,expr)::(fill_exprsig ts xs)
       | _ -> failwith "not implemented yet"
     | ElementList(x)::xs -> 
       ElementList(fill_exprsig ts x)::fill_exprsig ts xs
     | [] -> []
-
   fun (ts,be) -> 
     let bla = fill_exprsig ts be
-    printfn "%A\n____________" (bla)
+    let vla = 
+      match (slot_check_symbol_tree) (ts,bla) with
+      | Done(res,_,_) -> res
+      | Error e -> failwith "not implemented yet"
+    //printfn "%A\n____________" (bla)
     Done((Lit(String(""),Star)),ts,be)
 
 let rec build_exprsig_list (be:List<ScopeBuilder.BasicExpression>) : List<ExprSig> =
   match be with
-  | Id(x,p)::xs -> Element(Nop,Id(x,p))::(build_exprsig_list xs)
+  | Id(x,p)::xs -> Element("",Nop,Id(x,p))::(build_exprsig_list xs)
   | Application(_,x)::xs ->ElementList(build_exprsig_list x)::(build_exprsig_list xs)
   | [] -> []
   | _ -> failwith "not implemented yet"
