@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -121,15 +121,24 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Metacompiler\parser_monad.mc">
+    <Content Include="Metacompiler\BasicMonads\boolean.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Metacompiler\StandardLibrary\newnumber.mc">
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Metacompiler\parser_monad.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Metacompiler\StandardLibrary\tryableMonad.mc">
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Metacompiler\StandardLibrary\newnumber.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Metacompiler\StandardLibrary\tryableMonad.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

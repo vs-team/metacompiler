@@ -4,8 +4,11 @@ Data "Unit" -> Unit
 Data 'a -> "," -> 'b -> 'a * 'b    #> 5 
 Data "Left" -> 'a -> 'a | 'b       #> 5 
 Data "Right" -> 'b -> 'a | 'b      #> 5 
-Data "True" -> Boolean             
-Data "False" -> Boolean             
+
+Boolean => Boolean {
+    True -> TrueBoolean^primitive
+    False -> FalseBoolean^primitive
+  }
 
 Data "then" -> Then                
 Data "else" -> Else                
@@ -15,7 +18,6 @@ if True then f else g -> f
 if False then f else g -> g
 
 TypeFunc "int" => Number 
-
 int => Number Int^primitive {
     x + y -> IntAdd^primitive x y
     x - y -> IntSub^primitive x y
@@ -27,7 +29,6 @@ int => Number Int^primitive {
   }
 
 TypeFunc "float" => Number 
-
 float => Number Float^primitive {
     x + y -> FloatAdd^primitive x y
     x - y -> FloatSub^primitive x y
