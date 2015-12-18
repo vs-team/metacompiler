@@ -180,9 +180,9 @@ let rule_to_typedrule : Parser<ScopeBuilder.Rule,RuleTypedScope,Id*Rule> =
   }
 
 let rec sort_rules sort sorted =
-  let rule_exists st list = List.exists (fun (s,ru) -> if s = st then true else false) list
-  let rule_find st list = List.find (fun (s,ru) -> if s = st then true else false) list
-  let rule_filter st list = List.filter (fun (s,ru) -> if s = st then false else true) list 
+  let rule_exists st list = List.exists (fun (s,ru) -> s = st) list
+  let rule_find st list = List.find (fun (s,ru) -> s = st) list
+  let rule_filter st list = List.filter (fun (s,ru) -> s = st |> not) list 
   match sort with
   | (st,ru)::xs -> 
     if rule_exists st sorted then

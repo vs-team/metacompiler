@@ -48,15 +48,15 @@ and TypedScope =
         AliasDecls      = Map.empty
         DataDecls       = Map.empty
       }
-let filter_typescopes typscp st = List.filter (fun (s,t) -> if st = s then false else true) typscp
+let filter_typescopes typscp st = List.filter (fun (s,t) -> st = s |> not) typscp
 let find_typescope typscp st = 
-  if List.exists (fun (s,t) -> if st = s then true else false) typscp then
-    let _,res = List.find (fun (s,t) -> if st = s then true else false) typscp
+  if List.exists (fun (s,t) -> st = s) typscp then
+    let _,res = List.find (fun (s,t) -> st = s) typscp
     Done(res,[],())
   else Error TypeError 
 let rec filter_lists (l1:List<'a>) (l2:List<'a>) =
   match l1 with
-  | x::xs -> filter_lists xs (List.filter (fun st -> if x = st then false else true) l2)
+  | x::xs -> filter_lists xs (List.filter (fun st -> x = st |> not) l2)
   | [] -> l2
 
 let end_of_list =
