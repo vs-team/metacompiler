@@ -257,7 +257,7 @@ let build_symbol_table : Parser<string*TypedScope,List<string*TypedScope>,_>=
     let! typefunc = build_type_table  importlist
     let! arrow    = build_arrow_table importlist
     let! alias    = build_alias_table importlist
-    do! set_table_in_ctxt (data@typefunc@arrow@func@alias)
+    do! set_table_in_ctxt (typefunc@arrow@func@data@alias)
     printfn "%A" importlist
     return ()
   }

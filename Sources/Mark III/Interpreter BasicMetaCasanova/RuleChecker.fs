@@ -140,9 +140,9 @@ let build_symbol_tree : Parser<TableSymbols,List<ExprSig>,TreeExpr> =
       ElementList(fill_exprsig ts x)::fill_exprsig ts xs
     | [] -> []
   fun (ts,be) -> 
-    let bla = fill_exprsig ts be
-    let vla = 
-      match (slot_check_symbol_tree) (ts,bla) with
+    let exprstructure = fill_exprsig ts be
+    let ruletree = 
+      match (slot_check_symbol_tree) (ts,exprstructure) with
       | Done(res,_,_) -> res
       | Error e -> failwith "not implemented yet"
     //printfn "%A\n____________" (bla)
@@ -163,7 +163,7 @@ let rule_to_ruleinput : Parser<ScopeBuilder.Rule,RuleTypedScope,Id*TreeExpr> =
       | Done(res,a,b) ->
         match res with 
         | ts::tsxs ->
-          match (build_symbol_tree) (res,(build_exprsig_list x.Input)) with
+          match (build_symbol_tree) (order_tablesymbols res,(build_exprsig_list x.Input)) with
           | Done (tree,_,_) -> 
             //printfn "%A\n____________" (order_tablesymbols res)
             Done(((get_tablesymbol_name ts),(Lit(String(""),Star))),rule,ctxt)
