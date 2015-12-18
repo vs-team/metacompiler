@@ -61,33 +61,26 @@ let rec find_id_in_basicexpresion (id:Id) (expr:List<BasicExpression>) =
     | _ -> find_id_in_basicexpresion id xs
   | [] -> false
 
-let get_tablesymbol_name (ts:TableSymbols) :Id =
+let lift_tablesymbol_content (ts:TableSymbols) ret =
   match ts with
-  | DataSym(id,_,_)  -> id
-  | FuncSym(id,_,_)  -> id
-  | TypeSym(id,_,_)  -> id
-  | ArrowSym(id,_,_) -> id
-  | AliasSym(id,_,_) -> id
+  | DataSym (x,y,z)  -> ret (x,y,z)
+  | FuncSym (x,y,z)  -> ret (x,y,z)
+  | TypeSym (x,y,z)  -> ret (x,y,z)
+  | ArrowSym(x,y,z)  -> ret (x,y,z)
+  | AliasSym(x,y,z)  -> ret (x,y,z)
+
+let get_tablesymbol_name (ts:TableSymbols) :Id =
+  lift_tablesymbol_content ts (fun (x,_,_) -> x)
 
 let get_tablesymbol_typesignature (ts:TableSymbols) =
-  match ts with
-  | DataSym (_,_,sign) -> sign
-  | FuncSym (_,_,sign) -> sign
-  | TypeSym (_,_,sign) -> sign
-  | ArrowSym(_,_,sign) -> sign
-  | AliasSym(_,_,sign) -> sign
+  lift_tablesymbol_content ts (fun (_,_,x) -> x)
 
 let get_priority_of_symbol (ts:TableSymbols) =
   let pri sign =
     match sign with
     | Prioritizer.Name((i,a),_,_,_) -> i
     | _ -> failwith "no name found"  
-  match ts with
-  | DataSym (x,y,z) -> pri z
-  | FuncSym (x,y,z) -> pri z
-  | TypeSym (x,y,z) -> pri z
-  | ArrowSym(x,y,z) -> pri z
-  | AliasSym(x,y,z) -> pri z
+  lift_tablesymbol_content ts (fun (_,_,x) -> pri x)
 
 let rec match_rule_to_decl : Parser<TableSymbols,List<BasicExpression>,TableSymbols> =
   fun (ts,expr) ->
