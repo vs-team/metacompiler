@@ -2,7 +2,6 @@ import prelude
 import monad
 
 TypeFunc "TryableMonad" => ( * => * ) => Signature
-
 TryableMonad 'M => Monad(MCons^M) {
     inherit 'M
 

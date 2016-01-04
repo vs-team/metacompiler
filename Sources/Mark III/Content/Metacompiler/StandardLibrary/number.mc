@@ -1,5 +1,4 @@
 TypeFunc "Number" => * => Module
-
 Number 'a => Module {
     TypeFunc "Num" => *
     Num => 'a

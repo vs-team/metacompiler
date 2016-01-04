@@ -1,7 +1,6 @@
 import prelude
 
 TypeFunc "Monad" => (* => *) => Module
-
 Monad 'M => Module {
     ArrowFunc 'M 'a -> ">>=" -> ('a -> 'M 'b) -> 'M 'b   #> 10 L
     Func "return" -> 'a -> 'M 'a
