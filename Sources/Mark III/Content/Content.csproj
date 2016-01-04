@@ -121,7 +121,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Metacompiler\BasicMonads\boolean.mc">
+    <Content Include="Metacompiler\StandardLibrary\boolean.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
