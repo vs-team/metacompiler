@@ -11,13 +11,13 @@ MonoidMul 'a => Module {
   }
 
 TypeFunc "GroupAdd" => * => MonoidAdd => Module
-Ring 'a 'M => Module {
+GroupAdd 'a 'M => Module {
 	  inherit 'M 'a
 	  Func 'a -> "-" -> 'a -> 'a #> 60
   }
 
 TypeFunc "GroupMul" => * => MonoidMul => Module
-Ring 'a 'M => Module {
+GroupMul 'a 'M => Module {
 	  inherit 'M 'a
   	Func 'a -> "/" -> 'a -> 'a #> 70
   }
