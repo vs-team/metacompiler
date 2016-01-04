@@ -1,4 +1,5 @@
 ﻿import number
+import boolean
 
 Data "Unit" -> Unit                
 Data 'a -> "," -> 'b -> 'a * 'b    #> 5 
