@@ -28,7 +28,7 @@ Number 'a 'A 'M => Module{
 	  inherit 'M 'a
   }
 
-TypeFunc "Vector" => * => GroupAdd => MonoidMul=> Module
+TypeFunc "Vector" => * => GroupAdd => MonoidMul => Module
 Vector 'a 'A 'M => Module{
     inherit 'A 'a
     inherit 'M 'a
