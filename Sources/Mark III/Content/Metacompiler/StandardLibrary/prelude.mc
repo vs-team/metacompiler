@@ -7,8 +7,8 @@ Data "Left" -> 'a -> 'a | 'b       #> 5
 Data "Right" -> 'b -> 'a | 'b      #> 5 
 
 Boolean => Boolean {
-    True -> TrueBoolean^primitive
-    False -> FalseBoolean^primitive
+    True -> TrueBoolean^system
+    False -> FalseBoolean^system
   }
 
 Data "then" -> Then                
@@ -19,23 +19,23 @@ if True then f else g -> f
 if False then f else g -> g
 
 TypeFunc "int" => Number 
-int => Number Int^primitive {
-    x + y -> IntAdd^primitive x y
-    x - y -> IntSub^primitive x y
+int => Number Int^system {
+    x + y -> IntAdd^system x y
+    x - y -> IntSub^system x y
     zero -> 0
     
-    x * y -> IntMul^primitive x y
-    x / y -> IntDiv^primitive x y
+    x * y -> IntMul^system x y
+    x / y -> IntDiv^system x y
     one -> 1
   }
 
 TypeFunc "float" => Number 
-float => Number Float^primitive {
-    x + y -> FloatAdd^primitive x y
-    x - y -> FloatSub^primitive x y
+float => Number Float^system {
+    x + y -> FloatAdd^system x y
+    x - y -> FloatSub^system x y
     zero -> 0
     
-    x * y -> FloatMul^primitive x y
-    x / y -> FloatDiv^primitive x y
+    x * y -> FloatMul^system x y
+    x / y -> FloatDiv^system x y
     one -> 1
   }

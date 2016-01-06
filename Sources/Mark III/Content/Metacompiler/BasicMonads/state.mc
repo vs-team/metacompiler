@@ -7,9 +7,10 @@ StateT 'M 's 'a => ('s -> 'M('a*'s))
 TypeFunc "state" => Monad => * => Monad
 
 state 'M 's => Monad(StateT MCons^'M 's) {
-    p s >>=^'M (x,s')
+    p s >>=^'M x
+    lift x -> (x',s')
     --
-    (p >>= k) s -> k x s'
+    (p >>= k) s -> k x' s'
 
     return x s -> return^'M(x,s)
 

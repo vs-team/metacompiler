@@ -3,7 +3,7 @@ import prelude
 Data "with" -> With
 
 TypeFunc "match" => * => Module
-match ('a | 'b) => MatchT ('a | 'b) {
+match ('a | 'b) => Module ('a | 'b) {
     TypeFunc "Head" => *
     Head => 'a
 
@@ -12,5 +12,10 @@ match ('a | 'b) => MatchT ('a | 'b) {
     
     Func "do" -> 'a -> With -> (Head -> 'b) -> (Tail -> 'b) -> 'b
     do (Left x) with f g -> f x
+
+    do y with g h -> res
+    --
+    do (Right y) with f (g h) -> res
+
     do (Right y) with f g -> g y
   }

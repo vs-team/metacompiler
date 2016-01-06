@@ -1,11 +1,12 @@
 import prelude
 import match
 import monad
+import boolean
 
 TypeAlias "List" => * => *
 List 'a => Unit | ('a * (List 'a))
 
-Data 'a -> "::" -> List 'a -> ('a,List 'a)
+Data 'a -> "::" -> List 'a -> ('a, List 'a)
 
 Func "empty" -> List 'a
 empty -> Left Unit
@@ -37,8 +38,7 @@ TypeAlias "ListT" => (* => *) => * => *
 ListT 'M 'a => 'M(List 'a)
 
 TypeFunc "list" => Monad => Monad 
-
-list 'M => Monad(ListT MCons^'M) {
+list 'M 'a => Monad(ListT MCons^'M 'a) {
     lm >>=^'M l
     (do^(match(MCons 'a)) l with
       (\empty -> return^'M empty)
