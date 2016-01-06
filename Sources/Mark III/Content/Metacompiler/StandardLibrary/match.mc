@@ -3,7 +3,7 @@ import prelude
 Data "with" -> With
 
 TypeFunc "match" => * => Module
-match ('a | 'b) => MatchT ('a | 'b) {
+match ('a | 'b) => Module ('a | 'b) {
     TypeFunc "Head" => *
     Head => 'a
 
