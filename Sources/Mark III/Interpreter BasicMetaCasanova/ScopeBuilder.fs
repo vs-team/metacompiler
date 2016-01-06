@@ -12,7 +12,7 @@ type BasicExpression =
   | Arrow of Arrow * Position
   | Application of Bracket * List<BasicExpression>
   | Lambda of Rule
-  | Module of Id
+  | Module of Position
 
 and SymbolDeclaration = 
   {
@@ -51,7 +51,7 @@ and Scope =
     DataDeclarations         : List<SymbolDeclaration>
     TypeFunctionRules        : List<Rule>
     Rules                    : List<Rule>
-    Modules                  : List<Id*Scope>
+    Modules                  : List<Position*Scope>
   } 
   with 
     static member Zero = 
@@ -321,7 +321,7 @@ let rec priority : Parser<_, _, int*Associativity> =
   prs{
     do! priorityarrow
     let! pri = int_literal 
-    let! str = id .|| (prs{return "L"})
+    let! str = id .|| (prs{return "R"})
     let! ass = string_to_associativivaty str
     return pri,ass
   }
@@ -533,8 +533,8 @@ and scope_lines (pos:Position) :Parser<LineSplitter.BasicExpression,Scope,List<B
       let newscp = {Scope.Zero with CurrentNamespace = modulename ; ImportDeclaration = [ctxt.CurrentNamespace]}
       match (scope() (lines,newscp)) with 
       | Done (res,_,_) -> 
-        let ctxt' = {ctxt with Modules = (modulename,res)::ctxt.Modules }
-        Done([(Module modulename)],exprs,ctxt')
+        let ctxt' = {ctxt with Modules = (pos,res)::ctxt.Modules }
+        Done([(Module pos)],exprs,ctxt')
       | Error (p) -> 
         printfn "%A" p
         Error (p) 

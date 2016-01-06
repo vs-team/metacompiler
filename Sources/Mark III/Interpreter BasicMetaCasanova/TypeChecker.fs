@@ -26,37 +26,25 @@ how to handle modules (signatures)
   translate signatures to templated functions
 *)
 
-type TreeExpr = Abs of TreeExpr*MaybeType*Position
-              | App of TreeExpr*TreeExpr*MaybeType*Position
-              | Var of Id*MaybeType*Position
-              | Lit of Literal*Type*Position
+type TreeExpr = Abs of TreeExpr*TreeExpr
+              | App of TreeExpr*TreeExpr*TreeExpr
+              | Var of Id*TreeExpr
+              | Lit of Literal
 
 and Rule = {
   Input    :TreeExpr
   Output   :TreeExpr
   Premises :List<Premise>
-}and Premise = Assignment  of TreeExpr*TreeExpr
+}
+and Premise = Assignment  of TreeExpr*TreeExpr
              | Conditional of TreeExpr
 
-and Kind = Star
-         | Arrow of Kind*Kind
-         | Signature
-         | SmallArrow of Kind*Type
-         | TypeId of Id
+and Type = 
+         | Arrow        of Type*Type
+         | Union        of Type*Type
+         | Tuple        of Type*Type
 
-and Type = TypeId of Id
-         | Arrow  of Type*Type
-         | Union  of Id*TypeConstructors
-         | Generic of Id
-         | Application of Type * Type
-and TypeConstructors = Map<Id,Type>
-
-and MaybeType = Conflict of List<TreeExpr*TreeExpr>
-              | Known    of Type
-              | Unknown
-
-type Expr = Basic of BasicExpression | Tree of TreeExpr
-
+(*
 let rec selectDecls (exprs:List<BasicExpression>) (decls:List<SymbolDeclaration>) : List<SymbolDeclaration> =
   // recursively find names of operators and add them to the set
   let rec used_names exprs decls =
@@ -167,3 +155,4 @@ let test_exprs =
 let TypeCheck (root:Scope) (scopes:Map<Id,Scope>) =
   let test = test_exprs |> List.map (fun x-> prioritize x test_decls)
   None
+*)
