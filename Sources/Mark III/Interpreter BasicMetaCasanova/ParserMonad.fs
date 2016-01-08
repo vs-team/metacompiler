@@ -9,6 +9,8 @@ type ErrorType =  ParserMonadError
                 | TypeError
                 | RuleError           of string           
                 | PipeLineError
+                | EofError
+                | SatisfyError
                    
 type Result<'char,'ctxt,'result> = 
   | Done of 'result * List<'char> * 'ctxt
@@ -128,3 +130,39 @@ let setBuffer chars' =
 
 let setContext ctxt' =
   fun (chars,ctxt) -> ((),chars,ctxt') |> Done
+
+let ret x = prs.Return(x)
+let (>>=) p f = prs.Bind(p,f)
+
+let (|>>) (p:Parser<'char,'ctxt,'a>) (f: 'a -> 'b) :Parser<'char,'ctxt,'b> =
+  prs{
+    let! c = p
+    return f c
+  }
+
+let (>>.) (l:Parser<'src,'ctxt,_>) (r:Parser<'src,'ctxt,'r>) :Parser<'src,'ctxt,'r> =
+  prs{
+    do!  l
+    let! res = r
+    return res
+  }
+
+let (.>>) (l:Parser<'src,'ctxt,'r>) (r:Parser<'src,'ctxt,_>) :Parser<'src,'ctxt,'r> =
+  prs{
+    let! res = l
+    do!  r
+    return res
+  }
+
+let (.>>.) (l:Parser<'src,'ctxt,'lr>) (r:Parser<'src,'ctxt,'rr>) :Parser<'src,'ctxt,'lr*'rr> =
+  prs{
+    let! res_l = l
+    let! res_r = r
+    return (res_l,res_r)
+  }
+
+let satisfy (f:'char->bool) :Parser<'char,'ctxt,_> =
+  fun(lst,ctxt)->
+    match lst with
+    | x::xs -> if f x then Done((),xs,ctxt) else Error SatisfyError
+    | _ -> Error EofError
