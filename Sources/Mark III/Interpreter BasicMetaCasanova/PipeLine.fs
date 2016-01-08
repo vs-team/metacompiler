@@ -117,7 +117,7 @@ let start_scope_builder : Parser<string,Scope,List<string*ScopeBuilder.Scope>> =
   fun (paths,ctxt) ->
     match ctxt.Lines with 
       | Some line_blocks ->
-        let start_scope = {ScopeBuilder.Scope.Zero with CurrentNamespace = paths.Head}
+        let start_scope = {ScopeBuilder.Scope.Zero with CurrentNamespace = [paths.Head],0,0}
         match build_scopes line_blocks start_scope with
           | Some scope ->
             do printfn "Done scope building in %d ms." t.ElapsedMilliseconds
