@@ -1,62 +1,43 @@
 ﻿module TypeChecker
 open Common
 open ScopeBuilder // Scope
-//open Prioritizer
 
-(*
-Most Generic Fit
-inline typefuncs
-  order:
-    typefuncs that return Signature
-    other typefuncs (lazy: only when needed)
-  everything must be inlined
-  if can't solve, realize one level
-  every level must solve at least one parameter
-  keep track of every solved step to avoid type recursion (and for speed)
-inline modules to set of functions for each instance
-inline lambdas
-  keep track of usage count. If too much, don't inline
-
-typechecking algorithm
-  treeify expressions
-    symbol lookup
-      find in scope, else find in parent (breadth-first, bottom import first)
-
-how to handle modules (signatures)
-  translate signatures to templated functions
-*)
-
-type TreeExpr = Abs of TreeExpr*MaybeType*Position
-              | App of TreeExpr*TreeExpr*MaybeType*Position
-              | Var of Id*MaybeType*Position
-              | Lit of Literal*Type*Position
+type TreeExpr = Fun of Id*Namespace*TreeExpr*TreeExpr //points to library function
+              | Rul of Id*Namespace*TreeExpr*TreeExpr //points to rule
+              | DataLR of Id*Namespace*TreeExpr*TreeExpr //points to data
+              | DataRL of Id*Namespace*TreeExpr*TreeExpr //points to data
+              | Lambda of Id*Namespace*TreeExpr*TreeExpr 
+              | App of TreeExpr*TreeExpr     
+              | Var of Id*Type
+              | Lit of Literal
 
 and Rule = {
   Input    :TreeExpr
   Output   :TreeExpr
   Premises :List<Premise>
-}and Premise = Assignment  of TreeExpr*TreeExpr
-             | Conditional of TreeExpr
+}
+and Premise = Assignment      of TreeExpr*TreeExpr
+            | Conditional     of TreeExpr*TreeExpr
+            | ArrowAssignment of TreeExpr*TreeExpr
 
-and Kind = Star
-         | Arrow of Kind*Kind
-         | Signature
-         | SmallArrow of Kind*Type
-         | TypeId of Id
+and Data = {
+  Input    :TreeExpr
+  Output   :TreeExpr
+}
 
-and Type = TypeId of Id
-         | Arrow  of Type*Type
-         | Union  of Id*TypeConstructors
-         | Generic of Id
-         | Application of Type * Type
-and TypeConstructors = Map<Id,Type>
+and Type = Id           of Id
+         | Arrow        of Type*Type
+         | Union        of Type*Type
+         | Tuple        of Type*Type
 
-and MaybeType = Conflict of List<TreeExpr*TreeExpr>
-              | Known    of Type
-              | Unknown
+type Scope = {
+    Lambdas             :List<Id*Namespace*TreeExpr*TreeExpr>
+    LibraryFunctions    :List<Id*Namespace*TreeExpr*TreeExpr>
+    Rules               :List<Id*Namespace*List<Rule>>
+    Datas               :List<Id*Namespace*List<Data>>
+}
 
-type Expr = Basic of BasicExpression | Tree of TreeExpr
-
+(*
 let rec selectDecls (exprs:List<BasicExpression>) (decls:List<SymbolDeclaration>) : List<SymbolDeclaration> =
   // recursively find names of operators and add them to the set
   let rec used_names exprs decls =
@@ -167,3 +148,4 @@ let test_exprs =
 let TypeCheck (root:Scope) (scopes:Map<Id,Scope>) =
   let test = test_exprs |> List.map (fun x-> prioritize x test_decls)
   None
+*)

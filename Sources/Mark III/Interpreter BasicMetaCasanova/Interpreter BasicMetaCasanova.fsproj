@@ -60,7 +60,7 @@
     <Compile Include="RuleChecker.fs" />
     <Compile Include="TypeChecker.fs" />
     <Compile Include="Eval.fs" />
-    <Compile Include="Inliner.fs" />
+    <Compile Include="IR.fs" />
     <Compile Include="OutputAst.fs" />
     <Compile Include="CodeGen.fs" />
     <Compile Include="PipeLine.fs" />
