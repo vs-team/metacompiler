@@ -1,3 +1,4 @@
 import prelude
 
-1+1 -> eersteNrOoit
+Func "eersteNrOoit" -> int
+eersteNrNooit -> 1+1
