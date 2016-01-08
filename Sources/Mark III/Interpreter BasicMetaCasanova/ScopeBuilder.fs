@@ -12,7 +12,7 @@ type BasicExpression =
   | Arrow of Arrow * Position
   | Application of Bracket * List<BasicExpression>
   | Lambda of Rule
-  | Module of Position
+  | Module of Namespace*int*int
 
 and SymbolDeclaration = 
   {
@@ -41,7 +41,7 @@ and Premise =   Conditional of List<BasicExpression>
 
 and Scope = 
   {
-    CurrentNamespace         : Namespace
+    CurrentNamespace         : Namespace*int*int
     ImportDeclaration        : List<Id>
     InheritDeclaration       : List<Id>
     FunctionDeclarations     : List<SymbolDeclaration>
@@ -51,12 +51,12 @@ and Scope =
     DataDeclarations         : List<SymbolDeclaration>
     TypeFunctionRules        : List<Rule>
     Rules                    : List<Rule>
-    Modules                  : List<Position*Scope>
+    Modules                  : List<(Namespace*int*int)*Scope>
   } 
   with 
     static member Zero = 
       {
-        CurrentNamespace          = ""
+        CurrentNamespace          = [],0,0
         ImportDeclaration         = []
         InheritDeclaration        = []
         FunctionDeclarations      = []
@@ -529,12 +529,12 @@ and scope_lines (pos:Position) :Parser<LineSplitter.BasicExpression,Scope,List<B
     match exprs with
     | LineSplitter.Application(Curly,b) :: rest -> 
       let lines = extract b
-      let modulename = (sprintf "mod-%s-r:%dc:%d" ctxt.CurrentNamespace pos.Line pos.Col)
-      let newscp = {Scope.Zero with CurrentNamespace = modulename ; ImportDeclaration = [ctxt.CurrentNamespace]}
+      let modulename = ctxt.CurrentNamespace
+      let newscp = {Scope.Zero with CurrentNamespace = modulename}
       match (scope() (lines,newscp)) with 
       | Done (res,_,_) -> 
-        let ctxt' = {ctxt with Modules = (pos,res)::ctxt.Modules }
-        Done([(Module pos)],exprs,ctxt')
+        let ctxt' = {ctxt with Modules = ((modulename),res)::ctxt.Modules }
+        Done([(Module (modulename))],exprs,ctxt')
       | Error (p) -> 
         printfn "%A" p
         Error (p) 

@@ -31,7 +31,7 @@ and Type = Id           of Id
          | Tuple        of Type*Type
 
 type Scope = {
-    Lambdas             :List<Id*Namespace*TreeExpr*TreeExpr>
+    Lambdas             :List<Id*Namespace*Rule>
     LibraryFunctions    :List<Id*Namespace*TreeExpr*TreeExpr>
     Rules               :List<Id*Namespace*List<Rule>>
     Datas               :List<Id*Namespace*List<Data>>

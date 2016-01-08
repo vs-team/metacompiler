@@ -16,7 +16,7 @@ type Type = Unknown
           | SmallArrow of Type*Type
           | Bar        of Type*Type
           | Tuple      of Type*Type
-          | Call       of Type*Type
+          | Call       of Type*Namespace
 and TypeSignature = Nop
                   | Name of Priority*TypeSignature*TypeSignature*TypeSignature
                   | Sig  of Type*TypeSignature
@@ -101,6 +101,16 @@ let rec check_size_carry (carry:List<Type>) =
   | x::xs -> TypeIdList(x::xs)
   | [] -> TypeIdList([])
 
+let get_first_element (l:List<'a>) :'a*List<'a> =
+  match l with
+  | x::xs -> x,xs 
+  | _ -> failwith "prioritizer. not implemented yet"
+
+let get_id (be:BasicExpression) :Id =
+  match be with
+  | Id(s,p) -> s
+  | _ -> failwith "prioritizer. not implemented yet"
+
 let rec multiple_scopetype_to_type (typ:ScopeBuilder.Type) (carry:List<Type>) : Type =
   match typ with
   | x :: xs ->
@@ -108,6 +118,10 @@ let rec multiple_scopetype_to_type (typ:ScopeBuilder.Type) (carry:List<Type>) : 
     | Id (s,p) -> 
       if (s.StartsWith "'") then multiple_scopetype_to_type xs ((TypeIdVar (s))::carry)
       elif (s.Equals "|") then Bar ((check_size_carry carry),(multiple_scopetype_to_type xs []))
+      elif (s.Equals "^") then 
+        let carryelement,carrylist = get_first_element carry
+        let typelement,typelist    = get_first_element xs
+        multiple_scopetype_to_type typelist ((Call (TypeId(s),[get_id typelement]))::carrylist)
       else multiple_scopetype_to_type xs ((TypeId (s))::carry)
     | Arrow (SingleArrow,p) -> SmallArrow ((check_size_carry carry),(multiple_scopetype_to_type xs []))
     | Arrow (DoubleArrow,p) -> BigArrow ((check_size_carry carry),(multiple_scopetype_to_type xs []))
@@ -204,8 +218,9 @@ let get_import_list :Parser<string*TypedScope,List<string*TypedScope>,List<Id>>=
     |x::xs ->
       match find_typescope ctxt x with
       | Done(res,_,_) -> 
-        let l1 = (get_imports res.ImportDecls ctxt) 
-        x :: l1 @ (filter_lists l1 (get_imports xs ctxt))
+        x::res.ImportDecls
+        //let l1 = (get_imports res.ImportDecls ctxt) 
+        //x :: l1 @ (filter_lists l1 (get_imports xs ctxt))
       | Error _ -> []
     | [] -> []
   fun (typscp,ctxt) ->
@@ -216,7 +231,7 @@ let get_import_list :Parser<string*TypedScope,List<string*TypedScope>,List<Id>>=
 let lift_build_table (idlist:List<Id>) sym decls =
   let rec add_namespace_to_list symlist ns =
     match symlist with
-    | (st,sign)::xs -> (st,ns,sign) :: add_namespace_to_list xs ns
+    | (st,sign)::xs -> (st,[ns],sign) :: add_namespace_to_list xs ns
     | [] -> []
   let rec decls_to_table (typlist:List<Id*Namespace*TypeSignature>) =
     match typlist with
