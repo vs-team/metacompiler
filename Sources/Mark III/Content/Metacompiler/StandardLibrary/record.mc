@@ -13,11 +13,16 @@ field l f Ms => Record {
     get => cons^(get ta l f Ms)
     label => l
     field => f
-    res^t => Ms
+    rest => Ms
+
     l => l'
     --
-    get l' => fs^(t cons)
-  }
+    get l' => fst^cons
+
+    I l' => I^M l'
+    get l' => get l
+    $$ do set stuff
+}
 
 TypeFunc "Record" => Module
 Record => Module{
@@ -29,3 +34,17 @@ Record => Module{
     Rest => Record
   }
 
+TypeFunc "Getter" => Module
+Getter => { Cons => * {
+  Func getter => Str_p => Record => Getter
+
+  l' => label^M
+  --
+  getter l' M => {
+    Cons => fields^M
+  }
+
+  getter l' M => {
+    Cons => getter l' Rest^M
+  }
+}
