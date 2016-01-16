@@ -39,17 +39,17 @@ ListT 'M 'a => 'M(List 'a)
 
 TypeFunc "list" => Monad => Monad 
 list 'M 'a => Monad(ListT MCons^'M 'a) {
-    lm >>=^'M l
-    (do^(match(MCons 'a)) l with
-      (\empty -> return^'M empty)
-      (\(x :: xs) -> 
-        k x >>=^'M y
-        ((return^'M xs) >>= k) >>=^'M ys
-        return^'M (y @ ys)
-      )
-    ) => res
-    --
-    lm >>= k => res
+  lm >>=^'M l
+  (do^(match(MCons 'a)) l with
+    (\empty -> return^'M empty)
+    (\(x :: xs) -> 
+      k x >>=^'M y
+      ((return^'M xs) >>= k) >>=^'M ys
+      return^'M (y @ ys)
+    )
+  ) => res
+  --
+  lm >>= k => res
 
-    return x => return^'M(x :: empty)
-  }
+  return x => return^'M(x :: empty)
+}

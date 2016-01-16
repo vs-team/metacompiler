@@ -6,5 +6,5 @@ import list
 
 TypeFunc "result" => Monad => TryableMonad
 result 'M => either(MCons^'M (List String)){
-    inherit e
-  }
+  inherit e
+}
