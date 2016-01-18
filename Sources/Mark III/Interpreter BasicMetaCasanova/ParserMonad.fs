@@ -89,6 +89,14 @@ let rec repeat (p:Parser<_,_,'result>) : Parser<_,_,List<'result>> =
       return []
   }
 
+// repeats at least once
+let repeat1 (p:Parser<_,_,'result>) : Parser<_,_,List<'result>> =
+  prs{
+    let! first = p
+    let! rest  = repeat p
+    return (first::rest)
+  }
+
 let step = 
   fun (chars,ctxt) ->
     match chars with
@@ -166,3 +174,19 @@ let satisfy (f:'char->bool) :Parser<'char,'ctxt,_> =
     match lst with
     | x::xs -> if f x then Done((),xs,ctxt) else Error SatisfyError
     | _ -> Error EofError
+
+let contextSatisfies (f:'ctxt->bool) :Parser<'char,'ctxt,Unit> =
+  prs{
+    let! context = getContext
+    if f context then
+      return! nothing
+    else
+      return! fail SatisfyError
+  }
+
+let updateContext (f:'ctxt->'ctxt) :Parser<'char,'ctxt,Unit> =
+  prs{
+    let! c = getContext
+    do! setContext (f c)
+    return! nothing
+  }
