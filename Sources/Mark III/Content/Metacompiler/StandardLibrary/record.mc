@@ -1,50 +1,55 @@
 TypeFunc "empty" => Record
 empty => Record [] {
-  fields = Unit
-  Cons = Unit
-  make () = ()
+  fields -> Unit
+  cons -> Unit
+  make () -> ()
 }
 
 TypeFunc "field" => String => * => Record => Record
 field l f Ms => Record {
-  fields => f x fields^Ms
-  cons => f x cons^Ms
+  fields -> f x fields^Ms
+  cons -> f x cons^Ms
+
   make (x,xs) -> (x, (make^Ms xs))
-  get => cons^(get ta l f Ms)
-  label => l
-  field => f
-  rest => Ms
+  label -> l
+  field -> f
+  rest -> Ms
 
-  l => l'
+  Func "get" -> cons^(get ta l f Ms)
+
+  l -> l'
   --
-  get l' => fst^cons
+  get l' -> fst^cons
 
-  I l' => I^M l'
-  get l' => get l
+  I l' -> I^M l'
+  get l' -> get l
+
   $$ do set stuff
+  Func "set" -> String -> cons
+  set l -> cons
 }
 
 TypeFunc "Record" => Module
-Record => Module{
-  fields -> *
-  cous -> *
-  make -> fields -> cous
-  label => String
-  field => *
-  Rest => Record
+Record => Module {
+  Func "fields" -> *
+  Func "cons" -> *
+  Func "make" -> fields -> cons
+  Func "label" -> String
+  Func "field" -> *
+  Func "rest" -> Record
 }
 
 TypeFunc "Getter" => Module
-Getter => { Cons => * {
-  Func getter => Str_p => Record => Getter
+Getter => Module { cons => * {
+  Func getter -> Str_p -> Record -> Getter
 
-  l' => label^M
+  l' -> label^M
   --
-  getter l' M => {
-    Cons => fields^M
+  getter l' M -> {
+    cons -> fields^M
   }
 
-  getter l' M => {
-    Cons => getter l' Rest^M
+  getter l' M -> {
+    cons -> getter l' rest^M
   }
 }
