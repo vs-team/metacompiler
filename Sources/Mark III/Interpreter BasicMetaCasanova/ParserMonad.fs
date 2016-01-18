@@ -166,3 +166,12 @@ let satisfy (f:'char->bool) :Parser<'char,'ctxt,_> =
     match lst with
     | x::xs -> if f x then Done((),xs,ctxt) else Error SatisfyError
     | _ -> Error EofError
+
+let userStateSatisfies (f:'ctxt->bool) :Parser<'char,'ctxt,Unit> =
+  prs{
+    let! context = getContext
+    if f context then
+      return! nothing
+    else
+      return! fail SatisfyError
+  }
