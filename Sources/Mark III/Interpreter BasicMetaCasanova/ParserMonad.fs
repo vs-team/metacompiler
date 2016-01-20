@@ -169,6 +169,14 @@ let (.>>.) (l:Parser<'src,'ctxt,'lr>) (r:Parser<'src,'ctxt,'rr>) :Parser<'src,'c
     return (res_l,res_r)
   }
 
+let rec itterate (p:Parser<_,_,'result>) : Parser<_,_,List<'result>> =
+  prs{return! eof >>. ret []} .||
+  prs{
+    let! x  = p
+    let! xs = itterate p .|| ret []
+    return x::xs 
+  }
+
 let satisfy (f:'char->bool) :Parser<'char,'ctxt,_> =
   fun(lst,ctxt)->
     match lst with
