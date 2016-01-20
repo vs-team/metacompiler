@@ -45,11 +45,7 @@ Getter => Module { cons => * {
 
   l' -> label^M
   --
-  getter l' M -> {
-    cons -> fields^M
-  }
+  getter l' M -> {cons -> fields^M}
 
-  getter l' M -> {
-    cons -> getter l' rest^M
-  }
+  getter l' M -> {cons -> getter l' rest^M}
 }
