@@ -7,9 +7,7 @@ TypeAlias "List" => * => *
 List 'a => Unit | ('a * (List 'a))
 
 Data 'a -> "::" -> List 'a -> ('a, List 'a)
-
-Func "empty" -> List 'a
-empty -> Left Unit
+Data "empty" -> Left Unit
 
 
 Func List 'a -> "@" -> List 'a -> List 'a  #> 200
@@ -45,9 +43,7 @@ list 'M 'a => Monad(ListT MCons^'M 'a) {
     (\(x :: xs) -> 
       k x >>=^'M y
       ((return^'M xs) >>= k) >>=^'M ys
-      return^'M (y @ ys)
-    )
-  ) => res
+      return^'M (y @ ys))) => res
   --
   lm >>= k => res
 
