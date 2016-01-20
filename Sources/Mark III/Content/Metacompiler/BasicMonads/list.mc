@@ -7,9 +7,7 @@ TypeAlias "List" => * => *
 List 'a => Unit | ('a * (List 'a))
 
 Data 'a -> "::" -> List 'a -> ('a, List 'a)
-
-Func "empty" -> List 'a
-empty -> Left Unit
+Data "empty" -> Left Unit
 
 
 Func List 'a -> "@" -> List 'a -> List 'a  #> 200
