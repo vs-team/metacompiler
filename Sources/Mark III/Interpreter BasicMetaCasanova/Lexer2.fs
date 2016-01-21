@@ -48,13 +48,13 @@ let (!) (str:string) :Parser<char,Position,Unit> =
   traverse_from (str |> Seq.toList)
 
 let skip_comments :Parser<char,Position,unit> =
-  let stop (st:string) =
+  let stop (st:System.String) =
     prs{
       let! halt = (!st >>. ret (fail (LexerError Position.Zero))) .|| 
                   ((step |> ignore) >>. ret nothing)
       return! halt
     }
-  let start (st:string) (sto:string) = prs{ do! !st >>. stop sto |> repeat |> ignore} 
+  let start (st:System.String) (sto:System.String) = prs{ do! !st >>. stop sto |> repeat |> ignore} 
   prs{ do! start "$$" "\n"} .|| prs{ do! start "$*" "*$"}
 
 let char_between (a:char) (b:char) :Parser<char,Position,char> =
@@ -121,25 +121,25 @@ let float_literal pos :Parser<char,Position,Token> =
     | B() -> return Literal(Float32( f),pos)
   }
 
-let alpha_numeric_id =
+let alpha_numeric_id :Parser<char,Position,System.String>=
   prs{
     let! c  = alpha_char
     let! cs = (alpha_numeric) |> repeat
-    return (c::cs) |> string
+    return (c::cs) |> System.String.Concat
   }
 
 let all_id pos :Parser<char,Position,Token> =
   prs{
     let! str = alpha_numeric_id .|| symbol_id
-    return Literal(String(str),pos)
+    return Id((str|>System.String.Concat),pos)
   }
 
 let string_literal pos :Parser<char,Position,Token> =
   prs{
     do! char '\"'
-    let! chars = (alpha_numeric .|| symbol) |> repeat1 
+    let! chars = (alpha_numeric .|| symbol) |> repeat
     do! char '\"'
-    return (String (chars|>string),pos) |> Literal
+    return (String (chars|>Array.ofList|>System.String.Concat),pos) |> Literal
   }
 
 let horizontal_bar pos :Parser<char,Position,Token> =
