@@ -65,6 +65,7 @@
     <Compile Include="OutputAst.fs" />
     <Compile Include="CodeGen.fs" />
     <Compile Include="PipeLine.fs" />
+    <Compile Include="Pipeline2.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>
