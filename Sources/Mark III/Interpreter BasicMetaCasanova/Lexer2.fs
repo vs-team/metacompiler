@@ -77,7 +77,7 @@ let symbol :Parser<char,Position,char> =
 let symbol_id :Parser<char,Position,System.String> =
   prs{ 
     let! sym = symbol |> repeat1 
-    return sym |> Seq.toArray |> string 
+    return sym |> Seq.toArray |> System.String 
   }
 
 let alpha_char :Parser<char,Position,char> =
@@ -155,6 +155,7 @@ let skip_spaces :Parser<char,Position,unit>=
 let new_line pos :Parser<char,Position,Token> =
   prs{
     do! !"\r\n" .|| !"\n\r" .|| !"\n"
+    do! increment_line
     return (NewLine,pos) |> Keyword
   }
 
@@ -193,19 +194,20 @@ let token :Parser<char,Position,Token> =
       all_id pos          .||
       end_of_file pos
     return res
+  } .|| prs{
+    let! pos = get_position
+    let! er = fail (LexerError pos)
+    return! er
   }
 
 let token_lines :Parser<char,Position,List<Token>> =
-  prs{ return! token |> itterate}
+  prs{ return! token |> itterate} 
 
-let tokenize2 (path:string) :Parser<char,Position,List<Token>> = 
+let tokenize2 (file_path:string) :Parser<char,Position,List<Token>> = 
   prs{ 
-    if System.IO.File.Exists(path) then
-      let source = System.IO.File.ReadAllText(path) |> Seq.toList
-      let pos = Position.FromPath path
-      do! setBuffer source
-      do! setContext pos
+      do! setContext (Position.FromPath file_path)
       let! res = token_lines 
+      let! buf = getBuffer
+      printfn "%A" buf
       return res
-    else return! (fail (LexerError Position.Zero))
   }

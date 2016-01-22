@@ -69,7 +69,7 @@ let inline (.||) (p1:Parser<_,_,'a>) (p2:Parser<_,_,'a>) : Parser<_,_,'a> =
     | Error(p1) ->
       match p2(chars,ctxt) with
       | Error(p2) ->
-        Error(p1)
+        Error(p2)
       | Done(res2,chars',ctxt') ->
         (res2,chars',ctxt') |> Done
     | Done(res1,chars',ctxt') ->
@@ -107,7 +107,7 @@ let eof =
   fun (chars,ctxt) ->
     match chars with
     | [] -> Done((), [], ctxt)
-    | _ -> Error ParserMonadError
+    | _ -> Error EofError
 
 let ignore (p:Parser<_,_,'res>) : Parser<_,_,Unit> = 
   fun (chars,ctxt) -> 
@@ -173,7 +173,7 @@ let rec itterate (p:Parser<_,_,'result>) : Parser<_,_,List<'result>> =
   prs{return! eof >>. ret []} .||
   prs{
     let! x  = p
-    let! xs = itterate p .|| ret []
+    let! xs = itterate p
     return x::xs 
   }
 
