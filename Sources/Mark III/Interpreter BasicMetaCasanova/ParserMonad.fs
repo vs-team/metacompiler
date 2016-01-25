@@ -198,3 +198,11 @@ let updateContext (f:'ctxt->'ctxt) :Parser<'char,'ctxt,Unit> =
     do! setContext (f c)
     return! nothing
   }
+
+let match_with (expected:'char) :Parser<'char,'ctxt,_> =
+  prs{
+    let! x = step 
+    match x with
+    | expected -> return ()
+    | _ -> return ()
+  }
