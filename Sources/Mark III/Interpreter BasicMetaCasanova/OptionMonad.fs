@@ -34,3 +34,5 @@ let use_parser_monad (pars:Parser<'char,'ctxt,'res>)(input:List<'char>*'ctxt) :O
       printfn "%A" e
       None 
   opt{return! convert}
+
+let option_to_list (op:Option<'a>) :List<'a> = if op.IsSome then [op.Value] else []
