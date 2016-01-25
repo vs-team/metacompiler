@@ -6,8 +6,8 @@ import boolean
 TypeAlias "List" => * => *
 List 'a => Unit | ('a * (List 'a))
 
-Data 'a -> "::" -> List 'a -> ('a, List 'a)
-Data "empty" -> Left Unit
+TypeAlias 'a -> "::" -> List 'a -> ('a, List 'a)
+TypeAlias "empty" -> Left Unit
 
 
 Func List 'a -> "@" -> List 'a -> List 'a  #> 200
