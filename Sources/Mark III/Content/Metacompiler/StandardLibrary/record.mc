@@ -3,28 +3,44 @@ empty => Record [] {
   fields -> Unit
   cons -> Unit
   make () -> ()
+  first -> Unit
 }
 
 TypeFunc "field" => String => * => Record => Record
 field l f rs => Record {
   fields -> f x fields^rs
   cons -> f x cons^rs
-
   make (x,xs) -> (x, (make^rs xs))
   label -> l
   field -> f
   rest -> rs
+  first -> cons
 
-  Func "get" -> cons^(getter l f rs)
-  get -> get^rs l
+  Func "getter" -> String -> Record 
+  getter l' rs -> (cons -> getter l' rest^rs)
 
-  l -> l'
+  l' -> label^rs
   --
-  get l' -> fst^cons
+  getter l' rs -> (cons -> fields^rs)
 
-  $$ do set stuff
-  Func "set" -> cons
-  set -> set^rs l
+  Func "get" -> String -> cons^(getter l rs)
+  get l' -> get^rs l'
+  get l -> first^cons
+
+  $$fix setter
+  Func "setter" -> String -> Record 
+  setter l' rs -> (cons -> setter l' rest^rs)
+
+  l' -> label^rs
+  --
+  setter l' rs -> (cons -> fields^rs)
+
+  Func "set" -> String -> cons^(setter l rs)
+  set l' -> set^rs l'
+  set l -> fst^cons
+
+  Func "set" -> * -> cons^(setter l f rs)
+  set x -> first^cons
 }
 
 TypeFunc "Record" => Module
@@ -35,15 +51,5 @@ Record => Module {
   Func "label" -> String
   Func "field" -> *
   Func "rest" -> Record
-}
-
-TypeFunc "Getter" => Module
-Getter => Module { cons => * {
-  Func getter -> Str_p -> Record -> Getter
-
-  l' -> label^M
-  --
-  getter l' rs -> {cons -> fields^rs}
-
-  getter l' rs -> {cons -> getter l' rest^rs}
+  Func "first" -> Record
 }
