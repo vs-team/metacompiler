@@ -206,8 +206,5 @@ let token_lines :Parser<char,Position,List<Token>> =
 let tokenize2 (file_path:string) :Parser<char,Position,List<Token>> = 
   prs{ 
       do! setContext (Position.FromPath file_path)
-      let! res = token_lines 
-      let! buf = getBuffer
-      printfn "%A" buf
-      return res
+      return! token_lines 
   }
