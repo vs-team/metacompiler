@@ -1,5 +1,6 @@
 ﻿import prelude
 import monad
+import id
 
 TypeAlias "StateT" => (* => *) => * => * => *
 StateT 'M 's 'a => ('s -> 'M('a*'s))
@@ -12,7 +13,7 @@ state 'M 's => Monad(StateT MCons^'M 's) {
   --
   (p >>= k) s -> k x' s'
 
-  return x s -> return^'M(x,s)
+  return x s -> state(return^'M(x),s)
 
   Func "getState" -> MCons 's
   getState s -> return^'M(s,s)
