@@ -69,9 +69,9 @@ let char_between (a:char) (b:char) :Parser<char,Position,char> =
   }
 
 let symbol :Parser<char,Position,char> =
-  prs{ return! char_between '!' '/' .|| char_between ':' '@' .||
-               char_between '[' ']' .|| char_between '_' '`' .||
-               char_between '{' '~' 
+  prs{ return! char_between '!' '!' .|| char_between '#' '/' .|| 
+               char_between ':' '@' .|| char_between '[' ']' .|| 
+               char_between '_' '`' .|| char_between '{' '~' 
   } .|| prs { return! char '^' >>. ret '^'}
 
 let symbol_id :Parser<char,Position,System.String> =
@@ -130,8 +130,13 @@ let alpha_numeric_id :Parser<char,Position,System.String>=
 
 let all_id pos :Parser<char,Position,Token> =
   prs{
-    let! str = alpha_numeric_id .|| symbol_id
-    return Id((str|>System.String.Concat),pos)
+    return! ((char '\'') >>. prs{
+      let! str = alpha_numeric_id .|| symbol_id
+      return VarId((str|>System.String.Concat),pos)
+    }) .|| prs{
+      let! str = alpha_numeric_id .|| symbol_id
+      return Id((str|>System.String.Concat),pos)
+    } 
   }
 
 let string_literal pos :Parser<char,Position,Token> =

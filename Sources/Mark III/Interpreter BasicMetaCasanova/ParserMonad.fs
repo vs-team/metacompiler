@@ -11,6 +11,7 @@ type ErrorType =  ParserMonadError
                 | PipeLineError
                 | EofError
                 | SatisfyError
+                | MatchError
                    
 type Result<'char,'ctxt,'result> = 
   | Done of 'result * List<'char> * 'ctxt
@@ -199,10 +200,3 @@ let updateContext (f:'ctxt->'ctxt) :Parser<'char,'ctxt,Unit> =
     return! nothing
   }
 
-let match_with (expected:'char) :Parser<'char,'ctxt,_> =
-  prs{
-    let! x = step 
-    match x with
-    | expected -> return ()
-    | _ -> return ()
-  }
