@@ -13,7 +13,7 @@ either 'M 'e => TryableMonad(EitherT MCons^'M 'e) {
   
   pm >>= k -> try pm k fail
 
-  return x -> return^M(Left x)
+  return x -> either(return^'M(Left x))
   
   pm >>=^'M y
   (do^(match(MCons 'a)) y with 
