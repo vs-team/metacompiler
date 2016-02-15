@@ -55,7 +55,7 @@
     <Compile Include="Lexer.fs" />
     <Compile Include="Lexer2.fs" />
     <Compile Include="Parser.fs" />
-    <Compile Include="Parser2.fs" />
+    <Compile Include="DeclParser2.fs" />
     <Compile Include="LineSplitter.fs" />
     <Compile Include="ScopeBuilderId.fs" />
     <Compile Include="ScopeBuilder.fs" />

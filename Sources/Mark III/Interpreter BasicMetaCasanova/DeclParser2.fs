@@ -1,4 +1,4 @@
-﻿module Parser2
+﻿module DeclParser2
 
 open Common
 open ParserMonad
@@ -25,45 +25,24 @@ type SymbolDeclaration =
     Pos             :Position
   }
 
-type Premise = Conditional of List<DeclType> * List<DeclType>
-             | Implication of List<DeclType> * List<DeclType>
-             | ArrowStruct of List<DeclType> * List<DeclType>
-
-type Rule =
-  {
-    Input       : List<DeclType>
-    Output      : List<DeclType>
-    Premises    : List<Premise>
-  }
-
 type ParseScope = 
   {
-    Import      : List<Id>
     DataDecl    : List<SymbolDeclaration>
     FuncDecl    : List<SymbolDeclaration>
     ArrowDecl   : List<SymbolDeclaration>
     TypeDecl    : List<SymbolDeclaration>
     AliasDecl   : List<SymbolDeclaration>
-    FuncRule    : List<Id*Rule>
-    TypeRule    : List<Id*Rule>
-    AliasRule   : List<Id*Rule>
-    Modules     : List<Id>
   } with 
     static member Zero =
       {
-        Import      = []
         DataDecl    = []
         FuncDecl    = []
         ArrowDecl   = []
         TypeDecl    = []
         AliasDecl   = []
-        FuncRule    = []
-        TypeRule    = []
-        Modules     = []
-        AliasRule   = []
       }
 
-let extract_keyword :Parser<Token,ParseScope,Keyword*Position> =
+let extract_keyword() :Parser<Token,_,Keyword*Position> =
   prs{
     let! next = step
     match next with
@@ -71,7 +50,7 @@ let extract_keyword :Parser<Token,ParseScope,Keyword*Position> =
     | _ -> return! (fail MatchError)
   }
 
-let extract_id :Parser<Token,ParseScope,Id*Position> =
+let extract_id :Parser<Token,_,Id*Position> =
   prs{
     let! next = step
     match next with
@@ -79,7 +58,7 @@ let extract_id :Parser<Token,ParseScope,Id*Position> =
     | _ -> return! (fail MatchError)
   }
 
-let extract_varid :Parser<Token,ParseScope,Id*Position> =
+let extract_varid :Parser<Token,_,Id*Position> =
   prs{
     let! next = step
     match next with
@@ -87,7 +66,7 @@ let extract_varid :Parser<Token,ParseScope,Id*Position> =
     | _ -> return! (fail MatchError)
   }
 
-let extract_string_literal :Parser<Token,ParseScope,string*Position> =
+let extract_string_literal :Parser<Token,_,string*Position> =
   prs{
     let! next = step
     match next with
@@ -95,7 +74,7 @@ let extract_string_literal :Parser<Token,ParseScope,string*Position> =
     | _ -> return! (fail MatchError)
   }
 
-let extract_int_literal :Parser<Token,ParseScope,int*Position> =
+let extract_int_literal :Parser<Token,_,int*Position> =
   prs{
     let! next = step
     match next with
@@ -103,18 +82,18 @@ let extract_int_literal :Parser<Token,ParseScope,int*Position> =
     | _ -> return! (fail MatchError)
   }
 
-let check_keyword (expected:Keyword) :Parser<Token,ParseScope,_> =
+let check_keyword() (expected:Keyword) :Parser<Token,_,_> =
   prs{
-    let! k,p = extract_keyword
+    let! k,p = extract_keyword()
     if k = expected then return () else return! fail (ParserError p)
   }
 
-let skip_newline :Parser<Token,ParseScope,_> =
-  prs{do! (check_keyword NewLine) |> repeat |> ignore}
+let skip_newline :Parser<Token,_,_> =
+  prs{do! (check_keyword() NewLine) |> repeat |> ignore}
 
-let parse_single_arg :Parser<Token,ParseScope,DeclType> =
+let parse_single_arg :Parser<Token,_,DeclType> =
   prs{
-    let! id,pos = extract_id 
+    let! id,pos = extract_id
     return Id(id,pos)
   } .|| prs{
     let! id,pos = extract_varid 
@@ -123,16 +102,16 @@ let parse_single_arg :Parser<Token,ParseScope,DeclType> =
 
 let rec parse_arg :Parser<Token,ParseScope,DeclType> =
   prs{
-    do! check_keyword (Open Round)
+    do! check_keyword() (Open Round)
     let! res = parse_arg
-    do! check_keyword (Close Round)
+    do! check_keyword() (Close Round)
     return res
   } .|| prs{
-    do! check_keyword (Open Round)
+    do! check_keyword() (Open Round)
     let! before_arrow = parse_single_arg
-    do! check_keyword SingleArrow
+    do! check_keyword() SingleArrow
     let! after_arrow = parse_arg
-    do! check_keyword (Close Round)
+    do! check_keyword() (Close Round)
     return Arrow(before_arrow,after_arrow)
   } .|| prs{
     let! before_symbol = parse_single_arg
@@ -151,7 +130,7 @@ let parse_small_args :Parser<Token,ParseScope,List<DeclType>> =
   prs{
     return! prs{
       let! res = parse_arg
-      do! check_keyword SingleArrow
+      do! check_keyword() SingleArrow
       return res
     } |> repeat
   }
@@ -166,13 +145,13 @@ let parse_assosiotivity :Parser<Token,ParseScope,Associativity> =
 
 let parse_data :Parser<Token,ParseScope,_> =
   prs{
-    do! check_keyword Data
+    do! check_keyword() Data
     let! left_args = parse_small_args
     let! name = extract_string_literal
     let! right_args = parse_small_args
-    do! check_keyword SingleArrow
+    do! check_keyword() SingleArrow
     let! result = parse_single_arg
-    let! pri,ass = (check_keyword PriorityArrow >>.
+    let! pri,ass = (check_keyword() PriorityArrow >>.
                     (extract_int_literal .>>. parse_assosiotivity)) .||
                     prs{return((0,Position.Zero),Left)}
     let! ctxt = getContext
@@ -199,12 +178,13 @@ let check_presens :Parser<Id*ParseScope,Id,Id*ParseScope> =
 
 let parse_import :Parser<Token,List<Id*ParseScope>,List<Id*ParseScope>> =
   prs{
-    let! id,pos = UseDifferentCtxt ((check_keyword Import) >>. extract_id) ParseScope.Zero
+    do! skip_newline
+    let! id,pos = UseDifferentCtxt ((check_keyword() Import) >>. extract_id) ParseScope.Zero
     let! ctxt = getContext
     return! UseDifferentSrcAndCtxt (check_presens |> repeat) ctxt id
   }
 
-let parse2 :Parser<Token,List<Id*ParseScope>,ParseScope> =
+let decl_parse :Parser<Token,List<Id*ParseScope>,ParseScope> =
   prs{
     let! res = UseDifferentCtxt parse_scope ParseScope.Zero
     return res

@@ -3,7 +3,7 @@
 open Common
 open ParserMonad
 open Lexer2
-open Parser2
+open DeclParser2
 open OptionMonad
 
 let t = System.Diagnostics.Stopwatch()
