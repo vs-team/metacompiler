@@ -60,7 +60,7 @@ let rec first_successful (ps:List<Parser<_,_,'a>>) : Parser<_,_,'a> =
     | [] -> Error ParserMonadError
     | p :: ps ->
       match p(chars,ctxt) with
-      | Error(p) ->
+      | Error(_) ->
         first_successful ps (chars,ctxt)
       | res -> res 
 
@@ -184,6 +184,13 @@ let satisfy (f:'char->bool) :Parser<'char,'ctxt,_> =
     | x::xs -> if f x then Done((),xs,ctxt) else Error SatisfyError
     | _ -> Error EofError
 
+let rec getFirstInstanceOf (f:'char->bool) :Parser<'char,'ctxt,'char> =
+  prs{
+    let! next = step
+    if f next then return next
+    else return! getFirstInstanceOf f
+  }
+
 let contextSatisfies (f:'ctxt->bool) :Parser<'char,'ctxt,Unit> =
   prs{
     let! context = getContext
@@ -200,3 +207,14 @@ let updateContext (f:'ctxt->'ctxt) :Parser<'char,'ctxt,Unit> =
     return! nothing
   }
 
+let UseDifferentCtxt (p:Parser<'char,'ctxt2,'res>) (ctxt':'ctxt2):Parser<'char,'ctxt,'res> =
+  fun (char,ctxt) ->
+    match p (char,ctxt') with
+    | Done(res,char',_) -> Done(res,char',ctxt)
+    | Error p -> Error p
+
+let UseDifferentSrcAndCtxt (p:Parser<'char2,'ctxt2,'res>)(char':List<'char2>)(ctxt':'ctxt2):Parser<'char,'ctxt,'res> =
+  fun (char,ctxt) ->
+    match p (char',ctxt') with
+    | Done(res,char'',_) -> Done(res,char,ctxt)
+    | Error p -> Error p

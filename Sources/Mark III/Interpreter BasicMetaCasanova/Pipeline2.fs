@@ -3,6 +3,7 @@
 open Common
 open ParserMonad
 open Lexer2
+open Parser2
 open OptionMonad
 
 let t = System.Diagnostics.Stopwatch()
@@ -39,7 +40,7 @@ let start_lexer (paths:List<string>) (file_name:string) :Option<Id*List<Token>> 
     return (file_name,tokens)
   } |> (timer (sprintf "Done tokenization of file: [%s.mc] " file_name))
 
-let start_lexpars (paths:List<string>) (file_name:List<string>) :Option<_> =   
+let lex_files (paths:List<string>) (file_name:List<string>) :Option<_> =   
   opt{
     let list_of_lexer_results = 
       List.collect (fun x -> [start_lexer paths x]) file_name
@@ -47,9 +48,14 @@ let start_lexpars (paths:List<string>) (file_name:List<string>) :Option<_> =
     return lexer_res
   }
 
+let start_parser (tok:List<Id*Token>) :Option<_> =
+  opt{
+    return ()
+  }
+
 let start (paths:List<string>) (file_name:List<string>) :Option<_> =
   opt{
     t.Start()
-    let! lexpars_res = start_lexpars paths file_name
+    let! lexpars_res = lex_files paths file_name
     return lexpars_res
   }

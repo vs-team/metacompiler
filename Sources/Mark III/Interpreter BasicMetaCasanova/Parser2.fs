@@ -48,7 +48,20 @@ type ParseScope =
     TypeRule    : List<Id*Rule>
     AliasRule   : List<Id*Rule>
     Modules     : List<Id>
-  }
+  } with 
+    static member Zero =
+      {
+        Import      = []
+        DataDecl    = []
+        FuncDecl    = []
+        ArrowDecl   = []
+        TypeDecl    = []
+        AliasDecl   = []
+        FuncRule    = []
+        TypeRule    = []
+        Modules     = []
+        AliasRule   = []
+      }
 
 let extract_keyword :Parser<Token,ParseScope,Keyword*Position> =
   prs{
@@ -82,18 +95,22 @@ let extract_string_literal :Parser<Token,ParseScope,string*Position> =
     | _ -> return! (fail MatchError)
   }
 
+let extract_int_literal :Parser<Token,ParseScope,int*Position> =
+  prs{
+    let! next = step
+    match next with
+    | Lexer2.Literal(Int(i),pos) -> return i,pos
+    | _ -> return! (fail MatchError)
+  }
+
 let check_keyword (expected:Keyword) :Parser<Token,ParseScope,_> =
   prs{
     let! k,p = extract_keyword
     if k = expected then return () else return! fail (ParserError p)
   }
 
-let parse_import :Parser<Token,ParseScope,_> =
-  prs{
-    let! id,_ = (check_keyword Import) >>. extract_id
-    let! ctxt = getContext
-    do! setContext {ctxt with Import = id::ctxt.Import}
-  }
+let skip_newline :Parser<Token,ParseScope,_> =
+  prs{do! (check_keyword NewLine) |> repeat |> ignore}
 
 let parse_single_arg :Parser<Token,ParseScope,DeclType> =
   prs{
@@ -139,6 +156,14 @@ let parse_small_args :Parser<Token,ParseScope,List<DeclType>> =
     } |> repeat
   }
 
+let parse_assosiotivity :Parser<Token,ParseScope,Associativity> =
+  prs{
+    let! st,pos = extract_id
+    if st = "L" then return Left
+    elif st = "R" then return Right
+    else return! fail (ParserError pos)
+  }
+
 let parse_data :Parser<Token,ParseScope,_> =
   prs{
     do! check_keyword Data
@@ -147,22 +172,40 @@ let parse_data :Parser<Token,ParseScope,_> =
     let! right_args = parse_small_args
     do! check_keyword SingleArrow
     let! result = parse_single_arg
-
-    return ()
+    let! pri,ass = (check_keyword PriorityArrow >>.
+                    (extract_int_literal .>>. parse_assosiotivity)) .||
+                    prs{return((0,Position.Zero),Left)}
+    let! ctxt = getContext
+    do! setContext {ctxt with DataDecl = []}
   }
 
 let parse_lines :Parser<Token,ParseScope,_> =
   prs{
-    
+    do! parse_data
     return ()
   }
 
 let parse_scope :Parser<Token,ParseScope,_> =
   prs{
-    return ()
+    do! parse_lines |> itterate |> ignore
+    return! getContext
   }
 
-let parse2 :Parser<Token,ParseScope,_> =
+let check_presens :Parser<Id*ParseScope,Id,Id*ParseScope> =
   prs{
-    return ()
+    let! ctxt = getContext
+    return! getFirstInstanceOf (fun (id,scp) -> id = ctxt)
+  }
+
+let parse_import :Parser<Token,List<Id*ParseScope>,List<Id*ParseScope>> =
+  prs{
+    let! id,pos = UseDifferentCtxt ((check_keyword Import) >>. extract_id) ParseScope.Zero
+    let! ctxt = getContext
+    return! UseDifferentSrcAndCtxt (check_presens |> repeat) ctxt id
+  }
+
+let parse2 :Parser<Token,List<Id*ParseScope>,ParseScope> =
+  prs{
+    let! res = UseDifferentCtxt parse_scope ParseScope.Zero
+    return res
   }

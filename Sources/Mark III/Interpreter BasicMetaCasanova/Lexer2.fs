@@ -132,6 +132,7 @@ let all_id pos :Parser<char,Position,Token> =
   prs{
     return! ((char '\'') >>. prs{
       let! str = alpha_numeric_id .|| symbol_id
+      let str = "'" + str
       return VarId((str|>System.String.Concat),pos)
     }) .|| prs{
       let! str = alpha_numeric_id .|| symbol_id
