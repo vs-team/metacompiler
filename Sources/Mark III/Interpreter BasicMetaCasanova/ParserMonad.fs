@@ -219,3 +219,14 @@ let UseDifferentSrcAndCtxt (p:Parser<'char2,'ctxt2,'res>)(char':List<'char2>)(ct
     match p (char',ctxt') with
     | Done(res,char'',_) -> Done(res,char,ctxt)
     | Error p -> Error p
+
+let CatchImportError (p1:Parser<'char,'ctxt,'res>) 
+                     (perr:Parser<'char,'ctxt,'res>) :Parser<'char,'ctxt,'res> =
+  fun (char,ctxt) ->
+    match p1 (char,ctxt) with
+    | Done(res,char',ctxt') -> Done(res,char',ctxt')
+    | Error ImportError ->
+      match perr (char,ctxt) with
+      | Done(res,char',ctxt') -> Done(res,char',ctxt')
+      | Error e -> Error e
+    | Error e -> Error e

@@ -36,3 +36,15 @@ let use_parser_monad (pars:Parser<'char,'ctxt,'res>)(input:List<'char>*'ctxt) :O
   opt{return! convert}
 
 let option_to_list (op:Option<'a>) :List<'a> = if op.IsSome then [op.Value] else []
+
+let react_to_parser_error 
+    (pars:Parser<'char,'ctxt,'res>)(input:List<'char>*'ctxt) 
+    (err:ErrorType)(f:Option<'res>) :Option<'res> = 
+  let convert = 
+    match pars (input) with
+    | Done(res,_,_) -> Some(res)
+    | Error err -> f
+    | Error e ->
+      printfn "%A" e
+      None 
+  opt{return! convert}

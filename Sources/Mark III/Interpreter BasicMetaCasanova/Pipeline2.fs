@@ -48,10 +48,23 @@ let lex_files (paths:List<string>) (file_name:List<string>) :Option<_> =
     return lexer_res
   }
 
-let start_parser (tok:List<Id*Token>) :Option<_> =
+let rec start_parser (tok:Id*List<Token>)(tokens:List<Id*List<Token>>) 
+                     (scp:List<Id*ParseScope>) :Option<List<Id*ParseScope>> =
   opt{
-    return ()
+    let id,token = tok
+    let! res = react_to_parser_error (decl_parse id) (token,scp) (ImportError) 
+                (None)
+    return [] 
   }
+and parse_tokens (tokens:List<Id*List<Token>>) (scp:List<Id*ParseScope>) 
+                  :Option<List<Id*ParseScope>> =
+  opt{
+    let! head = List.tryHead tokens
+    let tail = List.skip 1 tokens
+    let! res = start_parser head tail scp
+    return res
+  }
+
 
 let start (paths:List<string>) (file_name:List<string>) :Option<_> =
   opt{

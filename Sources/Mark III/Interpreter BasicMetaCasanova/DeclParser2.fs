@@ -27,20 +27,32 @@ type SymbolDeclaration =
 
 type ParseScope = 
   {
-    DataDecl    : List<SymbolDeclaration>
-    FuncDecl    : List<SymbolDeclaration>
-    ArrowDecl   : List<SymbolDeclaration>
-    TypeDecl    : List<SymbolDeclaration>
-    AliasDecl   : List<SymbolDeclaration>
+    CurrentNamespace : Id
+    DataDecl         : List<SymbolDeclaration>
+    FuncDecl         : List<SymbolDeclaration>
+    ArrowDecl        : List<SymbolDeclaration>
+    TypeDecl         : List<SymbolDeclaration>
+    AliasDecl        : List<SymbolDeclaration>
   } with 
     static member Zero =
       {
-        DataDecl    = []
-        FuncDecl    = []
-        ArrowDecl   = []
-        TypeDecl    = []
-        AliasDecl   = []
+        CurrentNamespace  = ""
+        DataDecl          = []
+        FuncDecl          = []
+        ArrowDecl         = []
+        TypeDecl          = []
+        AliasDecl         = []
       }
+    static member add pc1 pc2=
+      {
+        CurrentNamespace  = pc2.CurrentNamespace
+        DataDecl          = pc1.DataDecl  @ pc2.DataDecl
+        TypeDecl          = pc1.TypeDecl  @ pc2.TypeDecl
+        FuncDecl          = pc1.FuncDecl  @ pc2.FuncDecl
+        AliasDecl         = pc1.AliasDecl @ pc2.AliasDecl
+        ArrowDecl         = pc1.ArrowDecl @ pc2.ArrowDecl
+      }
+
 
 let extract_keyword() :Parser<Token,_,Keyword*Position> =
   prs{
@@ -147,15 +159,18 @@ let parse_data :Parser<Token,ParseScope,_> =
   prs{
     do! check_keyword() Data
     let! left_args = parse_small_args
-    let! name = extract_string_literal
+    let! name,pos = extract_string_literal
     let! right_args = parse_small_args
     do! check_keyword() SingleArrow
     let! result = parse_single_arg
-    let! pri,ass = (check_keyword() PriorityArrow >>.
-                    (extract_int_literal .>>. parse_assosiotivity)) .||
-                    prs{return((0,Position.Zero),Left)}
+    let! (pri,_),ass = (check_keyword() PriorityArrow >>.
+                        (extract_int_literal .>>. parse_assosiotivity)) .||
+                         prs{return((0,Position.Zero),Left)}
+    let res = {Name = name ; LeftArgs = left_args; RightArgs = right_args;
+                Return = result ; Priority = pri ; Associativity = ass;
+                Pos = pos}
     let! ctxt = getContext
-    do! setContext {ctxt with DataDecl = []}
+    do! setContext {ctxt with DataDecl = res :: ctxt.DataDecl}
   }
 
 let parse_lines :Parser<Token,ParseScope,_> =
@@ -170,22 +185,39 @@ let parse_scope :Parser<Token,ParseScope,_> =
     return! getContext
   }
 
-let check_presens :Parser<Id*ParseScope,Id,Id*ParseScope> =
+let check_presens :Parser<Id,List<Id*ParseScope>,Id*ParseScope> =
   prs{
+    let! next = step
     let! ctxt = getContext
-    return! getFirstInstanceOf (fun (id,scp) -> id = ctxt)
+    if List.exists (fun (id,_) -> next = id) ctxt then
+     return List.find (fun (id,_) -> next = id) ctxt
+    else return! fail ImportError
   }
 
-let parse_import :Parser<Token,List<Id*ParseScope>,List<Id*ParseScope>> =
+let parse_import :Parser<Token,List<Id*ParseScope>,Id> =
   prs{
     do! skip_newline
     let! id,pos = UseDifferentCtxt ((check_keyword() Import) >>. extract_id) ParseScope.Zero
-    let! ctxt = getContext
-    return! UseDifferentSrcAndCtxt (check_presens |> repeat) ctxt id
+    return id
   }
 
-let decl_parse :Parser<Token,List<Id*ParseScope>,ParseScope> =
+let import_to_parsescope :Parser<Token,List<Id*ParseScope>,ParseScope> =
   prs{
-    let! res = UseDifferentCtxt parse_scope ParseScope.Zero
-    return res
+    let! imp = parse_import |> repeat
+    let! ctxt = getContext
+    let! scp = UseDifferentSrcAndCtxt (check_presens |> itterate) imp ctxt
+    return List.fold (fun state (_,x) -> ParseScope.add state x) ParseScope.Zero scp
+  }
+
+let decl_parse (curnamespace:Id) :Parser<Token,List<Id*ParseScope>,ParseScope> =
+  prs{
+    let! scp = import_to_parsescope
+    let  scp = {scp with CurrentNamespace = curnamespace}
+    return! UseDifferentCtxt parse_scope scp
+  }
+
+let start_decl_parse :Parser<Id*List<Token>,List<Id*ParseScope>,ParseScope> =
+  prs{
+    let! id,token = step
+    return ParseScope.Zero
   }
