@@ -12,7 +12,7 @@ type ErrorType =  ParserMonadError
                 | EofError
                 | ImportError
                 | SatisfyError
-                | MatchError
+                | MatchError          of string*Position
                    
 type Result<'char,'ctxt,'result> = 
   | Done of 'result * List<'char> * 'ctxt

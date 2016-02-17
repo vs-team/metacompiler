@@ -7,6 +7,7 @@ type Keyword =
   | Open of Bracket| Close of Bracket | NewLine | CommentLine
   | SingleArrow | DoubleArrow | PriorityArrow | Spaces of int
   | Less | LessEqual | Greater | GreaterEqual | Equal
+  | Star | Bar
 
 type Token =
   | Id of Id * Position
@@ -178,23 +179,25 @@ let token :Parser<char,Position,Token> =
       float_literal   pos .||
       int_literal     pos .||
       string_literal  pos .||
-      !>>. !"import" (Import,pos)     .||
-      !>>. !"inherit" (Inherit,pos)     .||
-      !>>. !"Func" (Func,pos)           .||
-      !>>. !"TypeFunc" (TypeFunc,pos)   .||
-      !>>. !"ArrowFunc" (ArrowFunc,pos) .||
-      !>>. !"TypeAlias" (TypeAlias,pos) .||
-      !>>. !"Data" (Data,pos)           .||
-      !>>. !"=>" (DoubleArrow,pos)      .||
-      !>>. !"->" (SingleArrow,pos)      .||
-      !>>. !"#>" (PriorityArrow,pos)    .||
-      !>>. !"{" (Open Curly,pos)        .||
-      !>>. !"}" (Close Curly,pos)       .||
-      !>>. !"[" (Open Square,pos)       .||
-      !>>. !"]" (Close Square,pos)      .||
-      !>>. !"(\\" (Open Lambda,pos)     .||
-      !>>. !"(" (Open Round,pos)        .||
-      !>>. !")" (Close Round,pos)       .||
+      !>>. !"import"      (Import,pos)         .||
+      !>>. !"inherit"     (Inherit,pos)        .||
+      !>>. !"Func"        (Func,pos)           .||
+      !>>. !"TypeFunc"    (TypeFunc,pos)       .||
+      !>>. !"ArrowFunc"   (ArrowFunc,pos)      .||
+      !>>. !"TypeAlias"   (TypeAlias,pos)      .||
+      !>>. !"Data"        (Data,pos)           .||
+      !>>. !"*"           (Star,pos)           .||
+      !>>. !"|"           (Bar,pos)            .||
+      !>>. !"=>"          (DoubleArrow,pos)    .||
+      !>>. !"->"          (SingleArrow,pos)    .||
+      !>>. !"#>"          (PriorityArrow,pos)  .||
+      !>>. !"{"           (Open Curly,pos)     .||
+      !>>. !"}"           (Close Curly,pos)    .||
+      !>>. !"["           (Open Square,pos)    .||
+      !>>. !"]"           (Close Square,pos)   .||
+      !>>. !"(\\"         (Open Lambda,pos)    .||
+      !>>. !"("           (Open Round,pos)     .||
+      !>>. !")"           (Close Round,pos)    .||
       horizontal_bar pos  .||
       new_line pos        .||
       all_id pos          .||
