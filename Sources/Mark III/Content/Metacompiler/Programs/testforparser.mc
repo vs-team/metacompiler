@@ -1,17 +1,15 @@
-﻿Data 'a -> "tuple" -> 'b -> 'a * 'b
-Data 'a -> "bar" -> 'b -> 'a | 'b  #> 123L
+﻿Func int -> "add" -> int -> int
 
-Data 'a -> 'c -> "bartuple" -> 'b -> 'd -> 'a * 'b | c * d  #>321R 
-Data 'a -> 'c -> "bartupcor" -> 'b -> 'd -> ('a * 'b) | ('c * 'd)
+Func int -> "sub" -> int -> int
 
-Data 'a -> "bla" -> ('b -> 'c) -> 'a * ('b -> 'c)
+Func "run" -> int
 
-Data "wtf" -> (('a -> ('b -> 'c)) -> (('a -> 'b) -> 'c)) 'd
+x add y -> x + y
 
-Data "vla" -> int  #>456L
+x sub y -> x - y
 
-Data "app" -> 'a 'b 'c
+4 add 5 -> res
+res sub 3 -> res2
+--------
+run -> res2
 
-Func 'a -> "functest" -> 'b -> 'c
-
-Func int -> "add" -> int -> int

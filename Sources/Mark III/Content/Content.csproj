@@ -151,6 +151,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Metacompiler\Programs\decltest.mc" />
     <None Include="Metacompiler\Programs\testforparser.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -13,6 +13,7 @@ type ErrorType =  ParserMonadError
                 | ImportError
                 | SatisfyError
                 | MatchError          of string*Position
+                | SyntaxError
                    
 type Result<'char,'ctxt,'result> = 
   | Done of 'result * List<'char> * 'ctxt
