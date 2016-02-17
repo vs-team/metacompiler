@@ -10,7 +10,7 @@ match ('a | 'b) => Module ('a | 'b) {
   TypeFunc "Tail" => *
   Tail => 'b
 
-  Func "do" -> 'a -> with -> (Head -> 'b) -> (Tail -> 'b) -> 'b
+  Func "do" -> 'a -> With -> (Head -> 'b) -> (Tail -> 'b) -> 'b
   do (Left x) with f g -> f x
 
   do y with g h -> res
