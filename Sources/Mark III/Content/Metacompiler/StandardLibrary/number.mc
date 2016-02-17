@@ -1,13 +1,13 @@
 ﻿TypeFunc "MonoidAdd" => * => Module
 MonoidAdd 'a => Module {
   Func 'a -> "+" -> 'a -> 'a #> 60
-  Func "identity" -> 'a
+  Func "identityAdd" -> 'a
 }
 
 TypeFunc "MonoidMul" => * => Module
 MonoidMul 'a => Module {
   Func 'a -> "*" -> 'a -> 'a #> 70
-  Func "identity" -> 'a
+  Func "identityMul" -> 'a
 }
 
 TypeFunc "GroupAdd" => * => Module
