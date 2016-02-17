@@ -1,7 +1,7 @@
 ﻿TypeFunc "MonoidAdd" => * => Module
-MonoidMul 'a => Module {
+MonoidAdd 'a => Module {
   Func 'a -> "+" -> 'a -> 'a #> 60
-  Func "identity" -> 'a 
+  Func "identity" -> 'a
 }
 
 TypeFunc "MonoidMul" => * => Module
@@ -10,26 +10,26 @@ MonoidMul 'a => Module {
   Func "identity" -> 'a
 }
 
-TypeFunc "GroupAdd" => * => MonoidAdd => Module
-GroupAdd 'a 'M => Module {
-  inherit 'M 'a
+TypeFunc "GroupAdd" => * => Module
+GroupAdd 'a => Module {
+  inherit MonoidAdd 'a
   Func 'a -> "-" -> 'a -> 'a #> 60
 }
 
-TypeFunc "GroupMul" => * => MonoidMul => Module
-GroupMul 'a 'M => Module {
-  inherit 'M 'a
+TypeFunc "GroupMul" => * => Module
+GroupMul 'a => Module {
+  inherit MonoidMul 'a
   Func 'a -> "/" -> 'a -> 'a #> 70
 }
 
-TypeFunc "Number" => * => GroupAdd => GroupMul => Module
-Number 'a 'A 'M => Module {
-  inherit 'A 'a
-  inherit 'M 'a
+TypeFunc "Number" => * => Module
+Number 'a => Module {
+  inherit GroupAdd 'a
+  inherit GroupMul 'a
 }
 
-TypeFunc "Vector" => * => GroupAdd => MonoidMul => Module
-Vector 'a 'A 'M => Module {
-  inherit 'A 'a
-  inherit 'M 'a
-} 
+TypeFunc "Vector" => * => Module
+Vector 'a => Module {
+  inherit GroupAdd 'a
+  inherit MonoidMul 'a
+}
