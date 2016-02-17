@@ -1,7 +1,7 @@
 ﻿import number
 import boolean
 
-Data "Unit" -> Unit
+Data "unit" -> Unit
 Data 'a -> "," -> 'b -> 'a * 'b    #> 5
 Data "Left" -> 'a -> 'a | 'b       #> 5
 Data "Right" -> 'b -> 'a | 'b      #> 5
