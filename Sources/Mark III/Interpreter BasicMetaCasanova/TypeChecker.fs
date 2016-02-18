@@ -17,8 +17,7 @@ type lit = I64 of System.Int64
          | F64 of System.Double
          | String of System.String
 
-type var = Tmp    of int
-         | Lambda of int
+type var = Lambda of int
          | Named  of Id
 
 type tree = Lit of lit
@@ -32,13 +31,22 @@ type conditional = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 type premisse = Assignment  of var*tree
               | Conditional of conditional*var*var
 
+type dataElem = DotNetType      of Id
+              | McType          of Id
+              | TypeLambda      of List<dataElem>
+              | TypeApplication of Id*List<dataElem>
+
 type rule = {
-  Input  :tree
+  input  :tree
   output :tree
   premis :List<premisse>
+  typemap:Map<Id,dataElem>
 }
 
-type data = DotNetType  of Id
-          | McType      of Id
-          | FuncType    of List<data>
-          | Application of Id*List<data>
+type data = {
+  id     :Id
+  args   :List<Id>
+  output :Id
+  typemap:Map<Id,dataElem>
+}
+
