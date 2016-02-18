@@ -45,13 +45,23 @@ list 'M 'a => Monad(ListT MCons^'M 'a) {
         return^'M k x
       $*
        * this will recursively call lm >>= k -> res
-       * Because ArrowFunc
+       * Because ArrowFunc (who makes this stuff up...)
        *$
       xs >>= ys
         k
       (y @ ys))) -> res
   -------------------------------
   lm >>= k -> res
+
+  lift lm return^id -> l
+  (do^(match(MCons 'a)) l with
+    (\empty -> return^'M empty)
+    (\(x :: xs) ->
+      bind^'M x (return^'M k x) -> y
+      bind xs k -> ys
+      (y @ ys))) -> res
+  ---------------------
+  bind lm k -> res
 
   return x => list(return^'M(x :: empty))
 }
