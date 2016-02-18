@@ -25,6 +25,7 @@ let main argv =
                //;"result"
                //;"state"
                "testforparser"
+               //"decltest"
               ]
   let file_paths = ["../../../Content/Metacompiler/StandardLibrary/";
                     "../../../Content/Metacompiler/BasicMonads/";

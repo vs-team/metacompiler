@@ -4,6 +4,7 @@ open Common
 open ParserMonad
 open Lexer2
 open ExtractFromToken2
+open GlobalSyntaxCheck2
 
 type Associativity = Left | Right
 
@@ -94,7 +95,7 @@ and parse_arg :Parser<Token,ParseScope,DeclType> =
     let! symbol,pos = extract_keyword()
     let! after_symbol = parse_arg
     if symbol = Star then return Tuple(before_symbol,after_symbol)
-    elif symbol = Lexer2.Bar then return Bar(before_symbol,after_symbol)
+    elif symbol = Lexer2.Pipe then return Bar(before_symbol,after_symbol)
     else return! fail (ParserError pos)
   } .|| parse_round .|| parse_single_arg
 
@@ -142,7 +143,8 @@ let parse_funcdecl :Parser<Token,ParseScope,_> =
 let parse_lines :Parser<Token,ParseScope,_> =
   prs{
     do! skip_newline
-    do! parse_datadecl .|| parse_funcdecl
+    do! parse_datadecl .|| parse_funcdecl .|| 
+         (UseDifferentCtxt check_rule Position.Zero)
     do! skip_newline
     return ()
   }

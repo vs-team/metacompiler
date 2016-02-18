@@ -36,7 +36,7 @@ and check_arg :Parser<Token,Position,_> =
     do! check_arg
   } .|| check_lamda_signature .|| prs{
     do! check_round .|| check_single_arg
-    do! check_keyword() Star .|| check_keyword() Bar
+    do! check_keyword() Star .|| check_keyword() Pipe
     do! check_arg
   } .|| check_round .|| check_single_arg
 
@@ -61,14 +61,62 @@ let check_parse_decl :Parser<Token,Position,_> =
     do! check_keyword() SingleArrow
     do! check_small_args |> ignore
     do! check_arg
-    do! check_keyword() PriorityArrow >>. 
-         (extract_int_literal() .>>. check_assosiotivity) |> ignore
+    do! (check_keyword() PriorityArrow >>. 
+         (extract_int_literal() .>>. check_assosiotivity) |> ignore) .|| 
+          prs{return ()}
+  }
+
+let check_condition :Parser<Token,Position,_> =
+  prs{
+    do! check_keyword() Less    .|| check_keyword() LessEqual    .||
+        check_keyword() Greater .|| check_keyword() GreaterEqual .||
+        check_keyword() Equal
+  }
+
+let check_premiss_element :Parser<Token,Position,_> =
+  prs{
+    do! check_single_arg .|| check_keyword() (Open Round) .||
+        check_keyword() (Close Round)  
+  }
+
+let check_premiss_element_with_literal :Parser<Token,Position,_> =
+  prs{
+    do! check_premiss_element .|| (extract_int_literal() |> ignore) .||
+        (extract_string_literal() |> ignore)
+  }
+
+let check_premiss_lift (arrow) :Parser<Token,Position,_> =
+  prs{
+    do! check_premiss_element_with_literal |> repeat1 |> ignore
+    do! arrow
+    do! check_premiss_element |> repeat1 |> ignore
+    do! check_keyword() NewLine
+  }
+
+let check_premis :Parser<Token,Position,_> =
+  check_premiss_lift (check_keyword() SingleArrow) .||
+  check_premiss_lift (check_condition)             .||
+  prs{do! check_premiss_element_with_literal |> repeat1 |> ignore
+      do! check_keyword() NewLine}
+
+
+let check_rule :Parser<Token,Position,_> =
+  prs{
+    do! check_premis |> repeat |> ignore
+    do! check_keyword() HorizontalBar >>. check_keyword() NewLine
+    do! check_premiss_element |> repeat1 |> ignore
+    do! check_keyword() SingleArrow
+    do! check_premiss_element_with_literal |> repeat1 |> ignore 
+  } .|| prs{
+    do! check_premiss_element |> repeat |> ignore
+    do! check_keyword() SingleArrow
+    do! check_premiss_element_with_literal |> repeat |> ignore 
   }
 
 let check_lines :Parser<Token,Position,_> =
   prs{
     do! skip_newline
-    do! check_parse_decl
+    do! (check_decl_keyword >>. check_parse_decl) .|| check_rule
     do! skip_newline
     return ()
   }

@@ -5,6 +5,7 @@ open ParserMonad
 open Lexer2
 open DeclParser2
 open OptionMonad
+open GlobalSyntaxCheck2
 
 let t = System.Diagnostics.Stopwatch()
 
@@ -47,7 +48,22 @@ let lex_files (paths:List<string>) (file_name:List<string>) :Option<List<Id*List
     return! try_unpack_list_of_option list_of_lexer_results
   }
 
-let rec start_decl_parser (tokens:Id*List<Token>) :Option<Id*ParseScope> =
+let start_global_syntax_check (tokens:Id*List<Token>) :Option<_> =
+  opt{
+    let id,tok = tokens
+    let! res = use_parser_monad check_syntax (tok,Position.Zero)
+    return () 
+  } |> (timer (sprintf "Done checking tokens of file: [%s.mc] " ((fun (id,_)->id)tokens)))
+
+let check_tokens (tokens:List<Id*List<Token>>) : Option<_> =
+  opt{
+    let list_of_checks =
+       List.collect (fun x -> [start_global_syntax_check x]) tokens
+    let! res = try_unpack_list_of_option list_of_checks
+    return ()
+  }
+
+let start_decl_parser (tokens:Id*List<Token>) :Option<Id*ParseScope> =
   opt{
     let id,tok = tokens
     let! res = use_parser_monad parse_scope (tok,{ParseScope.Zero with CurrentNamespace = id})
@@ -66,6 +82,8 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
   opt{
     t.Start()
     let! lex_res = lex_files paths file_name
+    do! check_tokens lex_res
     let! decl_pars_res = parse_tokens lex_res
     return decl_pars_res
+    //return lex_res
   }

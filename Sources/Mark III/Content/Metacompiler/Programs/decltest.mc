@@ -1,6 +1,7 @@
 ﻿Data 'a -> "tuple" -> 'b -> 'a * 'b
 Data 'a -> "bar" -> 'b -> 'a | 'b  #> 123L
 
+Data "tripletuple" -> 'a * 'b * 'c
 Data 'a -> 'c -> "bartuple" -> 'b -> 'd -> 'a * 'b | c * d  #>321R 
 Data 'a -> 'c -> "bartupcor" -> 'b -> 'd -> ('a * 'b) | ('c * 'd)
 

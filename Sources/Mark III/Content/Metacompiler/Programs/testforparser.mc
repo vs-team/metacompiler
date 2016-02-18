@@ -8,8 +8,8 @@ x add y -> x + y
 
 x sub y -> x - y
 
-4 add 5 -> res
-res sub 3 -> res2
+x add y -> res
+res sub c -> res2
 --------
 run -> res2
 
