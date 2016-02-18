@@ -20,14 +20,16 @@ let main argv =
                //;"match"
                //;"either"
                //;"id"
-               //;
-               "list"
+               //;"list"
                //;"option"
                //;"result"
                //;"state"
+               "testforparser"
+               //"decltest"
               ]
   let file_paths = ["../../../Content/Metacompiler/StandardLibrary/";
-                    "../../../Content/Metacompiler/BasicMonads/"]
+                    "../../../Content/Metacompiler/BasicMonads/";
+                    "../../../Content/Metacompiler/Programs/"]
   
 
   let res = 

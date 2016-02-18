@@ -7,6 +7,7 @@ type Keyword =
   | Open of Bracket| Close of Bracket | NewLine | CommentLine
   | SingleArrow | DoubleArrow | PriorityArrow | Spaces of int
   | Less | LessEqual | Greater | GreaterEqual | Equal
+  | Star | Pipe
 
 type Token =
   | Id of Id * Position
@@ -132,6 +133,7 @@ let all_id pos :Parser<char,Position,Token> =
   prs{
     return! ((char '\'') >>. prs{
       let! str = alpha_numeric_id .|| symbol_id
+      let str = "'" + str
       return VarId((str|>System.String.Concat),pos)
     }) .|| prs{
       let! str = alpha_numeric_id .|| symbol_id
@@ -177,23 +179,25 @@ let token :Parser<char,Position,Token> =
       float_literal   pos .||
       int_literal     pos .||
       string_literal  pos .||
-      !>>. !"import" (Import,pos)     .||
-      !>>. !"inherit" (Inherit,pos)     .||
-      !>>. !"Func" (Func,pos)           .||
-      !>>. !"TypeFunc" (TypeFunc,pos)   .||
-      !>>. !"ArrowFunc" (ArrowFunc,pos) .||
-      !>>. !"TypeAlias" (TypeAlias,pos) .||
-      !>>. !"Data" (Data,pos)           .||
-      !>>. !"=>" (DoubleArrow,pos)      .||
-      !>>. !"->" (SingleArrow,pos)      .||
-      !>>. !"#>" (PriorityArrow,pos)    .||
-      !>>. !"{" (Open Curly,pos)        .||
-      !>>. !"}" (Close Curly,pos)       .||
-      !>>. !"[" (Open Square,pos)       .||
-      !>>. !"]" (Close Square,pos)      .||
-      !>>. !"(\\" (Open Lambda,pos)     .||
-      !>>. !"(" (Open Round,pos)        .||
-      !>>. !")" (Close Round,pos)       .||
+      !>>. !"import"      (Import,pos)         .||
+      !>>. !"inherit"     (Inherit,pos)        .||
+      !>>. !"Func"        (Func,pos)           .||
+      !>>. !"TypeFunc"    (TypeFunc,pos)       .||
+      !>>. !"ArrowFunc"   (ArrowFunc,pos)      .||
+      !>>. !"TypeAlias"   (TypeAlias,pos)      .||
+      !>>. !"Data"        (Data,pos)           .||
+      !>>. !"*"           (Star,pos)           .||
+      !>>. !"|"           (Pipe,pos)            .||
+      !>>. !"=>"          (DoubleArrow,pos)    .||
+      !>>. !"->"          (SingleArrow,pos)    .||
+      !>>. !"#>"          (PriorityArrow,pos)  .||
+      !>>. !"{"           (Open Curly,pos)     .||
+      !>>. !"}"           (Close Curly,pos)    .||
+      !>>. !"["           (Open Square,pos)    .||
+      !>>. !"]"           (Close Square,pos)   .||
+      !>>. !"(\\"         (Open Lambda,pos)    .||
+      !>>. !"("           (Open Round,pos)     .||
+      !>>. !")"           (Close Round,pos)    .||
       horizontal_bar pos  .||
       new_line pos        .||
       all_id pos          .||

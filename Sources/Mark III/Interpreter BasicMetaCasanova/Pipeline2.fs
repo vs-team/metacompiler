@@ -3,7 +3,9 @@
 open Common
 open ParserMonad
 open Lexer2
+open DeclParser2
 open OptionMonad
+open GlobalSyntaxCheck2
 
 let t = System.Diagnostics.Stopwatch()
 
@@ -39,17 +41,49 @@ let start_lexer (paths:List<string>) (file_name:string) :Option<Id*List<Token>> 
     return (file_name,tokens)
   } |> (timer (sprintf "Done tokenization of file: [%s.mc] " file_name))
 
-let start_lexpars (paths:List<string>) (file_name:List<string>) :Option<_> =   
+let lex_files (paths:List<string>) (file_name:List<string>) :Option<List<Id*List<Token>>> =   
   opt{
     let list_of_lexer_results = 
       List.collect (fun x -> [start_lexer paths x]) file_name
-    let! lexer_res = try_unpack_list_of_option list_of_lexer_results
-    return lexer_res
+    return! try_unpack_list_of_option list_of_lexer_results
   }
+
+let start_global_syntax_check (tokens:Id*List<Token>) :Option<_> =
+  opt{
+    let id,tok = tokens
+    let! res = use_parser_monad check_syntax (tok,Position.Zero)
+    return () 
+  } |> (timer (sprintf "Done checking tokens of file: [%s.mc] " ((fun (id,_)->id)tokens)))
+
+let check_tokens (tokens:List<Id*List<Token>>) : Option<_> =
+  opt{
+    let list_of_checks =
+       List.collect (fun x -> [start_global_syntax_check x]) tokens
+    let! res = try_unpack_list_of_option list_of_checks
+    return ()
+  }
+
+let start_decl_parser (tokens:Id*List<Token>) :Option<Id*ParseScope> =
+  opt{
+    let id,tok = tokens
+    let! res = use_parser_monad parse_scope (tok,{ParseScope.Zero with CurrentNamespace = id})
+    return id,res
+  } |> (timer (sprintf "Done parsing decls of file: [%s.mc] " ((fun (id,_)->id)tokens)))
+
+let parse_tokens (tokens:List<Id*List<Token>>) : Option<List<Id*ParseScope>> =
+  opt{
+    let list_of_decl_res = 
+      List.collect (fun x -> [start_decl_parser x]) tokens
+    return! try_unpack_list_of_option list_of_decl_res
+  }
+
 
 let start (paths:List<string>) (file_name:List<string>) :Option<_> =
   opt{
     t.Start()
-    let! lexpars_res = start_lexpars paths file_name
-    return lexpars_res
+    let! lex_res = lex_files paths file_name
+    do! check_tokens lex_res
+    let! decl_pars_res = parse_tokens lex_res
+    return decl_pars_res
+    //return lex_res
   }

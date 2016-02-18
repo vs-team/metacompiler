@@ -2,51 +2,51 @@
 open Common
 open ScopeBuilder // Scope
 
-type Id       = List<string>
+type Id       = List<string>*string
 type LambdaId = List<string>*int
 
-type LTreeExpr = Fun    of Id*LTreeExpr*LTreeExpr //points to library function
-               | Rul    of Id*LTreeExpr*LTreeExpr //points to rule
-               | Data   of Id*LTreeExpr*LTreeExpr
-               | Lambda of LambdaId*LTreeExpr*LTreeExpr 
-               | App    of LTreeExpr*LTreeExpr     
-               | Var    of Id*Type
-               | Lit    of Literal
+type lit = I64 of System.Int64
+         | U64 of System.UInt64
+         | I32 of System.Int32
+         | U32 of System.UInt32
+         | I16 of System.Int16
+         | U16 of System.UInt16
+         | I8  of System.SByte
+         | U8  of System.Byte
+         | F32 of System.Single
+         | F64 of System.Double
+         | String of System.String
 
-type RTreeExpr = Var  of Id*Type
-               | Data of Id*RTreeExpr*RTreeExpr
+type var = Lambda of int
+         | Named  of Id
 
-and Rule = {
-  Input    :RTreeExpr
-  Output   :RTreeExpr
-  Premises :List<Premise>
+type tree = Lit of lit
+          | Var of var
+          | Lambda     of LambdaId*List<tree>
+          | RuleCall   of Id*List<tree>
+          | DotNetCall of Id*List<tree>
+
+type conditional = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
+
+type premisse = Assignment  of var*tree
+              | Conditional of conditional*var*var
+
+type dataElem = DotNetType      of Id
+              | McType          of Id
+              | TypeLambda      of List<dataElem>
+              | TypeApplication of Id*List<dataElem>
+
+type rule = {
+  input  :tree
+  output :tree
+  premis :List<premisse>
+  typemap:Map<Id,dataElem>
 }
 
-and Conditional = Less | LessEqual | Greater | GreaterEqual | Equal | NotEqual
-
-and Premise = Assignment      of LTreeExpr*RTreeExpr
-            | Conditional     of LTreeExpr*Conditional*LTreeExpr
-
-and Data = {
-  Input    :List<Type>
-  Output   :Type
+type data = {
+  id     :Id
+  args   :List<Id>
+  output :Id
+  typemap:Map<Id,dataElem>
 }
 
-and EasyData = {
-  Constructor : Id
-  Args   : List<Type>
-  Result : Type
-}
-
-and Type = Id           of Id 
-         | App          of Type*Type
-         | Arrow        of Type*Type
-
-type Namespace = {
-    Lambdas             :List<LambdaId*Rule>
-    LibraryFunctions    :List<Id*LTreeExpr*LTreeExpr>
-    Rules               :List<Id*List<Rule>>
-    Datas               :List<Id*List<Data>>
-}
-
-type Scope =  Map<Id,Namespace>
