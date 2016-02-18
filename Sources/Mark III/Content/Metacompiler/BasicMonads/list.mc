@@ -2,6 +2,7 @@ import prelude
 import match
 import monad
 import boolean
+import id
 
 TypeAlias "List" => * => *
 List 'a => Unit | ('a * (List 'a))
@@ -23,29 +24,34 @@ map (x :: xs) f -> (map (f x)) :: xs
 Func "filter" -> List 'a -> ('a -> Boolean) -> List 'a
 filter empty p -> empty
 
-(if p x then 
-  (x :: (filter xs p)) 
-  else 
-  (filter xs p)
-) -> res
---
+(if p x then
+  (x :: (filter xs p))
+  else
+  (filter xs p)) -> res
+-----------------------
 filter (x :: xs) p -> res
 
 
 TypeAlias "ListT" => (* => *) => * => *
 ListT 'M 'a => 'M(List 'a)
 
-TypeFunc "list" => Monad => Monad 
+TypeFunc "list" => Monad => Monad
 list 'M 'a => Monad(ListT MCons^'M 'a) {
-  lm >>=^'M l
+  lift lm return^id -> l
   (do^(match(MCons 'a)) l with
     (\empty -> return^'M empty)
-    (\(x :: xs) -> 
-      k x >>=^'M y
-      ((return^'M xs) >>= k) >>=^'M ys
-      return^'M (y @ ys))) => res
-  --
-  lm >>= k => res
+    (\(x :: xs) ->
+      x >>=^'M y
+        return^'M k x
+      $*
+       * this will recursively call lm >>= k -> res
+       * Because ArrowFunc
+       *$
+      xs >>= ys
+        k
+      (y @ ys))) -> res
+  -------------------------------
+  lm >>= k -> res
 
-  return x => return^'M(x :: empty)
+  return x => list(return^'M(x :: empty))
 }
