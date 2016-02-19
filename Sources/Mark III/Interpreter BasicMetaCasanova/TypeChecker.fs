@@ -54,7 +54,7 @@ type data = {
 }
 
 type fromTypecheckerWithLove = {
-  rules  : Map<Id,rule>
+  rules  : Map<Id,List<rule>>
   lamdas : Map<LambdaId,rule>
   datas  : Map<Id,data>
 }
