@@ -12,9 +12,8 @@ type DeclType =
   | Id          of Id * Position
   | IdVar       of Id * Position
   | Arrow       of DeclType*DeclType
-  | Application of DeclType*DeclType
-  | Tuple       of DeclType*DeclType
-  | Bar         of DeclType*DeclType
+  | Application of Id*DeclType*DeclType
+
 
 type SymbolDeclaration =
   {
@@ -89,14 +88,12 @@ and parse_arg :Parser<Token,ParseScope,DeclType> =
   prs{
     let! first_arg = parse_round .|| parse_lambda_signature .|| parse_single_arg
     let! n_arg     = parse_arg
-    return Application(first_arg,n_arg)
+    return Application("app",first_arg,n_arg)
   } .|| parse_lambda_signature .|| prs{
     let! before_symbol = parse_round .|| parse_single_arg
-    let! symbol,pos = extract_keyword()
+    let! symbol,pos = extract_id()
     let! after_symbol = parse_arg
-    if symbol = Star then return Tuple(before_symbol,after_symbol)
-    elif symbol = Lexer2.Pipe then return Bar(before_symbol,after_symbol)
-    else return! fail (ParserError pos)
+    return Application(symbol,before_symbol,after_symbol)
   } .|| parse_round .|| parse_single_arg
 
 let parse_small_args :Parser<Token,ParseScope,List<DeclType>> =

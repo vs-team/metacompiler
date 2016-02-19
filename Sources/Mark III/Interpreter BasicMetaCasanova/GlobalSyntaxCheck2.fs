@@ -36,7 +36,7 @@ and check_arg :Parser<Token,Position,_> =
     do! check_arg
   } .|| check_lamda_signature .|| prs{
     do! check_round .|| check_single_arg
-    do! check_keyword() Star .|| check_keyword() Pipe
+    do! extract_id() |> ignore
     do! check_arg
   } .|| check_round .|| check_single_arg
 
