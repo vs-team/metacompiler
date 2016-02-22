@@ -16,12 +16,11 @@ either 'M 'e => TryableMonad(EitherT MCons^'M 'e) {
 
   return x -> either(return^'M(Left x))
 
-  $$ pm >>=^'M y
-  lift pm return^id -> y
-  (do^(match(MCons 'a)) y with
-    (\x -> k x)
-    (\e -> err e)) -> res
-  return^'M res -> res'
-  --
+  {pm >>=^'M y
+    (do^(match(MCons 'a)) y with
+      (\x -> k x)
+      (\e -> err e)) -> z
+    return^'M z} -> res
+  ---------------------
   try pm k err -> res
 }
