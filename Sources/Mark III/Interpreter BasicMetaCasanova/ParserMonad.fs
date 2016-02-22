@@ -1,7 +1,7 @@
 ﻿module ParserMonad
 open Common
 
-type ErrorType =  ParserMonadError
+type ErrorType =  ParserMonadError    of string
                 | LexerError          of Position
                 | ParserError         of Position
                 | LineSplitterError   of Position
@@ -59,7 +59,7 @@ let inline (>>) p k =
 let rec first_successful (ps:List<Parser<_,_,'a>>) : Parser<_,_,'a> = 
   fun (chars,ctxt) ->
     match ps with
-    | [] -> Error ParserMonadError
+    | [] -> Error (ParserMonadError "first_successful")
     | p :: ps ->
       match p(chars,ctxt) with
       | Error(_) ->
@@ -104,7 +104,7 @@ let step =
   fun (chars,ctxt) ->
     match chars with
     | c::cs -> Done(c, cs, ctxt)
-    | _ -> Error ParserMonadError
+    | _ -> Error (ParserMonadError "step")
 
 let eof = 
   fun (chars,ctxt) ->

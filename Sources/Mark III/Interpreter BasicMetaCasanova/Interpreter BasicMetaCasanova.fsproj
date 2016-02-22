@@ -58,6 +58,7 @@
     <Compile Include="GlobalSyntaxCheck2.fs" />
     <Compile Include="DeclParser2.fs" />
     <Compile Include="ImportParser2.fs" />
+    <Compile Include="RuleParser2.fs" />
     <Compile Include="Parser.fs" />
     <Compile Include="LineSplitter.fs" />
     <Compile Include="ScopeBuilderId.fs" />

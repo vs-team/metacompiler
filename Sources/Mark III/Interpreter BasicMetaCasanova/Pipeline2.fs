@@ -63,14 +63,14 @@ let check_tokens (tokens:List<Id*List<Token>>) : Option<_> =
     return ()
   }
 
-let start_decl_parser (tokens:Id*List<Token>) :Option<Id*ParseScope> =
+let start_decl_parser (tokens:Id*List<Token>) :Option<Id*DeclParseScope*List<Token>> =
   opt{
     let id,tok = tokens
-    let! res = use_parser_monad parse_scope (tok,{ParseScope.Zero with CurrentNamespace = id})
-    return id,res
+    let! res = use_parser_monad parse_scope (tok,{DeclParseScope.Zero with CurrentNamespace = id})
+    return id,res,tok
   } |> (timer (sprintf "Done parsing decls of file: [%s.mc] " ((fun (id,_)->id)tokens)))
 
-let parse_tokens (tokens:List<Id*List<Token>>) : Option<List<Id*ParseScope>> =
+let parse_tokens (tokens:List<Id*List<Token>>) : Option<List<Id*DeclParseScope*List<Token>>> =
   opt{
     let list_of_decl_res = 
       List.collect (fun x -> [start_decl_parser x]) tokens
@@ -84,6 +84,6 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     let! lex_res = lex_files paths file_name
     do! check_tokens lex_res
     let! decl_pars_res = parse_tokens lex_res
-    return decl_pars_res
+    return (List.collect (fun (x,y,z) -> [x,y]) decl_pars_res)
     //return lex_res
   }
