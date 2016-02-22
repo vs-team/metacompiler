@@ -22,8 +22,9 @@ type lit = I64 of System.Int64
          | F64 of System.Double
          | String of System.String
 
-type var = Lambda of int
+type var = Lambda of LambdaId
          | Named  of Id
+         | Tmp    of int
 
 type lexpr = Lit of lit
            | Var of var
