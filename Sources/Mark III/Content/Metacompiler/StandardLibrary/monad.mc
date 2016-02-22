@@ -13,17 +13,17 @@ Monad 'M => Module {
   returnFrom a -> a
 
   Func "lift" -> ('a -> 'b ) -> 'M 'a -> 'M 'b
-  a >>= a'
-    return f a
-  --
-  lift f a -> a'
+  {a >>= a'
+     return f a'} -> res
+  ----------------------
+  lift f a -> res
 
   Func "lift2" -> ('a -> 'b -> 'c) -> 'M 'a -> 'M 'b -> 'M 'c
-  a >>= a'
-    b >>= b'
-      return f b
-  --
-  lift2 f a b -> return(f a' b')
+  {a >>= a'
+     b >>= b'
+       return f a' b'} -> res
+  ---------------------------
+  lift2 f a b -> res
 
   $$ TypeFunc "liftM" => (M' 'a -> M' 'b) => M M' 'a => M M' 'b
   TypeFunc "liftM" => (* => *) => * => *
