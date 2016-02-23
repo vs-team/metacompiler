@@ -1,11 +1,14 @@
 import monad
 
-TypeAlias "IoT" => (* => *) => *
-IoT => 'M => 'M
+TypeAlias "SystemIOT" => (* => *) => *
+SystemIOT => 'M => IO => 'M
 
-TypeFunc "io" => Monad => Monad
-io 'M => Monad(IoT MCons^'M) {
-  pm >>= k ->
+TypeFunc "systemIO" => Monad => IO => Monad
+systemIO 'M io => Monad(SystemIOT MCons^'M) {
+  {x >>=^'M y
+    return^'M k y} -> res
+  --
+  x >>= k -> res
 
-  return x -> io(return^'M(x))
+  return x -> systemIO(return^'M(x))
 }
