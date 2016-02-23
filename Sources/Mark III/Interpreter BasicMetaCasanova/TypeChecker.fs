@@ -2,8 +2,13 @@
 open Common
 open ScopeBuilder // Scope
 
-type Id       = List<string>*string
-type LambdaId = List<string>*int
+type Type = DotNetType      of Id
+          | McType          of Id
+          | TypeApplication of Id*List<Type>
+
+type Id       = List<string>*string*Type
+type DataId   = List<string>*string*Type
+type LambdaId = List<string>*int*Type
 
 type lit = I64 of System.Int64
          | U64 of System.UInt64
@@ -17,36 +22,40 @@ type lit = I64 of System.Int64
          | F64 of System.Double
          | String of System.String
 
-type var = Lambda of int
+type var = Lambda of LambdaId
          | Named  of Id
+         | Tmp    of int
 
-type tree = Lit of lit
-          | Var of var
-          | Lambda     of LambdaId*List<tree>
-          | RuleCall   of Id*List<tree>
-          | DotNetCall of Id*List<tree>
+type lexpr = Lit of lit
+           | Var of var
+           | RuleCall        of var*list<var>
+           | DotNetCall      of var*list<var>
+           | ConstructorCall of DataId*list<var>
+
+type rexpr = Id of Id
+           | DestructorCall of DataId*List<Id>
 
 type conditional = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 
-type premisse = Assignment  of var*tree
-              | Conditional of conditional*var*var
-
-type dataElem = DotNetType      of Id
-              | McType          of Id
-              | TypeLambda      of List<dataElem>
-              | TypeApplication of Id*List<dataElem>
+type premisse = Assignment  of lexpr*rexpr
+              | Conditional of conditional*lexpr*lexpr
 
 type rule = {
-  input  :tree
-  output :tree
+  input  :rexpr
+  output :lexpr
   premis :List<premisse>
-  typemap:Map<Id,dataElem>
+  typemap:Map<Id,Type>
 }
 
 type data = {
   id     :Id
   args   :List<Id>
   output :Id
-  typemap:Map<Id,dataElem>
+  typemap:Map<Id,Type>
 }
 
+type fromTypecheckerWithLove = {
+  rules  : Map<Id,List<rule>>
+  lamdas : Map<LambdaId,rule>
+  datas  : Map<Id,data>
+}

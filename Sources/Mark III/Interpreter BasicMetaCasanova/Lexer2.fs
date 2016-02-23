@@ -7,7 +7,6 @@ type Keyword =
   | Open of Bracket| Close of Bracket | NewLine | CommentLine
   | SingleArrow | DoubleArrow | PriorityArrow | Spaces of int
   | Less | LessEqual | Greater | GreaterEqual | Equal
-  | Star | Pipe
 
 type Token =
   | Id of Id * Position
@@ -186,8 +185,6 @@ let token :Parser<char,Position,Token> =
       !>>. !"ArrowFunc"   (ArrowFunc,pos)      .||
       !>>. !"TypeAlias"   (TypeAlias,pos)      .||
       !>>. !"Data"        (Data,pos)           .||
-      !>>. !"*"           (Star,pos)           .||
-      !>>. !"|"           (Pipe,pos)            .||
       !>>. !"=>"          (DoubleArrow,pos)    .||
       !>>. !"->"          (SingleArrow,pos)    .||
       !>>. !"#>"          (PriorityArrow,pos)  .||
