@@ -1,6 +1,131 @@
 ﻿module IR
 open Common
 open ParserMonad
+open TypeChecker
+
+let group_data (constructors:Map<Id,data>) :Map<Type,List<data>> =
+  (Map.empty,constructors) ||> Map.fold (fun r k v ->
+    let t = v.output
+    match r |> Map.tryFind t with
+    | Some ds -> Map.add t (v::ds) r
+    | None    -> Map.add t [v]     r )
+
+let genericMangle (name:string) :string =
+  let readables = 
+    Map.ofArray <| Array.zip "!#$%&'*+,-./\\:;<>=?@^_`|~"B [|
+      "bang";"hash";"cash";"perc";"amp";"prime";"star";"plus";"comma";
+      "dash"; "dot";"slash";"back";"colon";"semi";"less";"great";
+      "equal";"quest";"at";"caret";"under";"tick";"pipe";"tilde"|]
+  let mangleChar c =
+    if (c>='a'&&c<='z') || (c>='A'&&c<='Z') || (c>='0'&&c<='9')
+    then sprintf "%c" c
+    else let lookup = readables |> Map.tryFind (System.Convert.ToByte c)
+         match lookup with
+         | None   -> sprintf "_%02X" (System.Convert.ToByte(c))
+         | Some x -> sprintf "_%s" x
+  name |> String.collect mangleChar
+
+let CSharpMangle (name:string) :string =
+  let keywords = Set.ofArray [| "abstract" ; "as" ; "base" ; "bool" ; 
+    "break" ; "byte" ; "case" ; "catch" ; "char" ; "checked" ; "class" ; "const" ;
+    "continue" ; "decimal" ; "default" ; "delegate" ; "do" ; "double" ; "else" ;
+    "enum" ; "event" ; "explicit" ; "extern" ; "false" ; "finally" ; "fixed" ; 
+    "float" ; "for" ; "foreach" ; "goto" ; "if" ; "implicit" ; "in" ; "int" ; 
+    "interface" ; "internal" ; "is" ; "lock" ; "long" ; "namespace" ; "new" ;
+    "null" ; "object" ; "operator" ; "out" ; "override" ; "params" ; "private" ;
+    "protected" ; "public" ; "readonly" ; "ref" ; "return" ; "sbyte" ; "sealed" ;
+    "short" ; "sizeof" ; "stackalloc" ; "static" ; "string" ; "struct" ; 
+    "switch" ; "this" ; "throw" ; "true" ; "try" ; "typeof" ; "uint" ; "ulong" ; 
+    "unchecked" ; "unsafe" ; "ushort" ; "using" ; "virtual" ; "void" ; 
+    "volatile" ; "while" |]
+  let name = genericMangle name
+  let name = if keywords.Contains(name) then sprintf "@%s" name else name 
+  if  name = "System" then "_System" else name
+
+let rec print_type_suffix(t:Type) :string =
+  match t with
+  | DotNetType (ns,n) -> ns@[n] |> Seq.map CSharpMangle |> String.concat "_ns"
+  | McType     (ns,n) -> ns@[n] |> Seq.map CSharpMangle |> String.concat "_ns"
+  | TypeApplication (fn,lst) -> 
+    fn::lst |> List.map print_type_suffix |> String.concat "_sp"
+
+let rec strip_namespace_type(t:Type) :Type = 
+  match t with
+  | DotNetType (_,n) -> DotNetType ([],n)
+  | McType     (_,n) -> McType     ([],n)
+  | TypeApplication (fn,lst) -> TypeApplication ((strip_namespace_type fn),lst)
+
+let strip_namespace_id((ns,n,t):Id) :string = n
+
+let gen_data (constructors:Map<Id,data>) =
+  let foreach_type ((t:Type),(constructors:List<data>)) =
+    let preamble = "[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]"
+    let header = sprintf "%s\npublic struct %s" preamble (t|>strip_namespace_type|>print_type_suffix)
+    let enum   = sprintf "public enum _enum:System.Uint32{%s};\n" (constructors|>List.map(fun (x:data)->x.id|>strip_namespace_id|>CSharpMangle)|>String.concat ", ")
+    let ctor_args = sprintf "public struct %s {%s};"
+    let id     = "[System.Runtime.InteropServices.FieldOffset(0)] public _enum _id;\n"
+    let body   = "//TODO:body;\n" 
+    let ctors  = "//TODO:ctors;\n" 
+    let dtors  = "//TODO:dtors;\n" 
+    header + "{\n" + enum + id + body + ctors + dtors + "}\n"
+  group_data constructors |> Map.toSeq |> Seq.map foreach_type |> String.concat "\n\n"
+
+let failsafe_codegen(input:fromTypecheckerWithLove) =
+  printf "%s" (gen_data input.datas)
+
+let test_data:fromTypecheckerWithLove=
+  let comma_id:Id = ["mc";"test"],"comma",(TypeApplication((McType(["mc";"test"],"star")),[DotNetType(["System"],"Int32");DotNetType(["System"],"Single")]))
+  let data:data =
+    {
+      id=comma_id;
+      args=["a",(DotNetType(["System"],"Int32")); "b",(DotNetType(["System"],"Single")); ];
+      output=McType(["mc";"test"],"star")
+    }
+  let datas = Map.ofSeq <| [(comma_id,data)]
+  {rules=Map.empty;lambdas=Map.empty;datas=datas}
+
+(*
+let print_var_csharp(v:var) :string =
+  match v with
+  | Named  (n) -> n |> String.concat "_NS_"
+  | Lambda (l) -> (ns |> String.concat "_NS_") + (sprintf "_NS_%d" n)
+  | Tmp    (ns,n) -> (ns |> String.concat "_NS_") + (sprintf "_NS_%d" n)
+
+let print_lit_csharp(l:lit) :string =
+  match l with
+  | TypeChecker.lit.I64 i    -> sprintf "%d" i
+  | TypeChecker.lit.I32 i    -> sprintf "%d" i
+  | TypeChecker.lit.I16 i    -> sprintf "%d" i
+  | TypeChecker.lit.I8  i    -> sprintf "%d" i
+  | TypeChecker.lit.U64 i    -> sprintf "%d" i
+  | TypeChecker.lit.U32 i    -> sprintf "%d" i
+  | TypeChecker.lit.U16 i    -> sprintf "%d" i
+  | TypeChecker.lit.U8  i    -> sprintf "%d" i
+  | TypeChecker.lit.String s -> sprintf "\"%s\"" s
+
+let print_lexpr_csharp(l:lexpr) :string =
+  match l with
+| Lit lit -> print_lit_csharp lit  
+| Var var -> print_var_csharp var
+
+let print_premisse_csharp (instr:premisse) :string =
+  match instr with
+  | Assignment(l,r)   -> sprintf "%s=%s;\n" (print_var_csharp l) (print_value_csharp r)
+
+let print_data (id:string) (t:Type) (data:data) =
+  let preamble = sprintf "[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit)]struct %s%s" id (argmangle_type t)
+  let 
+
+type namespaced = Namespace of string*List<namespaced>
+                | Rule      of string*Type*List<rule>
+                | Data      of string*Type*List<data>
+
+let collect_namespaces
+
+let failsafe_codegen (input:fromTypecheckerWithLove) =
+*)  
+
+
 (*
 let nop:Parser<byte,_,unit> =
   prs{
