@@ -17,14 +17,14 @@ type DeclType =
 
 type SymbolDeclaration =
   {
-    Name            :string
-    CurrentNamespace :Namespace
-    LeftArgs        :List<DeclType>
-    RightArgs       :List<DeclType>
-    Return          :DeclType
-    Priority        :int
-    Associativity   :Associativity
-    Pos             :Position
+    Name              :string
+    CurrentNamespace  :Namespace
+    LeftArgs          :List<DeclType>
+    RightArgs         :List<DeclType>
+    Return            :DeclType
+    Priority          :int
+    Associativity     :Associativity
+    Pos               :Position
   }
 
 type DeclParseScope = 
