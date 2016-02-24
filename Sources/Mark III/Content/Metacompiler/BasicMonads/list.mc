@@ -49,5 +49,5 @@ list 'M 'a => Monad(ListT MCons^'M 'a) {
   -------------------------------
   lm >>= k -> res
 
-  return x => list(return^'M(x :: empty))
+  return x -> list(return^'M(x :: empty))
 }
