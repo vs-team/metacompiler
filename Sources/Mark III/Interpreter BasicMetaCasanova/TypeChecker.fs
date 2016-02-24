@@ -6,8 +6,8 @@ type Type = DotNetType      of List<string>*string
           | McType          of List<string>*string
           | TypeApplication of Type*List<Type>
 
-type Id       = List<string>*string*Type
-type LambdaId = List<string>*int*Type
+type Id       = {Namespace:List<string>;Name:string;Type:Type}
+type LambdaId = {Namespace:List<string>;Name:int;   Type:Type}
 
 type lit = I64 of System.Int64
          | U64 of System.UInt64
@@ -20,6 +20,7 @@ type lit = I64 of System.Int64
          | F32 of System.Single
          | F64 of System.Double
          | String of System.String
+         | Bool of System.Boolean
 
 type var = Lambda of LambdaId
          | Named  of Id
