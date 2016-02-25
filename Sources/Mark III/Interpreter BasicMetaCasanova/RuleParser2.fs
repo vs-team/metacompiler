@@ -19,44 +19,75 @@ type Rule =
     Name              : Id
     CurrentNamespace  : Namespace
     Input             : List<Id>
-    Output            : string
+    Output            : Id
     Premises          : List<Premises>
     TypeTable         : List<Id*Type>
   
   }
 
-type LeftOfPremis =
+type LeftOfPremis = 
   {
     Name              : Id
     CurrentNamespace  : Namespace
+    Args              : List<Id*DeclType>
+    Return            : DeclType
+    Pos               : Position
   }
 
-let rec leftarg_to_parser (leftarg:DeclType) :Parser<Token,DeclParseScope,Id*DeclType> =
+type premise = LeftOfPremis*Id
+
+let arg_to_parser (rightarg:DeclType) :Parser<Token,DeclParseScope,Id*DeclType> =
   prs{ 
     let! arg,pos = extract_id()
-    return arg,leftarg
+    return arg,rightarg
+  }
+
+let argstructure_parser (argstruct:ArgStructure) :Parser<Token,DeclParseScope,_> =
+  prs{
+    match argstruct with
+    | LeftArg(l,r) -> 
+      let! left_id,_ = extract_id()
+      let! name,pos    = extract_id()
+      let! right_id,_ = extract_id()
+      return (name,(left_id,l)::(right_id,r)::[],pos)
+    | RightArgs (ls) -> 
+      let! name,pos    = extract_id()
+      let! rightargs = IterateTroughGivenList ls arg_to_parser 
+      return (name,rightargs,pos)
   }
 
 let decl_to_parser (decl:SymbolDeclaration):Parser<Token,DeclParseScope,_> =
   prs{
-    let! leftargs = IterateTroughGivenList decl.LeftArgs leftarg_to_parser
-    let! name,pos = extract_id()
+    let! name,args,pos = argstructure_parser decl.Args
     if name = decl.Name then 
-      let! rightargs = IterateTroughGivenList decl.RightArgs leftarg_to_parser
-      return ()
+      return {Name = name ; CurrentNamespace = decl.CurrentNamespace ; 
+              Args = args ; Return = decl.Return ; Pos = pos }
     else
       return! fail (RuleError (name,pos))
   }
 
+let decls_to_parser (decls:List<SymbolDeclaration>):Parser<Token,DeclParseScope,_> =
+  prs{return! FirstSuccesfullInList decls decl_to_parser}
 
 
 let parse_premis :Parser<Token,DeclParseScope,_> =
   prs{
-    return ()
+    let! ctxt = getContext
+    let! left = decls_to_parser (ctxt.DataDecl @ ctxt.FuncDecl)
+    do! check_keyword() SingleArrow
+    //let! right = decls_to_parser (ctxt.DataDecl @ ctxt.FuncDecl)
+    let! right,_ = extract_id() .>> (check_keyword() NewLine)
+    return left,right
   }
 
 let parse_rule :Parser<Token,DeclParseScope,_> =
   prs{
+    let! premises = parse_premis |> repeat1
+    do! (check_keyword() HorizontalBar) .|| (check_keyword() NewLine)
+    let! ctxt = getContext
+    let! input = decls_to_parser ctxt.FuncDecl
+    do! check_keyword() SingleArrow
+    let! output,_ = extract_id() .>> (check_keyword() NewLine)
     return ()
   }
 

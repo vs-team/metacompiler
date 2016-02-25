@@ -236,3 +236,12 @@ let rec IterateTroughGivenList (ls:List<'item>)(p:'item -> Parser<'char,'ctxt,'r
       return y::ys
     | [] -> return! fail EndOfListError
   }
+
+let rec FirstSuccesfullInList (ls:List<'item>)(p:'item -> Parser<'char,'ctxt,'res>) 
+    :Parser<'char,'ctxt,'res> =
+  prs{
+    match ls with
+    | x::xs -> 
+      return! (p x) .|| FirstSuccesfullInList xs p
+    | [] -> return! fail (EndOfListError) 
+  }

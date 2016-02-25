@@ -15,16 +15,18 @@ type DeclType =
   | Application of Id*DeclType*DeclType
 
 
+type ArgStructure = LeftArg of DeclType*DeclType
+                  | RightArgs of List<DeclType>
+
 type SymbolDeclaration =
   {
-    Name              :string
-    CurrentNamespace  :Namespace
-    LeftArgs          :List<DeclType>
-    RightArgs         :List<DeclType>
-    Return            :DeclType
-    Priority          :int
-    Associativity     :Associativity
-    Pos               :Position
+    Name              : string
+    CurrentNamespace  : Namespace
+    Args              : ArgStructure
+    Return            : DeclType
+    Priority          : int
+    Associativity     : Associativity
+    Pos               : Position
   }
 
 type DeclParseScope = 
@@ -93,13 +95,26 @@ and parse_arg :Parser<Token,DeclParseScope,DeclType> =
     return Application(symbol,before_symbol,after_symbol)
   } .|| parse_round .|| parse_single_arg
 
-let parse_small_args :Parser<Token,DeclParseScope,List<DeclType>> =
+let parse_small_args :Parser<Token,DeclParseScope,DeclType> =
   prs{
       let! res = parse_arg
       do! check_keyword() SingleArrow
       return res
-   } |> repeat
+   } 
   
+let parse_arg_structure :Parser<Token,DeclParseScope,Id*ArgStructure*Position> =
+  prs{
+    let! left_arg = parse_small_args
+    let! name,pos = extract_string_literal()
+    do! check_keyword() SingleArrow
+    let! right_arg = parse_small_args
+    return (name,LeftArg(left_arg,right_arg),pos)
+  } .|| prs{
+    let! name,pos = extract_string_literal()
+    do! check_keyword() SingleArrow
+    let! right_args = parse_small_args |> repeat
+    return (name,RightArgs(right_args),pos)
+  }
 
 let parse_assosiotivity :Parser<Token,DeclParseScope,Associativity> =
   prs{
@@ -111,16 +126,13 @@ let parse_assosiotivity :Parser<Token,DeclParseScope,Associativity> =
 
 let lift_parse_decl (setctxt) :Parser<Token,DeclParseScope,_> =
   prs{
-    let! left_args = parse_small_args
-    let! name,pos = extract_string_literal()
-    do! check_keyword() SingleArrow
-    let! right_args = parse_small_args
+    let! name,args,pos = parse_arg_structure
     let! result = parse_arg
     let! (pri,_),ass = (check_keyword() PriorityArrow >>.
                         (extract_int_literal() .>>. parse_assosiotivity)) .||
                          prs{return((0,Position.Zero),Left)}
     let! ctxt = getContext
-    let res = {Name = name ; CurrentNamespace = [ctxt.CurrentNamespace] ; LeftArgs = left_args; RightArgs = right_args;
+    let res = {Name = name ; CurrentNamespace = [ctxt.CurrentNamespace] ; Args = args;
                 Return = result ; Priority = pri ; Associativity = ass;
                 Pos = pos}
     do! setContext (setctxt ctxt res)
