@@ -88,7 +88,7 @@ let rec match_rule_to_decl : Parser<TableSymbols,List<BasicExpression>,TableSymb
     | x::xs -> 
       if find_id_in_basicexpresion (get_tablesymbol_name x) expr 
       then Done(x,xs,expr) else Error TypeError
-    | [] -> Error (RuleError "match_rule_to_decl")
+    | [] -> Error (RuleError ("match_rule_to_decl",Position.Zero))
 
 let order_tablesymbols (ts:List<TableSymbols>) = 
   List.sortWith (fun x y -> (get_priority_of_symbol y) - (get_priority_of_symbol x)) ts 
@@ -161,7 +161,7 @@ let rule_to_ruleinput : Parser<ScopeBuilder.Rule,RuleTypedScope,Id*TreeExpr> =
             //printfn "%A\n____________" (order_tablesymbols res)
             Done(((get_tablesymbol_name ts),(Lit(String(""),Star))),rule,ctxt)
           | Error e -> Error e
-        | [] -> Error (RuleError (sprintf "No symbol found in:%A" x.Input))
+        | [] -> Error (RuleError ((sprintf "No symbol found in:%A" x.Input),Position.Zero))
       | Error e -> Error e
     | [] -> Error TypeError
 

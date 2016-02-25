@@ -2,13 +2,12 @@
 open Common
 open ScopeBuilder // Scope
 
-type Type = DotNetType      of Id
-          | McType          of Id
-          | TypeApplication of Id*List<Type>
+type Type = DotNetType      of List<string>*string
+          | McType          of List<string>*string
+          | TypeApplication of Type*List<Type>
 
-type Id       = List<string>*string*Type
-type DataId   = List<string>*string*Type
-type LambdaId = List<string>*int*Type
+type Id       = {Namespace:List<string>;Name:string;Type:Type}
+type LambdaId = {Namespace:List<string>;Name:int;   Type:Type}
 
 type lit = I64 of System.Int64
          | U64 of System.UInt64
@@ -21,6 +20,7 @@ type lit = I64 of System.Int64
          | F32 of System.Single
          | F64 of System.Double
          | String of System.String
+         | Bool of System.Boolean
 
 type var = Lambda of LambdaId
          | Named  of Id
@@ -30,10 +30,10 @@ type lexpr = Lit of lit
            | Var of var
            | RuleCall        of var*list<var>
            | DotNetCall      of var*list<var>
-           | ConstructorCall of DataId*list<var>
+           | ConstructorCall of Id*list<var>
 
 type rexpr = Id of Id
-           | DestructorCall of DataId*List<Id>
+           | DestructorCall  of Id*List<var>
 
 type conditional = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 
@@ -49,13 +49,12 @@ type rule = {
 
 type data = {
   id     :Id
-  args   :List<Id>
-  output :Id
-  typemap:Map<Id,Type>
+  args   :List<string*Type>
+  output :Type
 }
 
 type fromTypecheckerWithLove = {
-  rules  : Map<Id,List<rule>>
-  lamdas : Map<LambdaId,rule>
-  datas  : Map<Id,data>
+  rules   : Map<Id,List<rule>>
+  lambdas : Map<LambdaId,rule>
+  datas   : Map<Id,data>
 }

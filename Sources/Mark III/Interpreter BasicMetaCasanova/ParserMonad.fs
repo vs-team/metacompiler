@@ -7,13 +7,14 @@ type ErrorType =  ParserMonadError    of string
                 | LineSplitterError   of Position
                 | ScopeError          of string*Position
                 | TypeError
-                | RuleError           of string
+                | RuleError           of string*Position
                 | PipeLineError
                 | EofError
                 | ImportError
                 | SatisfyError
                 | MatchError          of string*Position
                 | SyntaxError
+                | EndOfListError
                    
 type Result<'char,'ctxt,'result> = 
   | Done of 'result * List<'char> * 'ctxt
@@ -221,13 +222,17 @@ let UseDifferentSrcAndCtxt (p:Parser<'char2,'ctxt2,'res>)(char':List<'char2>)(ct
     | Done(res,char'',_) -> Done(res,char,ctxt)
     | Error p -> Error p
 
-let CatchImportError (p1:Parser<'char,'ctxt,'res>) 
-                     (perr:Parser<'char,'ctxt,'res>) :Parser<'char,'ctxt,'res> =
-  fun (char,ctxt) ->
-    match p1 (char,ctxt) with
-    | Done(res,char',ctxt') -> Done(res,char',ctxt')
-    | Error ImportError ->
-      match perr (char,ctxt) with
-      | Done(res,char',ctxt') -> Done(res,char',ctxt')
-      | Error e -> Error e
-    | Error e -> Error e
+let rec IterateTroughGivenList (ls:List<'item>)(p:'item -> Parser<'char,'ctxt,'res>) 
+      :Parser<'char,'ctxt,List<'res>> =
+  prs{
+    match ls with
+    | [] -> return []
+    | _  -> return! fail EndOfListError
+  } .|| prs{
+    match ls with
+    | x::xs -> 
+      let! y = p x
+      let! ys = IterateTroughGivenList xs p
+      return y::ys
+    | [] -> return! fail EndOfListError
+  }
