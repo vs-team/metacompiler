@@ -2,7 +2,6 @@
 import match
 import monad
 import tryableMonad
-import id
 
 TypeAlias "EitherT" => (* => *) => * => * => *
 EitherT 'M 'e 'a => 'M('a | 'e)
