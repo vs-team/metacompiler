@@ -24,11 +24,10 @@ Monad 'M => Module {
   ---------------------------
   lift2 f a b -> res
 
-  $$ TypeFunc "liftM" => (M' 'a -> M' 'b) => M M' 'a => M M' 'b
-  TypeFunc "liftM" => (* => *) => * => *
-  N >>= a
+  Func "liftM" => (MCons^'M 'a -> MCons^M' 'b) => 'M (MCons^'M 'a) => 'M (Mcons^'M 'b)
+  {M >>=^'M a
     f a -> b
-      lift^N(return^N b) >>= res
-  --
-  liftM f N -> return res
+    return^'M b} -> res
+  ---------------------
+  liftM f M -> res
 }
