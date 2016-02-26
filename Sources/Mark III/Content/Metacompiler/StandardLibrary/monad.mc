@@ -24,7 +24,7 @@ Monad 'M => Module {
   ---------------------------
   lift2 f a b -> res
 
-  Func "liftM" => (MCons^'M 'a -> MCons^M' 'b) => 'M (MCons^'M 'a) => 'M (Mcons^'M 'b)
+  Func "liftM" -> (MCons^'M 'a -> MCons^M' 'b) -> 'M (MCons^'M 'a) -> 'M (Mcons^'M 'b)
   {M >>=^'M a
     f a -> b
     return^'M b} -> res
