@@ -65,7 +65,15 @@ let decl_to_parser (decl:SymbolDeclaration):Parser<Token,DeclParseScope,LeftOfPr
   }
 
 let decls_to_parser (decls:List<SymbolDeclaration>):Parser<Token,DeclParseScope,_> =
-  prs{return! FirstSuccesfullInList decls decl_to_parser}
+  //(prs{return! FirstSuccesfullInList decls decl_to_parser}) 
+  CatchError 
+    (prs{return! FirstSuccesfullInList decls decl_to_parser}) 
+    (EndOfListError)
+    (prs{
+      let! ids = extract_id() |> repeat
+      printfn "%s: \ndoes not match with known decls" (sprintf "%A" ids)
+      return! fail (EndOfListError)
+    })
 
 
 let parse_premis :Parser<Token,DeclParseScope,Premises> =
@@ -80,15 +88,15 @@ let parse_premis :Parser<Token,DeclParseScope,Premises> =
 
 let parse_rule :Parser<Token,DeclParseScope,Rule> =
   prs{
-      let! premises = parse_premis |> repeat1
-      do! (check_keyword() HorizontalBar) .|| (check_keyword() NewLine)
-      let! ctxt = getContext
-      let! input = decls_to_parser ctxt.FuncDecl
-      do! check_keyword() SingleArrow
-      let! output,_ = extract_id() .>> (check_keyword() NewLine)
-      return {Name = input.Name ; CurrentNamespace = ctxt.CurrentNamespace ;
-              Input = input.Args ; Output = (output,input.Return) ;
-              Premises = premises ; TypeTable = []}
+    let! premises =  RepeatUntil parse_premis (check_keyword() HorizontalBar)
+    do! (check_keyword() NewLine)
+    let! ctxt = getContext
+    let! input = decls_to_parser ctxt.FuncDecl
+    do! check_keyword() SingleArrow
+    let! output,_ = extract_id() .>> (check_keyword() NewLine)
+    return {Name = input.Name ; CurrentNamespace = ctxt.CurrentNamespace ;
+            Input = input.Args ; Output = (output,input.Return) ;
+            Premises = premises ; TypeTable = []}
   }
 
 let parse_rules (decl:DeclParseScope) :Parser<Token,List<Rule>,_> =
@@ -98,12 +106,18 @@ let parse_rules (decl:DeclParseScope) :Parser<Token,List<Rule>,_> =
     do! setContext (res::ctxt)
   }
 
-let parse_lines (decl:DeclParseScope) :Parser<Token,List<Rule>,List<Rule>> =
+let parse_line (decl:DeclParseScope) :Parser<Token,List<Rule>,_> =
   prs{
     do! (check_keyword() NewLine) |> repeat |> ignore
-    do! UseDifferentCtxt (parse_rules decl) [] .|| 
-          (UseDifferentCtxt (check_decl_keyword >>. check_parse_decl) Position.Zero)
+    do! (UseDifferentCtxt (check_decl_keyword >>. check_parse_decl) Position.Zero) .|| 
+          (parse_rules decl)
     do! (check_keyword() NewLine) |> repeat |> ignore
+    return ()
+  }
+
+let parse_lines (decl:DeclParseScope) :Parser<Token,List<Rule>,List<Rule>> =
+  prs{
+    do! parse_line decl |> itterate |> ignore
     return! getContext
   }
 
