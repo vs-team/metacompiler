@@ -31,7 +31,7 @@ type SymbolDeclaration =
 
 type DeclParseScope = 
   {
-    CurrentNamespace : Id
+    CurrentNamespace : Namespace
     DataDecl         : List<SymbolDeclaration>
     FuncDecl         : List<SymbolDeclaration>
     //ArrowDecl        : List<SymbolDeclaration>
@@ -40,7 +40,7 @@ type DeclParseScope =
   } with 
     static member Zero =
       {
-        CurrentNamespace  = ""
+        CurrentNamespace  = []
         DataDecl          = []
         FuncDecl          = []
         //ArrowDecl         = []
@@ -132,7 +132,7 @@ let lift_parse_decl (setctxt) :Parser<Token,DeclParseScope,_> =
                         (extract_int_literal() .>>. parse_assosiotivity)) .||
                          prs{return((0,Position.Zero),Left)}
     let! ctxt = getContext
-    let res = {Name = name ; CurrentNamespace = [ctxt.CurrentNamespace] ; Args = args;
+    let res = {Name = name ; CurrentNamespace = ctxt.CurrentNamespace ; Args = args;
                 Return = result ; Priority = pri ; Associativity = ass;
                 Pos = pos}
     do! setContext (setctxt ctxt res)
