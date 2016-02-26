@@ -1,6 +1,5 @@
 ﻿import prelude
 import monad
-import id
 
 TypeAlias "StateT" => (* => *) => * => * => *
 StateT 'M 's 'a => ('s -> 'M('a * 's))
