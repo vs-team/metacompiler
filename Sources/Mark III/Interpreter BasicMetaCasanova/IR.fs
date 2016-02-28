@@ -55,53 +55,104 @@ let rec strip_namespace_type(t:Type) :Type =
   | McType     (_,n) -> McType     ([],n)
   | TypeApplication (fn,lst) -> TypeApplication ((strip_namespace_type fn),lst)
 
+let print_local_id n = match n with Named x -> CSharpMangle x | Tmp x -> sprintf "_tmp%d" x 
+
 // data generation /////////////////////////////////////////////////////////////
 
-let group_data (constructors:Map<Id,data>) :Map<Type,List<data>> =
+let group_by_type (constructors:Map<Id,data>) :Map<Type,List<Id*data>> =
   (Map.empty,constructors) ||> Map.fold (fun r k v ->
     let t = v.output
     match r |> Map.tryFind t with
-    | Some ds -> Map.add t (v::ds) r
-    | None    -> Map.add t [v]     r )
+    | Some ds -> Map.add t ((k,v)::ds) r
+    | None    -> Map.add t [k,v]     r )
 
-let gen_data (constructors:Map<Id,data>) =
-  let foreach_type ((t:Type),(constructors:List<data>)) :string =
-    let field (n:string,t:Type) = sprintf "public %s %s;" (mangle_type t) (CSharpMangle n)
-    let elements = constructors |> List.map (fun (d:data) -> 
-      sprintf "public class %s:%s{%s};\n" (CSharpMangle d.id.Name) (t|>strip_namespace_type|>mangle_type_suffix) ((List.map field d.args)|>String.concat " ") )
-    sprintf "class %s{\n%s};\n" (t|>strip_namespace_type|>mangle_type_suffix) (elements|>String.concat "")
-  group_data constructors |> Map.toSeq |> Seq.map foreach_type |> String.concat "\n"
+let generate_type ((t:Type),(constructors:List<Id*data>)) :string =
+  let field (n:local_id,t:Type) = sprintf "public %s %s;" (mangle_type t) (print_local_id n)
+  let elements = constructors |> List.map (fun (id:Id,d:data) -> 
+    sprintf "public class %s:%s{%s};\n" (CSharpMangle id.Name) (t|>strip_namespace_type|>mangle_type_suffix) ((List.map field d.args)|>String.concat " ") )
+  sprintf "class %s{\n%s};\n" (t|>strip_namespace_type|>mangle_type_suffix) (elements|>String.concat "")
+
+// rule generation /////////////////////////////////////////////////////////////
+
+// namespace generation ////////////////////////////////////////////////////////
+
 
 // program and tests ///////////////////////////////////////////////////////////
 
+type namespace_body = {
+  Types   : Map<Type,List<Id*data>>
+  Lambdas : Map<LambdaId,rule>
+  Funcs   : Map<Id,List<rule>>
+}
+
+type tree<'i,'d when 'i : comparison> = {children:Map<'i,tree<'i,'d>>; data:seq<'d>}
+
+let tree_empty = {children=Map.empty;data=Seq.empty}
+
+let rec tree_add (index:List<'i>) (f:('d->'d)) (tree:tree<'i,'d>) :tree<'i,'d> =
+  match index with
+  | []    -> {tree with data = Seq.map f tree.data}
+  | x::xs -> match Map.tryFind x tree.children with
+             | Some node -> tree_add xs f node
+             | None      -> {tree with children = tree.children |> Map.add x (tree_add xs f tree_empty)}
+
+let rec tree_flatten (paropen:('i->'a)) (element:(seq<'d>->'a)) (parclose:('i->'a)) (i:'i) (tree:tree<'i,'d>):seq<'a> =
+  let tmp x = x 
+  [ Seq.ofList [paropen i; element tree.data]; 
+    tree.children |> Map.map (fun k v ->tree_flatten paropen element parclose k v) |> Map.toSeq |> Seq.map (fun (_,x)->x) |> Seq.concat;
+    Seq.ofList [parclose i]] |> Seq.concat
+
+let rec get_namespace (t:Type) :List<string> =
+  match t with
+  | DotNetType (ns,_) -> ns
+  | McType     (ns,_) -> ns
+  | TypeApplication (t,_) -> get_namespace t
+
+let real_codegen input =
+  let body = {Types=group_by_type input.datas; Lambdas=input.lambdas; Funcs=input.rules}
+  body.Types |> Map.toSeq |> Seq.map generate_type |> String.concat "\n"
+
+type NamespacedItem = Ns   of string*List<NamespacedItem>
+                    | Data of string*data
+                    | Func of string*rule
 let failsafe_codegen(input:fromTypecheckerWithLove) =
-  printf "%s" (gen_data input.datas)
+  let namespaced:tree<string,fromTypecheckerWithLove> = (tree_empty,input.datas)   ||> Map.fold (fun tree id data-> 
+    tree |> tree_add id.Namespace (fun x->{x with datas=x.datas|>Map.add id data}))
+  //let namespaced:tree<string,fromTypecheckerWithLove> = (namespaced,input.rules)   ||> Map.fold (fun tree id rule-> tree |> tree_add id.Namespace (fun x->{x with rules=Map.add id rule x.rules}))
+  //let namespaced:tree<string,fromTypecheckerWithLove> = (namespaced,input.lambdas) ||> Map.fold (fun tree id lambda-> tree |> tree_add id.Namespace (fun x->{x with lambdas=Map.add id lambda x.lambdas}))
+  tree_flatten 
+    (fun i->sprintf "namespace %s {" i)
+    (fun xs-> Seq.map real_codegen xs|> String.concat "\n")
+    (fun _->"}")
+    "mc"
+    namespaced
+  |> String.concat "\n" |> printf "%s"
+  //let mix = (Map.empty,Map.toList grouped_data) ||> List.fold (fun s (k,v) -> Map.add (get_namespace k) (Data(k,v)) s)
+  //let mix = (mix,Map.toList input.lambdas)      ||> List.fold (fun s (l,r) -> Map.add l.Namespace (Lambda(l,r))     s)
+  //let mix = (mix,Map.toList input.rules)        ||> List.fold (fun s (f,r) -> Map.add f.Namespace (Func(f,r))       s)
 
 let test_data:fromTypecheckerWithLove=
   let int_t:Type   = DotNetType(["System"],"Int32");
   let float_t:Type = DotNetType(["System"],"float");
-  let star_t:Type  = TypeApplication((McType(["mc";"test"],"star")),[int_t;float_t])
-  let pipe_t:Type  = TypeApplication((McType(["mc";"test"],"pipe")),[int_t;float_t])
-  let comma_id:Id  = {Namespace=["mc";"test"];Name="comma";Type=star_t}
-  let left_id:Id   = {Namespace=["mc";"test"];Name="left"; Type=pipe_t}
-  let right_id:Id  = {Namespace=["mc";"test"];Name="right";Type=pipe_t}
+  let star_t:Type  = TypeApplication((McType(["test"],"star")),[int_t;float_t])
+  let pipe_t:Type  = TypeApplication((McType(["test"],"pipe")),[int_t;float_t])
+  let comma_id:Id  = {Namespace=["test"];Name="comma";Type=star_t}
+  let left_id:Id   = {Namespace=["test"];Name="left"; Type=pipe_t}
+  let right_id:Id  = {Namespace=["test"];Name="right";Type=pipe_t}
   let comma_data:data = 
     { 
-      id=comma_id;
-      args=["a",(DotNetType(["System"],"Int32"));
-            "b",(DotNetType(["System"],"Single")); ];
+      args=[Named("a"),(DotNetType(["System"],"Int32"));
+            Named("b"),(DotNetType(["System"],"Single")); ];
       output=star_t;
     }
   let left_data:data =
     {
-      id=left_id;
-      args=["a",(DotNetType(["System"],"Int32"));]; 
+      args=[Named("a"),(DotNetType(["System"],"Int32"));]; 
       output=pipe_t;
     }
   let right_data:data =
     {
-      id=right_id;
-      args=["a",(DotNetType(["System"],"Single"));]; 
+      args=[Named("a"),(DotNetType(["System"],"Single"));]; 
       output=pipe_t;
     }
         

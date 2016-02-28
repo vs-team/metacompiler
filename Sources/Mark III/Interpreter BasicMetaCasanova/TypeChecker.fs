@@ -22,18 +22,20 @@ type lit = I64 of System.Int64
          | String of System.String
          | Bool of System.Boolean
 
-type var = Lambda of LambdaId
-         | Named  of Id
-         | Tmp    of int
+type global_id = Lambda of LambdaId
+               | Named  of Id
+
+type local_id = Named of string
+              | Tmp   of int
 
 type lexpr = Lit of lit
-           | Var of var
-           | RuleCall        of var*list<var>
-           | DotNetCall      of var*list<var>
-           | ConstructorCall of Id*list<var>
+           | Var of global_id
+           | RuleCall        of global_id*list<local_id>
+           | DotNetCall      of global_id*list<local_id>
+           | ConstructorCall of Id*list<local_id>
 
 type rexpr = Id of Id
-           | DestructorCall  of Id*List<var>
+           | DestructorCall  of Id*List<local_id>
 
 type conditional = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 
@@ -44,12 +46,11 @@ type rule = {
   input  :rexpr
   output :lexpr
   premis :List<premisse>
-  typemap:Map<Id,Type>
+  typemap:Map<local_id,Type>
 }
 
 type data = {
-  id     :Id
-  args   :List<string*Type>
+  args   :List<local_id*Type>
   output :Type
 }
 
