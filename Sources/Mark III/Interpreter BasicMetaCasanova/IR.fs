@@ -72,20 +72,22 @@ let construct_tree (input:fromTypecheckerWithLove) :List<NamespacedItem> =
                | [],list           -> Ns(n,datatree []   (ns,v))::list
   input.datas |> Map.toSeq |> Seq.map (fun (n,d)->n.Namespace,(n.Name,d)) |> Seq.fold datatree []
           
-let rec print_tree (ns:NamespacedItem) :string =
+let rec print_tree (ns:List<NamespacedItem>) :string =
   let print_base_types (ns:List<NamespacedItem>) = 
-    let types = ns |> List.fold (fun types item -> match item with Data (_,v) -> v.output::types | _ -> types) []
+    let types = ns |> List.fold (fun types item -> match item with Data (_,v) -> v.output::types | _ -> types) [] |> List.distinct
     let print t = sprintf "public class %s{}\n" (t|>strip_namespace_type|>mangle_type_suffix)
     List.map print types
   let field (n:local_id,t:Type) = sprintf "public %s %s;\n" (mangle_type t) (print_local_id n)
-  match ns with
-  | Ns (n,ns) -> sprintf "namespace %s{\n%s}\n" (CSharpMangle n) ((print_base_types ns)@(ns|>List.map print_tree) |> String.concat "\n")
-  | Data (n,d)-> sprintf "public class %s:%s{\n%s}\n"  (CSharpMangle n) (d.output|>strip_namespace_type|>mangle_type_suffix) ((List.map field d.args)|>String.concat "")
-  | _ -> "// todo: Rules and lambads"
+  let go ns = match ns with
+              | Ns (n,ns) -> sprintf "namespace %s{\n%s}\n" (CSharpMangle n) (print_tree ns)
+              | Data (n,d) -> sprintf "public class %s:%s{\n%s}\n" (CSharpMangle n) (d.output|>strip_namespace_type|>mangle_type_suffix) (d.args|>List.map field|>String.concat "")
+              | Func (s,_) -> sprintf "// todo: Func %s\n" s
+              | Lambda (s,_) -> sprintf "// todo: Lambda %d\n" s
+  (print_base_types ns)@(ns|>List.map go)|>String.concat "\n"
     
 let failsafe_codegen(input:fromTypecheckerWithLove) =
   let test = construct_tree input
-  input |> construct_tree |> List.map print_tree |> String.concat "\n" |> printf "%s"
+  input |> construct_tree |> print_tree |> printf "%s"
 
 let test_data:fromTypecheckerWithLove=
   let int_t:Type   = DotNetType(["System"],"Int32");
