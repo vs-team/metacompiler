@@ -60,17 +60,30 @@ let print_local_id n = match n with Named x -> CSharpMangle x | Tmp x -> sprintf
 
 type NamespacedItem = Ns     of string*List<NamespacedItem>
                     | Data   of string*data
-                    | Func   of string*rule
+                    | Func   of string*List<rule>
                     | Lambda of int*rule
 
 let construct_tree (input:fromTypecheckerWithLove) :List<NamespacedItem> =
-  let rec datatree (s:List<NamespacedItem>) (idx:List<string>,v:string*data) =
+  let rec datatree (s:List<NamespacedItem>) (idx:List<string>,v:string*data) :List<NamespacedItem> =
     match idx with
     | []    -> (Data(v))::s
     | n::ns -> match s |> List.partition (fun x->match x with Ns(n,_)->true | _->false) with
                | [Ns(n,body)],rest -> Ns(n,datatree body (ns,v))::rest
                | [],list           -> Ns(n,datatree []   (ns,v))::list
-  input.datas |> Map.toSeq |> Seq.map (fun (n,d)->n.Namespace,(n.Name,d)) |> Seq.fold datatree []
+  let rec functree (s:List<NamespacedItem>) (idx:List<string>,v:string*List<rule>) :List<NamespacedItem> =
+    match idx with
+    | []    -> (Func(v))::s
+    | n::ns -> match s |> List.partition (fun x->match x with Ns(n,_)->true | _->false) with
+               | [Ns(n,body)],rest -> Ns(n,functree body (ns,v))::rest
+               | [],list           -> Ns(n,functree []   (ns,v))::list
+  let rec lambdatree (s:List<NamespacedItem>) (idx:List<string>,v:int*rule) :List<NamespacedItem> =
+    match idx with
+    | []    -> (Lambda(v))::s
+    | n::ns -> match s |> List.partition (fun x->match x with Ns(n,_)->true | _->false) with
+               | [Ns(n,body)],rest -> Ns(n,lambdatree body (ns,v))::rest
+               | [],list           -> Ns(n,lambdatree []   (ns,v))::list
+  let go input output state = input |> Map.toSeq |> Seq.map (fun (n,d)->n.Namespace,(n.Name,d)) |> Seq.fold output state
+  [] |> go input.lambdas lambdatree |> go input.rules   functree |> go input.datas datatree
           
 let rec print_tree (ns:List<NamespacedItem>) :string =
   let print_base_types (ns:List<NamespacedItem>) = 
@@ -81,12 +94,11 @@ let rec print_tree (ns:List<NamespacedItem>) :string =
   let go ns = match ns with
               | Ns (n,ns) -> sprintf "namespace %s{\n%s}\n" (CSharpMangle n) (print_tree ns)
               | Data (n,d) -> sprintf "public class %s:%s{\n%s}\n" (CSharpMangle n) (d.output|>strip_namespace_type|>mangle_type_suffix) (d.args|>List.map field|>String.concat "")
-              | Func (s,_) -> sprintf "// todo: Func %s\n" s
-              | Lambda (s,_) -> sprintf "// todo: Lambda %d\n" s
+              | Func (s,_) -> sprintf "// todo: Func %s\n" (CSharpMangle s)
+              | Lambda (s,_) -> sprintf "// todo: Lambda nr %d\n" s
   (print_base_types ns)@(ns|>List.map go)|>String.concat "\n"
     
 let failsafe_codegen(input:fromTypecheckerWithLove) =
-  let test = construct_tree input
   input |> construct_tree |> print_tree |> printf "%s"
 
 let test_data:fromTypecheckerWithLove=
@@ -99,20 +111,62 @@ let test_data:fromTypecheckerWithLove=
   let right_id:Id  = {Namespace=["mc";"test"];Name="right";Type=pipe_t}
   let comma_data:data = 
     { 
-      args=[Named("a"),(DotNetType(["System"],"Int32"));
-            Named("b"),(DotNetType(["System"],"Single")); ];
+      args=[Named("a"),int_t; Named("b"),float_t; ];
       output=star_t;
     }
   let left_data:data =
     {
-      args=[Named("a"),(DotNetType(["System"],"Int32"));]; 
+      args=[Named("a"),int_t;]; 
       output=pipe_t;
     }
   let right_data:data =
     {
-      args=[Named("a"),(DotNetType(["System"],"Single"));]; 
+      args=[Named("a"),float_t;]; 
       output=pipe_t;
     }
-        
   let datas = Map.ofSeq <| [comma_id,comma_data; left_id,left_data; right_id,right_data]
   {rules=Map.empty;lambdas=Map.empty;datas=datas}
+
+let list_test:fromTypecheckerWithLove =
+  let int_t:Type   = DotNetType(["System"],"Int32");
+  let list_t:Type  = TypeApplication((McType(["mc";"test"],"List")),[int_t])
+  let append_id:Id = {Namespace=["mc";"test"];Name="::";Type=list_t}
+  let nil_id:Id    = {Namespace=["mc";"test"];Name="nil";Type=list_t}
+  let append_data:data =
+    {
+      args=[Named("x"),int_t; Named("xs"),int_t];
+      output=list_t;
+    }
+  let nil_data:data =
+    {
+      args=[];
+      output=list_t;
+    }
+
+  let add_t:Type = Arrow(int_t,Arrow(int_t,int_t))
+  let add_id:Id  = {Namespace=["builtin"];Name="add";Type=add_t}
+
+  let length_t:Type= Arrow (list_t,int_t)
+  let length_id:Id = {Namespace=["mc";"test"];Name="length";Type=length_t}
+  let length_nil:rule =
+    {
+      input=[DestructorCall(nil_id,[])]
+      premis=[]
+      output=Lit(I32(0))
+      typemap=Map.empty
+    }
+  let length_append:rule =
+    {
+      input=[DestructorCall(append_id,[Named("x");Named("xs")])]
+      premis=[Assignment(RuleCall(global_id.Named(length_id),[Named("xs")]),Id(Named("r")))
+              Assignment(Lit(I32(1)),Id(Tmp(0)))]
+      output=DotNetCall(global_id.Named(add_id),[Named("r");Tmp(0)])
+      typemap=Map.ofSeq [Named("x"),int_t;
+                         Named("xs"),list_t;
+                         Named("r"),int_t;
+                         Tmp(0),int_t]
+    }
+
+  let datas = Map.ofSeq <| [nil_id,nil_data; append_id,append_data]
+  let Funcs = Map.ofSeq <| [length_id,[length_nil;length_append]]
+  {rules=Funcs;datas=datas;lambdas=Map.empty}

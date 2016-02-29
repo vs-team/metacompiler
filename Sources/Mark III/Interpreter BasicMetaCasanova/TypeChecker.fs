@@ -5,9 +5,11 @@ open ScopeBuilder // Scope
 type Type = DotNetType      of List<string>*string
           | McType          of List<string>*string
           | TypeApplication of Type*List<Type>
+          | Arrow           of Type*Type
 
-type Id       = {Namespace:List<string>;Name:string;Type:Type}
-type LambdaId = {Namespace:List<string>;Name:int;   Type:Type}
+type genericId<'a>= {Namespace:List<string>;Name:'a;Type:Type}
+type Id       = genericId<string>
+type LambdaId = genericId<int>
 
 type lit = I64 of System.Int64
          | U64 of System.UInt64
@@ -34,7 +36,7 @@ type lexpr = Lit of lit
            | DotNetCall      of global_id*list<local_id>
            | ConstructorCall of Id*list<local_id>
 
-type rexpr = Id of Id
+type rexpr = Id of local_id
            | DestructorCall  of Id*List<local_id>
 
 type conditional = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
@@ -43,7 +45,7 @@ type premisse = Assignment  of lexpr*rexpr
               | Conditional of conditional*lexpr*lexpr
 
 type rule = {
-  input  :rexpr
+  input  :List<rexpr>
   output :lexpr
   premis :List<premisse>
   typemap:Map<local_id,Type>
