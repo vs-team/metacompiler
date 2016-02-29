@@ -18,7 +18,7 @@ empty @ l -> l
 
 Func "map" -> List 'a -> ('a -> 'b) -> List 'b
 map empty f -> empty
-map (x :: xs) f -> (map (f x)) :: xs
+map (x :: xs) f -> (f x) :: (map xs)
 
 
 Func "filter" -> List 'a -> ('a -> Boolean) -> List 'a
