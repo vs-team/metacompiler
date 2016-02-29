@@ -1,8 +1,6 @@
 import prelude
 import match
 import monad
-import boolean
-import id
 
 TypeAlias "List" => * => *
 List 'a => Unit | ('a * (List 'a))
@@ -28,7 +26,7 @@ filter empty p -> empty
   (x :: (filter xs p))
   else
   (filter xs p)) -> res
------------------------
+-------------------------
 filter (x :: xs) p -> res
 
 
@@ -36,9 +34,9 @@ TypeAlias "ListT" => (* => *) => * => *
 ListT 'M 'a => 'M(List 'a)
 
 TypeFunc "list" => Monad => Monad
-list 'M 'a => Monad(ListT MCons^'M 'a) {
+list 'M => Monad(ListT MCons^'M) {
   {lm >>= l
-    (do^(match(MCons 'a)) l with
+    (do^(match(List)) l with
       (\empty -> return^'M empty)
       (\(x :: xs) ->
         {x >>=^'M y
