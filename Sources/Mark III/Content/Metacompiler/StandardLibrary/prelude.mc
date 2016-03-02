@@ -1,41 +1,36 @@
 ﻿import number
-import boolean
+import System
 
 Data "unit" -> Unit
 Data 'a -> "," -> 'b -> 'a * 'b    #> 5
 Data "Left" -> 'a -> 'a | 'b       #> 5
 Data "Right" -> 'b -> 'a | 'b      #> 5
 
-boolean => Boolean {
-  True ~> True^builtin
-  False ~> False^builtin
-}
-
 Data "then" -> Then
 Data "else" -> Else
 
 Func "if" -> Boolean -> Then -> 'a -> Else -> 'a -> 'a
-if True then f else g -> f
-if False then f else g -> g
+if True^builtin then f else g -> f
+if False^builtin then f else g -> g
 
 TypeFunc "int" => Number
-int => Number Int^system {
-  x + y -> IntAdd^system x y
-  x - y -> IntSub^system x y
+int => Number System^Int {
+  x + y -> add^builtin x y
+  x - y -> sub^builtin x y
   identityAdd -> 0
 
-  x * y -> IntMul^system x y
-  x / y -> IntDiv^system x y
+  x * y -> mul^builtin x y
+  x / y -> divsigned^builtin x y
   identityMul -> 1
 }
 
 TypeFunc "float" => Number
-float => Number Float^system {
-  x + y -> FloatAdd^system x y
-  x - y -> FloatSub^system x y
-  identityAdd -> 0
+float => Number System^Float {
+  x + y -> fadd^builtin x y
+  x - y -> fsub^builtin x y
+  identityAdd -> 0.0
 
-  x * y -> FloatMul^system x y
-  x / y -> FloatDiv^system x y
-  identityMul -> 1
+  x * y -> fmul^builtin x y
+  x / y -> fdivsigned^builtin x y
+  identityMul -> 1.0
 }
