@@ -11,7 +11,7 @@ type Type = GenericType     of Id
           | McType          of Id
           | TypeApplication of Id*List<Type>
 
-type LeftOfPremis = 
+type FunctionBranch = 
   {
     Name              : Id
     CurrentNamespace  : Namespace
@@ -20,8 +20,20 @@ type LeftOfPremis =
     Pos               : Position
   }
 
-type Premises = Conditional 
-              | Implication of LeftOfPremis*Id
+type IdBranch =
+  {
+    Name              : Id
+    CurrentNamespace  : Namespace
+    Pos               : Position
+  }
+
+type PremisBranch = RuleBranch of FunctionBranch 
+                  | IdBranch   of IdBranch
+
+type Condition = Less | LessEqual | Greater | GreaterEqual | Equal
+
+type Premises = Conditional of Condition*PremisBranch*PremisBranch
+              | Implication of PremisBranch*Id
 
 type Rule =
   {
@@ -32,6 +44,17 @@ type Rule =
     Premises          : List<Premises>
     TypeTable         : List<Id*Type>
   
+  }
+
+let token_condition_to_condition (key:Keyword)(pos:Position) :Parser<Token,DeclParseScope,Condition> =
+  prs{
+    match key with
+    | Lexer2.Less         -> return Less
+    | Lexer2.Greater      -> return Greater
+    | Lexer2.LessEqual    -> return LessEqual
+    | Lexer2.GreaterEqual -> return GreaterEqual
+    | Lexer2.Equal        -> return Equal
+    | _                   -> return! fail (RuleError ("conditional expected, got keyword.",pos))
   }
 
 let arg_to_parser (rightarg:DeclType) :Parser<Token,DeclParseScope,Id*DeclType> =
@@ -54,7 +77,7 @@ let argstructure_parser (argstruct:ArgStructure) :Parser<Token,DeclParseScope,_>
       return (name,rightargs,pos)
   }
 
-let decl_to_parser (decl:SymbolDeclaration):Parser<Token,DeclParseScope,LeftOfPremis> =
+let decl_to_parser (decl:SymbolDeclaration):Parser<Token,DeclParseScope,FunctionBranch> =
   prs{
     let! name,args,pos = argstructure_parser decl.Args
     if name = decl.Name then 
@@ -64,19 +87,28 @@ let decl_to_parser (decl:SymbolDeclaration):Parser<Token,DeclParseScope,LeftOfPr
       return! fail (RuleError (name,pos))
   }
 
-let decls_to_parser (decls:List<SymbolDeclaration>):Parser<Token,DeclParseScope,_> =
-  //(prs{return! FirstSuccesfullInList decls decl_to_parser}) 
-  CatchError 
-    (prs{return! FirstSuccesfullInList decls decl_to_parser}) 
-    (EndOfListError)
-    (prs{
-      let! ids = extract_id() |> repeat
-      printfn "%s: \ndoes not match with known decls" (sprintf "%A" ids)
-      return! fail (EndOfListError)
-    })
+let decls_to_parser (decls:List<SymbolDeclaration>):Parser<Token,DeclParseScope,PremisBranch> =
+  (prs{
+    let! res = FirstSuccesfullInList decls decl_to_parser
+    return RuleBranch res
+  }) .|| prs{
+    let! id,pos = extract_id()
+    let! ctxt = getContext
+    return IdBranch({Name = id ; CurrentNamespace = ctxt.CurrentNamespace ; Pos = pos})
+  }
+  //CatchError 
+  //  (prs{
+  //    let! res = (FirstSuccesfullInList decls decl_to_parser)
+  //    return RuleBranch res
+  //  }) 
+  //  (EndOfListError)
+  //  (prs{
+  //    let! ids = extract_id() |> repeat
+  //    printfn "%s: \ndoes not match with known decls" (sprintf "%A" ids)
+  //    return! fail (EndOfListError)
+  //  }) .|| 
 
-
-let parse_premis :Parser<Token,DeclParseScope,Premises> =
+let implication_premis :Parser<Token,DeclParseScope,Premises> =
   prs{
     let! ctxt = getContext
     let! left = decls_to_parser (ctxt.DataDecl @ ctxt.FuncDecl)
@@ -86,12 +118,23 @@ let parse_premis :Parser<Token,DeclParseScope,Premises> =
     return Implication (left,right)
   }
 
+let parse_premis :Parser<Token,DeclParseScope,Premises> =
+   implication_premis .|| prs{
+    let! ctxt = getContext
+    let! left = decls_to_parser (ctxt.DataDecl @ ctxt.FuncDecl)
+    let! condition,pos = extract_keyword()
+    let! right = decls_to_parser (ctxt.DataDecl @ ctxt.FuncDecl)
+    do! check_keyword() NewLine
+    let! cond = token_condition_to_condition condition pos
+    return Conditional (cond,left,right)
+  }
+
 let parse_rule :Parser<Token,DeclParseScope,Rule> =
   prs{
     let! premises =  RepeatUntil parse_premis (check_keyword() HorizontalBar)
-    do! (check_keyword() NewLine)
+    do! (check_keyword() HorizontalBar) >>. (check_keyword() NewLine)
     let! ctxt = getContext
-    let! input = decls_to_parser ctxt.FuncDecl
+    let! input = FirstSuccesfullInList ctxt.FuncDecl decl_to_parser
     do! check_keyword() SingleArrow
     let! output,_ = extract_id() .>> (check_keyword() NewLine)
     return {Name = input.Name ; CurrentNamespace = ctxt.CurrentNamespace ;

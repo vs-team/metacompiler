@@ -258,7 +258,7 @@ let CatchError (p1:Parser<'char,'ctxt,'res>) (e:ErrorType)
 
 let rec RepeatUntil (pb:Parser<_,_,'result>) (pe:Parser<_,_,_>) 
   : Parser<_,_,List<'result>> =
-  prs{return! pe >>. ret []} .||
+  prs{return! (lookahead pe) >>. ret []} .||
   prs{
     let! x  = pb
     let! xs = RepeatUntil pb pe
