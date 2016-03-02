@@ -6,9 +6,9 @@ Data 'a -> "," -> 'b -> 'a * 'b    #> 5
 Data "Left" -> 'a -> 'a | 'b       #> 5
 Data "Right" -> 'b -> 'a | 'b      #> 5
 
-Boolean => Boolean {
-  True -> TrueBoolean^system
-  False -> FalseBoolean^system
+boolean => Boolean {
+  True ~> True^builtin
+  False ~> False^builtin
 }
 
 Data "then" -> Then

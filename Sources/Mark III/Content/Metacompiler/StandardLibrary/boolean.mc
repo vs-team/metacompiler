@@ -1,5 +1,7 @@
+import System
+
 TypeFunc "Boolean" => Module
 Boolean => Module {
-  Func "True" -> Boolean^system
-  Func "False" -> Boolean^system
+  Func "True" -> System^Boolean
+  Func "False" -> System^Boolean
 }
