@@ -30,23 +30,20 @@ type global_id = Lambda of LambdaId
 type local_id = Named of string
               | Tmp   of int
 
-type lexpr = Lit of lit
-           | Var of global_id
-           | RuleCall        of global_id*list<local_id>
-           | DotNetCall      of global_id*list<local_id>
-           | ConstructorCall of Id*list<local_id>
-
-type rexpr = Id of local_id
-           | DestructorCall  of Id*List<local_id>
-
+type builtin     = ADD | FADD | SUB | FSUB | MUL | FMUL | DIV | FDIV | UDIV
 type conditional = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 
-type premisse = Assignment  of lexpr*rexpr
-              | Conditional of conditional*lexpr*lexpr
+type premisse = Literal         of local_id*lit
+              | Call            of local_id*global_id*list<local_id>
+              | DotNetCall      of local_id*Id*list<local_id>
+              | BuiltinCall     of local_id*builtin*list<local_id>
+              | ConstructorCall of local_id*Id*list<local_id>
+              | DestructorCall  of local_id*Id*list<local_id>
+              | Conditional     of local_id*conditional*local_id
 
 type rule = {
-  input  :List<rexpr>
-  output :lexpr
+  input  :List<local_id>
+  output :local_id
   premis :List<premisse>
   typemap:Map<local_id,Type>
 }
