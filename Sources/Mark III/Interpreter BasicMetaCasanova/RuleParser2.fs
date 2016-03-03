@@ -27,13 +27,14 @@ type IdBranch =
     Pos               : Position
   }
 
-type PremisBranch = RuleBranch of FunctionBranch 
-                  | IdBranch   of IdBranch
+type PremisFunctionTree = RuleBranch of FunctionBranch 
+                        | DataBranch of FunctionBranch 
+                        | IdBranch   of IdBranch
 
 type Condition = Less | LessEqual | Greater | GreaterEqual | Equal
 
-type Premises = Conditional of Condition*PremisBranch*PremisBranch
-              | Implication of PremisBranch*Id
+type Premises = Conditional of Condition*PremisFunctionTree*PremisFunctionTree
+              | Implication of PremisFunctionTree*PremisFunctionTree
 
 type Rule =
   {
@@ -87,7 +88,7 @@ let decl_to_parser (decl:SymbolDeclaration):Parser<Token,DeclParseScope,Function
       return! fail (RuleError (name,pos))
   }
 
-let decls_to_parser (decls:List<SymbolDeclaration>):Parser<Token,DeclParseScope,PremisBranch> =
+let decls_to_parser (decls:List<SymbolDeclaration>):Parser<Token,DeclParseScope,PremisFunctionTree> =
   (prs{
     let! res = FirstSuccesfullInList decls decl_to_parser
     return RuleBranch res
@@ -96,25 +97,14 @@ let decls_to_parser (decls:List<SymbolDeclaration>):Parser<Token,DeclParseScope,
     let! ctxt = getContext
     return IdBranch({Name = id ; CurrentNamespace = ctxt.CurrentNamespace ; Pos = pos})
   }
-  //CatchError 
-  //  (prs{
-  //    let! res = (FirstSuccesfullInList decls decl_to_parser)
-  //    return RuleBranch res
-  //  }) 
-  //  (EndOfListError)
-  //  (prs{
-  //    let! ids = extract_id() |> repeat
-  //    printfn "%s: \ndoes not match with known decls" (sprintf "%A" ids)
-  //    return! fail (EndOfListError)
-  //  }) .|| 
 
 let implication_premis :Parser<Token,DeclParseScope,Premises> =
   prs{
     let! ctxt = getContext
     let! left = decls_to_parser (ctxt.DataDecl @ ctxt.FuncDecl)
     do! check_keyword() SingleArrow
-    //let! right = decls_to_parser (ctxt.DataDecl @ ctxt.FuncDecl)
-    let! right,_ = extract_id() .>> (check_keyword() NewLine)
+    let! right = decls_to_parser (ctxt.DataDecl) .>> (check_keyword() NewLine)
+    //let! right,_ = extract_id() .>> (check_keyword() NewLine)
     return Implication (left,right)
   }
 

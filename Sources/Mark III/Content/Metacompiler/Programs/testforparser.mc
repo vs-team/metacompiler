@@ -4,7 +4,9 @@ Func int -> "sub" -> int -> int
 Func int -> "+" -> int -> int
 Func int -> "-" -> int -> int
 
-Func "run" -> int^BuildIn
+Func "run" -> int
+
+Data 'a -> "," -> 'b -> 'a * 'b
 
 x + y == x + y
 x + y -> res
@@ -21,6 +23,6 @@ res sub c -> res2
 --------
 run -> res2
 
-a -> b
+a -> b,c
 ------
 run -> bla
