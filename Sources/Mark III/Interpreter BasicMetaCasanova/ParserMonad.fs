@@ -245,3 +245,22 @@ let rec FirstSuccesfullInList (ls:List<'item>)(p:'item -> Parser<'char,'ctxt,'re
       return! (p x) .|| FirstSuccesfullInList xs p
     | [] -> return! fail (EndOfListError) 
   }
+
+let CatchError (p1:Parser<'char,'ctxt,'res>) (e:ErrorType) 
+  (p2:Parser<'char,'ctxt,'res>) :Parser<'char,'ctxt,'res> =
+  fun (char,ctxt) ->
+    match p1 (char,ctxt) with
+    | Done(res',char',ctxt') -> Done(res',char',ctxt')
+    | e -> 
+      match p2 (char,ctxt) with
+      | x -> x
+    | Error err -> Error err
+
+let rec RepeatUntil (pb:Parser<_,_,'result>) (pe:Parser<_,_,_>) 
+  : Parser<_,_,List<'result>> =
+  prs{return! (lookahead pe) >>. ret []} .||
+  prs{
+    let! x  = pb
+    let! xs = RepeatUntil pb pe
+    return x::xs 
+  }

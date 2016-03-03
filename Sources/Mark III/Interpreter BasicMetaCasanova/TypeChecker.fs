@@ -5,9 +5,11 @@ open ScopeBuilder // Scope
 type Type = DotNetType      of List<string>*string
           | McType          of List<string>*string
           | TypeApplication of Type*List<Type>
+          | Arrow           of Type*Type
 
-type Id       = {Namespace:List<string>;Name:string;Type:Type}
-type LambdaId = {Namespace:List<string>;Name:int;   Type:Type}
+type genericId<'a>= {Namespace:List<string>;Name:'a;Type:Type}
+type Id       = genericId<string>
+type LambdaId = genericId<int>
 
 type lit = I64 of System.Int64
          | U64 of System.UInt64
@@ -22,34 +24,32 @@ type lit = I64 of System.Int64
          | String of System.String
          | Bool of System.Boolean
 
-type var = Lambda of LambdaId
-         | Named  of Id
-         | Tmp    of int
+type global_id = Lambda of LambdaId
+               | Named  of Id
 
-type lexpr = Lit of lit
-           | Var of var
-           | RuleCall        of var*list<var>
-           | DotNetCall      of var*list<var>
-           | ConstructorCall of Id*list<var>
+type local_id = Named of string
+              | Tmp   of int
 
-type rexpr = Id of Id
-           | DestructorCall  of Id*List<var>
-
+type builtin     = ADD | FADD | SUB | FSUB | MUL | FMUL | DIV | FDIV | UDIV
 type conditional = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 
-type premisse = Assignment  of lexpr*rexpr
-              | Conditional of conditional*lexpr*lexpr
+type premisse = Literal         of local_id*lit
+              | Call            of local_id*global_id*list<local_id>
+              | DotNetCall      of local_id*Id*list<local_id>
+              | BuiltinCall     of local_id*builtin*list<local_id>
+              | ConstructorCall of local_id*Id*list<local_id>
+              | DestructorCall  of local_id*Id*list<local_id>
+              | Conditional     of local_id*conditional*local_id
 
 type rule = {
-  input  :rexpr
-  output :lexpr
+  input  :List<local_id>
+  output :local_id
   premis :List<premisse>
-  typemap:Map<Id,Type>
+  typemap:Map<local_id,Type>
 }
 
 type data = {
-  id     :Id
-  args   :List<string*Type>
+  args   :List<local_id*Type>
   output :Type
 }
 

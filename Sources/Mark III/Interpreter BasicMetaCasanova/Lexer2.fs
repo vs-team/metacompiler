@@ -136,7 +136,13 @@ let all_id pos :Parser<char,Position,Token> =
       return VarId((str|>System.String.Concat),pos)
     }) .|| prs{
       let! str = alpha_numeric_id .|| symbol_id
-      return Id((str|>System.String.Concat),pos)
+      let! pos = get_position
+      if str = "==" then return Keyword(Equal,pos)
+      elif str = ">=" then return Keyword(GreaterEqual,pos)
+      elif str = "<=" then return Keyword(LessEqual,pos)
+      elif str = ">" then return Keyword(Greater,pos)
+      elif str = "<" then return Keyword(Less,pos)
+      else return Id((str|>System.String.Concat),pos)
     } 
   }
 

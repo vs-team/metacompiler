@@ -6,6 +6,7 @@ open Lexer2
 open DeclParser2
 open OptionMonad
 open GlobalSyntaxCheck2
+open RuleParser2
 
 let t = System.Diagnostics.Stopwatch()
 
@@ -66,7 +67,7 @@ let check_tokens (tokens:List<Id*List<Token>>) : Option<_> =
 let start_decl_parser (tokens:Id*List<Token>) :Option<Id*DeclParseScope*List<Token>> =
   opt{
     let id,tok = tokens
-    let! res = use_parser_monad parse_scope (tok,{DeclParseScope.Zero with CurrentNamespace = id})
+    let! res = use_parser_monad parse_scope (tok,{DeclParseScope.Zero with CurrentNamespace = [id]})
     return id,res,tok
   } |> (timer (sprintf "Done parsing decls of file: [%s.mc] " ((fun (id,_)->id)tokens)))
 
@@ -77,6 +78,10 @@ let parse_tokens (tokens:List<Id*List<Token>>) : Option<List<Id*DeclParseScope*L
     return! try_unpack_list_of_option list_of_decl_res
   }
 
+let start_rule_parser (ctxt:List<Id*DeclParseScope*List<Token>>) :Option<Id*List<Rule>> =
+  opt{
+    return! use_parser_monad parse_rule_scope (ctxt,[])
+  } |> (timer (sprintf "Done parsing Rules "))
 
 let start (paths:List<string>) (file_name:List<string>) :Option<_> =
   opt{
@@ -84,6 +89,8 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     let! lex_res = lex_files paths file_name
     do! check_tokens lex_res
     let! decl_pars_res = parse_tokens lex_res
-    return (List.collect (fun (x,y,z) -> [x,y]) decl_pars_res)
+    let! rule_pars_res = start_rule_parser decl_pars_res
+    return rule_pars_res
+    //return (List.collect (fun (x,y,z) -> [x,y]) decl_pars_res)
     //return lex_res
   }
