@@ -1,22 +1,39 @@
+import prelude
+
+TypeFunc "Record" => Module
+Record => Module {
+  TypeFunc "fields" => *
+  TypeFunc "cons" => *
+  TypeFunc "field" => *
+  Func "make" -> fields -> cons
+  Func "label" -> String
+  Func "rest" -> Record
+  Func "first" -> Record
+}
+
 TypeFunc "empty" => Record
-empty => Record [] {
+empty => Record {
   fields -> Unit
   cons -> Unit
   make () -> ()
   first -> Unit
+  rest -> Unit
 }
 
-TypeFunc "field" => String => * => Record => Record
-field l f rs => Record {
-  fields -> f x fields^rs
-  cons -> f x cons^rs
-  make (x,xs) -> (x, (make^rs xs))
-  label -> l
+TypeFunc "record" => String => * => Record => Record
+record l f rs => Record {
+  fields -> (f fields^rs)
+  cons -> (f cons^rs)
   field -> f
-  rest -> rs
-  first -> cons
 
-  Func "getter" -> String -> Record 
+  make (x,xs) -> (x, (make^rs xs))
+  make x -> x
+
+  label -> l
+  rest -> rs
+  first -> record (label field rest)
+
+  Func "getter" -> String -> Record
   getter l' rs -> (cons -> getter l' rest^rs)
 
   l' -> label^rs
@@ -28,7 +45,7 @@ field l f rs => Record {
   get l -> first^cons
 
   $$fix setter
-  Func "setter" -> String -> Record 
+  Func "setter" -> String -> Record
   setter l' rs -> (cons -> setter l' rest^rs)
 
   l' -> label^rs
@@ -43,13 +60,3 @@ field l f rs => Record {
   set x -> first^cons
 }
 
-TypeFunc "Record" => Module
-Record => Module {
-  Func "fields" -> *
-  Func "cons" -> *
-  Func "make" -> fields -> cons
-  Func "label" -> String
-  Func "field" -> *
-  Func "rest" -> Record
-  Func "first" -> Record
-}
