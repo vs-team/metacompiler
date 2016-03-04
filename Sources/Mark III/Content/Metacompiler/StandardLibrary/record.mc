@@ -15,9 +15,11 @@ TypeFunc "empty" => Record
 empty => Record {
   fields -> Unit
   cons -> Unit
+  field -> Unit
   make () -> ()
-  first -> Unit
+  label -> Unit
   rest -> Unit
+  first -> Unit
 }
 
 TypeFunc "record" => String => * => Record => Record
