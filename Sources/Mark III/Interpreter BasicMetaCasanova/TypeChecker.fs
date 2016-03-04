@@ -17,7 +17,7 @@ type lit = I64 of System.Int64
          | Bool of System.Boolean
 
 type global_id = Lambda of LambdaId
-               | Named  of Id
+               | Func   of Id
 
 type local_id = Named of string
               | Tmp   of int
