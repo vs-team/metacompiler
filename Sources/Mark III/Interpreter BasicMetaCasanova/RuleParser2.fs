@@ -7,10 +7,6 @@ open DeclParser2
 open GlobalSyntaxCheck2
 open ExtractFromToken2
 
-type Type = GenericType     of Id
-          | McType          of Id
-          | TypeApplication of Id*List<Type>
-
 type FunctionBranch = 
   {
     Name              : Id
@@ -36,15 +32,13 @@ type Condition = Less | LessEqual | Greater | GreaterEqual | Equal
 type Premises = Conditional of Condition*PremisFunctionTree*PremisFunctionTree
               | Implication of PremisFunctionTree*PremisFunctionTree
 
-type Rule =
+type RuleDef =
   {
     Name              : Id
     CurrentNamespace  : Namespace
     Input             : List<Id*DeclType>
     Output            : Id*DeclType
     Premises          : List<Premises>
-    TypeTable         : List<Id*Type>
-  
   }
 
 let token_condition_to_condition (key:Keyword)(pos:Position) :Parser<Token,DeclParseScope,Condition> =
@@ -119,7 +113,7 @@ let parse_premis :Parser<Token,DeclParseScope,Premises> =
     return Conditional (cond,left,right)
   }
 
-let parse_rule :Parser<Token,DeclParseScope,Rule> =
+let parse_rule :Parser<Token,DeclParseScope,RuleDef> =
   prs{
     let! premises =  RepeatUntil parse_premis (check_keyword() HorizontalBar)
     do! (check_keyword() HorizontalBar) >>. (check_keyword() NewLine)
@@ -129,17 +123,17 @@ let parse_rule :Parser<Token,DeclParseScope,Rule> =
     let! output,_ = extract_id() .>> (check_keyword() NewLine)
     return {Name = input.Name ; CurrentNamespace = ctxt.CurrentNamespace ;
             Input = input.Args ; Output = (output,input.Return) ;
-            Premises = premises ; TypeTable = []}
+            Premises = premises }
   }
 
-let parse_rules (decl:DeclParseScope) :Parser<Token,List<Rule>,_> =
+let parse_rules (decl:DeclParseScope) :Parser<Token,List<RuleDef>,_> =
   prs{
     let! ctxt = getContext
     let! res = UseDifferentCtxt parse_rule decl
     do! setContext (res::ctxt)
   }
 
-let parse_line (decl:DeclParseScope) :Parser<Token,List<Rule>,_> =
+let parse_line (decl:DeclParseScope) :Parser<Token,List<RuleDef>,_> =
   prs{
     do! (check_keyword() NewLine) |> repeat |> ignore
     do! (UseDifferentCtxt (check_decl_keyword >>. check_parse_decl) Position.Zero) .|| 
@@ -148,13 +142,13 @@ let parse_line (decl:DeclParseScope) :Parser<Token,List<Rule>,_> =
     return ()
   }
 
-let parse_lines (decl:DeclParseScope) :Parser<Token,List<Rule>,List<Rule>> =
+let parse_lines (decl:DeclParseScope) :Parser<Token,List<RuleDef>,List<RuleDef>> =
   prs{
     do! parse_line decl |> itterate |> ignore
     return! getContext
   }
 
-let parse_rule_scope :Parser<Id*DeclParseScope*List<Token>,List<Id>,Id*List<Rule>> =
+let parse_rule_scope :Parser<Id*DeclParseScope*List<Token>,List<Id>,Id*List<RuleDef>> =
   prs{
     let! id,decl,tok = step
     let! res = UseDifferentSrcAndCtxt (parse_lines decl) tok []
