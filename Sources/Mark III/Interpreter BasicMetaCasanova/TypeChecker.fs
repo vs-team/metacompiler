@@ -1,14 +1,15 @@
 ﻿module TypeChecker
 open Common
 
-type Type = DotNetType      of List<string>*string
-          | McType          of List<string>*string
-          | TypeApplication of Type*List<Type>
-          | Arrow           of Type*Type
-
-type genericId<'a>= {Namespace:List<string>;Name:'a;Type:Type}
+type genericId<'a>= {Namespace:List<string>;Name:'a;}
 type Id       = genericId<string>
 type LambdaId = genericId<int>
+type TypeId   = genericId<string>
+
+type Type = DotNetType      of TypeId
+          | McType          of TypeId
+          | TypeApplication of Type*List<Type>
+          | Arrow           of Type*Type
 
 type lit = I64 of System.Int64
          | U64 of System.UInt64
@@ -16,27 +17,28 @@ type lit = I64 of System.Int64
          | String of System.String
          | Bool of System.Boolean
 
-type global_id = Lambda of LambdaId
-               | Func   of Id
+type rule_id = Lambda of LambdaId
+             | Func   of Id
 
 type local_id = Named of string
               | Tmp   of int
 
-type builtin = ADD | FADD 
-             | SUB | FSUB
-             | MUL | FMUL
-             | DIV | FDIV | UDIV
-             | REM | FREM | UREM
 type conditional = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 
-type premisse = Literal            of lit*local_id
-              | Conditional        of local_id*conditional*local_id
-              | Destructor         of local_id*Id*List<local_id>
-              | McClosure          of global_id*local_id
-              | DotNetClosure      of Id*local_id
-              | BuiltinClosure     of builtin*local_id
-              | ConstructorClosure of Id*local_id
-              | Apply              of local_id*local_id*local_id
+type premisse = Literal            of Literal
+              | Conditional        of Conditional
+              | Destructor         of Destructor
+              | McClosure          of McClosure
+              | DotNetClosure      of DotNetClosure
+              | ConstructorClosure of ConstructorClosure
+              | Application        of Application
+and Literal            = {value:lit; dest:local_id}
+and Conditional        = {left:local_id; predicate:Conditional; right:local_id}
+and Destructor         = {source:local_id; destructor:Id; args:List<local_id>}
+and McClosure          = {func:rule_id; dest:local_id}
+and DotNetClosure      = {func:Id; dest:local_id}
+and ConstructorClosure = {func:Id; dest:local_id}
+and Application        = {closure:local_id; argument:local_id; dest:local_id}
 
 type rule = {
   input  :List<local_id>
@@ -47,11 +49,12 @@ type rule = {
 
 type data = {
   args   :List<local_id*Type>
-  output :Type
+  outputType :Type
 }
 
 type fromTypecheckerWithLove = {
   rules   : Map<Id,List<rule>>
   lambdas : Map<LambdaId,rule>
-  datas   : Map<Id,data>
+  datas   : List<Id*data>
+  main    : rule
 }
