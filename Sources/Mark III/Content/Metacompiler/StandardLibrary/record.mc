@@ -2,63 +2,41 @@ import prelude
 
 TypeFunc "Record" => Module
 Record => Module {
-  TypeFunc "fields" => *
-  TypeFunc "cons" => *
-  TypeFunc "field" => *
-  Func "make" -> fields -> cons
+  Func "fields" -> 'a
+  Func "field" -> 'a
   Func "label" -> String
   Func "rest" -> Record
-  Func "first" -> Record
+
+  Func "get" -> String -> Record -> Record
+  (if (l = label^rs)
+    rs
+    else
+    get l rest^rs) -> res
+  -----------------------
+  get l rs -> res
+
+  Func "set" -> String -> 'a -> Record -> Record
+  (if (l = label^rs)
+    record l f rs
+    else
+    set l f rest^rs) -> res
+  -------------------------
+  set l f' rs -> res
 }
 
 TypeFunc "empty" => Record
 empty => Record {
   fields -> Unit
-  cons -> Unit
   field -> Unit
-  make () -> ()
   label -> Unit
   rest -> Unit
-  first -> Unit
 }
 
 TypeFunc "record" => String => * => Record => Record
 record l f rs => Record {
-  fields -> (f fields^rs)
-  cons -> (f cons^rs)
+  fields -> (f,fields^rs)
   field -> f
-
-  make (x,xs) -> (x, (make^rs xs))
-  make x -> x
-
   label -> l
   rest -> rs
-  first -> record (label field rest)
-
-  Func "getter" -> String -> Record
-  getter l' rs -> (cons -> getter l' rest^rs)
-
-  l' -> label^rs
-  --
-  getter l' rs -> (cons -> fields^rs)
-
-  Func "get" -> String -> cons^(getter l rs)
-  get l' -> get^rs l'
-  get l -> first^cons
-
-  $$fix setter
-  Func "setter" -> String -> Record
-  setter l' rs -> (cons -> setter l' rest^rs)
-
-  l' -> label^rs
-  --
-  setter l' rs -> (cons -> fields^rs)
-
-  Func "set" -> String -> cons^(setter l rs)
-  set l' -> set^rs l'
-  set l -> fst^cons
-
-  Func "set" -> * -> cons^(setter l f rs)
-  set x -> first^cons
 }
 
