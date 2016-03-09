@@ -7,11 +7,13 @@ open DeclParser2
 open GlobalSyntaxCheck2
 open ExtractFromToken2
 
+type ArgId = Id*Position
+
 type FunctionBranch = 
   {
     Name              : Id
     CurrentNamespace  : Namespace
-    Args              : List<Id*DeclType>
+    Args              : List<ArgId*DeclType>
     Return            : DeclType
     Pos               : Position
   }
@@ -36,8 +38,8 @@ type RuleDef =
   {
     Name              : Id
     CurrentNamespace  : Namespace
-    Input             : List<Id*DeclType>
-    Output            : Id*DeclType
+    Input             : List<ArgId*DeclType>
+    Output            : ArgId*DeclType
     Premises          : List<Premises>
   }
 
@@ -52,20 +54,20 @@ let token_condition_to_condition (key:Keyword)(pos:Position) :Parser<Token,DeclP
     | _                   -> return! fail (RuleError ("conditional expected, got keyword.",pos))
   }
 
-let arg_to_parser (rightarg:DeclType) :Parser<Token,DeclParseScope,Id*DeclType> =
+let arg_to_parser (rightarg:DeclType) :Parser<Token,DeclParseScope,ArgId*DeclType> =
   prs{ 
     let! arg,pos = extract_id()
-    return arg,rightarg
+    return (arg,pos),rightarg
   }
 
 let argstructure_parser (argstruct:ArgStructure) :Parser<Token,DeclParseScope,_> =
   prs{
     match argstruct with
     | LeftArg(l,r) -> 
-      let! left_id,_ = extract_id()
+      let! left_id,lpos = extract_id()
       let! name,pos    = extract_id()
-      let! right_id,_ = extract_id()
-      return (name,(left_id,l)::(right_id,r)::[],pos)
+      let! right_id,rpos = extract_id()
+      return (name,((left_id,lpos),l)::((right_id,pos),r)::[],pos)
     | RightArgs (ls) -> 
       let! name,pos    = extract_id()
       let! rightargs = IterateTroughGivenList ls arg_to_parser 
@@ -120,9 +122,9 @@ let parse_rule :Parser<Token,DeclParseScope,RuleDef> =
     let! ctxt = getContext
     let! input = FirstSuccesfullInList ctxt.FuncDecl decl_to_parser
     do! check_keyword() SingleArrow
-    let! output,_ = extract_id() .>> (check_keyword() NewLine)
+    let! output,pos = extract_id() .>> (check_keyword() NewLine)
     return {Name = input.Name ; CurrentNamespace = ctxt.CurrentNamespace ;
-            Input = input.Args ; Output = (output,input.Return) ;
+            Input = input.Args ; Output = ((output,pos),input.Return) ;
             Premises = premises }
   }
 
