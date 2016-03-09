@@ -41,8 +41,7 @@ list 'M => Monad(ListT MCons^'M) {
       (\(x :: xs) ->
         {x >>=^'M y
           return^'M k x} -> z
-        {xs >>= ys
-          k} -> zs
+        xs >>= k -> zs
         (z @ zs)))} -> res
   -------------------------------
   lm >>= k -> res
