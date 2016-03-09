@@ -60,7 +60,7 @@ let print_local_id n = match n with Named x -> CSharpMangle x | Tmp x -> sprintf
 
 type NamespacedItem = Ns     of string*List<NamespacedItem>
                     | Data   of string*Type*data
-                    | Func   of string*Type*List<rule>
+                    | Function of string*Type*List<rule>
                     | Lambda of int*Type*rule
 
 let construct_tree (input:fromTypecheckerWithLove) :List<NamespacedItem> =
@@ -72,7 +72,7 @@ let construct_tree (input:fromTypecheckerWithLove) :List<NamespacedItem> =
                | [],list           -> Ns(n,datatree []   (ns,v))::list
   let rec functree (s:List<NamespacedItem>) (idx:List<string>,v:string*Type*List<rule>) :List<NamespacedItem> =
     match idx with
-    | []    -> (Func(v))::s
+    | []    -> (Function(v))::s
     | n::ns -> match s |> List.partition (fun x->match x with Ns(n,_)->true | _->false) with
                | [Ns(n,body)],rest -> Ns(n,functree body (ns,v))::rest
                | [],list           -> Ns(n,functree []   (ns,v))::list
@@ -84,27 +84,53 @@ let construct_tree (input:fromTypecheckerWithLove) :List<NamespacedItem> =
                | [],list           -> Ns(n,lambdatree []   (ns,v))::list
   let go input output state = input |> Map.toSeq |> Seq.map (fun (n,d)->n.Namespace,(n.Name,n.Type,d)) |> Seq.fold output state
   [] |> go input.lambdas lambdatree |> go input.rules   functree |> go input.datas datatree
-          
+
+let print_literal lit =
+  match lit with
+  | I64 i    -> sprintf "%d" i
+  | U64 i    -> sprintf "%u" i
+  | F64 i    -> sprintf "%f" i
+  | String s -> sprintf "\"%s\"" s
+  | Bool b   -> if b then "true" else "false"
+
+let print_global_id id = "ID"
+  //match id with
+  //| global_id.Lambda l -> sprintf "%s.%s" (String.concat l.Namespace ".") l.Name
+
+let rec func_arity (t:Type) :int =
+  match t with
+  | Arrow (_,x) -> 1 + (func_arity x)
+  | _ -> 0
+
+let field (n:local_id,t:Type) = sprintf "public %s %s;\n" (mangle_type t) (print_local_id n)
+
+let print_func (s:string) (t:Type) (rules:List<rule>) =
+  //let print_premisse (p:premisse) =
+  //  match p with
+  //  | Literal (loc,lit)    -> sprintf "var %s=%s;\n" (print_local_id loc) (print_literal lit)
+  //  | Call (loc,func,args) -> sprintf "var %s=%s" (print_local_id loc) (print_global_id func)
+  let print_rule = "{\nrule\n}\n" 
+  let body = sprintf "List<%s> _ret;\n%s\nreturn _ret;\n" "RET_TYPE" "BODY"
+  let print_func = sprintf "public static List<%s> _call(%s){%s}" "RET_TYPE" "RULES" body
+  let closure_call = sprintf "public %s _closure_call(){return call(%s);}" "RET_TYPE" "ARGS"
+  sprintf "public class %s{\n%s}" (CSharpMangle s) body
+     
 let rec print_tree (ns:List<NamespacedItem>) :string =
   let print_base_types (ns:List<NamespacedItem>) = 
     let types = ns |> List.fold (fun types item -> match item with Data (_,_,v) -> v.output::types | _ -> types) [] |> List.distinct
     let print t = sprintf "public class %s{}\n" (t|>strip_namespace_type|>mangle_type_suffix)
     List.map print types
-  let field (n:local_id,t:Type) = sprintf "public %s %s;\n" (mangle_type t) (print_local_id n)
-  let print_func (s:string) (t:Type) (rules:List<rule>) =
-    let static_call  = sprintf "public static %s _call(%s){%s}" "RET_TYPE" "ARGS" "BODY"
-    let closure_call = sprintf "public %s _closure_call(){return call(%s);}" "RET_TYPE" "ARGS"
-    let body = "BODY"
-    sprintf "public class %s{\n%s}" (CSharpMangle s)
   let go ns = match ns with
               | Ns (n,ns) -> sprintf "namespace %s{\n%s}\n" (CSharpMangle n) (print_tree ns)
               | Data (n,_,d) -> sprintf "public class %s:%s{\n%s}\n" (CSharpMangle n) (d.output|>strip_namespace_type|>mangle_type_suffix) (d.args|>List.map field|>String.concat "")
-              | Func (s,_,_) -> sprintf "// todo: Func %s\n" (CSharpMangle s)
+              | Function (s,_,_) -> sprintf "// todo: Func %s\n" (CSharpMangle s)
               | Lambda (s,_,_) -> sprintf "// todo: Lambda nr %d\n" s
   (print_base_types ns)@(ns|>List.map go)|>String.concat "\n"
     
 let failsafe_codegen(input:fromTypecheckerWithLove) =
   input |> construct_tree |> print_tree |> printf "%s"
+
+// TEST DATA ///////////////////////////////////////////////////////////////////
 
 let test_data:fromTypecheckerWithLove=
   let int_t:Type   = DotNetType(["System"],"Int32");
@@ -160,11 +186,11 @@ let list_test:fromTypecheckerWithLove =
   let length_nil:rule =
     {
       input=[Tmp(0)]
-      premis=[DestructorCall(Tmp(0),nil_id,[]);
-              Literal(Tmp(1),lit.I32(0))]
+      premis=[Destructor(Tmp(0),  nil_id,[])
+              Literal   (I64(0L), Tmp(1)) ]
       output=Tmp(1)
       typemap=Map.ofSeq [Tmp(0),list_t
-                         Tmp(1),int_t]
+                         Tmp(1),int_t ]
     }
 
   // length xs -> r
@@ -173,17 +199,23 @@ let list_test:fromTypecheckerWithLove =
   let length_append:rule =
     {
       input=[Tmp(0)]
-      premis=[DestructorCall(Tmp(0),append_id,[Named("x");Named("xs")])
-              Call(Named("r"),global_id.Named(length_id),[Named("xs")])
-              Literal(Named("r"), lit.I32(0))
-              BuiltinCall(Tmp(2),ADD,[Named("r");Tmp(1)])]
-      output=Tmp(2)
-      typemap=Map.ofSeq [Named("x"),int_t
+      premis=[Destructor    (Tmp(0),          append_id,  [Named("x");Named("xs")])
+              McClosure     (Func(length_id), Tmp(1))
+              Apply         (Tmp(1),          Named("xs"), Named("r"))
+              Literal       (I64(0L),         Tmp(2))
+              BuiltinClosure(ADD,             Tmp(3))
+              Apply         (Tmp(3),          Named("r"),  Tmp(4))
+              Apply         (Tmp(4),          Tmp(2),      Tmp(5))]
+      output=Tmp(5)
+      typemap=Map.ofSeq [Tmp(0),list_t
+                         Named("x"),int_t
                          Named("xs"),list_t
+                         Tmp(1),Arrow(list_t,int_t)
                          Named("r"),int_t
-                         Tmp(0),list_t
-                         Tmp(1),int_t
-                         Tmp(2),int_t]
+                         Tmp(2),int_t
+                         Tmp(3),Arrow(int_t,(Arrow(int_t,int_t)))
+                         Tmp(4),Arrow(int_t,int_t)
+                         Tmp(5),int_t ]
     }
 
   let datas = Map.ofSeq <| [nil_id,nil_data; append_id,append_data]

@@ -126,11 +126,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Metacompiler\StandardLibrary\boolean.mc">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Metacompiler\parser_monad.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
