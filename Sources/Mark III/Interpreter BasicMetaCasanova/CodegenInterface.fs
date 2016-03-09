@@ -1,4 +1,4 @@
-﻿module TypeChecker
+﻿module CodegenInterface
 open Common
 
 type genericId<'a>= {Namespace:List<string>;Name:'a;}

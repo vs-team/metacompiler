@@ -1,7 +1,7 @@
-﻿module IR
+﻿module Codegen
 open Common
 open ParserMonad
-open TypeChecker
+open CodegenInterface
 
 // mangling ////////////////////////////////////////////////////////////////////
     

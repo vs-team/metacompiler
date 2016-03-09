@@ -1,6 +1,5 @@
 ﻿open ParserMonad
 open Lexer2
-open TypeChecker
 open Pipeline2
 open System
 open System.IO

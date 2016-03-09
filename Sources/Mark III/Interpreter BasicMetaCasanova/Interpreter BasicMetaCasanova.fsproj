@@ -60,8 +60,8 @@
     <Compile Include="RuleParser2.fs" />
     <Compile Include="RuleNormalizer2.fs" />
     <Compile Include="RuleTypeChecker2.fs" />
-    <Compile Include="TypeChecker.fs" />
-    <Compile Include="IR.fs" />
+    <Compile Include="CodegenInterface.fs" />
+    <Compile Include="Codegen.fs" />
     <Compile Include="Pipeline2.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
