@@ -50,7 +50,7 @@ let get_local_id :Parser<Premises,NormalizerContext,int> =
     return new_local_id
   }
 
-let normalize_Premis_functiontree (input:PremisFunctionTree) :Parser<Premises,NormalizerContext,_> =
+let normalize_Left_premistree (input:PremisFunctionTree) :Parser<Premises,NormalizerContext,_> =
   prs{
     match input with
     | RuleParser2.Literal(lit,pos) -> 
