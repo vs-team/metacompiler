@@ -242,10 +242,8 @@ let validate (input:fromTypecheckerWithLove) =
     else
       rules |> List.fold (fun (success:bool) (rule:rule) -> if check_typemap id rule then success else false) true ) true
 
-let failsafe_codegen(input:fromTypecheckerWithLove) =
+let failsafe_codegen(input:fromTypecheckerWithLove) :Option<string>=
   if validate input then
-    do printf "code validation successful\n\n"
-    input |> construct_tree |> print_tree input |> printf "%s"
+    input |> construct_tree |> print_tree input |> Some
   else
-    printf "code validation failed\n\n"
-    ()
+    None
