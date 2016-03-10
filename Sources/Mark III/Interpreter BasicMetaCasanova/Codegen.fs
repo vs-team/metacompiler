@@ -118,11 +118,11 @@ let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :s
 let test_data:fromTypecheckerWithLove=
   let int_t:Type   = DotNetType({Namespace=["System"];Name="Int32"})
   let float_t:Type = DotNetType({Namespace=["System"];Name="Single"})
-  let star_t:Type  = TypeApplication((McType({Namespace=["mc";"test"];Name="star"})),[int_t;float_t])
-  let pipe_t:Type  = TypeApplication((McType({Namespace=["mc";"test"];Name="pipe"})),[int_t;float_t])
-  let comma_id:Id  = {Namespace=["mc";"test"];Name="comma"}
-  let left_id:Id   = {Namespace=["mc";"test"];Name="left"}
-  let right_id:Id  = {Namespace=["mc";"test"];Name="right"}
+  let star_t:Type  = TypeApplication((McType({Namespace=["test";"mc"];Name="star"})),[int_t;float_t])
+  let pipe_t:Type  = TypeApplication((McType({Namespace=["test";"mc"];Name="pipe"})),[int_t;float_t])
+  let comma_id:Id  = {Namespace=["test";"mc"];Name="comma"}
+  let left_id:Id   = {Namespace=["test";"mc"];Name="left"}
+  let right_id:Id  = {Namespace=["test";"mc"];Name="right"}
   let comma_data:data = 
     { 
       args=[int_t; float_t; ];
@@ -149,7 +149,7 @@ let list_test:fromTypecheckerWithLove =
 
   // data "nil" -> List
   let list_t:Type  = TypeApplication((McType({Namespace=["mc";"test"];Name="List"})),[int_t])
-  let nil_id:Id    = {Namespace=["mc";"test"];Name="nil"}
+  let nil_id:Id    = {Namespace=["test";"mc"];Name="nil"}
   let nil_data:data =
     {
       args=[];
@@ -157,7 +157,7 @@ let list_test:fromTypecheckerWithLove =
     }
 
   // data Int -> "::" -> List -> List
-  let append_id:Id = {Namespace=["mc";"test"];Name="::"}
+  let append_id:Id = {Namespace=["test";"mc"];Name="::"}
   let append_data:data =
     {
       args=[int_t; int_t];
@@ -166,7 +166,7 @@ let list_test:fromTypecheckerWithLove =
   
   // length nil -> 0
   let length_t:Type= Arrow (list_t,int_t)
-  let length_id:Id = {Namespace=["mc";"test"];Name="length"}
+  let length_id:Id = {Namespace=["test";"mc"];Name="length"}
   let length_nil:rule =
     {
       side_effect=false
@@ -189,7 +189,7 @@ let list_test:fromTypecheckerWithLove =
               McClosure({func=Func(length_id); dest=Tmp(1)})
               Application({closure=Tmp(1); argument=Named("xs"); dest=Named("r")})
               Literal({value=I64(0L); dest=Tmp(2)})
-              DotNetClosure({func={Name="add";Namespace=["System";"Int32"]};dest=Tmp(3)})
+              DotNetClosure({func={Name="add";Namespace=["Int32";"System"]};dest=Tmp(3)})
               Application({closure=Tmp(3); argument=Named("r"); dest=Tmp(4)})
               Application({closure=Tmp(4); argument=Tmp(2);     dest=Tmp(5)}) ]
       output=Tmp(5)
@@ -221,20 +221,31 @@ let get_locals (ps:premisse list) :local_id list =
     | Application         x -> [x.closure;x.dest;x.argument] )
 
 let validate (input:fromTypecheckerWithLove) =
-  let check_rule (id:Id) (rule:rule) :bool =
+  let ice () = 
+      do System.Console.BackgroundColor <- System.ConsoleColor.Red
+      do System.Console.Write "INTERNAL COMPILER ERROR"
+      do System.Console.BackgroundColor <- System.ConsoleColor.Black
+  let print_id id = String.concat "^" (id.Name::id.Namespace)
+  let check_typemap (id:Id) (rule:rule) :bool =
     let expected = (get_locals rule.premis) @ rule.input |> List.distinct |> List.sort
     let received  = rule.typemap |> Map.toList |> List.map (fun (x,_)->x) |> List.sort
     if expected = received then true
     else 
-      do printf "typemap error in rule %s:\n  expected: %A\n  received: %A\n" (String.concat "^" (id.Name::id.Namespace)) expected received
+      do ice()
+      do printf " incorrect typemap in rule %s:\n  expected: %A\n  received: %A\n" (print_id id) expected received
       false
   input.rules |> Map.fold (fun (success:bool) (id:Id) (rules:rule list)-> 
-    rules |> List.fold (fun (success:bool) (rule:rule) -> if check_rule id rule then success else false) true ) true
+    if rules.IsEmpty then
+      do ice()
+      do printf " empty rule: %s\n" (print_id id)
+      false
+    else
+      rules |> List.fold (fun (success:bool) (rule:rule) -> if check_typemap id rule then success else false) true ) true
 
 let failsafe_codegen(input:fromTypecheckerWithLove) =
   if validate input then
-    do printf "code validated\n"
+    do printf "code validation successful\n\n"
     input |> construct_tree |> print_tree input |> printf "%s"
   else
-    printf "code validation failed\n"
+    printf "code validation failed\n\n"
     ()
