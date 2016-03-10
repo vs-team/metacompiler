@@ -32,6 +32,7 @@ type premisse = Literal            of Literal
               | DotNetClosure      of DotNetClosure
               | ConstructorClosure of ConstructorClosure
               | Application        of Application
+              | ApplicationCall    of Application
 and Literal            = {value:lit; dest:local_id}
 and Conditional        = {left:local_id; predicate:Conditional; right:local_id}
 and Destructor         = {source:local_id; destructor:Id; args:List<local_id>}
@@ -49,7 +50,7 @@ type rule = {
 }
 
 type data = {
-  args   :List<local_id*Type>
+  args       :List<Type>
   outputType :Type
 }
 
