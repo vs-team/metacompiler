@@ -195,7 +195,7 @@ let failsafe_codegen(input:fromTypecheckerWithLove) =
 
 let test_data:fromTypecheckerWithLove=
   let int_t:Type   = DotNetType({Namespace=["System"];Name="Int32"})
-  let float_t:Type = DotNetType({Namespace=["System"];Name="float"})
+  let float_t:Type = DotNetType({Namespace=["System"];Name="Single"})
   let star_t:Type  = TypeApplication((McType({Namespace=["mc";"test"];Name="star"})),[int_t;float_t])
   let pipe_t:Type  = TypeApplication((McType({Namespace=["mc";"test"];Name="pipe"})),[int_t;float_t])
   let comma_id:Id  = {Namespace=["mc";"test"];Name="comma"}
@@ -217,7 +217,7 @@ let test_data:fromTypecheckerWithLove=
       outputType=pipe_t;
     }
   let datas = [comma_id,comma_data; left_id,left_data; right_id,right_data]
-  let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty}
+  let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty;side_effect=true}
   {rules=Map.empty;lambdas=Map.empty;datas=datas;main=main}
 
 let list_test:fromTypecheckerWithLove =
@@ -247,6 +247,7 @@ let list_test:fromTypecheckerWithLove =
   let length_id:Id = {Namespace=["mc";"test"];Name="length"}
   let length_nil:rule =
     {
+      side_effect=false
       input=[Tmp(0)]
       premis=[Destructor({source=Tmp(0); destructor=nil_id; args=[]})
               Literal   ({value=I64(0L);dest=Tmp(1)}) ]
@@ -260,6 +261,7 @@ let list_test:fromTypecheckerWithLove =
   // length x::xs -> add^builtin r 0
   let length_append:rule =
     {
+      side_effect=false
       input=[Tmp(0)]
       premis=[Destructor({source=Tmp(0); destructor=append_id; args=[Named("x");Named("xs")]})
               McClosure({func=Func(length_id); dest=Tmp(1)})
@@ -282,5 +284,5 @@ let list_test:fromTypecheckerWithLove =
 
   let datas = [nil_id,nil_data; append_id,append_data]
   let Funcs = Map.ofSeq <| [length_id,[length_nil;length_append]]
-  let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty}
+  let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty;side_effect=true}
   {rules=Funcs;datas=datas;lambdas=Map.empty;main=main}

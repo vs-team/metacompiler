@@ -17,8 +17,8 @@ type lit = I64 of System.Int64
          | String of System.String
          | Bool of System.Boolean
 
-type rule_id = Lambda of LambdaId
-             | Func   of Id
+type rule_id = Lambda     of LambdaId
+             | Func       of Id
 
 type local_id = Named of string
               | Tmp   of int
@@ -41,6 +41,7 @@ and ConstructorClosure = {func:Id; dest:local_id}
 and Application        = {closure:local_id; argument:local_id; dest:local_id}
 
 type rule = {
+  side_effect :bool
   input  :List<local_id>
   output :local_id
   premis :List<premisse>
