@@ -49,7 +49,8 @@ let rec mangle_type(t:Type):string=
   | TypeApplication (fn,lst) -> mangle_type fn
 
 
-let print_local_id n = match n with Named x -> CSharpMangle x | Tmp x -> sprintf "_tmp%d" x 
+let mangle_local_id n = match n with Named x -> CSharpMangle x | Tmp x -> sprintf "_tmp%d" x 
+let mangle_id (id:Id) = (id.Name::id.Namespace) |> List.rev |> List.map CSharpMangle |> String.concat "."
 
 type NamespacedItem = Ns       of string*List<NamespacedItem>
                     | Data     of string*data
@@ -89,7 +90,7 @@ let print_literal lit =
   | Bool b   -> if b then "true" else "false"
 
 let field (n:int) (t:Type) :string =
-  sprintf "public %s %s;\n" (mangle_type t) (print_local_id(Tmp(n)))
+  sprintf "public %s %s;\n" (mangle_type t) (mangle_local_id(Tmp(n)))
 
 let highest_tmp (typemap:Map<local_id,Type>): int =
   typemap |> Map.fold (fun s k _ -> match k with Tmp(x) when x>s -> x | _ -> s) 0
@@ -97,10 +98,10 @@ let highest_tmp (typemap:Map<local_id,Type>): int =
 let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :string =
   let build_func (name:string) (rules:rule list) = 
     let rule = List.head rules
-    let args = "/*ARGS*/" //rule.input |> Seq.map (fun id-> rule.typemap.[id])
-    let ret_type = "/*RET*/"
+    let args = rule.input |> Seq.map (fun id-> sprintf "public %s %s;\n" (mangle_type rule.typemap.[id]) (mangle_local_id id) ) |> String.concat ""
+    let ret_type = mangle_type rule.typemap.[rule.output]
     let rules = "/*RULES*/"
-    sprintf "class %s{\n%s\npublic List<%s> run(){\nList<%s> _ret;\n%s\nreturn _ret;\n}\n}\n" (CSharpMangle name) args ret_type ret_type rules
+    sprintf "class %s{\n%spublic List<%s> run(){\nList<%s> _ret;\n%s\nreturn _ret;\n}\n}\n" (CSharpMangle name) args ret_type ret_type rules
   let print_base_types (ns:List<NamespacedItem>) = 
     let types = ns |> List.fold (fun types item -> match item with Data (_,v) -> v.outputType::types | _ -> types) [] |> List.distinct
     let print t = sprintf "public class %s{}\n" (t|>mangle_type_suffix)
@@ -224,8 +225,8 @@ let validate (input:fromTypecheckerWithLove) =
   let ice () = 
       do System.Console.BackgroundColor <- System.ConsoleColor.Red
       do System.Console.Write "INTERNAL COMPILER ERROR"
-      do System.Console.BackgroundColor <- System.ConsoleColor.Black
-  let print_id id = String.concat "^" (id.Name::id.Namespace)
+      do System.Console.ResetColor()
+  let print_id (id:Id) = String.concat "^" (id.Name::id.Namespace)
   let check_typemap (id:Id) (rule:rule) :bool =
     let expected = (get_locals rule.premis) @ rule.input |> List.distinct |> List.sort
     let received  = rule.typemap |> Map.toList |> List.map (fun (x,_)->x) |> List.sort
@@ -245,5 +246,4 @@ let validate (input:fromTypecheckerWithLove) =
 let failsafe_codegen(input:fromTypecheckerWithLove) :Option<string>=
   if validate input then
     input |> construct_tree |> print_tree input |> Some
-  else
-    None
+  else None
