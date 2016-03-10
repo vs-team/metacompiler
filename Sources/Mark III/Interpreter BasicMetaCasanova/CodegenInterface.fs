@@ -17,8 +17,8 @@ type lit = I64 of System.Int64
          | String of System.String
          | Bool of System.Boolean
 
-type rule_id = Lambda of LambdaId
-             | Func   of Id
+type rule_id = Lambda     of LambdaId
+             | Func       of Id
 
 type local_id = Named of string
               | Tmp   of int
@@ -32,6 +32,7 @@ type premisse = Literal            of Literal
               | DotNetClosure      of DotNetClosure
               | ConstructorClosure of ConstructorClosure
               | Application        of Application
+              | ApplicationCall    of Application
 and Literal            = {value:lit; dest:local_id}
 and Conditional        = {left:local_id; predicate:Conditional; right:local_id}
 and Destructor         = {source:local_id; destructor:Id; args:List<local_id>}
@@ -41,6 +42,7 @@ and ConstructorClosure = {func:Id; dest:local_id}
 and Application        = {closure:local_id; argument:local_id; dest:local_id}
 
 type rule = {
+  side_effect :bool
   input  :List<local_id>
   output :local_id
   premis :List<premisse>
@@ -48,7 +50,7 @@ type rule = {
 }
 
 type data = {
-  args   :List<local_id*Type>
+  args       :List<Type>
   outputType :Type
 }
 

@@ -25,7 +25,8 @@ type IdBranch =
     Pos               : Position
   }
 
-type PremisFunctionTree = RuleBranch of FunctionBranch 
+type PremisFunctionTree = Literal    of Literal*Position
+                        | RuleBranch of FunctionBranch 
                         | DataBranch of FunctionBranch 
                         | IdBranch   of IdBranch
 
@@ -39,8 +40,9 @@ type RuleDef =
     Name              : Id
     CurrentNamespace  : Namespace
     Input             : List<ArgId*DeclType>
-    Output            : ArgId*DeclType
+    Output            : PremisFunctionTree
     Premises          : List<Premises>
+    Pos               : Position
   }
 
 let token_condition_to_condition (key:Keyword)(pos:Position) :Parser<Token,DeclParseScope,Condition> =
@@ -92,6 +94,9 @@ let decls_to_parser (decls:List<SymbolDeclaration>):Parser<Token,DeclParseScope,
     let! id,pos = extract_id()
     let! ctxt = getContext
     return IdBranch({Name = id ; CurrentNamespace = ctxt.CurrentNamespace ; Pos = pos})
+  } .|| prs{
+    let! lit,pos = extract_literal()
+    return Literal(lit,pos)
   }
 
 let implication_premis :Parser<Token,DeclParseScope,Premises> =
@@ -122,10 +127,10 @@ let parse_rule :Parser<Token,DeclParseScope,RuleDef> =
     let! ctxt = getContext
     let! input = FirstSuccesfullInList ctxt.FuncDecl decl_to_parser
     do! check_keyword() SingleArrow
-    let! output,pos = extract_id() .>> (check_keyword() NewLine)
+    let! output = decls_to_parser ctxt.DataDecl
     return {Name = input.Name ; CurrentNamespace = ctxt.CurrentNamespace ;
-            Input = input.Args ; Output = ((output,pos),input.Return) ;
-            Premises = premises }
+            Input = input.Args ; Output = output ;
+            Premises = premises ; Pos = input.Pos}
   }
 
 let parse_rules (decl:DeclParseScope) :Parser<Token,List<RuleDef>,_> =
@@ -150,9 +155,9 @@ let parse_lines (decl:DeclParseScope) :Parser<Token,List<RuleDef>,List<RuleDef>>
     return! getContext
   }
 
-let parse_rule_scope :Parser<Id*DeclParseScope*List<Token>,List<Id>,Id*List<RuleDef>> =
+let parse_rule_scope :Parser<Id*DeclParseScope*List<Token>,List<Id>,Id*List<RuleDef>*List<SymbolDeclaration>> =
   prs{
     let! id,decl,tok = step
     let! res = UseDifferentSrcAndCtxt (parse_lines decl) tok []
-    return id,res
+    return id,res,decl.DataDecl
   }

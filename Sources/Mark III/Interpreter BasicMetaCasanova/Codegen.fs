@@ -1,6 +1,5 @@
 ﻿module Codegen
 open Common
-open ParserMonad
 open CodegenInterface
 
 // mangling ////////////////////////////////////////////////////////////////////
@@ -49,13 +48,6 @@ let rec mangle_type(t:Type):string=
   | McType     (id) -> id.Namespace@[id.Name] |> Seq.map (fun x->if x="System" then "_System" else CSharpMangle x) |> String.concat "."
   | TypeApplication (fn,lst) -> mangle_type fn
 
- (*
-let rec strip_namespace_type(t:Type) :Type = 
-  match t with
-  | DotNetType (id) -> DotNetType ([],id.Name)
-  | McType     (_,n) -> McType     ([],n)
-  | TypeApplication (fn,lst) -> TypeApplication ((strip_namespace_type fn),lst)
-  *)
 
 let print_local_id n = match n with Named x -> CSharpMangle x | Tmp x -> sprintf "_tmp%d" x 
 
@@ -63,8 +55,6 @@ type NamespacedItem = Ns       of string*List<NamespacedItem>
                     | Data     of string*data
                     | Function of string*List<rule>
                     | Lambda   of int*rule
-
-
 
 let construct_tree (input:fromTypecheckerWithLove) :List<NamespacedItem> =
   let rec datatree (s:List<NamespacedItem>) (idx:List<string>,v:string*data) :List<NamespacedItem> =
@@ -98,126 +88,58 @@ let print_literal lit =
   | String s -> sprintf "\"%s\"" s
   | Bool b   -> if b then "true" else "false"
 
-  (*
-let print_global_id id = "ID"
-  //match id with
-  //| global_id.Lambda l -> sprintf "%s.%s" (String.concat l.Namespace ".") l.Name
+let field (n:int) (t:Type) :string =
+  sprintf "public %s %s;\n" (mangle_type t) (print_local_id(Tmp(n)))
 
-let rec func_arity (t:Type) :int =
-  match t with
-  | Arrow (_,x) -> 1 + (func_arity x)
-  | _ -> 0
+let highest_tmp (typemap:Map<local_id,Type>): int =
+  typemap |> Map.fold (fun s k _ -> match k with Tmp(x) when x>s -> x | _ -> s) 0
 
-
-let rec print_rule(r:rule)(t:Map<string,Type>):string =
-  match p with
-  | [] -> ""
-  | p::ps ->
-    match p with
-    | Literal(l,id) -> sprintf "val %s = %s;\n%s" (print_local_id id) (print_literal l) (print_premises p highest_tmp)
-    | Conditional(x,c,y) -> 
-      let cond = 
-        match c with
-        | Less -> "<"
-        | LessEqual -> "<="
-        | Equal -> "="
-        | GreaterEqual -> ">="
-        | Greater -> ">"
-        | NotEqual -> "!="
-      sprintf "if(%s%s%s){%s}" (print_local_id x) cond (print_local_id y) (print_premises ps highest_tmp)
-    | Destructor(from,id,ret) ->
-      // var $tmp = $from as $specific_type
-      // if($tmp!=null){
-      //   var %arg[i] = %tmp.%arg[i]
-      let new_highest_tmp = highest_tmp+1
-      let new_tmp = print_local_id (Tmp(new_tmp))
-      let cast = sprintf "var %s = %s as %s;" new_tmp (print_local_id from) (print_global id)
-      let args = ret |> List.map (fun x-> sprintf "var %s=%s.%s;")
-      let cond = sprintf "if(%s!=null){%s%s}" new_tmp 
-      
-      
-
-let print_func (s:string) (t:Type) (rules:List<rule>) =
-  //let print_premisse (p:premisse) =
-  //  match p with
-  //  | Literal (loc,lit)    -> sprintf "var %s=%s;\n" (print_local_id loc) (print_literal lit)
-  //  | Call (loc,func,args) -> sprintf "var %s=%s" (print_local_id loc) (print_global_id func)
-  let print_rule = "{\nrule\n}\n" 
-  let body = sprintf "List<%s> _ret;\n%s\nreturn _ret;\n" "RET_TYPE" "BODY"
-  let print_func = sprintf "public static List<%s> _call(%s){%s}" "RET_TYPE" "RULES" body
-  let closure_call = sprintf "public %s _closure_call(){return call(%s);}" "RET_TYPE" "ARGS"
-  sprintf "public class %s{\n%s}" (CSharpMangle s) body
-*)
-
-let field (n:local_id,t:Type) = sprintf "public %s %s;\n" (mangle_type t) (print_local_id n)
-
-let get_locals (ps:premisse list) :local_id list =
-  ps |> List.collect (fun p ->
-    match p with
-    | Literal             x -> [x.dest]
-    | Conditional         x -> [x.left;x.right]
-    | Destructor          x -> x.source::x.args
-    | McClosure           x -> [x.dest]
-    | DotNetClosure       x -> [x.dest]
-    | ConstructorClosure  x -> [x.dest]
-    | Application         x -> [x.closure;x.dest;x.argument] ) |> List.distinct
-
-let highest_tmp (ps:premisse list) :int =
-  ps |> get_locals |> List.fold 
-    (fun s x-> match x with Tmp(x)->x::s | _ -> s) []
-    |> List.max
-    (*
-let print_rule (r:rule) (lookup:fromTypecheckerWithLove) =
-  let max_tmp = highest_tmp r.premis
-  let prem (p:premisse) (ps:premisse list) (max_tmp:int) =
-    match p with
-    | Destructor (from,type_id,args) ->
-      let max_tmp = max_tmp+1
-      let data = lookup.data.[type_id].output |> strip_namespace_type |>
-      let cast_line = sprintf "var %s = %s as %s;\n" (Tmp(max_tmp))
-      *)
 let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :string =
+  let build_func (name:string) (rules:rule list) = 
+    let rule = List.head rules
+    let args = "/*ARGS*/" //rule.input |> Seq.map (fun id-> rule.typemap.[id])
+    let ret_type = "/*RET*/"
+    let rules = "/*RULES*/"
+    sprintf "class %s{\n%s\npublic List<%s> run(){\nList<%s> _ret;\n%s\nreturn _ret;\n}\n}\n" (CSharpMangle name) args ret_type ret_type rules
   let print_base_types (ns:List<NamespacedItem>) = 
     let types = ns |> List.fold (fun types item -> match item with Data (_,v) -> v.outputType::types | _ -> types) [] |> List.distinct
     let print t = sprintf "public class %s{}\n" (t|>mangle_type_suffix)
     List.map print types
-  let go ns = match ns with
-              | Ns(n,ns)     -> sprintf "namespace %s{\n%s}\n" (CSharpMangle n) (print_tree lookup ns)
-              | Data(n,d)    -> sprintf "public class %s:%s{\n%s}\n" (CSharpMangle n) (d.outputType|>mangle_type_suffix) (d.args|>List.map field|>String.concat "")
-              | Function(s,_)-> sprintf "// todo: Func %s\n" (CSharpMangle s)
-              | Lambda(s,_)  -> sprintf "// todo: Lambda nr %d\n" s
+  let go ns =
+    match ns with
+    | Ns(n,ns)      -> sprintf "namespace %s{\n%s}\n" (CSharpMangle n) (print_tree lookup ns)
+    | Data(n,d)     -> sprintf "public class %s:%s{\n%s}\n" (CSharpMangle n) (d.outputType|>mangle_type_suffix) (d.args|>List.mapi field|>String.concat "")
+    | Function(name,rules) -> build_func name rules
+    | Lambda(number,rule)  -> build_func (sprintf "_L%d" number) [rule]
   (print_base_types ns)@(ns|>List.map go)|>String.concat "\n"
     
-let failsafe_codegen(input:fromTypecheckerWithLove) =
-  input |> construct_tree |> print_tree input |> printf "%s"
-
 // TEST DATA ///////////////////////////////////////////////////////////////////
 
 let test_data:fromTypecheckerWithLove=
   let int_t:Type   = DotNetType({Namespace=["System"];Name="Int32"})
-  let float_t:Type = DotNetType({Namespace=["System"];Name="float"})
-  let star_t:Type  = TypeApplication((McType({Namespace=["mc";"test"];Name="star"})),[int_t;float_t])
-  let pipe_t:Type  = TypeApplication((McType({Namespace=["mc";"test"];Name="pipe"})),[int_t;float_t])
-  let comma_id:Id  = {Namespace=["mc";"test"];Name="comma"}
-  let left_id:Id   = {Namespace=["mc";"test"];Name="left"}
-  let right_id:Id  = {Namespace=["mc";"test"];Name="right"}
+  let float_t:Type = DotNetType({Namespace=["System"];Name="Single"})
+  let star_t:Type  = TypeApplication((McType({Namespace=["test";"mc"];Name="star"})),[int_t;float_t])
+  let pipe_t:Type  = TypeApplication((McType({Namespace=["test";"mc"];Name="pipe"})),[int_t;float_t])
+  let comma_id:Id  = {Namespace=["test";"mc"];Name="comma"}
+  let left_id:Id   = {Namespace=["test";"mc"];Name="left"}
+  let right_id:Id  = {Namespace=["test";"mc"];Name="right"}
   let comma_data:data = 
     { 
-      args=[Named("a"),int_t; Named("b"),float_t; ];
+      args=[int_t; float_t; ];
       outputType=star_t;
     }
   let left_data:data =
     {
-      args=[Named("a"),int_t;]; 
+      args=[int_t;]; 
       outputType=pipe_t;
     }
   let right_data:data =
     {
-      args=[Named("a"),float_t;]; 
+      args=[float_t;]; 
       outputType=pipe_t;
     }
   let datas = [comma_id,comma_data; left_id,left_data; right_id,right_data]
-  let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty}
+  let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty;side_effect=true}
   {rules=Map.empty;lambdas=Map.empty;datas=datas;main=main}
 
 let list_test:fromTypecheckerWithLove =
@@ -225,28 +147,29 @@ let list_test:fromTypecheckerWithLove =
   let add_t:Type = Arrow(int_t,Arrow(int_t,int_t))
   let add_id:Id  = {Namespace=["builtin"];Name="add"}
 
-  // data "nil" -> List int
+  // data "nil" -> List
   let list_t:Type  = TypeApplication((McType({Namespace=["mc";"test"];Name="List"})),[int_t])
-  let nil_id:Id    = {Namespace=["mc";"test"];Name="nil"}
+  let nil_id:Id    = {Namespace=["test";"mc"];Name="nil"}
   let nil_data:data =
     {
       args=[];
       outputType=list_t;
     }
 
-  // data x -> "::" -> xs -> List int
-  let append_id:Id = {Namespace=["mc";"test"];Name="::"}
+  // data Int -> "::" -> List -> List
+  let append_id:Id = {Namespace=["test";"mc"];Name="::"}
   let append_data:data =
     {
-      args=[Named("x"),int_t; Named("xs"),int_t];
+      args=[int_t; int_t];
       outputType=list_t;
     }
   
   // length nil -> 0
   let length_t:Type= Arrow (list_t,int_t)
-  let length_id:Id = {Namespace=["mc";"test"];Name="length"}
+  let length_id:Id = {Namespace=["test";"mc"];Name="length"}
   let length_nil:rule =
     {
+      side_effect=false
       input=[Tmp(0)]
       premis=[Destructor({source=Tmp(0); destructor=nil_id; args=[]})
               Literal   ({value=I64(0L);dest=Tmp(1)}) ]
@@ -260,12 +183,13 @@ let list_test:fromTypecheckerWithLove =
   // length x::xs -> add^builtin r 0
   let length_append:rule =
     {
+      side_effect=false
       input=[Tmp(0)]
       premis=[Destructor({source=Tmp(0); destructor=append_id; args=[Named("x");Named("xs")]})
               McClosure({func=Func(length_id); dest=Tmp(1)})
               Application({closure=Tmp(1); argument=Named("xs"); dest=Named("r")})
               Literal({value=I64(0L); dest=Tmp(2)})
-              DotNetClosure({func={Name="add";Namespace=["System";"Int32"]};dest=Tmp(3)})
+              DotNetClosure({func={Name="add";Namespace=["Int32";"System"]};dest=Tmp(3)})
               Application({closure=Tmp(3); argument=Named("r"); dest=Tmp(4)})
               Application({closure=Tmp(4); argument=Tmp(2);     dest=Tmp(5)}) ]
       output=Tmp(5)
@@ -282,5 +206,46 @@ let list_test:fromTypecheckerWithLove =
 
   let datas = [nil_id,nil_data; append_id,append_data]
   let Funcs = Map.ofSeq <| [length_id,[length_nil;length_append]]
-  let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty}
+  let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty;side_effect=true}
   {rules=Funcs;datas=datas;lambdas=Map.empty;main=main}
+
+let get_locals (ps:premisse list) :local_id list =
+  ps |> List.collect (fun p ->
+    match p with
+    | Literal             x -> [x.dest]
+    | Conditional         x -> [x.left;x.right]
+    | Destructor          x -> x.source::x.args
+    | McClosure           x -> [x.dest]
+    | DotNetClosure       x -> [x.dest]
+    | ConstructorClosure  x -> [x.dest]
+    | Application         x -> [x.closure;x.dest;x.argument] )
+
+let validate (input:fromTypecheckerWithLove) =
+  let ice () = 
+      do System.Console.BackgroundColor <- System.ConsoleColor.Red
+      do System.Console.Write "INTERNAL COMPILER ERROR"
+      do System.Console.BackgroundColor <- System.ConsoleColor.Black
+  let print_id id = String.concat "^" (id.Name::id.Namespace)
+  let check_typemap (id:Id) (rule:rule) :bool =
+    let expected = (get_locals rule.premis) @ rule.input |> List.distinct |> List.sort
+    let received  = rule.typemap |> Map.toList |> List.map (fun (x,_)->x) |> List.sort
+    if expected = received then true
+    else 
+      do ice()
+      do printf " incorrect typemap in rule %s:\n  expected: %A\n  received: %A\n" (print_id id) expected received
+      false
+  input.rules |> Map.fold (fun (success:bool) (id:Id) (rules:rule list)-> 
+    if rules.IsEmpty then
+      do ice()
+      do printf " empty rule: %s\n" (print_id id)
+      false
+    else
+      rules |> List.fold (fun (success:bool) (rule:rule) -> if check_typemap id rule then success else false) true ) true
+
+let failsafe_codegen(input:fromTypecheckerWithLove) =
+  if validate input then
+    do printf "code validation successful\n\n"
+    input |> construct_tree |> print_tree input |> printf "%s"
+  else
+    printf "code validation failed\n\n"
+    ()

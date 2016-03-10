@@ -35,6 +35,14 @@ let extract_varid() :Parser<Token,_,Id*Position> =
     | _ -> return! fail (MatchError ("VarId",extract_position_from_token next))
   }
 
+let extract_literal() :Parser<Token,_,Literal*Position> =
+  prs{
+    let! next = step
+    match next with
+    | Lexer2.Literal(lit,pos) -> return lit,pos
+    | _ -> return! fail (MatchError ("literal",extract_position_from_token next))
+  }
+
 let extract_string_literal() :Parser<Token,_,string*Position> =
   prs{
     let! next = step

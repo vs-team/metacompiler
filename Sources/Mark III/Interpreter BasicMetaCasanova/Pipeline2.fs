@@ -78,9 +78,9 @@ let parse_tokens (tokens:List<Id*List<Token>>) : Option<List<Id*DeclParseScope*L
     return! try_unpack_list_of_option list_of_decl_res
   }
 
-let start_rule_parser (ctxt:List<Id*DeclParseScope*List<Token>>) :Option<Id*List<RuleDef>> =
+let start_rule_parser (ctxt:List<Id*DeclParseScope*List<Token>>) :Option<List<Id*List<RuleDef>*List<SymbolDeclaration>>> =
   opt{
-    return! use_parser_monad parse_rule_scope (ctxt,[])
+    return! use_parser_monad (itterate (parse_rule_scope)) (ctxt,[])
   } |> (timer (sprintf "Done parsing Rules "))
 
 let start (paths:List<string>) (file_name:List<string>) :Option<_> =
