@@ -48,9 +48,12 @@ let rec mangle_type(t:Type):string=
   | McType     (id) -> id.Namespace@[id.Name] |> Seq.map (fun x->if x="System" then "_System" else CSharpMangle x) |> String.concat "."
   | TypeApplication (fn,lst) -> mangle_type fn
 
-
 let mangle_local_id n = match n with Named x -> CSharpMangle x | Tmp x -> sprintf "_tmp%d" x 
 let mangle_id (id:Id) = (id.Name::id.Namespace) |> List.rev |> List.map CSharpMangle |> String.concat "."
+let mangle_rule_id(id:rule_id) =
+  match id with 
+  | Lambda x -> sprintf "%s._lambda%d" (x.Namespace|>List.rev|>String.concat ".") x.Name
+  | Func x -> mangle_id x
 
 type NamespacedItem = Ns       of string*List<NamespacedItem>
                     | Data     of string*data
@@ -89,18 +92,68 @@ let print_literal lit =
   | String s -> sprintf "\"%s\"" s
   | Bool b   -> if b then "true" else "false"
 
+let print_predicate (p:predicate) :string= 
+  match p with Less -> "<" | LessEqual -> "<=" | Equal -> "=" | GreaterEqual -> ">=" | Greater -> ">" | NotEqual -> "!="
+
 let field (n:int) (t:Type) :string =
   sprintf "public %s %s;\n" (mangle_type t) (mangle_local_id(Tmp(n)))
 
 let highest_tmp (typemap:Map<local_id,Type>): int =
   typemap |> Map.fold (fun s k _ -> match k with Tmp(x) when x>s -> x | _ -> s) 0
 
+let print_rule_bodies (rules:rule list) =
+  let rec premisse (m:Map<local_id,Type>) (ps:premisse list) = 
+    match ps with 
+    | [] -> ""
+    | p::ps -> 
+      match p with
+      | Literal x -> sprintf "var %s = %s;\n%s"
+                       (mangle_local_id x.dest)
+                       (print_literal x.value)
+                       (premisse m ps)
+      | Conditional x -> sprintf "if(%s %s %s){%s}"
+                           (mangle_local_id x.left)
+                           (print_predicate x.predicate)
+                           (mangle_local_id x.right)
+                           (premisse m ps)
+      | Destructor x ->
+        let new_id  = (Tmp(1+(highest_tmp m)))
+        sprintf "var %s = %s as %s;\nif(%s!=null){\n%s%s}\n"
+          (mangle_local_id new_id)
+          (mangle_local_id x.source)
+          (mangle_id       x.destructor)
+          (mangle_local_id new_id)
+          (x.args|>List.mapi(fun nr arg->sprintf "var %s=%s.%s;\n" (mangle_local_id arg) (mangle_local_id new_id) (mangle_local_id(Tmp nr)))|>String.concat "")
+          (premisse (m|>Map.add new_id (McType(x.destructor))) ps)
+      | McClosure x -> sprintf "var %s = new %s();\n%s" 
+                         (mangle_local_id x.dest)
+                         (mangle_rule_id x.func)
+                         (premisse m ps)
+      | DotNetClosure x -> sprintf "var %s = new %s();\n%s" 
+                             (mangle_local_id x.dest)
+                             (mangle_id x.func)
+                             (premisse m ps)
+      | ConstructorClosure x -> sprintf "var %s = new %s();\n%s" 
+                                  (mangle_local_id x.dest)
+                                  (mangle_id x.func)
+                                  (premisse m ps)
+      | Application x -> sprintf "var %s = %s; %s.%s=%s;\n%s"
+                           (mangle_local_id x.dest)
+                           (mangle_local_id x.closure)
+                           (mangle_local_id x.dest)
+                           (sprintf "_arg%d" x.argnr)
+                           (mangle_local_id  x.argument)
+                           (premisse m ps)
+      | _ -> "/*PREMISSE*/\n"+(premisse m ps)
+  let f (rule:rule) = sprintf "{\n%s%s}\n" (rule.input|>List.mapi(fun i x->sprintf "var %s=_arg%d;\n" (mangle_local_id x) i) |> String.concat "") (premisse rule.typemap rule.premis)
+  rules |> List.map f |> String.concat ""
+
 let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :string =
   let build_func (name:string) (rules:rule list) = 
     let rule = List.head rules
-    let args = rule.input |> Seq.map (fun id-> sprintf "public %s %s;\n" (mangle_type rule.typemap.[id]) (mangle_local_id id) ) |> String.concat ""
+    let args = rule.input |> Seq.mapi (fun nr id-> sprintf "public %s _arg%d;\n" (mangle_type rule.typemap.[id]) nr) |> String.concat ""
     let ret_type = mangle_type rule.typemap.[rule.output]
-    let rules = "/*RULES*/"
+    let rules = print_rule_bodies rules
     sprintf "class %s{\n%spublic List<%s> run(){\nList<%s> _ret;\n%s\nreturn _ret;\n}\n}\n" (CSharpMangle name) args ret_type ret_type rules
   let print_base_types (ns:List<NamespacedItem>) = 
     let types = ns |> List.fold (fun types item -> match item with Data (_,v) -> v.outputType::types | _ -> types) [] |> List.distinct
@@ -188,11 +241,11 @@ let list_test:fromTypecheckerWithLove =
       input=[Tmp(0)]
       premis=[Destructor({source=Tmp(0); destructor=append_id; args=[Named("x");Named("xs")]})
               McClosure({func=Func(length_id); dest=Tmp(1)})
-              Application({closure=Tmp(1); argument=Named("xs"); dest=Named("r")})
+              ApplicationCall({argnr=0;closure=Tmp(1); argument=Named("xs"); dest=Named("r")})
               Literal({value=I64(0L); dest=Tmp(2)})
               DotNetClosure({func={Name="add";Namespace=["Int32";"System"]};dest=Tmp(3)})
-              Application({closure=Tmp(3); argument=Named("r"); dest=Tmp(4)})
-              Application({closure=Tmp(4); argument=Tmp(2);     dest=Tmp(5)}) ]
+              Application({argnr=0;closure=Tmp(3); argument=Named("r"); dest=Tmp(4)})
+              ApplicationCall({argnr=1;closure=Tmp(4); argument=Tmp(2); dest=Tmp(5)}) ]
       output=Tmp(5)
       typemap=Map.ofSeq [Tmp(0),list_t
                          Named("x"),int_t
@@ -219,7 +272,8 @@ let get_locals (ps:premisse list) :local_id list =
     | McClosure           x -> [x.dest]
     | DotNetClosure       x -> [x.dest]
     | ConstructorClosure  x -> [x.dest]
-    | Application         x -> [x.closure;x.dest;x.argument] )
+    | Application         x -> [x.closure;x.dest;x.argument]
+    | ApplicationCall     x -> [x.closure;x.dest;x.argument] )
 
 let validate (input:fromTypecheckerWithLove) =
   let ice () = 
