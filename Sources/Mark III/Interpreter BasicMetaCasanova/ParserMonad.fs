@@ -7,6 +7,7 @@ type ErrorType =  ParserMonadError    of string
                 | LineSplitterError   of Position
                 | ScopeError          of string*Position
                 | TypeError
+                | NormalizeError      of string
                 | RuleError           of string*Position
                 | PipeLineError
                 | EofError
