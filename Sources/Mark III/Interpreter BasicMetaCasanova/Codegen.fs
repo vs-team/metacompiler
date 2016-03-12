@@ -79,7 +79,7 @@ let construct_tree (input:fromTypecheckerWithLove) :List<NamespacedItem> =
     | n::ns -> match s |> List.partition (fun x->match x with Ns(n,_)->true | _->false) with
                | [Ns(n,body)],rest -> Ns(n,lambdatree body (ns,v))::rest
                | [],list           -> Ns(n,lambdatree []   (ns,v))::list
-  let go input output state = input |> Seq.map (fun (n,d)->n.Namespace,(n.Name,d)) |> Seq.fold output state
+  let go input output state = input |> Seq.map (fun (n,d)->(List.rev n.Namespace),(n.Name,d)) |> Seq.fold output state
   [] |> go (Map.toSeq input.lambdas) lambdatree 
      |> go (Map.toSeq input.rules) functree 
      |> go input.datas datatree
@@ -102,20 +102,20 @@ let highest_tmp (typemap:Map<local_id,Type>): int =
   typemap |> Map.fold (fun s k _ -> match k with Tmp(x) when x>s -> x | _ -> s) 0
 
 let print_rule_bodies (rules:rule list) =
-  let rec premisse (m:Map<local_id,Type>) (ps:premisse list) = 
+  let rec premisse (m:Map<local_id,Type>) (ps:premisse list) (ret:local_id) = 
     match ps with 
-    | [] -> ""
+    | [] -> sprintf "_ret.add(%s);\n" (mangle_local_id ret)
     | p::ps -> 
       match p with
       | Literal x -> sprintf "var %s = %s;\n%s"
                        (mangle_local_id x.dest)
                        (print_literal x.value)
-                       (premisse m ps)
+                       (premisse m ps ret)
       | Conditional x -> sprintf "if(%s %s %s){%s}"
                            (mangle_local_id x.left)
                            (print_predicate x.predicate)
                            (mangle_local_id x.right)
-                           (premisse m ps)
+                           (premisse m ps ret)
       | Destructor x ->
         let new_id  = (Tmp(1+(highest_tmp m)))
         sprintf "var %s = %s as %s;\nif(%s!=null){\n%s%s}\n"
@@ -124,28 +124,37 @@ let print_rule_bodies (rules:rule list) =
           (mangle_id       x.destructor)
           (mangle_local_id new_id)
           (x.args|>List.mapi(fun nr arg->sprintf "var %s=%s.%s;\n" (mangle_local_id arg) (mangle_local_id new_id) (mangle_local_id(Tmp nr)))|>String.concat "")
-          (premisse (m|>Map.add new_id (McType(x.destructor))) ps)
+          (premisse (m|>Map.add new_id (McType(x.destructor))) ps ret)
       | McClosure x -> sprintf "var %s = new %s();\n%s" 
                          (mangle_local_id x.dest)
                          (mangle_rule_id x.func)
-                         (premisse m ps)
-      | DotNetClosure x -> sprintf "var %s = new %s();\n%s" 
+                         (premisse m ps ret)
+      | DotNetClosure x -> sprintf "var %s = new _DotNetClosure.%s();\n%s" 
                              (mangle_local_id x.dest)
                              (mangle_id x.func)
-                             (premisse m ps)
+                             (premisse m ps ret)
       | ConstructorClosure x -> sprintf "var %s = new %s();\n%s" 
                                   (mangle_local_id x.dest)
                                   (mangle_id x.func)
-                                  (premisse m ps)
+                                  (premisse m ps ret)
       | Application x -> sprintf "var %s = %s; %s.%s=%s;\n%s"
-                           (mangle_local_id x.dest)
-                           (mangle_local_id x.closure)
-                           (mangle_local_id x.dest)
+                           (mangle_local_id  x.dest)
+                           (mangle_local_id  x.closure)
+                           (mangle_local_id  x.dest)
                            (sprintf "_arg%d" x.argnr)
                            (mangle_local_id  x.argument)
-                           (premisse m ps)
-      | _ -> "/*PREMISSE*/\n"+(premisse m ps)
-  let f (rule:rule) = sprintf "{\n%s%s}\n" (rule.input|>List.mapi(fun i x->sprintf "var %s=_arg%d;\n" (mangle_local_id x) i) |> String.concat "") (premisse rule.typemap rule.premis)
+                           (premisse m ps ret)
+      | ImpureApplicationCall x
+      | ApplicationCall x -> sprintf "%s.%s=%s;\nforeach(var %s in %s._run()){%s}"
+                               (mangle_local_id  x.closure)
+                               (sprintf "_arg%d" x.argnr)
+                               (mangle_local_id  x.argument)
+                               (mangle_local_id  x.argument)
+                               (mangle_local_id  x.closure)
+                               (premisse m ps ret)
+  let f (rule:rule) = sprintf "{\n%s%s}\n"
+                        (rule.input|>List.mapi (fun i x->sprintf "var %s=_arg%d;\n" (mangle_local_id x) i) |> String.concat "")
+                        (premisse rule.typemap rule.premis rule.output)
   rules |> List.map f |> String.concat ""
 
 let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :string =
@@ -154,7 +163,7 @@ let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :s
     let args = rule.input |> Seq.mapi (fun nr id-> sprintf "public %s _arg%d;\n" (mangle_type rule.typemap.[id]) nr) |> String.concat ""
     let ret_type = mangle_type rule.typemap.[rule.output]
     let rules = print_rule_bodies rules
-    sprintf "class %s{\n%spublic List<%s> run(){\nList<%s> _ret;\n%s\nreturn _ret;\n}\n}\n" (CSharpMangle name) args ret_type ret_type rules
+    sprintf "class %s{\n%spublic List<%s> _run(){\nList<%s> _ret;\n%s\nreturn _ret;\n}\n}\n" (CSharpMangle name) args ret_type ret_type rules
   let print_base_types (ns:List<NamespacedItem>) = 
     let types = ns |> List.fold (fun types item -> match item with Data (_,v) -> v.outputType::types | _ -> types) [] |> List.distinct
     let print t = sprintf "public class %s{}\n" (t|>mangle_type_suffix)
