@@ -50,23 +50,51 @@ let get_local_id_number :Parser<Premises,NormalizerContext,int> =
     return new_local_id
   }
 
-let rec Normalize_arguments (norid:NormalId) (args:List<ArgId>) (decl:List<DeclType>) 
-  :Parser<Premises,NormalizerContext,_> =
+let data_args_to_normalid (data:FunctionBranch) (decl:List<DeclType>) 
+  :Parser<Premises,NormalizerContext,List<NormalId>> =
   prs{
-    match args with
-    | (id,pos)::[] -> 
+    match decl with
+    | x::[] -> 
+      if data.Return = x 
+      then return List.collect (fun ((id,pos),dec) -> [VarId(id,[dec],pos)]) data.Args
+      else return! fail (NormalizeError "wrong decl.")
+    | _ -> return! fail (NormalizeError "signature for destructor is to long.")
+  }
+
+let normalize_right_premistree (sourceid:NormalId) (arg:ArgId) (decl:List<DeclType>) 
+  (output:PremisFunctionTree):Parser<Premises,NormalizerContext,_> =
+  prs{
+    match output with
+    | RuleParser2.Literal(lit,pos) -> 
+      return! fail (NormalizeError (sprintf "right of premis may not have literals%A" pos))
+    | RuleParser2.RuleBranch(x) ->
+      return! fail (NormalizeError (sprintf "right of premis may not have a rule%A" x.Pos))
+    | RuleParser2.DataBranch(x) ->
+      let id,pos = arg 
       let arg = VarId(id,decl,pos)
       let! int_id = get_local_id_number
-      let dest = TempId(int_id,decl,pos)
-      return ([ApplyCall(norid,arg,dest)]),dest
+      let apply_dest = TempId(int_id,decl,pos)
+      let apply_call = ApplyCall(sourceid,arg,apply_dest)
+      let! list_normal_id = data_args_to_normalid x decl
+      let data_standardid = x.Name,x.CurrentNamespace
+      let destructor = Destructor(apply_dest,data_standardid,list_normal_id)
+      return apply_call::[destructor]
+  }
+
+let rec Normalize_arguments (sourceid:NormalId) (args:List<ArgId>) (decl:List<DeclType>) 
+  (output:PremisFunctionTree) :Parser<Premises,NormalizerContext,List<Premisse>> =
+  prs{
+    match args with
+    | arg::[] -> 
+      return! normalize_right_premistree sourceid arg decl output
     | (id,pos)::xs -> 
       match decl with
       | a::al ->
         let arg = VarId(id,[a],pos)
         let! int_id = get_local_id_number
         let dest = TempId(int_id,al,pos)
-        let! res,end_dest = Normalize_arguments dest xs al
-        return (Apply(norid,arg,dest)::res),end_dest
+        let! res = Normalize_arguments dest xs al output
+        return (Apply(sourceid,arg,dest)::res)
       | [] -> 
         return! fail (NormalizeError "Type aplication shorter then given arguments")
     | [] ->
@@ -74,45 +102,44 @@ let rec Normalize_arguments (norid:NormalId) (args:List<ArgId>) (decl:List<DeclT
 
   }
 
-let normalize_Left_premistree (input:PremisFunctionTree) 
-  :Parser<Premises,NormalizerContext,List<Premisse>*NormalId> =
+let normalize_Left_premistree (input:PremisFunctionTree) (output:PremisFunctionTree)
+  :Parser<Premises,NormalizerContext,List<Premisse>> =
   prs{
     match input with
     | RuleParser2.Literal(lit,pos) -> 
       let! local_id = get_local_id_number
       let normalid = TempId(local_id,[DeclType.Id("int",pos)],pos)
       let res = Literal(lit,normalid)
-      return [res],normalid
+      return [res]
     | RuleParser2.RuleBranch(x) -> 
       let! cons_id = get_local_id_number
       let cons_args,cons_types = 
         List.fold (fun (xs,ys) (x,y) -> ((x::xs),(y::ys))) ([],[]) x.Args
       let construct_id = TempId(cons_id,cons_types@[x.Return],x.Pos)
       let construct = McClosure (FuncId(x.Name,x.CurrentNamespace), construct_id)
-      let! applypremisses,applyres = 
-        Normalize_arguments construct_id cons_args (cons_types@[x.Return])
-      return (construct::applypremisses),applyres
+      let! applypremisses = 
+        Normalize_arguments construct_id cons_args (cons_types@[x.Return]) output
+      return (construct::applypremisses)
     | RuleParser2.DataBranch(x) -> 
       let! cons_id = get_local_id_number
       let cons_args,cons_types = 
         List.fold (fun (xs,ys) (x,y) -> ((x::xs),(y::ys))) ([],[]) x.Args
       let construct_id = TempId(cons_id,cons_types@[x.Return],x.Pos)
       let construct = ConstructorClosure ((x.Name,x.CurrentNamespace), construct_id)
-      let! applypremisses,applyres = 
-        Normalize_arguments construct_id cons_args (cons_types@[x.Return])
-      return (construct::applypremisses),applyres
+      let! applypremisses = 
+        Normalize_arguments construct_id cons_args (cons_types@[x.Return]) output
+      return (construct::applypremisses)
     //| RuleParser2.IdBranch(x) ->
       
   }
 
-let normalize_premis :Parser<Premises,NormalizerContext,_> =
+let normalize_premis :Parser<Premises,NormalizerContext,List<Premisse>> =
   prs{
     let! nextprem = step
     match nextprem with
-    | RuleParser2.Conditional(cond,left,right) ->
-      return ()
     | RuleParser2.Implication(left,right) ->
-      return ()
+      return! normalize_Left_premistree left right
+    //| RuleParser2.Conditional(cond,left,right) ->
   }
 
 let normalize_rules :Parser<RuleDef,NormalizerContext,_> =
