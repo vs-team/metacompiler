@@ -259,7 +259,7 @@ let list_test:fromTypecheckerWithLove =
 
   // length xs -> r
   // -------------------------------
-  // length x::xs -> add^builtin r 0
+  // length x::xs -> add^builtin r 1
   let length_append:rule =
     {
       side_effect=false
@@ -267,7 +267,7 @@ let list_test:fromTypecheckerWithLove =
       premis=[Destructor({source=Tmp(0); destructor=append_id; args=[Named("x");Named("xs")]})
               McClosure({func=Func(length_id); dest=Tmp(1)})
               ApplicationCall({argnr=0;closure=Tmp(1); argument=Named("xs"); dest=Named("r")})
-              Literal({value=I64(0L); dest=Tmp(2)})
+              Literal({value=I64(1L); dest=Tmp(2)})
               DotNetClosure({func={Name="add";Namespace=["Int32";"System"]};dest=Tmp(3)})
               Application({argnr=0;closure=Tmp(3); argument=Named("r"); dest=Tmp(4)})
               ApplicationCall({argnr=1;closure=Tmp(4); argument=Tmp(2); dest=Tmp(5)}) ]
@@ -328,11 +328,18 @@ let get_locals (ps:premisse list) :local_id list =
     | ImpureApplicationCall x 
     | ApplicationCall     x -> [x.closure;x.dest;x.argument] )
 
-let validate (input:fromTypecheckerWithLove) =
+let foldi (f:'int->'state->'element->'state) (s:'state) (lst:seq<'element>) :'state =
+  let fn ((counter:'int),(state:'state)) (element:'element) :'counter*'state = 
+    counter+1,(f counter state element)
+  let _,ret = lst|>Seq.fold fn (0,s)
+  ret 
+
+let validate (input:fromTypecheckerWithLove) :bool =
   let ice () = 
       do System.Console.BackgroundColor <- System.ConsoleColor.Red
       do System.Console.Write "INTERNAL COMPILER ERROR"
       do System.Console.ResetColor()
+  let print_local_id (id:local_id) = match id with Named(x)->x | Tmp(x)->sprintf "temporary(%d)" x
   let print_id (id:Id) = String.concat "^" (id.Name::id.Namespace)
   let check_typemap (id:Id) (rule:rule) :bool =
     let expected = (get_locals rule.premis) @ rule.input |> List.distinct |> List.sort
@@ -342,13 +349,33 @@ let validate (input:fromTypecheckerWithLove) =
       do ice()
       do printf " incorrect typemap in rule %s:\n  expected: %A\n  received: %A\n" (print_id id) expected received
       false
-  input.rules |> Map.fold (fun (success:bool) (id:Id) (rules:rule list)-> 
+  let check_dest_constness (id:Id) (rule:rule) (success:bool):bool =
+      let per_premisse (statementnr:int) (set:Set<local_id>,success:bool) (premisse:premisse) :Set<local_id>*bool =
+        let check (set:Set<local_id>,success:bool) (local:local_id) =
+          if set.Contains(local) then
+            do ice()
+            do printf " %s assigned twice in rule %s, statement %d\n" (print_local_id local) (print_id id) statementnr
+            set,false
+          else set.Add(local),success
+        match premisse with
+        | Literal x               -> check (set,success) x.dest
+        | Conditional _           -> set,success
+        | Destructor x            -> x.args |> Seq.fold check (set,success)
+        | McClosure  x            -> check (set,success) x.dest
+        | DotNetClosure x         -> check (set,success) x.dest
+        | ConstructorClosure x    -> check (set,success) x.dest
+        | Application x           -> check (set,success) x.dest
+        | ApplicationCall x       -> check (set,success) x.dest
+        | ImpureApplicationCall x -> check (set,success) x.dest
+      let _,ret = rule.premis |> foldi per_premisse (Set.empty,success)
+      ret
+  (true,input.rules) ||> Map.fold (fun (success:bool) (id:Id) (rules:rule list)-> 
     if rules.IsEmpty then
       do ice()
       do printf " empty rule: %s\n" (print_id id)
       false
     else
-      input.main::rules |> List.fold (fun (success:bool) (rule:rule) -> if check_typemap id rule then success else false) true ) true
+      (true,input.main::rules) ||> List.fold (fun (success:bool) (rule:rule) -> if check_typemap id rule then (check_dest_constness id rule success) else false))
 
 let failsafe_codegen(input:fromTypecheckerWithLove) :Option<string>=
   if validate input then
