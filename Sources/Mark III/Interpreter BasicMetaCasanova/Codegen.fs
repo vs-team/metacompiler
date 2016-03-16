@@ -1,66 +1,7 @@
 ﻿module Codegen
 open Common
 open CodegenInterface
-
-// mangling ////////////////////////////////////////////////////////////////////
-    
-let genericMangle (name:string) :string =
-  let readables = 
-    Map.ofArray <| Array.zip "!#$%&'*+,-./\\:;<>=?@^_`|~"B [|
-      "bang";"hash";"cash";"perc";"amp";"prime";"star";"plus";"comma";
-      "dash"; "dot";"slash";"back";"colon";"semi";"less";"great";
-      "equal";"quest";"at";"caret";"under";"tick";"pipe";"tilde"|]
-  let mangleChar c =
-    if (c>='A'&&c<='Z') || (c>='a'&&c<='z') || (c>='0'&&c<='9') then
-      sprintf "%c" c
-    else 
-      let lookup = readables |> Map.tryFind (System.Convert.ToByte c)
-      match lookup with
-      | None   ->  failwith <| sprintf "ERROR(codegen): expecting printable ASCII character, got (0x%04X)" (System.Convert.ToUInt16(c))
-      | Some x -> sprintf "_%s" x
-  name |> String.collect mangleChar
-
-let CSharpMangle (name:string) :string =
-  let keywords = Set.ofArray [| "abstract" ; "as" ; "base" ; "bool" ; 
-    "break" ; "byte" ; "case" ; "catch" ; "char" ; "checked" ; "class" ; "const" ;
-    "continue" ; "decimal" ; "default" ; "delegate" ; "do" ; "double" ; "else" ;
-    "enum" ; "event" ; "explicit" ; "extern" ; "false" ; "finally" ; "fixed" ; 
-    "float" ; "for" ; "foreach" ; "goto" ; "if" ; "implicit" ; "in" ; "int" ; 
-    "interface" ; "internal" ; "is" ; "lock" ; "long" ; "namespace" ; "new" ;
-    "null" ; "object" ; "operator" ; "out" ; "override" ; "params" ; "private" ;
-    "protected" ; "public" ; "readonly" ; "ref" ; "return" ; "sbyte" ; "sealed" ;
-    "short" ; "sizeof" ; "stackalloc" ; "static" ; "string" ; "struct" ; 
-    "switch" ; "this" ; "throw" ; "true" ; "try" ; "typeof" ; "uint" ; "ulong" ; 
-    "unchecked" ; "unsafe" ; "ushort" ; "using" ; "virtual" ; "void" ; 
-    "volatile" ; "while" |]
-  let name = genericMangle name
-  if keywords.Contains(name) then sprintf "@%s" name else name 
-
-let rec mangle_type_suffix(t:Type):string=
-  match t with
-  | DotNetType (id) -> id.Namespace@[id.Name] |> Seq.map genericMangle |> String.concat "_ns"
-  | McType     (id) -> id.Namespace@[id.Name] |> Seq.map genericMangle |> String.concat "_ns"
-  | TypeApplication (fn,lst) -> (mangle_type_suffix fn)+"_of"+(lst |> List.map mangle_type_suffix |> String.concat "_t")
-
-let rec remove_namespace_of_type(t:Type):Type=
-  match t with
-  | DotNetType (id) -> DotNetType({id with Namespace=[]})
-  | McType     (id) -> McType({id with Namespace=[]})
-  | TypeApplication (fn,lst) -> TypeApplication((remove_namespace_of_type fn),lst)
-  
-let rec mangle_type(t:Type):string=
-  match t with
-  | DotNetType (id) -> id.Namespace@[id.Name] |> Seq.map CSharpMangle |> String.concat "."
-  | McType     (id) -> id.Namespace@[id.Name] |> Seq.map (fun x->if x="System" then "_System" else CSharpMangle x) |> String.concat "."
-  | TypeApplication (fn,lst) -> (mangle_type fn)+"_of"+(lst|>List.map mangle_type_suffix|>String.concat "_t")
-
-let mangle_local_id n = match n with Named x -> CSharpMangle x | Tmp x -> sprintf "_tmp%d" x 
-let mangle_id (id:Id) = (id.Name::id.Namespace) |> List.rev |> List.map (fun x->if x="System" then "_System" else CSharpMangle x) |> String.concat "."
-let mangle_lambda (id:LambdaId) = sprintf "%s._lambda%d" (id.Namespace|>List.rev|>String.concat ".") id.Name
-let mangle_rule_id(id:rule_id) =
-  match id with 
-  | Lambda x -> mangle_lambda x
-  | Func x -> mangle_id x
+open Mangle
 
 type NamespacedItem = Ns       of string*List<NamespacedItem>
                     | Data     of string*data
@@ -194,127 +135,6 @@ let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :s
     
 // TEST DATA ///////////////////////////////////////////////////////////////////
 
-let test_data:fromTypecheckerWithLove=
-  let int_t:Type   = DotNetType({Namespace=["System"];Name="Int32"})
-  let float_t:Type = DotNetType({Namespace=["System"];Name="Single"})
-  let star_t:Type  = TypeApplication((McType({Namespace=["test";"mc"];Name="star"})),[int_t;float_t])
-  let pipe_t:Type  = TypeApplication((McType({Namespace=["test";"mc"];Name="pipe"})),[int_t;float_t])
-  let comma_id:Id  = {Namespace=["test";"mc"];Name="comma"}
-  let left_id:Id   = {Namespace=["test";"mc"];Name="left"}
-  let right_id:Id  = {Namespace=["test";"mc"];Name="right"}
-  let comma_data:data = 
-    { 
-      args=[int_t; float_t; ];
-      outputType=star_t;
-    }
-  let left_data:data =
-    {
-      args=[int_t;]; 
-      outputType=pipe_t;
-    }
-  let right_data:data =
-    {
-      args=[float_t;]; 
-      outputType=pipe_t;
-    }
-  let datas = [comma_id,comma_data; left_id,left_data; right_id,right_data]
-  let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty;side_effect=true}
-  {rules=Map.empty;lambdas=Map.empty;datas=datas;main=main}
-
-let list_test:fromTypecheckerWithLove =
-  let int_t:Type   = DotNetType({Namespace=["System"];Name="Int32"})
-  let add_t:Type = Arrow(int_t,Arrow(int_t,int_t))
-  let add_id:Id  = {Namespace=["builtin"];Name="add"}
-
-  // data "nil" -> List
-  let list_t:Type  = TypeApplication((McType({Namespace=["mc";"test"];Name="List"})),[int_t])
-  let nil_id:Id    = {Namespace=["test";"mc"];Name="nil"}
-  let nil_data:data =
-    {
-      args=[];
-      outputType=list_t;
-    }
-
-  // data Int -> "::" -> List -> List
-  let append_id:Id = {Namespace=["test";"mc"];Name="::"}
-  let append_data:data =
-    {
-      args=[int_t; list_t];
-      outputType=list_t;
-    }
-  
-  // length nil -> 0
-  let length_t:Type= Arrow (list_t,int_t)
-  let length_id:Id = {Namespace=["test";"mc"];Name="length"}
-  let length_nil:rule =
-    {
-      side_effect=false
-      input=[Tmp(0)]
-      premis=[Destructor({source=Tmp(0); destructor=nil_id; args=[]})
-              Literal   ({value=I64(0L);dest=Tmp(1)}) ]
-      output=Tmp(1)
-      typemap=Map.ofSeq [Tmp(0),list_t
-                         Tmp(1),int_t ]
-    }
-
-  // length xs -> r
-  // -------------------------------
-  // length x::xs -> add^builtin r 0
-  let length_append:rule =
-    {
-      side_effect=false
-      input=[Tmp(0)]
-      premis=[Destructor({source=Tmp(0); destructor=append_id; args=[Named("x");Named("xs")]})
-              McClosure({func=Func(length_id); dest=Tmp(1)})
-              ApplicationCall({argnr=0;closure=Tmp(1); argument=Named("xs"); dest=Named("r")})
-              Literal({value=I64(0L); dest=Tmp(2)})
-              DotNetClosure({func={Name="add";Namespace=["Int32";"System"]};dest=Tmp(3)})
-              Application({argnr=0;closure=Tmp(3); argument=Named("r"); dest=Tmp(4)})
-              ApplicationCall({argnr=1;closure=Tmp(4); argument=Tmp(2); dest=Tmp(5)}) ]
-      output=Tmp(5)
-      typemap=Map.ofSeq [Tmp(0),list_t
-                         Named("x"),int_t
-                         Named("xs"),list_t
-                         Tmp(1),Arrow(list_t,int_t)
-                         Named("r"),int_t
-                         Tmp(2),int_t
-                         Tmp(3),Arrow(int_t,(Arrow(int_t,int_t)))
-                         Tmp(4),Arrow(int_t,int_t)
-                         Tmp(5),int_t ]
-    }
-
-  let datas = [nil_id,nil_data; append_id,append_data]
-  let Funcs = Map.ofSeq <| [length_id,[length_nil;length_append]]
-  let main = 
-    {
-      input=[]
-      output=Tmp(7)
-      premis=[ConstructorClosure({func=nil_id;dest=Named("end")})
-              Literal({value=I64(2L);dest=Named("second")})
-              ConstructorClosure({func=append_id;dest=Tmp(0)})
-              Application({closure=Tmp(0); argnr=0; argument=Named("second"); dest=Tmp(1)})
-              Application({closure=Tmp(1); argnr=1; argument=Named("end"); dest=Tmp(2)})
-              Literal({value=I64(1L);dest=Named("first")})
-              ConstructorClosure({func=append_id;dest=Tmp(3)})
-              Application({closure=Tmp(3); argnr=0; argument=Named("first"); dest=Tmp(4)})
-              Application({closure=Tmp(4); argnr=1; argument=Tmp(2); dest=Tmp(5)})
-              McClosure({func=Func(length_id); dest=Tmp(6)})
-              ApplicationCall({argnr=0; closure=Tmp(6); argument=Tmp(5); dest=Tmp(7)})]
-      typemap=Map.ofSeq [Named("end"),list_t
-                         Named("second"),int_t
-                         Named("first"),int_t
-                         Tmp(0),Arrow(int_t,(Arrow(list_t,list_t)))
-                         Tmp(1),Arrow(list_t,list_t)
-                         Tmp(2),list_t
-                         Tmp(3),Arrow(int_t,(Arrow(list_t,list_t)))
-                         Tmp(4),Arrow(list_t,list_t)
-                         Tmp(5),list_t
-                         Tmp(6),Arrow(list_t,int_t)
-                         Tmp(7),int_t]
-      side_effect=true
-    }
-  {rules=Funcs;datas=datas;lambdas=Map.empty;main=main}
-
 let get_locals (ps:premisse list) :local_id list =
   ps |> List.collect (fun p ->
     match p with
@@ -328,11 +148,18 @@ let get_locals (ps:premisse list) :local_id list =
     | ImpureApplicationCall x 
     | ApplicationCall     x -> [x.closure;x.dest;x.argument] )
 
-let validate (input:fromTypecheckerWithLove) =
+let foldi (f:'int->'state->'element->'state) (s:'state) (lst:seq<'element>) :'state =
+  let fn ((counter:'int),(state:'state)) (element:'element) :'counter*'state = 
+    counter+1,(f counter state element)
+  let _,ret = lst|>Seq.fold fn (0,s)
+  ret 
+
+let validate (input:fromTypecheckerWithLove) :bool =
   let ice () = 
       do System.Console.BackgroundColor <- System.ConsoleColor.Red
       do System.Console.Write "INTERNAL COMPILER ERROR"
       do System.Console.ResetColor()
+  let print_local_id (id:local_id) = match id with Named(x)->x | Tmp(x)->sprintf "temporary(%d)" x
   let print_id (id:Id) = String.concat "^" (id.Name::id.Namespace)
   let check_typemap (id:Id) (rule:rule) :bool =
     let expected = (get_locals rule.premis) @ rule.input |> List.distinct |> List.sort
@@ -342,13 +169,33 @@ let validate (input:fromTypecheckerWithLove) =
       do ice()
       do printf " incorrect typemap in rule %s:\n  expected: %A\n  received: %A\n" (print_id id) expected received
       false
-  input.rules |> Map.fold (fun (success:bool) (id:Id) (rules:rule list)-> 
+  let check_dest_constness (id:Id) (rule:rule) (success:bool):bool =
+      let per_premisse (statementnr:int) (set:Set<local_id>,success:bool) (premisse:premisse) :Set<local_id>*bool =
+        let check (set:Set<local_id>,success:bool) (local:local_id) =
+          if set.Contains(local) then
+            do ice()
+            do printf " %s assigned twice in rule %s, statement %d\n" (print_local_id local) (print_id id) statementnr
+            set,false
+          else set.Add(local),success
+        match premisse with
+        | Literal x               -> check (set,success) x.dest
+        | Conditional _           -> set,success
+        | Destructor x            -> x.args |> Seq.fold check (set,success)
+        | McClosure  x            -> check (set,success) x.dest
+        | DotNetClosure x         -> check (set,success) x.dest
+        | ConstructorClosure x    -> check (set,success) x.dest
+        | Application x           -> check (set,success) x.dest
+        | ApplicationCall x       -> check (set,success) x.dest
+        | ImpureApplicationCall x -> check (set,success) x.dest
+      let _,ret = rule.premis |> foldi per_premisse (Set.empty,success)
+      ret
+  (true,input.rules) ||> Map.fold (fun (success:bool) (id:Id) (rules:rule list)-> 
     if rules.IsEmpty then
       do ice()
       do printf " empty rule: %s\n" (print_id id)
       false
     else
-      input.main::rules |> List.fold (fun (success:bool) (rule:rule) -> if check_typemap id rule then success else false) true ) true
+      (true,input.main::rules) ||> List.fold (fun (success:bool) (rule:rule) -> if check_typemap id rule then (check_dest_constness id rule success) else false))
 
 let failsafe_codegen(input:fromTypecheckerWithLove) :Option<string>=
   if validate input then
