@@ -133,8 +133,6 @@ let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :s
     | Lambda(number,rule)  -> build_func (sprintf "_lambda%d" number) [rule]
   (print_base_types ns)@(ns|>List.map go)|>String.concat "\n"
     
-// TEST DATA ///////////////////////////////////////////////////////////////////
-
 let get_locals (ps:premisse list) :local_id list =
   ps |> List.collect (fun p ->
     match p with
