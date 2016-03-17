@@ -13,8 +13,7 @@ type FunctionBranch =
   {
     Name              : Id
     CurrentNamespace  : Namespace
-    Args              : List<ArgId*DeclType>
-    Return            : DeclType
+    Args              : List<ArgId>
     Pos               : Position
   }
 
@@ -39,7 +38,7 @@ type RuleDef =
   {
     Name              : Id
     CurrentNamespace  : Namespace
-    Input             : List<ArgId*DeclType>
+    Input             : List<ArgId>
     Output            : PremisFunctionTree
     Premises          : List<Premises>
     Pos               : Position
@@ -56,23 +55,18 @@ let token_condition_to_condition (key:Keyword)(pos:Position) :Parser<Token,DeclP
     | _                   -> return! fail (RuleError ("conditional expected, got keyword.",pos))
   }
 
-let arg_to_parser (rightarg:DeclType) :Parser<Token,DeclParseScope,ArgId*DeclType> =
-  prs{ 
-    let! arg,pos = extract_id()
-    return (arg,pos),rightarg
-  }
-
-let argstructure_parser (argstruct:ArgStructure) :Parser<Token,DeclParseScope,_> =
+let argstructure_parser (argstruct:ArgStructure) 
+  :Parser<Token,DeclParseScope,Id*List<Id*Position>*Position> =
   prs{
     match argstruct with
-    | LeftArg(l,r) -> 
+    | LeftArg(_) -> 
       let! left_id,lpos = extract_id()
       let! name,pos    = extract_id()
       let! right_id,rpos = extract_id()
-      return (name,((left_id,lpos),l)::((right_id,pos),r)::[],pos)
+      return (name,((left_id,lpos)::(right_id,rpos)::[]),pos)
     | RightArgs (ls) -> 
-      let! name,pos    = extract_id()
-      let! rightargs = IterateTroughGivenList ls arg_to_parser 
+      let! name,pos = extract_id()
+      let! rightargs = extract_id() |> repeat
       return (name,rightargs,pos)
   }
 
@@ -81,7 +75,7 @@ let decl_to_parser (decl:SymbolDeclaration):Parser<Token,DeclParseScope,Function
     let! name,args,pos = argstructure_parser decl.Args
     if name = decl.Name then 
       return {Name = name ; CurrentNamespace = decl.CurrentNamespace ; 
-              Args = args ; Return = decl.Return ; Pos = pos }
+              Args = args ; Pos = pos }
     else
       return! fail (RuleError (name,pos))
   }
