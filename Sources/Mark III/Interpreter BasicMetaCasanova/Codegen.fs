@@ -3,6 +3,13 @@ open Common
 open CodegenInterface
 open Mangle
 
+let ice () = 
+    do System.Console.BackgroundColor <- System.ConsoleColor.Red
+    do System.Console.Write "INTERNAL COMPILER ERROR"
+    do System.Console.ResetColor()
+
+// TODO: generate dotnet closures
+
 type NamespacedItem = Ns       of string*List<NamespacedItem>
                     | Data     of string*data
                     | Function of string*List<rule>
@@ -49,7 +56,10 @@ let field (n:int) (t:Type) :string =
 let highest_tmp (typemap:Map<local_id,Type>): int =
   typemap |> Map.fold (fun s k _ -> match k with Tmp(x) when x>s -> x | _ -> s) 0
 
-let rec premisse (m:Map<local_id,Type>) (ps:premisse list) (ret:local_id) =
+let get_map (a:local_id) (m:Map<local_id,int>) :int*Map<local_id,int> =
+  match Map.tryFind a m with None -> 0,(Map.add a 1 m) | Some x -> x,(Map.add a (x+1) m)
+ 
+let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse list) (ret:local_id) =
   match ps with 
   | [] -> sprintf "_ret.Add(%s);\n" (mangle_local_id ret)
   | p::ps -> 
@@ -57,12 +67,12 @@ let rec premisse (m:Map<local_id,Type>) (ps:premisse list) (ret:local_id) =
     | Literal x -> sprintf "var %s = %s;\n%s"
                      (mangle_local_id x.dest)
                      (print_literal x.value)
-                     (premisse m ps ret)
+                     (premisse m app ps ret)
     | Conditional x -> sprintf "if(%s %s %s){%s}"
                          (mangle_local_id x.left)
                          (print_predicate x.predicate)
                          (mangle_local_id x.right)
-                         (premisse m ps ret)
+                         (premisse m app ps ret)
     | Destructor x ->
       let new_id  = (Tmp(1+(highest_tmp m)))
       sprintf "var %s = %s as %s;\nif(%s!=null){\n%s%s}\n"
@@ -71,39 +81,43 @@ let rec premisse (m:Map<local_id,Type>) (ps:premisse list) (ret:local_id) =
         (mangle_id       x.destructor)
         (mangle_local_id new_id)
         (x.args|>List.mapi(fun nr arg->sprintf "var %s=%s._arg%d;\n" (mangle_local_id arg) (mangle_local_id new_id) nr)|>String.concat "")
-        (premisse (m|>Map.add new_id (McType(x.destructor))) ps ret)
-    | McClosure x -> sprintf "var %s = new %s();\n%s" 
-                       (mangle_local_id x.dest)
-                       (mangle_rule_id x.func)
-                       (premisse m ps ret)
+        (premisse (m|>Map.add new_id (McType(x.destructor))) app ps ret)
+    | FuncClosure x -> sprintf "var %s = new %s();\n%s" 
+                         (mangle_local_id x.dest)
+                         (mangle_id x.func)
+                         (premisse m (app|>Map.add x.dest 0) ps ret)
     | DotNetClosure x -> sprintf "var %s = new _dotnet.%s();\n%s" 
                            (mangle_local_id x.dest)
                            (mangle_id x.func)
-                           (premisse m ps ret)
+                           (premisse m (app|>Map.add x.dest 0) ps ret)
     | ConstructorClosure x -> sprintf "var %s = new %s();\n%s" 
                                 (mangle_local_id x.dest)
                                 (mangle_id x.func)
-                                (premisse m ps ret)
-    | Application x -> sprintf "var %s = %s; %s.%s=%s;\n%s"
+                                (premisse m (app|>Map.add x.dest 0) ps ret)
+    | Application x -> 
+      let i = match app|>Map.tryFind x.closure with Some(x)->x | None-> failwith (sprintf "Application failed: %s is not a closure." (mangle_local_id x.closure))
+      sprintf "var %s = %s; %s.%s=%s;\n%s"
                          (mangle_local_id  x.dest)
                          (mangle_local_id  x.closure)
                          (mangle_local_id  x.dest)
-                         (sprintf "_arg%d" x.argnr)
+                         (sprintf "_arg%d" i)
                          (mangle_local_id  x.argument)
-                         (premisse m ps ret)
+                         (premisse m (app|>Map.add x.dest (i+1)) ps ret)
     | ImpureApplicationCall x
-    | ApplicationCall x -> sprintf "%s.%s=%s;\nforeach(var %s in %s._run()){\n%s}\n"
-                             (mangle_local_id  x.closure)
-                             (sprintf "_arg%d" x.argnr)
-                             (mangle_local_id  x.argument)
-                             (mangle_local_id  x.dest)
-                             (mangle_local_id  x.closure)
-                             (premisse m ps ret)
+    | ApplicationCall x -> 
+      let i = match app|>Map.tryFind x.closure with Some(x)->x | None-> failwith (sprintf "ApplicationCall failed: %s is not a closure." (mangle_local_id x.closure))
+      sprintf "%s.%s=%s;\nforeach(var %s in %s._run()){\n%s}\n"
+        (mangle_local_id  x.closure)
+        (sprintf "_arg%d" i)
+        (mangle_local_id  x.argument)
+        (mangle_local_id  x.dest)
+        (mangle_local_id  x.closure)
+        (premisse m (app|>Map.add x.dest (i+1)) ps ret)
 
 let print_rule (rule:rule) = 
   sprintf "{\n%s%s}\n"
     (rule.input|>List.mapi (fun i x->sprintf "var %s=_arg%d;\n" (mangle_local_id x) i) |> String.concat "")
-    (premisse rule.typemap rule.premis rule.output)
+    (premisse rule.typemap Map.empty rule.premis rule.output)
 
 let print_rule_bodies (rules:rule list) =
   rules |> List.map print_rule |> String.concat ""
@@ -139,24 +153,21 @@ let get_locals (ps:premisse list) :local_id list =
     | Literal             x -> [x.dest]
     | Conditional         x -> [x.left;x.right]
     | Destructor          x -> x.source::x.args
-    | McClosure           x -> [x.dest]
+    | LambdaClosure       x -> [x.dest]
+    | FuncClosure         x -> [x.dest]
     | DotNetClosure       x -> [x.dest]
     | ConstructorClosure  x -> [x.dest]
     | Application         x
     | ImpureApplicationCall x 
     | ApplicationCall     x -> [x.closure;x.dest;x.argument] )
 
-let foldi (f:'int->'state->'element->'state) (s:'state) (lst:seq<'element>) :'state =
-  let fn ((counter:'int),(state:'state)) (element:'element) :'counter*'state = 
+let foldi (f:int->'state->'element->'state) (s:'state) (lst:seq<'element>) :'state =
+  let fn ((counter:int),(state:'state)) (element:'element) :'counter*'state = 
     counter+1,(f counter state element)
   let _,ret = lst|>Seq.fold fn (0,s)
   ret 
 
 let validate (input:fromTypecheckerWithLove) :bool =
-  let ice () = 
-      do System.Console.BackgroundColor <- System.ConsoleColor.Red
-      do System.Console.Write "INTERNAL COMPILER ERROR"
-      do System.Console.ResetColor()
   let print_local_id (id:local_id) = match id with Named(x)->x | Tmp(x)->sprintf "temporary(%d)" x
   let print_id (id:Id) = String.concat "^" (id.Name::id.Namespace)
   let check_typemap (id:Id) (rule:rule) :bool =
@@ -179,7 +190,8 @@ let validate (input:fromTypecheckerWithLove) :bool =
         | Literal x               -> check (set,success) x.dest
         | Conditional _           -> set,success
         | Destructor x            -> x.args |> Seq.fold check (set,success)
-        | McClosure  x            -> check (set,success) x.dest
+        | FuncClosure  x          -> check (set,success) x.dest
+        | LambdaClosure x         -> check (set,success) x.dest
         | DotNetClosure x         -> check (set,success) x.dest
         | ConstructorClosure x    -> check (set,success) x.dest
         | Application x           -> check (set,success) x.dest
@@ -199,4 +211,5 @@ let failsafe_codegen(input:fromTypecheckerWithLove) :Option<string>=
   if validate input then
     let foo = input |> construct_tree |> print_tree input
     foo+(print_main input.main) |> Some
+
   else None

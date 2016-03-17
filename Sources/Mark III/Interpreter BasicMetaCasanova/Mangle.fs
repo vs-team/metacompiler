@@ -54,8 +54,4 @@ let rec mangle_type(t:Type):string=
 let mangle_local_id n = match n with Named x -> CSharpMangle x | Tmp x -> sprintf "_tmp%d" x 
 let mangle_id (id:Id) = (id.Name::id.Namespace) |> List.rev |> List.map (fun x->if x="System" then "_System" else CSharpMangle x) |> String.concat "."
 let mangle_lambda (id:LambdaId) = sprintf "%s._lambda%d" (id.Namespace|>List.rev|>String.concat ".") id.Name
-let mangle_rule_id(id:rule_id) =
-  match id with 
-  | Lambda x -> mangle_lambda x
-  | Func x -> mangle_id x
 

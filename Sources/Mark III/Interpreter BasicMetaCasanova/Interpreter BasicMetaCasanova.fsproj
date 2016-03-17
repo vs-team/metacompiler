@@ -64,6 +64,7 @@
     <Compile Include="Mangle.fs" />
     <Compile Include="Codegen.fs" />
     <Compile Include="CodegenTest.fs" />
+    <Compile Include="Interpreter.fs" />
     <Compile Include="Pipeline2.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />

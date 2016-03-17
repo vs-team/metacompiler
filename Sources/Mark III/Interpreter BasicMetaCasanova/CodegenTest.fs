@@ -72,12 +72,12 @@ let list_test:fromTypecheckerWithLove =
       side_effect=false
       input=[Tmp(0)]
       premis=[Destructor({source=Tmp(0); destructor=append_id; args=[Named("x");Named("xs")]})
-              McClosure({func=Func(length_id); dest=Tmp(1)})
-              ApplicationCall({argnr=0;closure=Tmp(1); argument=Named("xs"); dest=Named("r")})
+              FuncClosure({func=length_id; dest=Tmp(1)})
+              ApplicationCall({closure=Tmp(1); argument=Named("xs"); dest=Named("r")})
               Literal({value=I64(1L); dest=Tmp(2)})
               DotNetClosure({func={Name="add";Namespace=["Int32";"System"]};dest=Tmp(3)})
-              Application({argnr=0;closure=Tmp(3); argument=Named("r"); dest=Tmp(4)})
-              ApplicationCall({argnr=1;closure=Tmp(4); argument=Tmp(2); dest=Tmp(5)}) ]
+              Application({closure=Tmp(3); argument=Named("r"); dest=Tmp(4)})
+              ApplicationCall({closure=Tmp(4); argument=Tmp(2); dest=Tmp(5)}) ]
       output=Tmp(5)
       typemap=Map.ofSeq [Tmp(0),list_t
                          Named("x"),int_t
@@ -99,15 +99,15 @@ let list_test:fromTypecheckerWithLove =
       premis=[ConstructorClosure({func=nil_id;dest=Named("end")})
               Literal({value=I64(2L);dest=Named("second")})
               ConstructorClosure({func=append_id;dest=Tmp(0)})
-              Application({closure=Tmp(0); argnr=0; argument=Named("second"); dest=Tmp(1)})
-              Application({closure=Tmp(1); argnr=1; argument=Named("end"); dest=Tmp(2)})
+              Application({closure=Tmp(0); argument=Named("second"); dest=Tmp(1)})
+              Application({closure=Tmp(1); argument=Named("end"); dest=Tmp(2)})
               Literal({value=I64(1L);dest=Named("first")})
               Conditional({left=Named("first");predicate=Less;right=Named("second")})
               ConstructorClosure({func=append_id;dest=Tmp(3)})
-              Application({closure=Tmp(3); argnr=0; argument=Named("first"); dest=Tmp(4)})
-              Application({closure=Tmp(4); argnr=1; argument=Tmp(2); dest=Tmp(5)})
-              McClosure({func=Func(length_id); dest=Tmp(6)})
-              ApplicationCall({argnr=0; closure=Tmp(6); argument=Tmp(5); dest=Tmp(7)})]
+              Application({closure=Tmp(3); argument=Named("first"); dest=Tmp(4)})
+              Application({closure=Tmp(4); argument=Tmp(2); dest=Tmp(5)})
+              FuncClosure({func=length_id; dest=Tmp(6)})
+              ApplicationCall({closure=Tmp(6); argument=Tmp(5); dest=Tmp(7)})]
       typemap=Map.ofSeq [Named("end"),list_t
                          Named("second"),int_t
                          Named("first"),int_t

@@ -17,9 +17,6 @@ type lit = I64 of System.Int64
          | String of System.String
          | Bool of System.Boolean
 
-type rule_id = Lambda     of LambdaId
-             | Func       of Id
-
 type local_id = Named of string
               | Tmp   of int
 
@@ -28,7 +25,8 @@ type predicate = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 type premisse = Literal               of Literal
               | Conditional           of Conditional
               | Destructor            of Destructor
-              | McClosure             of McClosure
+              | FuncClosure           of FuncClosure
+              | LambdaClosure         of LambdaClosure
               | DotNetClosure         of DotNetClosure
               | ConstructorClosure    of ConstructorClosure
               | Application           of Application
@@ -37,10 +35,11 @@ type premisse = Literal               of Literal
 and Literal            = {value:lit; dest:local_id}
 and Conditional        = {left:local_id; predicate:predicate; right:local_id}
 and Destructor         = {source:local_id; destructor:Id; args:List<local_id>}
-and McClosure          = {func:rule_id; dest:local_id;}
+and LambdaClosure      = {func:LambdaId;dest:local_id}
+and FuncClosure        = {func:Id;      dest:local_id}
 and DotNetClosure      = {func:Id;      dest:local_id}
 and ConstructorClosure = {func:Id;      dest:local_id}
-and Application        = {closure:local_id; argument:local_id; dest:local_id; argnr:int}
+and Application        = {closure:local_id; argument:local_id; dest:local_id}
 
 type rule = {
   side_effect :bool
