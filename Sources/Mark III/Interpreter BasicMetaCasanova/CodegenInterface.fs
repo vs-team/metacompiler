@@ -25,21 +25,18 @@ type predicate = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 type premisse = Literal               of Literal
               | Conditional           of Conditional
               | Destructor            of Destructor
-              | FuncClosure           of FuncClosure
-              | LambdaClosure         of LambdaClosure
-              | DotNetClosure         of DotNetClosure
-              | ConstructorClosure    of ConstructorClosure
+              | FuncClosure           of closure<Id>
+              | LambdaClosure         of closure<LambdaId>
+              | DotNetClosure         of closure<Id>
+              | ConstructorClosure    of closure<Id>
               | Application           of Application
               | ApplicationCall       of Application
               | ImpureApplicationCall of Application
-and Literal            = {value:lit; dest:local_id}
-and Conditional        = {left:local_id; predicate:predicate; right:local_id}
-and Destructor         = {source:local_id; destructor:Id; args:List<local_id>}
-and LambdaClosure      = {func:LambdaId;dest:local_id}
-and FuncClosure        = {func:Id;      dest:local_id}
-and DotNetClosure      = {func:Id;      dest:local_id}
-and ConstructorClosure = {func:Id;      dest:local_id}
-and Application        = {closure:local_id; argument:local_id; dest:local_id}
+and Literal     = {value:lit; dest:local_id}
+and Conditional = {left:local_id; predicate:predicate; right:local_id}
+and Destructor  = {source:local_id; destructor:Id; args:List<local_id>}
+and closure<'a> = {func:'a;dest:local_id}
+and Application = {closure:local_id; argument:local_id; dest:local_id}
 
 type rule = {
   side_effect :bool
