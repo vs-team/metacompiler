@@ -100,7 +100,7 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     do! check_tokens lex_res
     let! decl_pars_res = parse_tokens lex_res
     let! rule_pars_res = start_rule_parser decl_pars_res
-    let! code_res = start_codegen Codegen.list_test
+    let! code_res = start_codegen CodegenTest.list_test
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res)) 
     return rule_pars_res
     //return (List.collect (fun (x,y,z) -> [x,y]) decl_pars_res)
