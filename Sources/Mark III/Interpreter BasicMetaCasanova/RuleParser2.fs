@@ -7,7 +7,7 @@ open DeclParser2
 open GlobalSyntaxCheck2
 open ExtractFromToken2
 
-type ArgId = Id*Position*int
+type ArgId = Id*Position
 
 type FunctionBranch = 
   {
@@ -56,20 +56,18 @@ let token_condition_to_condition (key:Keyword)(pos:Position) :Parser<Token,DeclP
   }
 
 let argstructure_parser (argstruct:ArgStructure) 
-  :Parser<Token,DeclParseScope,Id*List<Id*Position*int>*Position> =
+  :Parser<Token,DeclParseScope,Id*List<Id*Position>*Position> =
   prs{
     match argstruct with
     | LeftArg(_) -> 
       let! left_id,lpos = extract_id()
       let! name,pos    = extract_id()
       let! right_id,rpos = extract_id()
-      return (name,((left_id,lpos,0)::(right_id,rpos,1)::[]),pos)
+      return (name,((left_id,lpos)::(right_id,rpos)::[]),pos)
     | RightArgs (ls) -> 
       let! name,pos = extract_id()
       let! rightargs = extract_id() |> repeat
-      let listfunc = (fun (ls,i) (id,pos) -> ((id,pos,i)::ls),(i+1))
-      let right,_ = List.fold listfunc ([],0) rightargs
-      return (name,right,pos)
+      return (name,rightargs,pos)
   }
 
 let decl_to_parser (decl:SymbolDeclaration):Parser<Token,DeclParseScope,FunctionBranch> =
