@@ -8,15 +8,17 @@ open DeclParser2
 open OptionMonad
 open GlobalSyntaxCheck2
 open RuleParser2
-
+open RuleNormalizer2
 
 let t = System.Diagnostics.Stopwatch()
 
 let find_correct_path (paths:List<string>)(name:string) :Option<string> =
   let condition = (fun x -> System.IO.File.Exists(x + name + ".mc"))
   opt{
-    let! correct_path = List.tryFind condition paths
-    return sprintf "%s%s.mc" correct_path name
+    let correct_path = List.tryFind condition paths
+    let! found_path =  
+      if_none correct_path (sprintf "could not find file [%s] in given dir's " name)
+    return sprintf "%s%s.mc" found_path name
   }
 
 let read_file (path:string) :Option<List<char>> = 
@@ -85,10 +87,19 @@ let parse_tokens (tokens:List<Id*List<Token>>) : Option<List<Id*DeclParseScope*L
     return! try_unpack_list_of_option list_of_decl_res
   }
 
-let start_rule_parser (ctxt:List<Id*DeclParseScope*List<Token>>) :Option<List<Id*List<RuleDef>*List<SymbolDeclaration>>> =
+let start_rule_parser (ctxt:List<Id*DeclParseScope*List<Token>>) 
+  :Option<List<Id*List<RuleDef>*List<SymbolDeclaration>>> =
   opt{
     return! use_parser_monad (itterate (parse_rule_scope)) (ctxt,[])
   } |> (timer (sprintf "parsing Rules "))
+
+let start_rule_normalizer (ctxt:List<Id*List<RuleDef>*List<SymbolDeclaration>>)
+  :Option<List<Id*List<NormalizedRule>>> = 
+  opt{
+    let ctxt' = List.collect (fun (id,rule,_) -> [id,rule]) ctxt
+    let! res = use_parser_monad (itterate (normalize_rules)) (ctxt',"")
+    return res
+  }
 
 let start_codegen (ctxt:fromTypecheckerWithLove) :Option<_> =
   Codegen.failsafe_codegen ctxt |> (timer (sprintf "Code gen "))
@@ -100,9 +111,10 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     do! check_tokens lex_res
     let! decl_pars_res = parse_tokens lex_res
     let! rule_pars_res = start_rule_parser decl_pars_res
+    let! normalized_rule_res = start_rule_normalizer rule_pars_res
     let! code_res = start_codegen CodegenTest.list_test
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res)) 
-    return rule_pars_res
+    return normalized_rule_res
     //return (List.collect (fun (x,y,z) -> [x,y]) decl_pars_res)
     //return lex_res
   }

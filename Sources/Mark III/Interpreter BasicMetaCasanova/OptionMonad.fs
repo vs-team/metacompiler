@@ -48,3 +48,10 @@ let react_to_parser_error
       printfn "%A" e
       None 
   opt{return! convert}
+
+let if_none (op1:Option<'a>) (st:string) :Option<'a> =
+  match op1 with
+  | Some(x) -> Some (x)
+  | None -> 
+    printfn "%s" st
+    None
