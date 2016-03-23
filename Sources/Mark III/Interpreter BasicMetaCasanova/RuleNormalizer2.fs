@@ -12,7 +12,9 @@ type GlobalId = FuncId of Id*Namespace
 type NormalId = VarId of Id*Position
               | TempId of int*Position
 
-type Premisse = Alias              of NormalId*NormalId
+type AliasType = NormalId*NormalId
+
+type Premisse = Alias              of AliasType
               | Literal            of Literal*NormalId
               | Conditional        of NormalId*Condition*NormalId
               | Destructor         of NormalId*StandardId*List<NormalId>
@@ -126,21 +128,78 @@ let normalize_premis :Parser<Premises,NormalizerContext,List<Premisse>> =
     | RuleParser2.Conditional(cond,left,right) -> return []
   }
 
-let normalize_rules :Parser<RuleDef,NormalizerContext,_> =
+let normalize_rule :Parser<RuleDef,NormalizerContext,NormalizedRule> =
   prs{
-    let! nextrule = step
-    let name = nextrule.Name
-    let currentnamespace = nextrule.CurrentNamespace
-    let! ctxt = getContext
-    let! premises = 
-      UseDifferentSrcAndCtxt normalize_premis nextrule.Premises ctxt
-    let inputs = List.collect (fun x -> [VarId(x)]) nextrule.Input
-    //let output = nextrule.
+    let! next = step
+    let! premises = UseDifferentSrc normalize_premis next.Premises 
+    let inputs = List.collect (fun x -> [VarId(x)]) next.Input
+    let! outputid = UseDifferentSrc get_local_id_number []
+    let outputnormalid = TempId(outputid,next.Pos)
+    let outputmonad = normalize_Left_premistree next.Output outputnormalid
+    let! output = UseDifferentSrc outputmonad []
+    let premises = premises @ output
+    let result = {Name = next.Name ; CurentNamespace = next.CurrentNamespace ;
+                  Input = inputs ; Output = outputnormalid ; Premis = premises ;
+                  Pos = next.Pos}
+    return result
+  }
+
+let rec find_alias (prem:List<Premisse>): List<Premisse>*List<AliasType> =
+  match prem with
+  | x::xs -> 
+    match x with
+    | Alias(ali) -> 
+      let pr,al = (find_alias xs)
+      pr,(ali::al)
+    | ls -> 
+      let pr,al = find_alias prem
+      (x::pr,al)
+  | [] -> [],[]
+
+let rec change_alias_premis (prem:Premisse) ((lalias,ralias):AliasType) =
+  match prem with
+  | Alias(_) -> failwith "Alias sould not be in this list."
+  | Literal(l,r) ->
+    if r = ralias then Literal(l,lalias) else Literal(l,r)
+  | Conditional(l,c,r) ->
+    if l = ralias then Conditional(lalias,c,r)
+    elif r = ralias then Conditional(l,c,lalias)
+    else Conditional(l,c,r)
+  | Destructor(l,s,r) ->
+    let test = List.exists (fun x -> x = ralias) r
+    if l = ralias then Destructor(lalias,s,r)
+    elif test then 
+      let right = List.collect (fun x -> if x = ralias then [lalias] else [x]) r
+      Destructor(l,s,right)
+    else Destructor(l,s,r)
+  | McClosure(g,r) ->
+    if r = ralias then McClosure(g,lalias) else McClosure(g,r)
+  | DotNetClosure(s,r) -> 
+    if r = ralias then DotNetClosure(s,lalias) else DotNetClosure(s,r)  
+  | ConstructorClosure(s,r) ->
+    if r = ralias then ConstructorClosure(s,lalias) else ConstructorClosure(s,r)  
+  | Apply(l,a,r) -> 
+    if l = ralias then Apply(lalias,a,r) 
+    elif r = ralias then Apply(l,a,ralias) 
+    else Apply(l,a,r)
+  | ApplyCall (l,a,r) -> 
+    if l = ralias then ApplyCall(lalias,a,r) 
+    elif r = ralias then ApplyCall(l,a,ralias) 
+    else ApplyCall(l,a,r)
+
+let de_alias_rule :Parser<NormalizedRule,NormalizerContext,_> =
+  prs{
+    let! next = step
+    let prem,alias = find_alias next.Premis
+
     return ()
   }
 
-let normalize_rules_and_data :Parser<Id*List<RuleDef>,Position,_> =
+let normalize_rules :Parser<Id*List<RuleDef>,Id,Id*List<NormalizedRule>> =
   prs{
     let! id,rules = step
-    return ()
+    let rule_normalizer = normalize_rule |> itterate
+    let! res = UseDifferentSrcAndCtxt rule_normalizer rules NormalizerContext.Zero
+    return id,res
   }
+

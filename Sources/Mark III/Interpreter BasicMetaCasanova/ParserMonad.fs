@@ -211,6 +211,12 @@ let updateContext (f:'ctxt->'ctxt) :Parser<'char,'ctxt,Unit> =
     return! nothing
   }
 
+let UseDifferentSrc (p:Parser<'char2,'ctxt,'res>) (char':List<'char2>):Parser<'char,'ctxt,'res> =
+  fun (char,ctxt) ->
+    match p (char',ctxt) with
+    | Done(res,char',ctxt) -> Done(res,char,ctxt)
+    | Error p -> Error p
+
 let UseDifferentCtxt (p:Parser<'char,'ctxt2,'res>) (ctxt':'ctxt2):Parser<'char,'ctxt,'res> =
   fun (char,ctxt) ->
     match p (char,ctxt') with
