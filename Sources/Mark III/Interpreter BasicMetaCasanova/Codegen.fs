@@ -44,8 +44,10 @@ let print_literal lit =
   | I64 i    -> sprintf "%d" i
   | U64 i    -> sprintf "%u" i
   | F64 i    -> sprintf "%f" i
+  | F32 i    -> sprintf "%f" i
   | String s -> sprintf "\"%s\"" s
   | Bool b   -> if b then "true" else "false"
+  | Void     -> "void"
 
 let print_predicate (p:predicate) :string= 
   match p with Less -> "<" | LessEqual -> "<=" | Equal -> "=" | GreaterEqual -> ">=" | Greater -> ">" | NotEqual -> "!="
@@ -58,45 +60,98 @@ let highest_tmp (typemap:Map<local_id,Type>): int =
 
 let get_map (a:local_id) (m:Map<local_id,int>) :int*Map<local_id,int> =
   match Map.tryFind a m with None -> 0,(Map.add a 1 m) | Some x -> x,(Map.add a (x+1) m)
- 
+
+let overloadableOps =
+  [  "+"
+     "-"
+     "!"
+     "~"
+     "++"
+     "--"
+     "true"
+     "false"
+     "*"
+     "/"
+     "%"
+     "&"
+     "|"
+     "^"
+     "<<"
+     ">>"
+     "=="
+     "!="
+     "<"
+     ">"
+     "<="
+     ">="
+     "&&"
+     "||"
+  ] |> Set.ofList
+
 let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse list) (ret:local_id) =
   match ps with 
   | [] -> sprintf "_ret.Add(%s);\n" (mangle_local_id ret)
   | p::ps -> 
     match p with
-    | Literal x -> sprintf "var %s = %s;\n%s"
+    | Literal x -> sprintf "/*LITR*/var %s = %s;\n%s"
                      (mangle_local_id x.dest)
                      (print_literal x.value)
                      (premisse m app ps ret)
-    | Conditional x -> sprintf "if(%s %s %s){%s}"
+    | Conditional x -> sprintf "/*COND*/if(%s %s %s){%s}"
                          (mangle_local_id x.left)
                          (print_predicate x.predicate)
                          (mangle_local_id x.right)
                          (premisse m app ps ret)
     | Destructor x ->
       let new_id  = (Tmp(1+(highest_tmp m)))
-      sprintf "var %s = %s as %s;\nif(%s!=null){\n%s%s}\n"
+      sprintf "/*DTOR*/var %s = %s as %s;\nif(%s!=null){\n%s%s}\n"
         (mangle_local_id new_id)
         (mangle_local_id x.source)
         (mangle_id       x.destructor)
         (mangle_local_id new_id)
         (x.args|>List.mapi(fun nr arg->sprintf "var %s=%s._arg%d;\n" (mangle_local_id arg) (mangle_local_id new_id) nr)|>String.concat "")
         (premisse (m|>Map.add new_id (McType(x.destructor))) app ps ret)
-    | FuncClosure x -> sprintf "var %s = new %s();\n%s" 
+    | ConstructorClosure x
+    | FuncClosure x -> sprintf "/*FUNC*/var %s = new %s();\n%s" 
                          (mangle_local_id x.dest)
                          (mangle_id x.func)
                          (premisse m (app|>Map.add x.dest 0) ps ret)
-    | DotNetClosure x -> sprintf "var %s = new _dotnet.%s();\n%s" 
+    | LambdaClosure x -> sprintf "/*LAMB*/var %s = new %s();\n%s" 
                            (mangle_local_id x.dest)
-                           (mangle_id x.func)
+                           (mangle_lambda x.func)
                            (premisse m (app|>Map.add x.dest 0) ps ret)
-    | ConstructorClosure x -> sprintf "var %s = new %s();\n%s" 
-                                (mangle_local_id x.dest)
-                                (mangle_id x.func)
-                                (premisse m (app|>Map.add x.dest 0) ps ret)
+    | DotNetCall x -> 
+          let s = x.func.Name.Split([|'.'|])
+          let last = s.[s.Length-1]
+          if overloadableOps.Contains(last) then 
+            let args = x.args |> List.rev
+            sprintf "/*NCAL*/var %s = %s %s %s;\n %s"
+              (mangle_local_id x.dest)
+              (match x.args.Length with
+               | 1 -> ""
+               | 2 -> mangle_local_id args.[1])
+              last
+              (mangle_local_id args.[0])
+              (premisse m (app|>Map.add x.dest 0) ps ret)
+          else
+            sprintf "/*NCAL*/var %s = %s(%s);\n%s" 
+              (mangle_local_id x.dest)
+              (mangle_id x.func)
+              (x.args |> List.map mangle_local_id|>String.concat ",")
+              (premisse m (app|>Map.add x.dest 0) ps ret)
+    | DotNetConstructor x -> sprintf "/*NCON*/var %s = new %s(%s);\n%s" 
+                               (mangle_local_id x.dest)
+                               (mangle_id x.func)
+                               (x.args |> List.map mangle_local_id|>String.concat ",")
+                               (premisse m (app|>Map.add x.dest 0) ps ret)
+    | DotNetProperty x -> sprintf "/*NPRO*/var %s = %s.%s;\n%s" 
+                               (mangle_local_id x.dest)
+                               (mangle_id x.container)
+                               (mangle_local_id x.property)
+                               (premisse m (app|>Map.add x.dest 0) ps ret)
     | Application x -> 
       let i = match app|>Map.tryFind x.closure with Some(x)->x | None-> failwith (sprintf "Application failed: %s is not a closure." (mangle_local_id x.closure))
-      sprintf "var %s = %s; %s.%s=%s;\n%s"
+      sprintf "/*APPL*/var %s = %s; %s.%s=%s;\n%s"
                          (mangle_local_id  x.dest)
                          (mangle_local_id  x.closure)
                          (mangle_local_id  x.dest)
@@ -106,7 +161,7 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
     | ImpureApplicationCall x
     | ApplicationCall x -> 
       let i = match app|>Map.tryFind x.closure with Some(x)->x | None-> failwith (sprintf "ApplicationCall failed: %s is not a closure." (mangle_local_id x.closure))
-      sprintf "%s.%s=%s;\nforeach(var %s in %s._run()){\n%s}\n"
+      sprintf "/*CALL*/%s.%s=%s;\nforeach(var %s in %s._run()){\n%s}\n"
         (mangle_local_id  x.closure)
         (sprintf "_arg%d" i)
         (mangle_local_id  x.argument)
@@ -155,7 +210,9 @@ let get_locals (ps:premisse list) :local_id list =
     | Destructor          x -> x.source::x.args
     | LambdaClosure       x -> [x.dest]
     | FuncClosure         x -> [x.dest]
-    | DotNetClosure       x -> [x.dest]
+    | DotNetCall          x -> [x.dest]
+    | DotNetConstructor   x -> [x.dest]
+    | DotNetProperty      x -> [x.dest]
     | ConstructorClosure  x -> [x.dest]
     | Application         x
     | ImpureApplicationCall x 
@@ -171,12 +228,14 @@ let validate (input:fromTypecheckerWithLove) :bool =
   let print_local_id (id:local_id) = match id with Named(x)->x | Tmp(x)->sprintf "temporary(%d)" x
   let print_id (id:Id) = String.concat "^" (id.Name::id.Namespace)
   let check_typemap (id:Id) (rule:rule) :bool =
-    let expected = (get_locals rule.premis) @ rule.input |> List.distinct |> List.sort
+    let expected = (get_locals rule.premis) @ (rule.output::rule.input) |> List.distinct |> List.sort
     let received  = rule.typemap |> Map.toList |> List.map (fun (x,_)->x) |> List.sort
     if expected = received then true
     else 
+      let missing = expected |> List.filter (fun x -> received |> List.exists (fun y->x=y) |> not)
+      let extra   = received |> List.filter (fun x -> expected |> List.exists (fun y->x=y) |> not)
       do ice()
-      do printf " incorrect typemap in rule %s:\n  expected: %A\n  received: %A\n" (print_id id) expected received
+      do printf " incorrect typemap in rule %s:\n  missing %A\n  extra: %A\n" (print_id id) missing extra
       false
   let check_dest_constness (id:Id) (rule:rule) (success:bool):bool =
       let per_premisse (statementnr:int) (set:Set<local_id>,success:bool) (premisse:premisse) :Set<local_id>*bool =
@@ -190,10 +249,12 @@ let validate (input:fromTypecheckerWithLove) :bool =
         | Literal x               -> check (set,success) x.dest
         | Conditional _           -> set,success
         | Destructor x            -> x.args |> Seq.fold check (set,success)
+        | ConstructorClosure x    -> check (set,success) x.dest
         | FuncClosure  x          -> check (set,success) x.dest
         | LambdaClosure x         -> check (set,success) x.dest
-        | DotNetClosure x         -> check (set,success) x.dest
-        | ConstructorClosure x    -> check (set,success) x.dest
+        | DotNetCall x            -> check (set,success) x.dest
+        | DotNetConstructor x     -> check (set,success) x.dest
+        | DotNetProperty x        -> check (set,success) x.dest
         | Application x           -> check (set,success) x.dest
         | ApplicationCall x       -> check (set,success) x.dest
         | ImpureApplicationCall x -> check (set,success) x.dest
