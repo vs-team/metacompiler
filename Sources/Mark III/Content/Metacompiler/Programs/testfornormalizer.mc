@@ -1,10 +1,15 @@
 ﻿Func int -> "add" -> int -> int
 Func int -> "sub" -> int -> int
+Func "test" -> int -> int
 
 x add y -> res
 -----
 x sub y -> res
 
-a sub b -> res2
+
+a -> c
+b -> d
+c sub d -> res2
+res2 -> res3
 -------------
-a add b -> res2
+a add b -> res3
