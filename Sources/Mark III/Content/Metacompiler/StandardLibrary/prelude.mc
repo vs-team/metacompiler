@@ -15,7 +15,7 @@ if True^builtin then f else g -> f
 if False^builtin then f else g -> g
 
 TypeFunc "int" => Number
-int => Number System^Int {
+int => Number Int^System {
   x + y -> add^builtin x y
   x - y -> sub^builtin x y
   identityAdd -> 0
@@ -26,7 +26,7 @@ int => Number System^Int {
 }
 
 TypeFunc "float" => Number
-float => Number System^Float {
+float => Number Float^System {
   x + y -> fadd^builtin x y
   x - y -> fsub^builtin x y
   identityAdd -> 0.0
