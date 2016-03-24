@@ -44,7 +44,7 @@ let print_literal lit =
   | I64 i    -> sprintf "%d" i
   | U64 i    -> sprintf "%u" i
   | F64 i    -> sprintf "%f" i
-  | F32 i    -> sprintf "%f" i
+  | F32 i    -> sprintf "%ff" i
   | String s -> sprintf "\"%s\"" s
   | Bool b   -> if b then "true" else "false"
   | Void     -> "void"
@@ -141,12 +141,12 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
               (premisse m (app|>Map.add x.dest 0) ps ret)
     | DotNetConstructor x -> sprintf "/*NCON*/var %s = new %s(%s);\n%s" 
                                (mangle_local_id x.dest)
-                               (mangle_id x.func)
+                               (mangle_id {x.func with Namespace = x.func.Namespace |> List.rev})
                                (x.args |> List.map mangle_local_id|>String.concat ",")
                                (premisse m (app|>Map.add x.dest 0) ps ret)
     | DotNetProperty x -> sprintf "/*NPRO*/var %s = %s.%s;\n%s" 
                                (mangle_local_id x.dest)
-                               (mangle_id x.container)
+                               (mangle_local_id x.instance)
                                (mangle_local_id x.property)
                                (premisse m (app|>Map.add x.dest 0) ps ret)
     | Application x -> 

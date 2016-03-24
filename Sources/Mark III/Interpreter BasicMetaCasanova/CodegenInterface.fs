@@ -45,7 +45,7 @@ and Destructor  = {source:local_id; destructor:Id; args:List<local_id>}
 and closure<'a> = {func:'a;dest:local_id}
 and Application = {closure:local_id; argument:local_id; dest:local_id}
 and DotNetCall  = {func: Id;args:List<local_id>; dest:local_id}
-and DotNetProperty  = {container: Id; property: local_id; dest:local_id}
+and DotNetProperty  = {instance : local_id; property: local_id; dest:local_id}
 
 type rule = {
   side_effect :bool

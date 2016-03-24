@@ -24,20 +24,24 @@ let ball_func =
     output = Named("out")
     premis = 
       [
+        // b -> ball(position velocity)
+        Destructor(Destructor.Create(Named("b"),ball_id,[Named("position");Named("velocity")]))
+        
         // gety() -> y
-        DotNetProperty({container={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"}; 
+        DotNetProperty({
                         property=Named("Y")
-                        dest=Named("y")})
+                        instance = Named("position")
+                        dest=Named("y")
+                       })
 
         // y >= 0
         Literal({value=F32(0.0f);dest=Named("zero")})
-        Conditional({left=Named("y");predicate=GreaterEqual;right=Named("zero")})
+        Literal({value=F32(500.0f);dest=Named("ground")})
+        Conditional({left=Named("y");predicate=LessEqual;right=Named("ground")})
 
-        // b -> ball(position velocity)
-        Destructor(Destructor.Create(Named("b"),ball_id,[Named("position");Named("velocity")]))
 
         // Vector2(0,9.81)
-        Literal({value=F32(9.81f);dest=Named("g")})
+        Literal({value=F32(98.1f);dest=Named("g")})
         DotNetConstructor({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"}
                            args=[Named("zero");Named("g")]
                            dest=Named("v2")})
@@ -74,6 +78,7 @@ let ball_func =
         Named("out"),ball_t
         Named("y"),float_t
         Named("zero"),float_t
+        Named("ground"),float_t
         Named("velocity"),vec2_t
         Named("position"),vec2_t
         Named("g"),float_t
@@ -94,26 +99,30 @@ let ball_func =
     output = Named("out")
     premis = 
       [
-        // gety() -> y
-        DotNetProperty({container={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"}; 
-                        property=Named("Y")
-                        dest=Named("y")})
-
-        // gety() -> x
-        DotNetProperty({container={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"}; 
-                        property=Named("X")
-                        dest=Named("x")})
-
-        // y >= 0
-        Literal({value=F32(0.0f);dest=Named("zero")})
-        Conditional({left=Named("y");predicate=Less;right=Named("zero")})
-
         // b -> ball(position velocity)
         Destructor(Destructor.Create(Named("b"),ball_id,[Named("position");Named("velocity")]))
+        // gety() -> y
+        DotNetProperty(
+                        {
+                          property=Named("Y")
+                          instance = Named("position")
+                          dest=Named("y")
+                        })
+
+        // gety() -> x
+        DotNetProperty({
+                        property=Named("X")
+                        instance = Named("position")
+                        dest=Named("x")
+                       })
+
+        // y >= 0
+        Literal({value=F32(500.0f);dest=Named("ground")})
+        Conditional({left=Named("y");predicate=Greater;right=Named("ground")})
 
         // Vector2(pos.x,zero)
         DotNetConstructor({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"}
-                           args=[Named("x");Named("zero")]
+                           args=[Named("x");Named("ground")]
                            dest=Named("updatedPosition")})
 
 
@@ -133,7 +142,7 @@ let ball_func =
         Named("out"),ball_t
         Named("y"),float_t
         Named("x"),float_t
-        Named("zero"),float_t
+        Named("ground"),float_t
         Named("velocity"),vec2_t
         Named("position"),vec2_t
         Named("updatedPosition"),vec2_t
@@ -142,6 +151,6 @@ let ball_func =
         next_tmp(),(vec2_t --> ball_t)
       ] |> Map.ofSeq
   } 
-  let Funcs = Map.ofSeq <| [update_id,[update_bounce;update_fall_down]]
+  let Funcs = Map.ofSeq <| [update_id,[update_fall_down;update_bounce]]
   let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty.Add(Tmp(0),float_t);side_effect=true}
   {rules=Funcs;datas=[ball_id,ball_data];lambdas=Map.empty;main=main}
