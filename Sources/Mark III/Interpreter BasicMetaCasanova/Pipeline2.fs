@@ -94,10 +94,9 @@ let start_rule_parser (ctxt:List<Id*DeclParseScope*List<Token>>)
   } |> (timer (sprintf "parsing Rules "))
 
 let start_rule_normalizer (ctxt:List<Id*List<RuleDef>*List<SymbolDeclaration>>)
-  :Option<List<Id*List<NormalizedRule>>> = 
+  :Option<List<Id*List<NormalizedRule>*List<SymbolDeclaration>>> = 
   opt{
-    let ctxt' = List.collect (fun (id,rule,_) -> [id,rule]) ctxt
-    let! res = use_parser_monad (itterate (normalize_rules)) (ctxt',"")
+    let! res = use_parser_monad (itterate (normalize_rules)) (ctxt,"")
     return res
   }
 
@@ -114,7 +113,7 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     let! normalized_rule_res = start_rule_normalizer rule_pars_res
     let! code_res = start_codegen balltest.ball_func
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res)) 
-    return normalized_rule_res
+    return List.collect(fun (x,y,_) -> [(x,y)]) normalized_rule_res
     //return (List.collect (fun (x,y,z) -> [x,y]) decl_pars_res)
     //return lex_res
   }

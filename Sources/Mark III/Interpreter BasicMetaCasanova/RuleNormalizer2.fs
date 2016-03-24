@@ -2,6 +2,7 @@
 
 open Common
 open ParserMonad
+open DeclParser2
 open RuleParser2
 
 type StandardId = Id*Namespace
@@ -195,25 +196,32 @@ let change_alias_premis (prem:Premisse) ((lalias,ralias):AliasType) =
     elif r |= ralias then ApplyCall(l,a,lalias)
     else ApplyCall(l,a,r)
 
+let de_alias_output (output:NormalId) (alias:List<AliasType>) =
+  List.fold (fun ni (l,r) -> if ni |= r then l else ni) output alias
+
 let de_alias_rule :Parser<NormalizedRule,NormalizerContext,_> =
   prs{
     let! next = step
     let prem,alias = find_alias next.Premis
+    let revalias = List.rev alias
     let res = 
       List.collect(fun p -> 
-        [List.fold(fun pr a -> change_alias_premis pr a) p alias]) prem
-    return {next with Premis = res}
+        [List.fold(fun pr a -> change_alias_premis pr a) p revalias]) prem
+    let output = de_alias_output next.Output alias
+    return {next with Output = output ; Premis = res}
   }
 
-let normalize_rules :Parser<Id*List<RuleDef>,Id,Id*List<NormalizedRule>> =
+let normalize_rules 
+  :Parser<Id*List<RuleDef>*List<SymbolDeclaration>,Id
+    ,Id*List<NormalizedRule>*List<SymbolDeclaration>> =
   prs{
-    let! id,rules = step
+    let! id,rules,decl = step
     let rule_normalizer = normalize_rule |> itterate
     let! normalized_rules = 
       UseDifferentSrcAndCtxt rule_normalizer rules NormalizerContext.Zero
     let de_alias = de_alias_rule |> itterate
     let! de_aliased_rules = 
       UseDifferentSrcAndCtxt de_alias normalized_rules NormalizerContext.Zero
-    return id,de_aliased_rules
+    return id,de_aliased_rules,decl
   }
 

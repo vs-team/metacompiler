@@ -1,9 +1,5 @@
 ﻿module RuleTypeChecker2
 
-open Common
+open RuleNormalizer2
+open CodegenInterface
 
-type RuleContext =
-  {
-    TypeMap : List<Id>
-  
-  }
