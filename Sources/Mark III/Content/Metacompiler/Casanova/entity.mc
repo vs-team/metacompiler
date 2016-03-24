@@ -20,7 +20,6 @@ TypeFunc "TupleUpdatable" => Updatable t1 => Updatable t2 => Updatable (t1 * t2)
 TupleUpdatable e1 e2 => Updatable{
   TypeFunc "Cons" => Cons^t1 * Cons^t2
 
-
   update^e1 x dt -> x1
   update^e2 y dt -> x2
   --------------------------
@@ -98,11 +97,12 @@ Entity label field rest => Entity{
 TypeFunc "UpdatableEntity" => Entity => Entity
 UpdatableEntity e => Entity{
 
-  b -> l f r
+  e -> l f r
   update^f Cons^f dt -> f1
   update^r Cons^r dt -> r1
+  Entity label f1 r1 -> res
   -----------------------------------------
-  update (Entity l f r) dt -> Entity label f1 r1
+  update e dt -> res
 
   update Empty dt -> Empty
 }
