@@ -131,7 +131,8 @@ let normalize_premis :Parser<Premises,NormalizerContext,List<Premisse>> =
 let normalize_rule :Parser<RuleDef,NormalizerContext,NormalizedRule> =
   prs{
     let! next = step
-    let! premises = UseDifferentSrc normalize_premis next.Premises 
+    let! premises_list = UseDifferentSrc (normalize_premis |> itterate) next.Premises 
+    let premises = List.concat premises_list
     let inputs = List.collect (fun x -> [VarId(x)]) next.Input
     let! outputid = UseDifferentSrc get_local_id_number []
     let outputnormalid = TempId(outputid,next.Pos)
@@ -152,54 +153,67 @@ let rec find_alias (prem:List<Premisse>): List<Premisse>*List<AliasType> =
       let pr,al = (find_alias xs)
       pr,(ali::al)
     | ls -> 
-      let pr,al = find_alias prem
+      let pr,al = find_alias xs
       (x::pr,al)
   | [] -> [],[]
 
-let rec change_alias_premis (prem:Premisse) ((lalias,ralias):AliasType) =
+let (|=) (a:NormalId) (b:NormalId) =
+  match a with
+  | VarId(ida,posa) ->
+    match b with
+    | VarId(idb,posb) -> ida = idb 
+    | _ -> false
+  | TempId(ida,pos) -> 
+    match b with
+    | TempId(idb,posb) -> ida = idb
+    | _ -> false
+
+let change_alias_premis (prem:Premisse) ((lalias,ralias):AliasType) =
   match prem with
   | Alias(_) -> failwith "Alias sould not be in this list."
   | Literal(l,r) ->
-    if r = ralias then Literal(l,lalias) else Literal(l,r)
+    if r |= ralias then Literal(l,lalias) else Literal(l,r)
   | Conditional(l,c,r) ->
-    if l = ralias then Conditional(lalias,c,r)
-    elif r = ralias then Conditional(l,c,lalias)
+    if l |= ralias then Conditional(lalias,c,r)
+    elif r |= ralias then Conditional(l,c,lalias)
     else Conditional(l,c,r)
   | Destructor(l,s,r) ->
-    let test = List.exists (fun x -> x = ralias) r
-    if l = ralias then Destructor(lalias,s,r)
+    let test = List.exists (fun x -> x |= ralias) r
+    if l |= ralias then Destructor(lalias,s,r)
     elif test then 
-      let right = List.collect (fun x -> if x = ralias then [lalias] else [x]) r
+      let right = List.collect (fun x -> if x |= ralias then [lalias] else [x]) r
       Destructor(l,s,right)
     else Destructor(l,s,r)
-  | McClosure(g,r) ->
-    if r = ralias then McClosure(g,lalias) else McClosure(g,r)
-  | DotNetClosure(s,r) -> 
-    if r = ralias then DotNetClosure(s,lalias) else DotNetClosure(s,r)  
-  | ConstructorClosure(s,r) ->
-    if r = ralias then ConstructorClosure(s,lalias) else ConstructorClosure(s,r)  
+  | McClosure(g,r) -> McClosure(g,r)
+  | DotNetClosure(s,r) -> DotNetClosure(s,r)  
+  | ConstructorClosure(s,r) -> ConstructorClosure(s,r)  
   | Apply(l,a,r) -> 
-    if l = ralias then Apply(lalias,a,r) 
-    elif r = ralias then Apply(l,a,ralias) 
+    if a |= ralias then Apply(l,lalias,r) 
     else Apply(l,a,r)
   | ApplyCall (l,a,r) -> 
-    if l = ralias then ApplyCall(lalias,a,r) 
-    elif r = ralias then ApplyCall(l,a,ralias) 
+    if a |= ralias then ApplyCall(l,lalias,r)
+    elif r |= ralias then ApplyCall(l,a,lalias)
     else ApplyCall(l,a,r)
 
 let de_alias_rule :Parser<NormalizedRule,NormalizerContext,_> =
   prs{
     let! next = step
     let prem,alias = find_alias next.Premis
-
-    return ()
+    let res = 
+      List.collect(fun p -> 
+        [List.fold(fun pr a -> change_alias_premis pr a) p alias]) prem
+    return {next with Premis = res}
   }
 
 let normalize_rules :Parser<Id*List<RuleDef>,Id,Id*List<NormalizedRule>> =
   prs{
     let! id,rules = step
     let rule_normalizer = normalize_rule |> itterate
-    let! res = UseDifferentSrcAndCtxt rule_normalizer rules NormalizerContext.Zero
-    return id,res
+    let! normalized_rules = 
+      UseDifferentSrcAndCtxt rule_normalizer rules NormalizerContext.Zero
+    let de_alias = de_alias_rule |> itterate
+    let! de_aliased_rules = 
+      UseDifferentSrcAndCtxt de_alias normalized_rules NormalizerContext.Zero
+    return id,de_aliased_rules
   }
 
