@@ -86,7 +86,7 @@ TypeFunc "Empty" => EntityField {
 }
 
 TypeFunc "Entity" => String => Updatable => EntityField => EntityField
-Entity label field rest => Entity{
+Entity label field rest => EntityField{
   Cons => (label,field,rest)
   Fields => (field,Fields^rest)
   Field => field
