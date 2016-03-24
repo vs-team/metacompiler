@@ -16,7 +16,7 @@ RuleEntity e r => Updatable {
   update x dt -> update^e(apply^r x dt) dt
 }
 
-TypeFunc "TupleUpdatable" => Updatable t1 => Updatable t2 => Updatable (t1 * t2) 
+TypeFunc "TupleUpdatable" => Updatable t1 => Updatable t2 => Updatable (t1 * t2)
 TupleUpdatable e1 e2 => Updatable{
   TypeFunc "Cons" => Cons^t1 * Cons^t2
 
@@ -29,7 +29,7 @@ TupleUpdatable e1 e2 => Updatable{
 
 TypeFunc "UnionUpdatable" => Updatable t1 => Updatable t2 => Updatable (t1 | t2)
 UnionEntity e1 e2 => Updatable {
-  
+
   TypeFunc "Cons" => Cons^t1 | Cons^t2
 
 
@@ -53,7 +53,7 @@ Entity => Module{
   TypeFunc "Label" => string
   TypeFunc "Rest" => EntityField
 
-  Func "update" -> Cons -> float32^prelude -> Cons
+  Func "update" -> Cons -> float^prelude -> Cons
 
   TypeFunc "FieldType" => String => EntityField => *
   FieldType l r => field^(get l r)
@@ -75,7 +75,7 @@ Entity => Module{
   else
     set l f rest^rs) => res
   -------------------------
-  set l f' rs => res  
+  set l f' rs => res
 }
 
 TypeFunc "Empty" => EntityField {
@@ -97,7 +97,8 @@ Entity label field rest => Entity{
 
 TypeFunc "UpdatableEntity" => Entity => Entity
 UpdatableEntity e => Entity{
-  
+
+  b -> l f r
   update^f Cons^f dt -> f1
   update^r Cons^r dt -> r1
   -----------------------------------------
