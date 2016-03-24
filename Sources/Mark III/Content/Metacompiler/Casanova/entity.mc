@@ -98,9 +98,8 @@ Entity label field rest => Entity{
 TypeFunc "UpdatableEntity" => Entity => Entity
 UpdatableEntity e => Entity{
   
-
-  update^r Cons^r dt -> r1
   update^f Cons^f dt -> f1
+  update^r Cons^r dt -> r1
   -----------------------------------------
   update (Entity l f r) dt -> Entity label f1 r1
 
