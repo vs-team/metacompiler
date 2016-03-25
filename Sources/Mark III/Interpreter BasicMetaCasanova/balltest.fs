@@ -25,7 +25,7 @@ let ball_func =
     premis = 
       [
         // b -> ball(position velocity)
-        Destructor(Destructor.Create(Named("b"),ball_id,[Named("position");Named("velocity")]))
+        Destructor({source=Named("b");destructor=ball_id;args=[Named("position");Named("velocity")]})
         
         // gety() -> y
         DotNetProperty({
@@ -100,7 +100,8 @@ let ball_func =
     premis = 
       [
         // b -> ball(position velocity)
-        Destructor(Destructor.Create(Named("b"),ball_id,[Named("position");Named("velocity")]))
+        Destructor({source=Named("b");destructor=ball_id;args=[Named("position");Named("velocity")]})
+
         // gety() -> y
         DotNetProperty(
                         {
