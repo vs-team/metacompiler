@@ -27,21 +27,18 @@ type predicate = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 type premisse = Literal               of Literal
               | Conditional           of Conditional
               | Destructor            of Destructor
+              | ConstructorClosure    of closure<Id>
               | FuncClosure           of closure<Id>
               | LambdaClosure         of closure<LambdaId>
-              | DotNetCall            of DotNetCall
-              | DotNetConstructor     of DotNetCall
-              | DotNetProperty        of DotNetProperty
-              | ConstructorClosure    of closure<Id>
               | Application           of Application
               | ApplicationCall       of Application
               | ImpureApplicationCall of Application
+              | DotNetCall            of DotNetCall
+              | DotNetConstructor     of DotNetCall
+              | DotNetProperty        of DotNetProperty
 and Literal     = {value:lit; dest:local_id}
 and Conditional = {left:local_id; predicate:predicate; right:local_id}
 and Destructor  = {source:local_id; destructor:Id; args:List<local_id>}
-  with
-    static member Create(s,d,arguments) =
-      { source = s; destructor = d; args = arguments }
 and closure<'a> = {func:'a;dest:local_id}
 and Application = {closure:local_id; argument:local_id; dest:local_id}
 and DotNetCall  = {func: Id;args:List<local_id>; dest:local_id}
@@ -65,7 +62,6 @@ type fromTypecheckerWithLove = {
   lambdas : Map<LambdaId,rule>
   datas   : List<Id*data>
   main    : rule
-
 }
 
 let (-->) t1 t2 =

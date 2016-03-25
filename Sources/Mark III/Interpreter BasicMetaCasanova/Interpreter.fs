@@ -2,46 +2,48 @@
 open CodegenInterface
 open ParserMonad
 
-(*
-type StateMonad<'result,'state> = 'state -> 'result*'state
-let (>>=) (m:StateMonad<'a,'s>) (k:'a->StateMonad<'b,'s>) :StateMonad<'b,'s> =
-  fun state -> let (a,s) = m state in k a s
-let ret (x:'a) :StateMonad<'a,'b> = fun s -> x,s
-
-// look it's a rectangle
-type StateBuilder() =
-  member this.Return(x)=ret x
-  member this.Bind(m,k)=m>>=k
-  member this.ReturnFrom(x)=x
-let st = new StateBuilder()
-*)
-
-(*
-type ctxt = {locals:Map<local_id,Type*Option<obj>>;}
-
-type EvalMonad = Parser<premisse,ctxt,obj*Type>
-
-let eval_literal (lit:lit) :obj =
-  match lit with
-  | I64 x    -> box x
-  | U64 x    -> box x
-  | F64 x    -> box x
-  | String x -> box x
-  | Bool x   -> box x
-
-let eval =
-  prs{
-    let! x = step
-    match x with
-    | Literal x -> 
-      let o = eval_literal x.value
-      let! t = getContext
-      do!  updateContext (fun c->{c with values=c.values.Add(x.dest,(Some(o)))})
-      return o,t
-    | 
-  }
-  *)
-//type label = Option<Id>*int*obj
-
-//let eval_step (stack:label list list) (context:fromTypecheckerWithLove) :label list =
-  
+let rec eval_step (p:premisse)
+              (global_context:fromTypecheckerWithLove)
+              (type_map:Map<local_id,Type>)
+              (symbol_table:Map<local_id,obj>)
+              :List<Map<local_id,obj>> =
+  match p with
+  | Literal x ->
+    let value = match x.value with 
+                | I64 x->box x | U64 x->box x | F64 x->box x 
+                | F32 x->box x | String x->box x | Bool x->box x 
+                | Void->box()
+    [symbol_table.Add(x.dest,value)]
+  | Conditional x ->
+    let l = symbol_table.[x.left]  :?> System.IComparable
+    let r = symbol_table.[x.right] :?> System.IComparable
+    let f = match x.predicate with Less -> (<) | LessEqual->(<=) | Equal -> (=) | GreaterEqual -> (>=) | Greater -> (>) | NotEqual -> (<>)
+    if f l r then [symbol_table] else []
+  | Destructor x ->
+    let id,args = symbol_table.[x.source] :?> Id*List<obj>
+    if x.destructor = id then 
+      let additions = args |> List.zip x.args |> Map.ofList
+      [symbol_table |> Map.fold (fun a k v->a|>Map.add k v) additions]
+    else
+      []
+  | ConstructorClosure x ->
+    let ret = x.func,List.empty
+    [symbol_table.Add(x.dest,(box ret))]
+  | Application x -> // todo: lambdas (use :?)
+    let id,args = symbol_table.[x.closure] :?> Id*List<obj>
+    let res = id,(symbol_table.[x.argument]::args)
+    [symbol_table.Add(x.dest,(box res))]
+  | ApplicationCall x -> // todo: lambdas (use :?)
+    let id,args = symbol_table.[x.closure] :?> Id*List<obj>
+    let filled_args = symbol_table.[x.argument]::args
+    match global_context.datas |> List.tryFind (fun(x,_)->x=id) with
+    | Some(id,data) ->
+      [symbol_table.Add(x.dest,box filled_args)]
+    | None ->
+      global_context.rules.[id] |> List.map (fun rule -> // for each rule
+        ([],rule.premis) ||> List.fold (fun (stabs:List<Map<local_id,obj>>) p -> // for each instruction
+            stabs |> List.map (fun stab -> // for each fork
+              eval_step p global_context rule.typemap stab
+            ) |> List.concat
+          )
+        ) |> List.concat 
