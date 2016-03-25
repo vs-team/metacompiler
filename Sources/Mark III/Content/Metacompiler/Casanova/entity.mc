@@ -45,11 +45,11 @@ IdUpdatable t => Updatable {
 }
 
 TypeFunc "EntityField" => Module
-Entity => Module{
+EntityField => Module{
   TypeFunc "Cons" => *
   TypeFunc "Fields" => *
   TypeFunc "Field" => *
-  TypeFunc "Label" => string
+  TypeFunc "Label" => String
   TypeFunc "Rest" => EntityField
 
   Func "update" -> Cons -> float^prelude -> Cons
@@ -70,7 +70,7 @@ Entity => Module{
   TypeFunc "set" => 'l => 'rs => ft => cons^'rs
 
   (if (l = label^rs) then
-    record l f rs
+    Entity l f rs
   else
     set l f rest^rs) => res
   -------------------------
@@ -85,7 +85,7 @@ TypeFunc "Empty" => EntityField {
   Rest => unit
 }
 
-TypeFunc "Entity" => String => Updatable => EntityField => EntityField
+TypeFunc "Entity" => String => * => EntityField => EntityField
 Entity label field rest => EntityField{
   Cons => (label,field,rest)
   Fields => (field,Fields^rest)
