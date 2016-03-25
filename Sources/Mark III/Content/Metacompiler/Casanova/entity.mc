@@ -95,7 +95,7 @@ Entity label field rest => EntityField{
 }
 
 TypeFunc "UpdatableEntity" => Entity => Entity
-UpdatableEntity e => Entity (Label^e field^e Rest^e) {
+UpdatableEntity e => Entity (Label^e Field^e Rest^e) {
 
   e -> l f r
   update^f Cons^f dt -> f1
