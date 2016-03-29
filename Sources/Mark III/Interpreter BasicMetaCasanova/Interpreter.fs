@@ -78,7 +78,7 @@ let rec eval_step (p:premisse)
     | Some(id,data) ->
       [symbol_table.Add(x.dest,box filled_args)]
     | None ->
-      global_context.rules.[id] |> List.map (fun rule -> // for each rule
+      global_context.funcs.[id] |> List.map (fun rule -> // for each rule
           let results = eval_rule rule global_context filled_args 
           results |> List.map (fun v->symbol_table.Add(x.dest,v))
         )|>List.concat

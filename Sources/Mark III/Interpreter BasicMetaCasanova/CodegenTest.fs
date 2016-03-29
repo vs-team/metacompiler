@@ -26,7 +26,7 @@ let test_data:fromTypecheckerWithLove=
     }
   let datas = [comma_id,comma_data; left_id,left_data; right_id,right_data]
   let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty;side_effect=true}
-  {rules=Map.empty;lambdas=Map.empty;datas=datas;main=main;assemblies=[]}
+  {funcs=Map.empty;lambdas=Map.empty;datas=datas;main=main;assemblies=[]}
 
 let list_test:fromTypecheckerWithLove =
   let int_t:Type   = DotNetType({Namespace=["System"];Name="Int32"})
@@ -118,7 +118,7 @@ let list_test:fromTypecheckerWithLove =
                          Tmp(7),int_t]
       side_effect=true
     }
-  {rules=Funcs;datas=datas;lambdas=Map.empty;main=main;assemblies=[]}
+  {funcs=Funcs;datas=datas;lambdas=Map.empty;main=main;assemblies=[]}
 
 
 

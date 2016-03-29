@@ -154,4 +154,4 @@ let ball_func =
   } 
   let Funcs = Map.ofSeq <| [update_id,[update_fall_down;update_bounce]]
   let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty.Add(Tmp(0),float_t);side_effect=true}
-  {rules=Funcs;datas=[ball_id,ball_data];lambdas=Map.empty;main=main;assemblies=[]}
+  {funcs=Funcs;datas=[ball_id,ball_data];lambdas=Map.empty;main=main;assemblies=[]}

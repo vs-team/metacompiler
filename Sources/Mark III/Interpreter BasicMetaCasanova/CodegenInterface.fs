@@ -62,8 +62,8 @@ type data = {
 }
 
 type fromTypecheckerWithLove = {
-  assemblies : List<List<string>> 
-  rules   : Map<Id,List<rule>>
+  assemblies : List<string> 
+  funcs   : Map<Id,List<rule>>
   lambdas : Map<LambdaId,rule>
   datas   : List<Id*data>
   main    : rule

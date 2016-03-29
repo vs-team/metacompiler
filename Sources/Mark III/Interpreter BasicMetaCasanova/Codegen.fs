@@ -36,7 +36,7 @@ let construct_tree (input:fromTypecheckerWithLove) :List<NamespacedItem> =
                | [],list           -> Ns(n,lambdatree []   (ns,v))::list
   let go input output state = input |> Seq.map (fun (n,d)->(List.rev n.Namespace),(n.Name,d)) |> Seq.fold output state
   [] |> go (Map.toSeq input.lambdas) lambdatree 
-     |> go (Map.toSeq input.rules) functree 
+     |> go (Map.toSeq input.funcs) functree 
      |> go input.datas datatree
 
 let print_literal lit =
@@ -100,7 +100,7 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
                      (mangle_local_id x.dest)
                      (print_literal x.value)
                      (premisse m app ps ret)
-    | Conditional x -> sprintf "/*COND*/if(%s %s %s){%s}"
+    | Conditional x -> sprintf "/*COND*/if(%s %s %s){\n%s}"
                          (mangle_local_id x.left)
                          (print_predicate x.predicate)
                          (mangle_local_id x.right)
@@ -126,7 +126,7 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
     | DotNetStaticCall x -> 
           if overloadableOps.ContainsKey(x.func.Name) then 
             let args = x.args |> List.rev
-            sprintf "/*NCAL*/var %s = %s %s %s;\n %s"
+            sprintf "/*NSCA*/var %s = %s %s %s;\n%s"
               (mangle_local_id x.dest)
               (match x.args.Length with
                | 1 -> ""
@@ -135,7 +135,7 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
               (mangle_local_id args.[0])
               (premisse m (app|>Map.add x.dest 0) ps ret)
           else
-            sprintf "/*NCAL*/var %s = %s(%s);\n%s" 
+            sprintf "/*NSCA*/var %s = %s(%s);\n%s" 
               (mangle_local_id x.dest)
               (x.func.Namespace@[x.func.Name]|>String.concat ".")
               (x.args |> List.map mangle_local_id|>String.concat ",")
@@ -263,7 +263,7 @@ let validate (input:fromTypecheckerWithLove) :bool =
         | ImpureApplicationCall x -> check (set,success) x.dest
       let _,ret = rule.premis |> foldi per_premisse (Set.empty,success)
       ret
-  (true,input.rules) ||> Map.fold (fun (success:bool) (id:Id) (rules:rule list)-> 
+  (true,input.funcs) ||> Map.fold (fun (success:bool) (id:Id) (rules:rule list)-> 
     if rules.IsEmpty then
       do ice()
       do printf " empty rule: %s\n" (print_id id)
