@@ -36,15 +36,17 @@ type premisse = Literal               of Literal
               | ApplicationCall       of Application
               | ImpureApplicationCall of Application
               | DotNetCall            of DotNetCall
-              | DotNetConstructor     of DotNetCall
+              | DotNetStaticCall      of DotNetStaticCall
+              | DotNetConstructor     of DotNetStaticCall
               | DotNetProperty        of DotNetProperty
 and Literal     = {value:lit; dest:local_id}
 and Conditional = {left:local_id; predicate:predicate; right:local_id}
 and Destructor  = {source:local_id; destructor:Id; args:List<local_id>}
 and closure<'a> = {func:'a;dest:local_id}
 and Application = {closure:local_id; argument:local_id; dest:local_id}
-and DotNetCall  = {func: Id;args:List<local_id>; dest:local_id}
-and DotNetProperty  = {instance : local_id; property: local_id; dest:local_id}
+and DotNetStaticCall = {func: Id; args:List<local_id>; dest:local_id}
+and DotNetCall       = {instance: local_id; func: string; args:List<local_id>; dest:local_id}
+and DotNetProperty   = {instance: local_id; property: string; dest:local_id}
 
 type rule = {
   side_effect :bool
@@ -60,7 +62,8 @@ type data = {
 }
 
 type fromTypecheckerWithLove = {
-  rules   : Map<Id,List<rule>> // this is actually funcs
+  assemblies : List<List<string>> 
+  rules   : Map<Id,List<rule>>
   lambdas : Map<LambdaId,rule>
   datas   : List<Id*data>
   main    : rule

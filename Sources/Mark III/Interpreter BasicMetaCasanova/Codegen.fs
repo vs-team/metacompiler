@@ -122,7 +122,7 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
                            (mangle_local_id x.dest)
                            (mangle_lambda x.func)
                            (premisse m (app|>Map.add x.dest 0) ps ret)
-    | DotNetCall x -> 
+    | DotNetStaticCall x -> 
           let s = x.func.Name.Split([|'.'|])
           let last = s.[s.Length-1]
           if overloadableOps.Contains(last) then 
@@ -149,7 +149,7 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
     | DotNetProperty x -> sprintf "/*NPRO*/var %s = %s.%s;\n%s" 
                                (mangle_local_id x.dest)
                                (mangle_local_id x.instance)
-                               (mangle_local_id x.property)
+                               x.property
                                (premisse m (app|>Map.add x.dest 0) ps ret)
     | Application x -> 
       let i = match app|>Map.tryFind x.closure with Some(x)->x | None-> failwith (sprintf "Application failed: %s is not a closure." (mangle_local_id x.closure))
@@ -213,6 +213,7 @@ let get_locals (ps:premisse list) :local_id list =
     | LambdaClosure       x -> [x.dest]
     | FuncClosure         x -> [x.dest]
     | DotNetCall          x -> [x.dest]
+    | DotNetStaticCall    x -> [x.dest]
     | DotNetConstructor   x -> [x.dest]
     | DotNetProperty      x -> [x.dest]
     | ConstructorClosure  x -> [x.dest]
@@ -255,6 +256,7 @@ let validate (input:fromTypecheckerWithLove) :bool =
         | FuncClosure  x          -> check (set,success) x.dest
         | LambdaClosure x         -> check (set,success) x.dest
         | DotNetCall x            -> check (set,success) x.dest
+        | DotNetStaticCall x      -> check (set,success) x.dest
         | DotNetConstructor x     -> check (set,success) x.dest
         | DotNetProperty x        -> check (set,success) x.dest
         | Application x           -> check (set,success) x.dest

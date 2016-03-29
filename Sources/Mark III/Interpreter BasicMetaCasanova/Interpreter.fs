@@ -16,14 +16,16 @@ let print_premisse (p:premisse) :string =
   | LambdaClosure      x -> sprintf "LAMB %s -> %s" (print_lamb x.func) (print_loc x.dest)
   | Application        x -> sprintf "APPL %s %s -> %s" (print_loc x.closure) (print_loc x.argument) (print_loc x.dest)
   | ApplicationCall    x -> sprintf "CALL %s %s -> %s" (print_loc x.closure) (print_loc x.argument) (print_loc x.dest)
-  | DotNetCall         x -> sprintf "NCAL %s(%s) -> %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
+  | DotNetStaticCall   x -> sprintf "NSCA %s(%s) -> %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
   | DotNetConstructor  x -> sprintf "NCON %s(%s) -> %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
-  | DotNetProperty     x -> sprintf "NPRO %s.%s -> %s" (print_loc x.instance) (print_loc x.property) (print_loc x.dest)
+  | DotNetProperty     x -> sprintf "NPRO %s.%s -> %s" (print_loc x.instance) x.property (print_loc x.dest)
 
-let callNonBuiltin (x:DotNetCall):obj =
-    let t = System.Type.GetType(x.func.Namespace|>String.concat ".")
-    //let res = t.InvokeMember(x.func.Name,System.Reflection.BindingFlags.Default,System.Type.DefaultBinder,
-    box 1
+let staticCallNonBuiltin (x:DotNetStaticCall) (symbol_table:Map<local_id,obj>) :obj =
+  let t = System.Type.GetType(x.func.Namespace|>String.concat ".")
+  let args = x.args |> List.map (fun a->symbol_table.[a]) |> List.toArray
+  let f = t.GetMethod(x.func.Name,System.Reflection.BindingFlags.Public|||System.Reflection.BindingFlags.Static)
+  f.Invoke(null,args)
+  //let res = t.InvokeMember(x.func.Name,System.Reflection.BindingFlags.Default,System.Type.DefaultBinder,
 
 let rec eval_step (p:premisse)
                   (global_context:fromTypecheckerWithLove)
@@ -38,10 +40,10 @@ let rec eval_step (p:premisse)
       do printf "%A\n" o
       ()
     )
+  *)
   do System.Console.ForegroundColor <- System.ConsoleColor.Yellow
   do printf "%s\n" (print_premisse p)
   do System.Console.ResetColor()
-  *)
   match p with
   | Literal x ->
     let value = match x.value with 
@@ -80,27 +82,28 @@ let rec eval_step (p:premisse)
           let results = eval_rule rule global_context filled_args 
           results |> List.map (fun v->symbol_table.Add(x.dest,v))
         )|>List.concat
-  | DotNetCall x ->
-    let o = 
+  | DotNetStaticCall x ->
+    let ret:obj = 
       match x.func.Namespace with
       | ["System";"Int32"] when x.args.Length=2 ->
         let l = symbol_table.[x.args.[0]] :?> System.Int32
         let r = symbol_table.[x.args.[1]] :?> System.Int32
-        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->callNonBuiltin x
+        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table
       | ["System";"Int64"] when x.args.Length=2 ->
         let l = symbol_table.[x.args.[0]] :?> System.Int64
         let r = symbol_table.[x.args.[1]] :?> System.Int64
-        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->callNonBuiltin x
+        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table
       | ["System";"Single"] when x.args.Length=2 ->
         let l = symbol_table.[x.args.[0]] :?> System.Single
         let r = symbol_table.[x.args.[1]] :?> System.Single
-        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->callNonBuiltin x
+        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table
       | ["System";"Double"] when x.args.Length=2 ->
         let l = symbol_table.[x.args.[0]] :?> System.Double
         let r = symbol_table.[x.args.[1]] :?> System.Double
-        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->callNonBuiltin x
-      | _ -> callNonBuiltin x
-    [symbol_table.Add(x.dest,o)]
+        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table
+      | _ -> staticCallNonBuiltin x symbol_table
+    [symbol_table.Add(x.dest,ret)]
+   
 
 and eval_rule (rule:rule)
               (global_context:fromTypecheckerWithLove)

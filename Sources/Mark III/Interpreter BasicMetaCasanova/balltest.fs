@@ -29,7 +29,7 @@ let ball_func =
         
         // gety() -> y
         DotNetProperty({
-                        property=Named("Y")
+                        property="Y"
                         instance = Named("position")
                         dest=Named("y")
                        })
@@ -47,24 +47,24 @@ let ball_func =
                            dest=Named("v2")})
 
         // dotproduct
-        DotNetCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2.*"}
-                    args=[Named("v2");Named("dt")]
-                    dest=Named("outerProduct")})
+        DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Multiply"}
+                          args=[Named("v2");Named("dt")]
+                          dest=Named("outerProduct")})
 
         // sum
-        DotNetCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2.+"}
-                    args=[Named("velocity");Named("outerProduct")]
-                    dest=Named("updatedVelocity")})
+        DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Addition"}
+                          args=[Named("velocity");Named("outerProduct")]
+                          dest=Named("updatedVelocity")})
 
        // dotproduct
-        DotNetCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2.*"}
-                    args=[Named("updatedVelocity");Named("dt")]
-                    dest=Named("outerProduct2")})
+        DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="op_Multiply"}
+                          args=[Named("updatedVelocity");Named("dt")]
+                          dest=Named("outerProduct2")})
 
         // sum
-        DotNetCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2.+"}
-                    args=[Named("position");Named("outerProduct2")]
-                    dest=Named("updatedPosition")})
+        DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="op_Addition"}
+                          args=[Named("position");Named("outerProduct2")]
+                          dest=Named("updatedPosition")})
 
         // Ball (updated_position, updated_velocity)
         ConstructorClosure({func=ball_id;dest=next_tmp()})
@@ -105,14 +105,14 @@ let ball_func =
         // gety() -> y
         DotNetProperty(
                         {
-                          property=Named("Y")
+                          property="Y"
                           instance = Named("position")
                           dest=Named("y")
                         })
 
         // gety() -> x
         DotNetProperty({
-                        property=Named("X")
+                        property="X"
                         instance = Named("position")
                         dest=Named("x")
                        })
@@ -127,9 +127,9 @@ let ball_func =
                            dest=Named("updatedPosition")})
 
 
-        DotNetCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2.-"}
-                    args=[Named("velocity")]
-                    dest=Named("updatedVelocity")})
+        DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Subtraction"}
+                          args=[Named("velocity")]
+                          dest=Named("updatedVelocity")})
 
         // Ball (updated_position, updated_velocity)
         ConstructorClosure({func=ball_id;dest=next_tmp()})
@@ -154,4 +154,4 @@ let ball_func =
   } 
   let Funcs = Map.ofSeq <| [update_id,[update_fall_down;update_bounce]]
   let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty.Add(Tmp(0),float_t);side_effect=true}
-  {rules=Funcs;datas=[ball_id,ball_data];lambdas=Map.empty;main=main}
+  {rules=Funcs;datas=[ball_id,ball_data];lambdas=Map.empty;main=main;assemblies=[]}

@@ -26,7 +26,7 @@ let test_data:fromTypecheckerWithLove=
     }
   let datas = [comma_id,comma_data; left_id,left_data; right_id,right_data]
   let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty;side_effect=true}
-  {rules=Map.empty;lambdas=Map.empty;datas=datas;main=main}
+  {rules=Map.empty;lambdas=Map.empty;datas=datas;main=main;assemblies=[]}
 
 let list_test:fromTypecheckerWithLove =
   let int_t:Type   = DotNetType({Namespace=["System"];Name="Int32"})
@@ -75,7 +75,7 @@ let list_test:fromTypecheckerWithLove =
               FuncClosure({func=length_id; dest=Tmp(1)})
               ApplicationCall({closure=Tmp(1); argument=Named("xs"); dest=Named("r")})
               Literal({value=I32(1); dest=Tmp(2)})
-              DotNetCall({func={Name="+";Namespace=["System";"Int32"]};args=[Named("r");Tmp(2)];dest=Tmp(3)})
+              DotNetStaticCall({func={Name="+";Namespace=["System";"Int32"]};args=[Named("r");Tmp(2)];dest=Tmp(3)})
             ]
       output=Tmp(3)
       typemap=Map.ofSeq [Tmp(0),list_t
@@ -118,7 +118,7 @@ let list_test:fromTypecheckerWithLove =
                          Tmp(7),int_t]
       side_effect=true
     }
-  {rules=Funcs;datas=datas;lambdas=Map.empty;main=main}
+  {rules=Funcs;datas=datas;lambdas=Map.empty;main=main;assemblies=[]}
 
 
 
