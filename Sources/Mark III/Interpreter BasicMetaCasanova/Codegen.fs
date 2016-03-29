@@ -63,32 +63,33 @@ let highest_tmp (typemap:Map<local_id,Type>): int =
 let get_map (a:local_id) (m:Map<local_id,int>) :int*Map<local_id,int> =
   match Map.tryFind a m with None -> 0,(Map.add a 1 m) | Some x -> x,(Map.add a (x+1) m)
 
-let overloadableOps =
-  [  "+"
-     "-"
-     "!"
-     "~"
-     "++"
-     "--"
-     "true"
-     "false"
-     "*"
-     "/"
-     "%"
-     "&"
-     "|"
-     "^"
-     "<<"
-     ">>"
-     "=="
-     "!="
-     "<"
-     ">"
-     "<="
-     ">="
-     "&&"
-     "||"
-  ] |> Set.ofList
+let overloadableOps:Map<string,string> =
+  [ 
+    "op_Equality","=="
+    "op_Inequality","!="
+    "op_GreaterThan",">"
+    "op_LessThan","<"
+    "op_GreaterThanOrEqual",">="
+    "op_LessThanOrEqual","<="
+    "op_BitwiseAnd","&"
+    "op_BitwiseOr","|"
+    "op_Addition","+"
+    "op_Subtraction","-"
+    "op_Division","/"
+    "op_Modulus","%"
+    "op_Multiply","*"
+    "op_LeftShift","<<"
+    "op_RightShift",">>"
+    "op_ExclusiveOr","^"
+    "op_UnaryNegation","-"
+    "op_UnaryPlus","+"
+    "op_LogicalNot","!"
+    "op_OnesComplement","~"
+    "op_False","false"
+    "op_True","true"
+    "op_Increment","++"
+    "op_Decrement","--"
+  ] |> Map.ofList
 
 let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse list) (ret:local_id) =
   match ps with 
@@ -123,27 +124,25 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
                            (mangle_lambda x.func)
                            (premisse m (app|>Map.add x.dest 0) ps ret)
     | DotNetStaticCall x -> 
-          let s = x.func.Name.Split([|'.'|])
-          let last = s.[s.Length-1]
-          if overloadableOps.Contains(last) then 
+          if overloadableOps.ContainsKey(x.func.Name) then 
             let args = x.args |> List.rev
             sprintf "/*NCAL*/var %s = %s %s %s;\n %s"
               (mangle_local_id x.dest)
               (match x.args.Length with
                | 1 -> ""
                | 2 -> mangle_local_id args.[1])
-              last
+              overloadableOps.[x.func.Name]
               (mangle_local_id args.[0])
               (premisse m (app|>Map.add x.dest 0) ps ret)
           else
             sprintf "/*NCAL*/var %s = %s(%s);\n%s" 
               (mangle_local_id x.dest)
-              (mangle_id x.func)
+              (x.func.Namespace@[x.func.Name]|>String.concat ".")
               (x.args |> List.map mangle_local_id|>String.concat ",")
               (premisse m (app|>Map.add x.dest 0) ps ret)
     | DotNetConstructor x -> sprintf "/*NCON*/var %s = new %s(%s);\n%s" 
                                (mangle_local_id x.dest)
-                               (mangle_id {x.func with Namespace = x.func.Namespace |> List.rev})
+                               (x.func.Namespace@[x.func.Name]|>String.concat ".")
                                (x.args |> List.map mangle_local_id|>String.concat ",")
                                (premisse m (app|>Map.add x.dest 0) ps ret)
     | DotNetProperty x -> sprintf "/*NPRO*/var %s = %s.%s;\n%s" 
