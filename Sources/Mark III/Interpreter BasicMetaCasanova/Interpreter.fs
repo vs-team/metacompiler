@@ -20,6 +20,11 @@ let print_premisse (p:premisse) :string =
   | DotNetConstructor  x -> sprintf "NCON %s(%s) -> %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
   | DotNetProperty     x -> sprintf "NPRO %s.%s -> %s" (print_loc x.instance) (print_loc x.property) (print_loc x.dest)
 
+let callNonBuiltin (x:DotNetCall):obj =
+    let t = System.Type.GetType(x.func.Namespace|>String.concat ".")
+    //let res = t.InvokeMember(x.func.Name,System.Reflection.BindingFlags.Default,System.Type.DefaultBinder,
+    box 1
+
 let rec eval_step (p:premisse)
                   (global_context:fromTypecheckerWithLove)
                   (type_map:Map<local_id,Type>)
@@ -41,8 +46,8 @@ let rec eval_step (p:premisse)
   | Literal x ->
     let value = match x.value with 
                 | I64 x->box x | U64 x->box x | F64 x->box x 
-                | F32 x->box x | String x->box x | Bool x->box x 
-                | Void->box()
+                | I32 x->box x | U32 x->box x | F32 x->box x
+                | String x->box x | Bool x->box x | Void->box()
     [symbol_table.Add(x.dest,value)]
   | Conditional x ->
     let l = symbol_table.[x.left]  :?> System.IComparable
@@ -76,14 +81,27 @@ let rec eval_step (p:premisse)
           results |> List.map (fun v->symbol_table.Add(x.dest,v))
         )|>List.concat
   | DotNetCall x ->
-    let l = symbol_table.[x.args.[0]] :?> System.Int64
-    let r = symbol_table.[x.args.[1]] :?> System.Int64
-    [symbol_table.Add(x.dest,l+r)]
-    (*
-    let t = System.Type.GetType(x.func.Namespace|>String.concat ".")
-    let res = t.InvokeMember(x.func.Name,System.Reflection.BindingFlags.Default,System.Type.DefaultBinder,
-    [symbol_table.Add(x.dest,res)]
-    *)
+    let o = 
+      match x.func.Namespace with
+      | ["System";"Int32"] when x.args.Length=2 ->
+        let l = symbol_table.[x.args.[0]] :?> System.Int32
+        let r = symbol_table.[x.args.[1]] :?> System.Int32
+        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->callNonBuiltin x
+      | ["System";"Int64"] when x.args.Length=2 ->
+        let l = symbol_table.[x.args.[0]] :?> System.Int64
+        let r = symbol_table.[x.args.[1]] :?> System.Int64
+        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->callNonBuiltin x
+      | ["System";"Single"] when x.args.Length=2 ->
+        let l = symbol_table.[x.args.[0]] :?> System.Single
+        let r = symbol_table.[x.args.[1]] :?> System.Single
+        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->callNonBuiltin x
+      | ["System";"Double"] when x.args.Length=2 ->
+        let l = symbol_table.[x.args.[0]] :?> System.Double
+        let r = symbol_table.[x.args.[1]] :?> System.Double
+        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->callNonBuiltin x
+      | _ -> callNonBuiltin x
+    [symbol_table.Add(x.dest,o)]
+
 and eval_rule (rule:rule)
               (global_context:fromTypecheckerWithLove)
               (args:List<obj>) :List<obj> =

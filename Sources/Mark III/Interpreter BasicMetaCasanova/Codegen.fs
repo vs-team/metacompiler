@@ -41,8 +41,10 @@ let construct_tree (input:fromTypecheckerWithLove) :List<NamespacedItem> =
 
 let print_literal lit =
   match lit with
-  | I64 i    -> sprintf "%d" i
-  | U64 i    -> sprintf "%u" i
+  | I64 i    -> sprintf "%dL"  i
+  | U64 i    -> sprintf "%uUL" i
+  | I32 i    -> sprintf "%u" i
+  | U32 i    -> sprintf "%uU" i
   | F64 i    -> sprintf "%f" i
   | F32 i    -> sprintf "%ff" i
   | String s -> sprintf "\"%s\"" s

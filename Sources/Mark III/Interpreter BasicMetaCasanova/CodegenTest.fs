@@ -58,7 +58,7 @@ let list_test:fromTypecheckerWithLove =
       side_effect=false
       input=[Tmp(0)]
       premis=[Destructor({source=Tmp(0); destructor=nil_id; args=[]})
-              Literal   ({value=I64(0L);dest=Tmp(1)}) ]
+              Literal   ({value=I32(0);dest=Tmp(1)}) ]
       output=Tmp(1)
       typemap=Map.ofSeq [Tmp(0),list_t
                          Tmp(1),int_t ]
@@ -74,7 +74,7 @@ let list_test:fromTypecheckerWithLove =
       premis=[Destructor({source=Tmp(0); destructor=append_id; args=[Named("x");Named("xs")]})
               FuncClosure({func=length_id; dest=Tmp(1)})
               ApplicationCall({closure=Tmp(1); argument=Named("xs"); dest=Named("r")})
-              Literal({value=I64(1L); dest=Tmp(2)})
+              Literal({value=I32(1); dest=Tmp(2)})
               DotNetCall({func={Name="+";Namespace=["System";"Int32"]};args=[Named("r");Tmp(2)];dest=Tmp(3)})
             ]
       output=Tmp(3)
@@ -94,11 +94,11 @@ let list_test:fromTypecheckerWithLove =
       input=[]
       output=Tmp(7)
       premis=[ConstructorClosure({func=nil_id;dest=Named("end")})
-              Literal({value=I64(2L);dest=Named("second")})
+              Literal({value=I32(2);dest=Named("second")})
               ConstructorClosure({func=append_id;dest=Tmp(0)})
               Application({closure=Tmp(0); argument=Named("second"); dest=Tmp(1)})
               Application({closure=Tmp(1); argument=Named("end"); dest=Tmp(2)})
-              Literal({value=I64(1L);dest=Named("first")})
+              Literal({value=I32(1);dest=Named("first")})
               Conditional({left=Named("first");predicate=Less;right=Named("second")})
               ConstructorClosure({func=append_id;dest=Tmp(3)})
               Application({closure=Tmp(3); argument=Named("first"); dest=Tmp(4)})
