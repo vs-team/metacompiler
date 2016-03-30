@@ -34,7 +34,8 @@ let staticCallNonBuiltin (x:DotNetStaticCall) (symbol_table:Map<local_id,obj>) (
   match ts with
   | [t] -> 
     let args = x.args |> List.map (fun a->symbol_table.[a]) |> List.toArray
-    let f = t.GetMethod(x.func.Name,System.Reflection.BindingFlags.Public|||System.Reflection.BindingFlags.Static)
+    let argtypes = System.Type.GetTypeArray(args)
+    let f = t.GetMethod(x.func.Name,argtypes)
     f.Invoke(null,args)
   | []  -> failwith (sprintf "function %s not found in assembly" (print_id x.func))
   | _   -> failwith (sprintf "function %s defined in multiple assemblies" (print_id x.func))
@@ -145,9 +146,7 @@ and eval_rule (rule:rule)
     output
 
 let load_assemblies (src:List<string>) :List<System.Reflection.Assembly> =
-  src |> List.map (fun str->
-    System.Reflection.Assembly.LoadFrom(str)
-   )
+  src |> List.map (fun str-> System.Reflection.Assembly.LoadFrom(str) )
 
 let eval_main (src:fromTypecheckerWithLove) =
   let ctxt:global_context={assemblies=load_assemblies src.assemblies;funcs=src.funcs;datas=src.datas;lambdas=src.lambdas;main=src.main}

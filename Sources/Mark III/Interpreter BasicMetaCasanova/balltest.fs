@@ -157,13 +157,21 @@ let ball_func =
     input=[]
     output=Named("ret")
     premis=[
-        Literal({dest=Named("x");value=F32(10.0f)})
-        Literal({dest=Named("y");value=F32(20.0f)})
-        DotNetConstructor({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x");Named("y")];dest=Named("ret")})
+        Literal({dest=Named("x1");value=F32(10.0f)})
+        Literal({dest=Named("y1");value=F32(20.0f)})
+        DotNetConstructor({dest=Named("a");func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x1");Named("y1")]})
+        Literal({dest=Named("x2");value=F32(30.0f)})
+        Literal({dest=Named("y2");value=F32(40.0f)})
+        DotNetConstructor({dest=Named("b");func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x2");Named("y2")]})
+        DotNetStaticCall({dest=Named("ret");func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Addition"};args=[Named("a");Named("b")]})
       ]
     typemap=Map.ofList <| [
-      Named("x"),float_t
-      Named("y"),float_t
+      Named("x1"),float_t
+      Named("y1"),float_t
+      Named("x2"),float_t
+      Named("y2"),float_t
+      Named("a"),vec2_t
+      Named("b"),vec2_t
       Named("ret"),vec2_t
      ]
     side_effect=true
