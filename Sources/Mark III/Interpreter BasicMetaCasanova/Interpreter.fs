@@ -3,9 +3,9 @@ open CodegenInterface
 open ParserMonad
 
 let print_loc  (x:local_id) = match x with Named x -> x | Tmp x -> sprintf "_%d" x
+let print_id   (x:Id) = x.Namespace @ [x.Name] |> String.concat "." 
 
 let print_premisse (p:premisse) :string =
-  let print_id   (x:Id) = x.Namespace @ [x.Name] |> String.concat "." 
   let print_lamb (x:LambdaId) = x.Namespace @ [sprintf "lambda%d" x.Name] |> String.concat "." 
   match p with
   | Literal            x -> sprintf "LITR %A -> %s" x.value (print_loc x.dest)
@@ -20,15 +20,25 @@ let print_premisse (p:premisse) :string =
   | DotNetConstructor  x -> sprintf "NCON %s(%s) -> %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
   | DotNetProperty     x -> sprintf "NPRO %s.%s -> %s" (print_loc x.instance) x.property (print_loc x.dest)
 
-let staticCallNonBuiltin (x:DotNetStaticCall) (symbol_table:Map<local_id,obj>) :obj =
-  let t = System.Type.GetType(x.func.Namespace|>String.concat ".")
-  let args = x.args |> List.map (fun a->symbol_table.[a]) |> List.toArray
-  let f = t.GetMethod(x.func.Name,System.Reflection.BindingFlags.Public|||System.Reflection.BindingFlags.Static)
-  f.Invoke(null,args)
+type global_context = {assemblies:List<System.Reflection.Assembly>;funcs:Map<Id,List<rule>>;lambdas:Map<LambdaId,rule>;datas:List<Id*data>;main:rule;}
+
+let staticCallNonBuiltin (x:DotNetStaticCall) (symbol_table:Map<local_id,obj>) (assemblies:list<System.Reflection.Assembly>) :obj =
+  let ts:List<System.Type> = 
+    assemblies |> List.fold (fun (a:List<System.Type>) (v:System.Reflection.Assembly)->
+        let t:System.Type = v.GetType((x.func.Namespace|>String.concat "."),false)
+        if t=null then a else t::a
+      ) []
+  match ts with
+  | [t] -> 
+    let args = x.args |> List.map (fun a->symbol_table.[a]) |> List.toArray
+    let f = t.GetMethod(x.func.Name,System.Reflection.BindingFlags.Public|||System.Reflection.BindingFlags.Static)
+    f.Invoke(null,args)
+  | []  -> failwith (sprintf "function %s not found in assembly" (print_id x.func))
+  | _   -> failwith (sprintf "function %s defined in multiple assemblies" (print_id x.func))
   //let res = t.InvokeMember(x.func.Name,System.Reflection.BindingFlags.Default,System.Type.DefaultBinder,
 
 let rec eval_step (p:premisse)
-                  (global_context:fromTypecheckerWithLove)
+                  (global_context:global_context)
                   (type_map:Map<local_id,Type>)
                   (symbol_table:Map<local_id,obj>)
                   :List<Map<local_id,obj>> =
@@ -88,37 +98,42 @@ let rec eval_step (p:premisse)
       | ["System";"Int32"] when x.args.Length=2 ->
         let l = symbol_table.[x.args.[0]] :?> System.Int32
         let r = symbol_table.[x.args.[1]] :?> System.Int32
-        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table
+        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table global_context.assemblies
       | ["System";"Int64"] when x.args.Length=2 ->
         let l = symbol_table.[x.args.[0]] :?> System.Int64
         let r = symbol_table.[x.args.[1]] :?> System.Int64
-        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table
+        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table global_context.assemblies
       | ["System";"Single"] when x.args.Length=2 ->
         let l = symbol_table.[x.args.[0]] :?> System.Single
         let r = symbol_table.[x.args.[1]] :?> System.Single
-        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table
+        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table global_context.assemblies
       | ["System";"Double"] when x.args.Length=2 ->
         let l = symbol_table.[x.args.[0]] :?> System.Double
         let r = symbol_table.[x.args.[1]] :?> System.Double
-        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table
-      | _ -> staticCallNonBuiltin x symbol_table
+        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table global_context.assemblies
+      | _ -> staticCallNonBuiltin x symbol_table global_context.assemblies
     [symbol_table.Add(x.dest,ret)]
    
-
 and eval_rule (rule:rule)
-              (global_context:fromTypecheckerWithLove)
+              (ctxt:global_context)
               (args:List<obj>) :List<obj> =
     let input = Seq.zip rule.input args |> Map.ofSeq
     let called_stabs = ([input],rule.premis) ||> List.fold (fun (stabs:List<Map<local_id,obj>>) p -> // for each instruction
         stabs |> List.map (fun stab -> // for each fork
-          eval_step p global_context rule.typemap stab
+          eval_step p ctxt rule.typemap stab
         ) |> List.concat
       )
     let output = called_stabs |> List.map (fun stab-> stab.[rule.output])
     output
 
-let eval_main (woo:fromTypecheckerWithLove) =
+let load_assemblies (src:List<string>) :List<System.Reflection.Assembly> =
+  src |> List.map (fun str->
+    System.Reflection.Assembly.LoadFrom("%windir%/Microsoft.NET/assembly/"+str)
+   )
+
+let eval_main (src:fromTypecheckerWithLove) =
+  let ctxt:global_context={assemblies=load_assemblies src.assemblies;funcs=src.funcs;datas=src.datas;lambdas=src.lambdas;main=src.main}
   do printf "starting interpreting\n"
-  let res = eval_rule woo.main woo []
+  let res = eval_rule ctxt.main ctxt []
   do printf "results:\n%s" (res|>List.map (sprintf "  %A\n")|>String.concat "")
   res

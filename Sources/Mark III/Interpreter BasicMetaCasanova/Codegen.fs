@@ -1,5 +1,4 @@
 ﻿module Codegen
-open Common
 open CodegenInterface
 open Mangle
 
@@ -39,7 +38,7 @@ let construct_tree (input:fromTypecheckerWithLove) :List<NamespacedItem> =
      |> go (Map.toSeq input.funcs) functree 
      |> go input.datas datatree
 
-let print_literal lit =
+let print_literal (lit:lit) =
   match lit with
   | I64 i    -> sprintf "%dL"  i
   | U64 i    -> sprintf "%uUL" i

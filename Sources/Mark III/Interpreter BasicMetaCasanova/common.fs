@@ -12,12 +12,3 @@ type Namespace = List<string>
 type Literal = Int of int | String of string | Float32 of float32
 type Bracket = Curly | Round | Square | Indent | Lambda | Implicit | Comment
 
-type lit = I64 of System.Int64
-         | U64 of System.UInt64
-         | I32 of System.Int32
-         | U32 of System.Int32
-         | F64 of System.Double
-         | F32 of System.Single
-         | String of System.String
-         | Bool of System.Boolean
-         | Void
