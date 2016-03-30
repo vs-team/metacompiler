@@ -18,16 +18,19 @@ let print_premisse (p:premisse) :string =
   | ApplicationCall    x -> sprintf "CALL %s %s -> %s" (print_loc x.closure) (print_loc x.argument) (print_loc x.dest)
   | DotNetStaticCall   x -> sprintf "NSCA %s(%s) -> %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
   | DotNetConstructor  x -> sprintf "NCON %s(%s) -> %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
+  | DotNetCall         x -> sprintf "NDCA %s.%s(%s) -> %s" (print_loc x.instance) x.func (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
   | DotNetProperty     x -> sprintf "NPRO %s.%s -> %s" (print_loc x.instance) x.property (print_loc x.dest)
 
 type global_context = {assemblies:List<System.Reflection.Assembly>;funcs:Map<Id,List<rule>>;lambdas:Map<LambdaId,rule>;datas:List<Id*data>;main:rule;}
 
+let getClass (assemblies) (name:string) :List<System.Type> =
+  assemblies |> List.fold (fun (a:List<System.Type>) (v:System.Reflection.Assembly)->
+      let t:System.Type = v.GetType(name,false)
+      if t=null then a else t::a
+    ) []
+
 let staticCallNonBuiltin (x:DotNetStaticCall) (symbol_table:Map<local_id,obj>) (assemblies:list<System.Reflection.Assembly>) :obj =
-  let ts:List<System.Type> = 
-    assemblies |> List.fold (fun (a:List<System.Type>) (v:System.Reflection.Assembly)->
-        let t:System.Type = v.GetType((x.func.Namespace|>String.concat "."),false)
-        if t=null then a else t::a
-      ) []
+  let ts = getClass assemblies (x.func.Namespace|>String.concat ".")
   match ts with
   | [t] -> 
     let args = x.args |> List.map (fun a->symbol_table.[a]) |> List.toArray
@@ -35,7 +38,19 @@ let staticCallNonBuiltin (x:DotNetStaticCall) (symbol_table:Map<local_id,obj>) (
     f.Invoke(null,args)
   | []  -> failwith (sprintf "function %s not found in assembly" (print_id x.func))
   | _   -> failwith (sprintf "function %s defined in multiple assemblies" (print_id x.func))
-  //let res = t.InvokeMember(x.func.Name,System.Reflection.BindingFlags.Default,System.Type.DefaultBinder,
+
+let DotNetConstruct (x:DotNetStaticCall) (symbol_table:Map<local_id,obj>) (assemblies:list<System.Reflection.Assembly>) :obj =
+  let ts = getClass assemblies (x.func.Namespace@[x.func.Name]|>String.concat ".")
+  match ts with
+  | [t] -> 
+    let args = x.args |> List.map (fun a->symbol_table.[a]) |> List.toArray
+    let argtypes = System.Type.GetTypeArray(args)
+    let c = t.GetConstructor(argtypes)
+    c.Invoke(args)
+  | []  -> failwith (sprintf "constructor %s not found in assembly" (print_id x.func))
+  | _   -> failwith (sprintf "constructor %s defined in multiple assemblies" (print_id x.func))
+
+  //let res = t.InvokeMember(x.func.Name,System.oReflection.BindingFlags.Default,System.Type.DefaultBinder,
 
 let rec eval_step (p:premisse)
                   (global_context:global_context)
@@ -113,6 +128,9 @@ let rec eval_step (p:premisse)
         match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table global_context.assemblies
       | _ -> staticCallNonBuiltin x symbol_table global_context.assemblies
     [symbol_table.Add(x.dest,ret)]
+  | DotNetConstructor x ->
+    let ret = DotNetConstruct x symbol_table global_context.assemblies
+    [symbol_table.Add(x.dest,ret)]
    
 and eval_rule (rule:rule)
               (ctxt:global_context)
@@ -128,7 +146,7 @@ and eval_rule (rule:rule)
 
 let load_assemblies (src:List<string>) :List<System.Reflection.Assembly> =
   src |> List.map (fun str->
-    System.Reflection.Assembly.LoadFrom("%windir%/Microsoft.NET/assembly/"+str)
+    System.Reflection.Assembly.LoadFrom(str)
    )
 
 let eval_main (src:fromTypecheckerWithLove) =

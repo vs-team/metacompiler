@@ -153,5 +153,19 @@ let ball_func =
       ] |> Map.ofSeq
   } 
   let Funcs = Map.ofSeq <| [update_id,[update_fall_down;update_bounce]]
-  let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty.Add(Tmp(0),float_t);side_effect=true}
-  {funcs=Funcs;datas=[ball_id,ball_data];lambdas=Map.empty;main=main;assemblies=["Xna"]}
+  let main = {
+    input=[]
+    output=Named("ret")
+    premis=[
+        Literal({dest=Named("x");value=F32(10.0f)})
+        Literal({dest=Named("y");value=F32(20.0f)})
+        DotNetConstructor({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x");Named("y")];dest=Named("ret")})
+      ]
+    typemap=Map.ofList <| [
+      Named("x"),float_t
+      Named("y"),float_t
+      Named("ret"),vec2_t
+     ]
+    side_effect=true
+   }
+  {funcs=Funcs;datas=[ball_id,ball_data];lambdas=Map.empty;main=main;assemblies=["Microsoft.Xna.Framework.dll"]}
