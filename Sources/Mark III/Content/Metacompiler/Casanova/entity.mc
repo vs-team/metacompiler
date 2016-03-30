@@ -52,7 +52,8 @@ EntityField => Module{
   TypeFunc "Label" => String
   TypeFunc "Rest" => EntityField
 
-  Func "update" -> Cons -> float^prelude -> Cons
+  Func "update" -> Cons -> 'a -> Cons
+  update Empty dt -> Empty
 
   TypeFunc "FieldType" => String => EntityField => *
   FieldType l r => field^(get l r)
@@ -103,6 +104,4 @@ UpdatableEntity e => Entity (Label^e Field^e Rest^e) {
   Entity label f1 r1 -> res
   -----------------------------------------
   update e dt -> res
-
-  update Empty dt -> Empty
 }
