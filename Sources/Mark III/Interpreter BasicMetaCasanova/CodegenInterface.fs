@@ -11,16 +11,6 @@ type Type = DotNetType      of TypeId
           | TypeApplication of Type*List<Type>
           | Arrow           of Type*Type
 
-type lit = I64 of System.Int64
-         | U64 of System.UInt64
-         | I32 of System.Int32
-         | U32 of System.Int32
-         | F64 of System.Double
-         | F32 of System.Single
-         | String of System.String
-         | Bool of System.Boolean
-         | Void
-
 type local_id = Named of string
               | Tmp   of int
 
