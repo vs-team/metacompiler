@@ -51,6 +51,7 @@
     <Compile Include="Common.fs" />
     <Compile Include="ParserMonad.fs" />
     <Compile Include="OptionMonad.fs" />
+    <Compile Include="ExceptionMonad.fs" />
     <Compile Include="IncompleteMonad.fs" />
     <Compile Include="Lexer2.fs" />
     <Compile Include="ExtractFromToken2.fs" />
