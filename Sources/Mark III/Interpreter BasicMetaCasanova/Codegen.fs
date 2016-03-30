@@ -1,5 +1,4 @@
 ﻿module Codegen
-open Common
 open CodegenInterface
 open Mangle
 
@@ -36,13 +35,15 @@ let construct_tree (input:fromTypecheckerWithLove) :List<NamespacedItem> =
                | [],list           -> Ns(n,lambdatree []   (ns,v))::list
   let go input output state = input |> Seq.map (fun (n,d)->(List.rev n.Namespace),(n.Name,d)) |> Seq.fold output state
   [] |> go (Map.toSeq input.lambdas) lambdatree 
-     |> go (Map.toSeq input.rules) functree 
+     |> go (Map.toSeq input.funcs) functree 
      |> go input.datas datatree
 
-let print_literal lit =
+let print_literal (lit:lit) =
   match lit with
-  | I64 i    -> sprintf "%d" i
-  | U64 i    -> sprintf "%u" i
+  | I64 i    -> sprintf "%dL"  i
+  | U64 i    -> sprintf "%uUL" i
+  | I32 i    -> sprintf "%u" i
+  | U32 i    -> sprintf "%uU" i
   | F64 i    -> sprintf "%f" i
   | F32 i    -> sprintf "%ff" i
   | String s -> sprintf "\"%s\"" s
@@ -61,32 +62,33 @@ let highest_tmp (typemap:Map<local_id,Type>): int =
 let get_map (a:local_id) (m:Map<local_id,int>) :int*Map<local_id,int> =
   match Map.tryFind a m with None -> 0,(Map.add a 1 m) | Some x -> x,(Map.add a (x+1) m)
 
-let overloadableOps =
-  [  "+"
-     "-"
-     "!"
-     "~"
-     "++"
-     "--"
-     "true"
-     "false"
-     "*"
-     "/"
-     "%"
-     "&"
-     "|"
-     "^"
-     "<<"
-     ">>"
-     "=="
-     "!="
-     "<"
-     ">"
-     "<="
-     ">="
-     "&&"
-     "||"
-  ] |> Set.ofList
+let overloadableOps:Map<string,string> =
+  [ 
+    "op_Equality","=="
+    "op_Inequality","!="
+    "op_GreaterThan",">"
+    "op_LessThan","<"
+    "op_GreaterThanOrEqual",">="
+    "op_LessThanOrEqual","<="
+    "op_BitwiseAnd","&"
+    "op_BitwiseOr","|"
+    "op_Addition","+"
+    "op_Subtraction","-"
+    "op_Division","/"
+    "op_Modulus","%"
+    "op_Multiply","*"
+    "op_LeftShift","<<"
+    "op_RightShift",">>"
+    "op_ExclusiveOr","^"
+    "op_UnaryNegation","-"
+    "op_UnaryPlus","+"
+    "op_LogicalNot","!"
+    "op_OnesComplement","~"
+    "op_False","false"
+    "op_True","true"
+    "op_Increment","++"
+    "op_Decrement","--"
+  ] |> Map.ofList
 
 let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse list) (ret:local_id) =
   match ps with 
@@ -97,7 +99,7 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
                      (mangle_local_id x.dest)
                      (print_literal x.value)
                      (premisse m app ps ret)
-    | Conditional x -> sprintf "/*COND*/if(%s %s %s){%s}"
+    | Conditional x -> sprintf "/*COND*/if(%s %s %s){\n%s}"
                          (mangle_local_id x.left)
                          (print_predicate x.predicate)
                          (mangle_local_id x.right)
@@ -120,34 +122,32 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
                            (mangle_local_id x.dest)
                            (mangle_lambda x.func)
                            (premisse m (app|>Map.add x.dest 0) ps ret)
-    | DotNetCall x -> 
-          let s = x.func.Name.Split([|'.'|])
-          let last = s.[s.Length-1]
-          if overloadableOps.Contains(last) then 
+    | DotNetStaticCall x -> 
+          if overloadableOps.ContainsKey(x.func.Name) then 
             let args = x.args |> List.rev
-            sprintf "/*NCAL*/var %s = %s %s %s;\n %s"
+            sprintf "/*NSCA*/var %s = %s %s %s;\n%s"
               (mangle_local_id x.dest)
               (match x.args.Length with
                | 1 -> ""
                | 2 -> mangle_local_id args.[1])
-              last
+              overloadableOps.[x.func.Name]
               (mangle_local_id args.[0])
               (premisse m (app|>Map.add x.dest 0) ps ret)
           else
-            sprintf "/*NCAL*/var %s = %s(%s);\n%s" 
+            sprintf "/*NSCA*/var %s = %s(%s);\n%s" 
               (mangle_local_id x.dest)
-              (mangle_id x.func)
+              (x.func.Namespace@[x.func.Name]|>String.concat ".")
               (x.args |> List.map mangle_local_id|>String.concat ",")
               (premisse m (app|>Map.add x.dest 0) ps ret)
     | DotNetConstructor x -> sprintf "/*NCON*/var %s = new %s(%s);\n%s" 
                                (mangle_local_id x.dest)
-                               (mangle_id {x.func with Namespace = x.func.Namespace |> List.rev})
+                               (x.func.Namespace@[x.func.Name]|>String.concat ".")
                                (x.args |> List.map mangle_local_id|>String.concat ",")
                                (premisse m (app|>Map.add x.dest 0) ps ret)
     | DotNetProperty x -> sprintf "/*NPRO*/var %s = %s.%s;\n%s" 
                                (mangle_local_id x.dest)
                                (mangle_local_id x.instance)
-                               (mangle_local_id x.property)
+                               x.property
                                (premisse m (app|>Map.add x.dest 0) ps ret)
     | Application x -> 
       let i = match app|>Map.tryFind x.closure with Some(x)->x | None-> failwith (sprintf "Application failed: %s is not a closure." (mangle_local_id x.closure))
@@ -211,6 +211,7 @@ let get_locals (ps:premisse list) :local_id list =
     | LambdaClosure       x -> [x.dest]
     | FuncClosure         x -> [x.dest]
     | DotNetCall          x -> [x.dest]
+    | DotNetStaticCall    x -> [x.dest]
     | DotNetConstructor   x -> [x.dest]
     | DotNetProperty      x -> [x.dest]
     | ConstructorClosure  x -> [x.dest]
@@ -253,6 +254,7 @@ let validate (input:fromTypecheckerWithLove) :bool =
         | FuncClosure  x          -> check (set,success) x.dest
         | LambdaClosure x         -> check (set,success) x.dest
         | DotNetCall x            -> check (set,success) x.dest
+        | DotNetStaticCall x      -> check (set,success) x.dest
         | DotNetConstructor x     -> check (set,success) x.dest
         | DotNetProperty x        -> check (set,success) x.dest
         | Application x           -> check (set,success) x.dest
@@ -260,7 +262,7 @@ let validate (input:fromTypecheckerWithLove) :bool =
         | ImpureApplicationCall x -> check (set,success) x.dest
       let _,ret = rule.premis |> foldi per_premisse (Set.empty,success)
       ret
-  (true,input.rules) ||> Map.fold (fun (success:bool) (id:Id) (rules:rule list)-> 
+  (true,input.funcs) ||> Map.fold (fun (success:bool) (id:Id) (rules:rule list)-> 
     if rules.IsEmpty then
       do ice()
       do printf " empty rule: %s\n" (print_id id)

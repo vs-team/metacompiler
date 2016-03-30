@@ -9,6 +9,7 @@ open OptionMonad
 open GlobalSyntaxCheck2
 open RuleParser2
 open RuleNormalizer2
+open DataNormalizer2
 
 let t = System.Diagnostics.Stopwatch()
 
@@ -98,7 +99,14 @@ let start_rule_normalizer (ctxt:List<Id*List<RuleDef>*List<SymbolDeclaration>>)
   opt{
     let! res = use_parser_monad (itterate (normalize_rules)) (ctxt,"")
     return res
-  }
+  } |> (timer (sprintf "Normalizing Rules "))
+
+let start_data_normalizer (ctxt:List<Id*DeclParseScope>)
+  :Option<List<Id*List<NormalizedData>>> = 
+  opt{
+    let! res = use_parser_monad (itterate (normalize_datas)) (ctxt,"")
+    return res
+  } |> (timer (sprintf "Normalizing Datas "))
 
 let start_codegen (ctxt:fromTypecheckerWithLove) :Option<_> =
   Codegen.failsafe_codegen ctxt |> (timer (sprintf "Code gen "))
@@ -111,6 +119,8 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     let! decl_pars_res = parse_tokens lex_res
     let! rule_pars_res = start_rule_parser decl_pars_res
     let! normalized_rule_res = start_rule_normalizer rule_pars_res
+    let! normalized_data_res = 
+      start_data_normalizer (List.collect (fun (id,decl,_) -> [id,decl]) decl_pars_res)
     let! code_res = start_codegen balltest.ball_func
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res)) 
     return List.collect(fun (x,y,_) -> [(x,y)]) normalized_rule_res

@@ -7,8 +7,7 @@ open RuleParser2
 
 type StandardId = Id*Namespace
 
-type GlobalId = FuncId of Id*Namespace
-              | LambdaId  of int*Namespace
+type GlobalId = Id*Namespace
 
 type NormalId = VarId of Id*Position
               | TempId of int*Position
@@ -103,7 +102,7 @@ let normalize_Left_premistree (input:PremisFunctionTree) (output:NormalId)
     | RuleParser2.RuleBranch(x) -> 
       let! cons_id = get_local_id_number
       let construct_id = TempId(cons_id,x.Pos)
-      let construct = McClosure (FuncId(x.Name,x.CurrentNamespace), construct_id)
+      let construct = McClosure ((x.Name,x.CurrentNamespace), construct_id)
       let! applypremisses = 
         Normalize_arguments construct_id x.Args output
       return (construct::applypremisses)

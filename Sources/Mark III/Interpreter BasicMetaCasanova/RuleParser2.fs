@@ -80,10 +80,15 @@ let decl_to_parser (decl:SymbolDeclaration):Parser<Token,DeclParseScope,Function
       return! fail (RuleError (name,pos))
   }
 
-let decls_to_parser (decls:List<SymbolDeclaration>):Parser<Token,DeclParseScope,PremisFunctionTree> =
+let decls_to_parser (funcs:List<SymbolDeclaration>) 
+  (datas:List<SymbolDeclaration>)
+  :Parser<Token,DeclParseScope,PremisFunctionTree> =
   (prs{
-    let! res = FirstSuccesfullInList decls decl_to_parser
+    let! res = FirstSuccesfullInList funcs decl_to_parser
     return RuleBranch res
+  }) .|| (prs{
+    let! res = FirstSuccesfullInList datas decl_to_parser
+    return DataBranch res
   }) .|| prs{
     let! id,pos = extract_id()
     let! ctxt = getContext
@@ -96,9 +101,9 @@ let decls_to_parser (decls:List<SymbolDeclaration>):Parser<Token,DeclParseScope,
 let implication_premis :Parser<Token,DeclParseScope,Premises> =
   prs{
     let! ctxt = getContext
-    let! left = decls_to_parser (ctxt.DataDecl @ ctxt.FuncDecl)
+    let! left = decls_to_parser ctxt.FuncDecl ctxt.DataDecl
     do! check_keyword() SingleArrow
-    let! right = decls_to_parser (ctxt.DataDecl) .>> (check_keyword() NewLine)
+    let! right = decls_to_parser [] (ctxt.DataDecl) .>> (check_keyword() NewLine)
     //let! right,_ = extract_id() .>> (check_keyword() NewLine)
     return Implication (left,right)
   }
@@ -106,9 +111,9 @@ let implication_premis :Parser<Token,DeclParseScope,Premises> =
 let parse_premis :Parser<Token,DeclParseScope,Premises> =
    implication_premis .|| prs{
     let! ctxt = getContext
-    let! left = decls_to_parser (ctxt.DataDecl @ ctxt.FuncDecl)
+    let! left = decls_to_parser ctxt.FuncDecl ctxt.DataDecl
     let! condition,pos = extract_keyword()
-    let! right = decls_to_parser (ctxt.DataDecl @ ctxt.FuncDecl)
+    let! right = decls_to_parser ctxt.FuncDecl ctxt.DataDecl 
     do! check_keyword() NewLine
     let! cond = token_condition_to_condition condition pos
     return Conditional (cond,left,right)
@@ -121,7 +126,7 @@ let parse_rule :Parser<Token,DeclParseScope,RuleDef> =
     let! ctxt = getContext
     let! input = FirstSuccesfullInList ctxt.FuncDecl decl_to_parser
     do! check_keyword() SingleArrow
-    let! output = decls_to_parser ctxt.DataDecl
+    let! output = decls_to_parser [] ctxt.DataDecl
     return {Name = input.Name ; CurrentNamespace = ctxt.CurrentNamespace ;
             Input = input.Args ; Output = output ;
             Premises = premises ; Pos = input.Pos}

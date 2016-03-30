@@ -25,11 +25,11 @@ let ball_func =
     premis = 
       [
         // b -> ball(position velocity)
-        Destructor(Destructor.Create(Named("b"),ball_id,[Named("position");Named("velocity")]))
+        Destructor({source=Named("b");destructor=ball_id;args=[Named("position");Named("velocity")]})
         
         // gety() -> y
         DotNetProperty({
-                        property=Named("Y")
+                        property="Y"
                         instance = Named("position")
                         dest=Named("y")
                        })
@@ -47,24 +47,24 @@ let ball_func =
                            dest=Named("v2")})
 
         // dotproduct
-        DotNetCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2.*"}
-                    args=[Named("v2");Named("dt")]
-                    dest=Named("outerProduct")})
+        DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Multiply"}
+                          args=[Named("v2");Named("dt")]
+                          dest=Named("outerProduct")})
 
         // sum
-        DotNetCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2.+"}
-                    args=[Named("velocity");Named("outerProduct")]
-                    dest=Named("updatedVelocity")})
+        DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Addition"}
+                          args=[Named("velocity");Named("outerProduct")]
+                          dest=Named("updatedVelocity")})
 
        // dotproduct
-        DotNetCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2.*"}
-                    args=[Named("updatedVelocity");Named("dt")]
-                    dest=Named("outerProduct2")})
+        DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="op_Multiply"}
+                          args=[Named("updatedVelocity");Named("dt")]
+                          dest=Named("outerProduct2")})
 
         // sum
-        DotNetCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2.+"}
-                    args=[Named("position");Named("outerProduct2")]
-                    dest=Named("updatedPosition")})
+        DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="op_Addition"}
+                          args=[Named("position");Named("outerProduct2")]
+                          dest=Named("updatedPosition")})
 
         // Ball (updated_position, updated_velocity)
         ConstructorClosure({func=ball_id;dest=next_tmp()})
@@ -100,18 +100,19 @@ let ball_func =
     premis = 
       [
         // b -> ball(position velocity)
-        Destructor(Destructor.Create(Named("b"),ball_id,[Named("position");Named("velocity")]))
+        Destructor({source=Named("b");destructor=ball_id;args=[Named("position");Named("velocity")]})
+
         // gety() -> y
         DotNetProperty(
                         {
-                          property=Named("Y")
+                          property="Y"
                           instance = Named("position")
                           dest=Named("y")
                         })
 
         // gety() -> x
         DotNetProperty({
-                        property=Named("X")
+                        property="X"
                         instance = Named("position")
                         dest=Named("x")
                        })
@@ -126,9 +127,9 @@ let ball_func =
                            dest=Named("updatedPosition")})
 
 
-        DotNetCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2.-"}
-                    args=[Named("velocity")]
-                    dest=Named("updatedVelocity")})
+        DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Subtraction"}
+                          args=[Named("velocity")]
+                          dest=Named("updatedVelocity")})
 
         // Ball (updated_position, updated_velocity)
         ConstructorClosure({func=ball_id;dest=next_tmp()})
@@ -152,5 +153,27 @@ let ball_func =
       ] |> Map.ofSeq
   } 
   let Funcs = Map.ofSeq <| [update_id,[update_fall_down;update_bounce]]
-  let main = {input=[];output=Tmp(0);premis=[];typemap=Map.empty.Add(Tmp(0),float_t);side_effect=true}
-  {rules=Funcs;datas=[ball_id,ball_data];lambdas=Map.empty;main=main}
+  let main = {
+    input=[]
+    output=Named("ret")
+    premis=[
+        Literal({dest=Named("x1");value=F32(10.0f)})
+        Literal({dest=Named("y1");value=F32(20.0f)})
+        DotNetConstructor({dest=Named("a");func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x1");Named("y1")]})
+        Literal({dest=Named("x2");value=F32(30.0f)})
+        Literal({dest=Named("y2");value=F32(40.0f)})
+        DotNetConstructor({dest=Named("b");func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x2");Named("y2")]})
+        DotNetStaticCall({dest=Named("ret");func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Addition"};args=[Named("a");Named("b")]})
+      ]
+    typemap=Map.ofList <| [
+      Named("x1"),float_t
+      Named("y1"),float_t
+      Named("x2"),float_t
+      Named("y2"),float_t
+      Named("a"),vec2_t
+      Named("b"),vec2_t
+      Named("ret"),vec2_t
+     ]
+    side_effect=true
+   }
+  {funcs=Funcs;datas=[ball_id,ball_data];lambdas=Map.empty;main=main;assemblies=["Microsoft.Xna.Framework.dll"]}
