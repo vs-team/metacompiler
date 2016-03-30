@@ -1,26 +1,50 @@
-import Keys^Forms^Windows^System
-
-Data "speed" -> Int^builtin -> Speed
-Data "colour" -> Int^builtin -> Colour
-Data "controls" -> KeyCode -> KeyCode -> KeyCode -> KeyCode -> Controls
-Data "position" -> Int^builtin -> Int^builtin -> Position
-Data "bike" -> Speed -> Colour -> Controls -> Position -> Bike
-
-Func "bikeSpeed" -> Int^builtin
-bikeSpeed -> 2
-
-Func "moveBike" -> Bike -> Bike
-bike -> speed colour controls position
-position -> x y
-direction -> xspeed yspeed
-(x +^builtin (speed *^builtin xspeed)) (y +^builtin (speed *^builtin yspeed)) -> newPosition
-bike speed colour controls newPosition -> movedBike
----------------------------------------------------
-moveBike xbike direction -> movedBike
+import Framework^Xna^Microsoft
+import Input^Windows^System
+import entity
 
 
-Func "changeSpeed" -> Bike -> Int^builtin -> Bike
-bike -> speed colour controls position
-newSpeed colour controls posistion -> newBike
----------------------------------------------
-changeSpeed bike newSpeed -> newBike
+TypeFunc "PositionEntity" => String => Vector2 => EntityField => EntityField
+PositionEntity label pos rest => Entity label pos rest{
+  dts -> (dt,speed)
+  Field^p +^Vector2 dt *^Vector2 speed -> newPos
+  Entity label^p newPos Rest^p -> res
+  -----------------------------------
+  update p dts -> res
+}
+
+TypeFunc "TrailEntity" => String => Vector2 => EntityField => EntityField
+TrailEntity label field rest => Entity label field rest{
+  Entity label^t pos fields^t -> res
+  ---------------------------------
+  update t pos -> res
+}
+
+TypeFunc "Keys" => Key => Key => Key => Key => EntityField
+Entity "Left" left Unit
+Entity "Right" right Left
+Entity "Up" up Right
+Entity "Down" down Up => res
+-------------------------------
+Keys left right up down => res
+
+TypeFunc "Bike" => String => Int => Keys => Vector2 => TrialEntity => EntityField => EntityField
+Entity "Colour" rgb Unit
+Entity "Controls" keys Colour
+Entity "Speed" speed Controls
+PositionEntity "Position" position Speed
+Entity "Trail" trail Position => field
+--------------------------------------
+Bike label rgb keys speed position trail rest => Entity label field rest {
+
+  get^b "Trial" Field^b => trial
+  get^trail "Position" Rest^trail => position
+  $$ update trail
+  update^Field^trial Field^trial Field^position => newTrailEntity
+  $$ update position
+  get^position "Speed" Rest^position => speed
+  update^position position (dt,Field^speed) -> newPos
+  Entity label^trial newTrialEntity newPos => newTrial
+  Entity Label^b newTrail Rest^b => res
+  -------------------------------------
+  update b dt -> res
+}
