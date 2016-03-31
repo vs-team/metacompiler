@@ -122,6 +122,20 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
                            (mangle_local_id x.dest)
                            (mangle_lambda x.func)
                            (premisse m (app|>Map.add x.dest 0) ps ret)
+    | DotNetCall x -> 
+      sprintf  "/*NDCA*/var %s = %s.%s(%s);\n%s"
+        (mangle_local_id x.dest)
+        (mangle_local_id x.instance)
+        x.func
+        (x.args |> List.map mangle_local_id|>String.concat ",")
+        (premisse m (app|>Map.add x.dest 0) ps ret)
+    | DotNetModify x -> 
+      sprintf  "/*NMOD*/var %s = %s.Clone().%s(%s);\n%s"
+        (mangle_local_id x.dest)
+        (mangle_local_id x.instance)
+        x.func
+        (x.args |> List.map mangle_local_id|>String.concat ",")
+        (premisse m (app|>Map.add x.dest 0) ps ret)
     | DotNetStaticCall x -> 
           if overloadableOps.ContainsKey(x.func.Name) then 
             let args = x.args |> List.rev
@@ -214,6 +228,7 @@ let get_locals (ps:premisse list) :local_id list =
     | DotNetStaticCall    x -> [x.dest]
     | DotNetConstructor   x -> [x.dest]
     | DotNetProperty      x -> [x.dest]
+    | DotNetModify        x -> [x.dest]
     | ConstructorClosure  x -> [x.dest]
     | Application         x
     | ImpureApplicationCall x 
@@ -256,6 +271,7 @@ let validate (input:fromTypecheckerWithLove) :bool =
         | DotNetCall x            -> check (set,success) x.dest
         | DotNetStaticCall x      -> check (set,success) x.dest
         | DotNetConstructor x     -> check (set,success) x.dest
+        | DotNetModify      x     -> check (set,success) x.dest
         | DotNetProperty x        -> check (set,success) x.dest
         | Application x           -> check (set,success) x.dest
         | ApplicationCall x       -> check (set,success) x.dest

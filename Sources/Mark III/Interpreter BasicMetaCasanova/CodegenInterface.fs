@@ -35,6 +35,7 @@ type premisse = Literal               of Literal
               | ApplicationCall       of Application
               | ImpureApplicationCall of Application
               | DotNetCall            of DotNetCall
+              | DotNetModify          of DotNetCall
               | DotNetStaticCall      of DotNetStaticCall
               | DotNetConstructor     of DotNetStaticCall
               | DotNetProperty        of DotNetProperty
