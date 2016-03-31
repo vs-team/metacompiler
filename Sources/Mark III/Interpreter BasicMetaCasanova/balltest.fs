@@ -30,17 +30,14 @@ let ball_func =
         Destructor({source=Named("b");destructor=ball_id;args=[Named("position");Named("velocity")]})
         
         // gety() -> y
-        DotNetProperty({
-                        property="Y"
+        DotNetProperty({property="Y"
                         instance = Named("position")
-                        dest=Named("y")
-                       })
+                        dest=Named("y") })
 
         // y >= 0
         Literal({value=F32(0.0f);dest=Named("zero")})
         Literal({value=F32(500.0f);dest=Named("ground")})
         Conditional({left=Named("y");predicate=LessEqual;right=Named("ground")})
-
 
         // Vector2(0,9.81)
         Literal({value=F32(98.1f);dest=Named("g")})
@@ -110,19 +107,14 @@ let ball_func =
         Destructor({source=Named("b");destructor=ball_id;args=[Named("position");Named("velocity")]})
 
         // gety() -> y
-        DotNetProperty(
-                        {
-                          property="Y"
-                          instance = Named("position")
-                          dest=Named("y")
-                        })
+        DotNetProperty({property="Y"
+                        instance = Named("position")
+                        dest=Named("y") })
 
         // gety() -> x
-        DotNetProperty({
-                        property="X"
+        DotNetProperty({property="X"
                         instance = Named("position")
-                        dest=Named("x")
-                       })
+                        dest=Named("x") })
 
         // y >= 0
         Literal({value=F32(500.0f);dest=Named("ground")})
