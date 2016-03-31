@@ -14,7 +14,14 @@ type RuleCheckerCtxt =
     TypeMap     : Map<local_id,Type>
     Premise     : List<premisse>
 
-  }
+  } with
+    static member Zero =
+      {
+        RuleDecl  = []
+        DataDecl  = []
+        TypeMap   = Map.empty
+        Premise   = []
+      }
 
 let build_local_id (id:NormalId):local_id =
   match id with
@@ -46,14 +53,21 @@ let rec convert_type (datatype:DataType) : Type =
 
 let rec convert_decl_to_type (decltype:DeclType)(ns:Namespace) : Type =
   match decltype with
-  | Id(id,_) -> McType{Namespace = ns ; Name = id}
+  | DeclParser2.Id(id,_) -> McType{Namespace = ns ; Name = id}
+  | DeclParser2.IdVar(id,_) -> McType{Namespace = ns ; Name = id}
+  | DeclParser2.Application(id,l,r) ->
+    TypeApplication((McType{Namespace=ns;Name=id})
+      ,[(convert_decl_to_type l ns);(convert_decl_to_type r ns)])
+  | DeclParser2.Arrow(l,r) -> 
+    Arrow((convert_decl_to_type l ns),(convert_decl_to_type r ns))
 
 let convert_arg_structure (argstruct:ArgStructure)(ret:DeclType)(id:local_id)(ns:Namespace) :local_id*Type =
   match argstruct with
   | LeftArg(l,r) -> 
     let left = convert_decl_to_type l ns
     let right = convert_decl_to_type r ns
-    id,Arrow(left,right) 
+    let ret = convert_decl_to_type ret ns
+    id,Arrow(left,Arrow(right,ret)) 
   | RightArgs(ls) -> 
     let ret = convert_decl_to_type ret ns
     id,(List.fold (fun state x -> Arrow((convert_decl_to_type x ns),state)) ret (List.rev ls))
@@ -105,16 +119,17 @@ let Lift_apply s a d ctxt lift :Exception<RuleCheckerCtxt> =
       let! type_argument = UseOptionMonad (Map.tryFind argument ctxt.TypeMap) "argument not found in symboltalbe: apply." 
       if type_argument = l then
         let destination = build_local_id d
-        let res = Application{closure = source; argument = argument; dest = destination}
+        let res = lift source argument destination
         let symbol_table = ctxt.TypeMap.Add(destination,r)
         return {ctxt with Premise = res:: ctxt.Premise; TypeMap = symbol_table}
       else return! Exception (sprintf "Type %A of argument %A do not match type %A of %A" argument type_argument l source)
     | _ -> return! Exception "Arrow expected during typechecking apply."
   }
 
-let type_check_premise (prem:RuleNormalizer2.Premisse) 
-  (ctxt:RuleCheckerCtxt):Exception<RuleCheckerCtxt> =
+let type_check_premise (ctxt:Exception<RuleCheckerCtxt>)
+  (prem:RuleNormalizer2.Premisse) :Exception<RuleCheckerCtxt> =
   exc{
+    let! ctxt = ctxt
     match prem with 
     | RuleNormalizer2.Alias(_) -> return! Exception "alias is not alowed during typechecking."
     | RuleNormalizer2.Literal(l,r) -> 
@@ -144,26 +159,50 @@ let type_check_premise (prem:RuleNormalizer2.Premisse)
       let res,symbol_table = build_closure s r ctxt.TypeMap ctxt.DataDecl (fun x -> ConstructorClosure x)
       return {ctxt with Premise = res::ctxt.Premise; TypeMap = symbol_table}
     | RuleNormalizer2.Apply(s,a,d) -> 
-      return! Lift_apply s a d ctxt (fun x -> Application x)
+      return! Lift_apply s a d ctxt (fun c a d ->
+         Application {closure = c; argument = a; dest = d})
     | RuleNormalizer2.ApplyCall (s,a,d) -> 
-      return! Lift_apply s a d ctxt (fun x -> ApplicationCall x)
+      return! Lift_apply s a d ctxt (fun c a d ->
+         ApplicationCall {closure = c; argument = a; dest = d; side_effect = false})
     | _ -> return! Exception "not implemented yet."
     //| RuleNormalizer2.DotNetClosure(s,r) -> 
   
   }
 
+let try_get_argument_type (id:Id) (input_args:List<local_id>) 
+  (ctxt:RuleCheckerCtxt) :Exception<RuleCheckerCtxt> =
+  exc{
+    let ruleopt = ctxt.RuleDecl |> List.tryFind (fun (x:SymbolDeclaration) -> 
+      x.Name = id.Name && x.CurrentNamespace = id.Namespace)
+    match ruleopt with
+    | Some(rule) ->
+      let arg_types = arg_structure_to_list rule.Args rule.CurrentNamespace
+      let arg_types = List.map (fun x -> convert_decl_to_type x rule.CurrentNamespace) arg_types 
+      let res = List.zip input_args arg_types
+      let symbol_table = res |> List.fold (fun (state:Map<local_id,Type>) (id,typ) -> 
+        state.Add (id,typ)) ctxt.TypeMap
+      return {ctxt with TypeMap = symbol_table}
+    | None -> return! Exception (sprintf "could not find rule: %A." id)
+  }
+
+let type_check_rule (ctxt:RuleCheckerCtxt) (next:NormalizedRule)
+  :Exception<Id*rule> =
+  exc{
+    let name = {Namespace = next.CurentNamespace ; Name = next.Name}
+    let input = List.map (fun x -> build_local_id x) next.Input
+    let output = build_local_id next.Output
+    let! ctxt = try_get_argument_type name input ctxt
+    let! premise = fold type_check_premise (Result ctxt) next.Premis
+    
+    let res = {side_effect = false ; input = input ; output = output ;
+               premis = premise.Premise ; typemap = premise.TypeMap}
+    return (name,res)
+    
+  }
+
 let type_check_rules (rules:List<NormalizedRule>) (ctxt:RuleCheckerCtxt)
   :Exception<List<Id*rule>> =
   exc{
-    let res = rules |> List.map (fun next ->
-      let name = {Namespace = next.CurentNamespace ; Name = next.Name}
-      let input = List.map (fun x -> build_local_id x) next.Input
-      let output = build_local_id next.Output
-      let premise = []
-
-      let res = {side_effect = false ; input = input ; output = output ;
-                 premis = [] ; typemap = Map.empty}
-      name,res
-    ) 
+    let! res = map (type_check_rule ctxt) rules
     return res
   }
