@@ -1,34 +1,32 @@
-Data "fieldSize" -> Int^builtin -> Int^builtin -> Fieldsize
-Data "playfield" -> Bike -> Bike -> Fieldsize -> ColouredBlocks -> Playfield
-
-Data "coordinate" -> Int^builtin -> Int^builtin -> Coordinate
-Data "nil" -> List Coordinate
-Data Coordinate -> "::" -> List Coordinate -> List Coordinate
-
-$$ variables haha they are funcs
-Func "colouredBlocks" -> List Coordinate
-
-Func "gravity" -> Float^builtin
-gravity -> 9.81
-
-Func "defaultSpeed" -> Int^builtin
-defaultSpeed -> 1
+import Framework^Xna^Microsoft
+import entity
+import bike
 
 
+TypeFunc "Bikes" => String => EntityField => EntityField => EntityField
+Bikes label bikeEntities rest => Entity label bikeEntities rest{
 
-Func "frameforward" -> Playfield -> Playfield
+  Func "updateBikes" => EntityField => Float => EntityField
+  update^b b dt
+  updateBikes Rest^b dt
+  ---------------------
+  updateBikes b dt -> res
 
-field -> b1 b2 fsize
-$$ checkKeyPresses
-moveBike b1 keys1 -> b1'
-moveBike b2 keys2 -> b2'
-$$ checkCollision
-playfield b1' b2' fsize -> newField
------------------------------------
-frameforward field -> newField
+  updateBikes Empty dt -> Empty
 
-Func "play" -> Playfield -> Bike
-frameforward field -> newField
+  Field^bs -> bikes
+  updateBikes bikes dt -> newBikes
+  set^bs label^bs newBikes bs -> res
+  ----------------------------------
+  update bs dt -> res
+}
 
---
-play field -> winner
+TypeFunc "Playfield" => String => EntityField => Vector2 => EntityField => EntityField
+
+-> field
+-----------
+Playfield label bikes size rest => Entity label field rest{
+
+  --------
+  update p dt -> res
+}
