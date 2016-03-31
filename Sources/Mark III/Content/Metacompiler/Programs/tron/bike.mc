@@ -20,7 +20,7 @@ TrailEntity label field rest => Entity label field rest{
 }
 
 TypeFunc "Keys" => Key => Key => Key => Key => EntityField
-Entity "Left" left Unit
+Entity "Left" left Empty
 Entity "Right" right Left
 Entity "Up" up Right
 Entity "Down" down Up => res
@@ -28,14 +28,13 @@ Entity "Down" down Up => res
 Keys left right up down => res
 
 TypeFunc "Bike" => String => Int => Keys => Vector2 => TrialEntity => EntityField => EntityField
-Entity "Colour" rgb Unit
+Entity "Colour" rgb Empty
 Entity "Controls" keys Colour
 Entity "Speed" speed Controls
 PositionEntity "Position" position Speed
 Entity "Trail" trail Position => field
 --------------------------------------
 Bike label rgb keys speed position trail rest => Entity label field rest {
-
   get^b "Trial" Field^b => trial
   get^trail "Position" Rest^trail => position
   $$ update trail
