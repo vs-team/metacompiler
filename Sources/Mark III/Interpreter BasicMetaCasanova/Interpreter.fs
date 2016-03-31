@@ -19,8 +19,8 @@ let print_premisse (p:premisse) :string =
   | DotNetConstructor  x -> sprintf "NCON %s(%s) -> %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
   | DotNetStaticCall   x -> sprintf "NSCA %s(%s) -> %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
   | DotNetCall         x -> sprintf "NDCA %s.%s(%s) -> %s" (print_loc x.instance) x.func (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
-  | DotNetModify       x -> sprintf "NMOD %s.%s(%s) -> %s" (print_loc x.instance) x.func (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
-  | DotNetProperty     x -> sprintf "NPRO %s.%s -> %s" (print_loc x.instance) x.property (print_loc x.dest)
+  | DotNetGet          x -> sprintf "NGET %s.%s -> %s" (print_loc x.instance) x.property (print_loc x.dest)
+  | DotNetSet          x -> sprintf "NSET %s.%s <- %s" (print_loc x.instance) x.property (print_loc x.dest)
 
 type global_context = {assemblies:List<System.Reflection.Assembly>;funcs:Map<Id,List<rule>>;lambdas:Map<LambdaId,rule>;datas:List<Id*data>;main:rule;}
 
@@ -143,11 +143,6 @@ let rec eval_step (p:premisse)
     let ret = DotNetConstruct x symbol_table global_context.assemblies
     [symbol_table.Add(x.dest,ret)]
   | DotNetCall x ->
-    match type_map.[x.instance] with 
-    | DotNetType t -> 
-      let ret = dynamicCallNonBuiltin x t symbol_table global_context.assemblies
-      [symbol_table.Add(x.dest,ret)]
-  | DotNetModify x ->
     match type_map.[x.instance] with 
     | DotNetType t -> 
       let ret = dynamicCallNonBuiltin x t symbol_table global_context.assemblies

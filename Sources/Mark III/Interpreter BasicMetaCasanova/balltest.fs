@@ -30,9 +30,9 @@ let ball_func =
         Destructor({source=Named("b");destructor=ball_id;args=[Named("position");Named("velocity")]})
         
         // gety() -> y
-        DotNetProperty({property="Y"
-                        instance = Named("position")
-                        dest=Named("y") })
+        DotNetGet({property="Y"
+                   instance = Named("position")
+                   dest=Named("y") })
 
         // y >= 0
         Literal({value=F32(0.0f);dest=Named("zero")})
@@ -107,14 +107,14 @@ let ball_func =
         Destructor({source=Named("b");destructor=ball_id;args=[Named("position");Named("velocity")]})
 
         // gety() -> y
-        DotNetProperty({property="Y"
-                        instance = Named("position")
-                        dest=Named("y") })
+        DotNetGet({property="Y"
+                   instance = Named("position")
+                   dest=Named("y") })
 
         // gety() -> x
-        DotNetProperty({property="X"
-                        instance = Named("position")
-                        dest=Named("x") })
+        DotNetGet({property="X"
+                   instance = Named("position")
+                   dest=Named("x") })
 
         // y >= 0
         Literal({value=F32(500.0f);dest=Named("ground")})
@@ -165,7 +165,7 @@ let ball_func =
         Literal({dest=Named("y2");value=F32(30.0f)})
         DotNetConstructor({dest=Named("b");func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x2");Named("y2")];side_effect=false})
         DotNetStaticCall({dest=Named("c");func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Addition"};args=[Named("a");Named("b")];side_effect=false})
-        DotNetModify({dest=Named("ret");instance=Named("c");func="Normalize";args=[];side_effect=false})
+        DotNetCall({dest=Named("ret");instance=Named("c");func="Normalize";args=[];side_effect=false;mutates_instance=true;})
       ]
     typemap=Map.ofList <| [
       Named("x1"),float_t

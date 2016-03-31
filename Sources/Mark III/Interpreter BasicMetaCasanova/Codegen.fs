@@ -129,13 +129,6 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
         x.func
         (x.args |> List.map mangle_local_id|>String.concat ",")
         (premisse m (app|>Map.add x.dest 0) ps ret)
-    | DotNetModify x -> 
-      sprintf  "/*NMOD*/var %s = %s.Clone().%s(%s);\n%s"
-        (mangle_local_id x.dest)
-        (mangle_local_id x.instance)
-        x.func
-        (x.args |> List.map mangle_local_id|>String.concat ",")
-        (premisse m (app|>Map.add x.dest 0) ps ret)
     | DotNetStaticCall x -> 
           if overloadableOps.ContainsKey(x.func.Name) then 
             let args = x.args |> List.rev
@@ -158,11 +151,11 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
                                (x.func.Namespace@[x.func.Name]|>String.concat ".")
                                (x.args |> List.map mangle_local_id|>String.concat ",")
                                (premisse m (app|>Map.add x.dest 0) ps ret)
-    | DotNetProperty x -> sprintf "/*NPRO*/var %s = %s.%s;\n%s" 
-                               (mangle_local_id x.dest)
-                               (mangle_local_id x.instance)
-                               x.property
-                               (premisse m (app|>Map.add x.dest 0) ps ret)
+    | DotNetGet x -> sprintf "/*NGET*/var %s = %s.%s;\n%s" 
+                       (mangle_local_id x.dest)
+                       (mangle_local_id x.instance)
+                       x.property
+                       (premisse m (app|>Map.add x.dest 0) ps ret)
     | Application x -> 
       let i = match app|>Map.tryFind x.closure with Some(x)->x | None-> failwith (sprintf "Application failed: %s is not a closure." (mangle_local_id x.closure))
       sprintf "/*APPL*/var %s = %s; %s.%s=%s;\n%s"
@@ -226,8 +219,8 @@ let get_locals (ps:premisse list) :local_id list =
     | DotNetCall          x -> [x.dest]
     | DotNetStaticCall    x -> [x.dest]
     | DotNetConstructor   x -> [x.dest]
-    | DotNetProperty      x -> [x.dest]
-    | DotNetModify        x -> [x.dest]
+    | DotNetGet           x -> [x.dest]
+    | DotNetSet           x -> [x.dest]
     | ConstructorClosure  x -> [x.dest]
     | Application         x -> [x.dest]
     | ApplicationCall     x -> [x.closure;x.dest;x.argument] )
@@ -269,8 +262,8 @@ let validate (input:fromTypecheckerWithLove) :bool =
         | DotNetCall x            -> check (set,success) x.dest
         | DotNetStaticCall x      -> check (set,success) x.dest
         | DotNetConstructor x     -> check (set,success) x.dest
-        | DotNetModify      x     -> check (set,success) x.dest
-        | DotNetProperty x        -> check (set,success) x.dest
+        | DotNetGet x             -> check (set,success) x.dest
+        | DotNetSet x             -> check (set,success) x.dest
         | Application x           -> check (set,success) x.dest
         | ApplicationCall x       -> check (set,success) x.dest
       let _,ret = rule.premis |> foldi per_premisse (Set.empty,success)
