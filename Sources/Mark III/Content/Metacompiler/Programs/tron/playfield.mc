@@ -3,9 +3,8 @@ import entity
 import bike
 
 
-TypeFunc "Bikes" => String => EntityField => EntityField => EntityField
-Bikes label bikeEntities rest => Entity label bikeEntities rest{
-
+TypeFunc "BikeEntity" => String => EntityField => EntityField => EntityField
+BikeEntity label bikes rest => Entity label bikes rest{
   Func "updateBikes" => EntityField => Float => EntityField
   update^b b dt
   updateBikes Rest^b dt
@@ -14,15 +13,15 @@ Bikes label bikeEntities rest => Entity label bikeEntities rest{
 
   updateBikes Empty dt -> Empty
 
-  Field^bs -> bikes
-  updateBikes bikes dt -> newBikes
-  set^bs label^bs newBikes bs -> res
-  ----------------------------------
+  Field^bs -> bikeEntities
+  updateBikes bikeEntities dt -> newBikeEntities
+  set^bs label^bs newBikeEntities bs -> res
+  -----------------------------------------
   update bs dt -> res
 }
 
 TypeFunc "Playfield" => String => EntityField => Vector2 => EntityField => EntityField
-
+BikeEntity (label + "bikes") bikes Empty
 -> field
 -----------
 Playfield label bikes size rest => Entity label field rest{
