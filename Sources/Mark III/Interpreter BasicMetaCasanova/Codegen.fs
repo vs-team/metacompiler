@@ -172,7 +172,6 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
                          (sprintf "_arg%d" i)
                          (mangle_local_id  x.argument)
                          (premisse m (app|>Map.add x.dest (i+1)) ps ret)
-    | ImpureApplicationCall x
     | ApplicationCall x -> 
       let i = match app|>Map.tryFind x.closure with Some(x)->x | None-> failwith (sprintf "ApplicationCall failed: %s is not a closure." (mangle_local_id x.closure))
       sprintf "/*CALL*/%s.%s=%s;\nforeach(var %s in %s._run()){\n%s}\n"
@@ -230,8 +229,7 @@ let get_locals (ps:premisse list) :local_id list =
     | DotNetProperty      x -> [x.dest]
     | DotNetModify        x -> [x.dest]
     | ConstructorClosure  x -> [x.dest]
-    | Application         x
-    | ImpureApplicationCall x 
+    | Application         x -> [x.dest]
     | ApplicationCall     x -> [x.closure;x.dest;x.argument] )
 
 let foldi (f:int->'state->'element->'state) (s:'state) (lst:seq<'element>) :'state =
@@ -275,7 +273,6 @@ let validate (input:fromTypecheckerWithLove) :bool =
         | DotNetProperty x        -> check (set,success) x.dest
         | Application x           -> check (set,success) x.dest
         | ApplicationCall x       -> check (set,success) x.dest
-        | ImpureApplicationCall x -> check (set,success) x.dest
       let _,ret = rule.premis |> foldi per_premisse (Set.empty,success)
       ret
   (true,input.funcs) ||> Map.fold (fun (success:bool) (id:Id) (rules:rule list)-> 

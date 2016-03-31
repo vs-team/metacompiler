@@ -25,27 +25,27 @@ type lit = I64 of System.Int64
 
 type predicate = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 
-type premisse = Literal               of Literal
-              | Conditional           of Conditional
-              | Destructor            of Destructor
-              | ConstructorClosure    of closure<Id>
-              | FuncClosure           of closure<Id>
-              | LambdaClosure         of closure<LambdaId>
-              | Application           of Application
-              | ApplicationCall       of Application
-              | ImpureApplicationCall of Application
-              | DotNetCall            of DotNetCall
-              | DotNetModify          of DotNetCall
-              | DotNetStaticCall      of DotNetStaticCall
-              | DotNetConstructor     of DotNetStaticCall
-              | DotNetProperty        of DotNetProperty
+type premisse = Literal               of Literal           // assign literal to local
+              | Conditional           of Conditional       // stops evaluation if condition is false
+              | Destructor            of Destructor        // destructs Mc data into its constructor arguments
+              | ConstructorClosure    of closure<Id>       // assigns mc data constructor closure to local
+              | FuncClosure           of closure<Id>       // assigns mc func closure to local
+              | LambdaClosure         of closure<LambdaId> // assigns lambda closure to local
+              | Application           of Application       // applies an argument to a local closure
+              | ApplicationCall       of ApplicationCall   // applies an argument to a local closure and calls it
+              | DotNetCall            of DotNetCall        // calls .Net method and assigns result to local
+              | DotNetModify          of DotNetCall        // calls .Net method that modifies source object and result to local
+              | DotNetStaticCall      of DotNetStaticCall  // calls .Net static method and assigns result to local
+              | DotNetConstructor     of DotNetStaticCall  // calls .Net constructor
+              | DotNetProperty        of DotNetProperty    // gets property value (will probably be split into get and set)
 and Literal     = {value:lit; dest:local_id}
 and Conditional = {left:local_id; predicate:predicate; right:local_id}
 and Destructor  = {source:local_id; destructor:Id; args:List<local_id>}
 and closure<'a> = {func:'a;dest:local_id}
 and Application = {closure:local_id; argument:local_id; dest:local_id}
-and DotNetStaticCall = {func: Id; args:List<local_id>; dest:local_id}
-and DotNetCall       = {instance: local_id; func: string; args:List<local_id>; dest:local_id}
+and ApplicationCall = {closure:local_id; argument:local_id; dest:local_id; side_effect:bool}
+and DotNetStaticCall = {func: Id; args:List<local_id>; dest:local_id; side_effect:bool}
+and DotNetCall       = {instance: local_id; func: string; args:List<local_id>; dest:local_id; side_effect:bool}
 and DotNetProperty   = {instance: local_id; property: string; dest:local_id}
 
 type rule = {
