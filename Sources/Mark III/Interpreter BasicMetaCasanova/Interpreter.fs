@@ -16,10 +16,11 @@ let print_premisse (p:premisse) :string =
   | LambdaClosure      x -> sprintf "LAMB %s -> %s" (print_lamb x.func) (print_loc x.dest)
   | Application        x -> sprintf "APPL %s %s -> %s" (print_loc x.closure) (print_loc x.argument) (print_loc x.dest)
   | ApplicationCall    x -> sprintf "CALL %s %s -> %s" (print_loc x.closure) (print_loc x.argument) (print_loc x.dest)
-  | DotNetStaticCall   x -> sprintf "NSCA %s(%s) -> %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
   | DotNetConstructor  x -> sprintf "NCON %s(%s) -> %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
+  | DotNetStaticCall   x -> sprintf "NSCA %s(%s) -> %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
   | DotNetCall         x -> sprintf "NDCA %s.%s(%s) -> %s" (print_loc x.instance) x.func (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
-  | DotNetProperty     x -> sprintf "NPRO %s.%s -> %s" (print_loc x.instance) x.property (print_loc x.dest)
+  | DotNetGet          x -> sprintf "NGET %s.%s -> %s" (print_loc x.instance) x.property (print_loc x.dest)
+  | DotNetSet          x -> sprintf "NSET %s.%s <- %s" (print_loc x.instance) x.property (print_loc x.dest)
 
 type global_context = {assemblies:List<System.Reflection.Assembly>;funcs:Map<Id,List<rule>>;lambdas:Map<LambdaId,rule>;datas:List<Id*data>;main:rule;}
 
@@ -51,7 +52,16 @@ let DotNetConstruct (x:DotNetStaticCall) (symbol_table:Map<local_id,obj>) (assem
   | []  -> failwith (sprintf "constructor %s not found in assembly" (print_id x.func))
   | _   -> failwith (sprintf "constructor %s defined in multiple assemblies" (print_id x.func))
 
-  //let res = t.InvokeMember(x.func.Name,System.oReflection.BindingFlags.Default,System.Type.DefaultBinder,
+let dynamicCallNonBuiltin (x:DotNetCall) (parent:Id) (symbol_table:Map<local_id,obj>) (assemblies:list<System.Reflection.Assembly>) :obj =
+  let ts = getClass assemblies (parent.Namespace@[parent.Name]|>String.concat ".")
+  match ts with
+  | [t] -> 
+    let args = x.args |> List.map (fun a->symbol_table.[a]) |> List.toArray
+    let argtypes = System.Type.GetTypeArray(args)
+    let f = t.GetMethod(x.func,argtypes)
+    f.Invoke(symbol_table.[x.instance],args)
+  | []  -> failwith (sprintf "method %s not found in assembly" (x.func))
+  | _   -> failwith (sprintf "method %s defined in multiple assemblies" (x.func))
 
 let rec eval_step (p:premisse)
                   (global_context:global_context)
@@ -132,6 +142,11 @@ let rec eval_step (p:premisse)
   | DotNetConstructor x ->
     let ret = DotNetConstruct x symbol_table global_context.assemblies
     [symbol_table.Add(x.dest,ret)]
+  | DotNetCall x ->
+    match type_map.[x.instance] with 
+    | DotNetType t -> 
+      let ret = dynamicCallNonBuiltin x t symbol_table global_context.assemblies
+      [symbol_table.Add(x.dest,ret)]
    
 and eval_rule (rule:rule)
               (ctxt:global_context)

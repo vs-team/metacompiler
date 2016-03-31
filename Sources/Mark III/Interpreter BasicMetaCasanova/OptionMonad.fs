@@ -35,6 +35,15 @@ let use_parser_monad (pars:Parser<'char,'ctxt,'res>)(input:List<'char>*'ctxt) :O
       None 
   opt{return! convert}
 
+let use_exception_monad (excep:ExceptionMonad.Exception<'a>) :Option<'a> =
+  opt{
+    match excep with
+    | ExceptionMonad.Result(res) -> return res
+    | ExceptionMonad.Exception s -> 
+      printfn "%s" s
+      return! None 
+  }
+
 let option_to_list (op:Option<'a>) :List<'a> = if op.IsSome then [op.Value] else []
 
 let react_to_parser_error 

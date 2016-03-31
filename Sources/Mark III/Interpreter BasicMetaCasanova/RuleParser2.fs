@@ -158,5 +158,5 @@ let parse_rule_scope :Parser<Id*DeclParseScope*List<Token>,List<Id>,Id*List<Rule
   prs{
     let! id,decl,tok = step
     let! res = UseDifferentSrcAndCtxt (parse_lines decl) tok []
-    return id,res,decl.DataDecl
+    return id,res,decl.FuncDecl
   }

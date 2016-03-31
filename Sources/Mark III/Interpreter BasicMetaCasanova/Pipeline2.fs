@@ -10,6 +10,7 @@ open GlobalSyntaxCheck2
 open RuleParser2
 open RuleNormalizer2
 open DataNormalizer2
+open RuleTypeChecker2
 
 let t = System.Diagnostics.Stopwatch()
 
@@ -108,6 +109,29 @@ let start_data_normalizer (ctxt:List<Id*DeclParseScope>)
     return res
   } |> (timer (sprintf "Normalizing Datas "))
 
+let use_rule_typechecker 
+  (set:List<NormalizedRule>*List<SymbolDeclaration>*List<SymbolDeclaration>)
+  :Option<List<CodegenInterface.Id*CodegenInterface.rule>> =
+  let (rule,ruledecl,datadecl) = set
+  let ctxt = {RuleCheckerCtxt.Zero with RuleDecl = ruledecl; DataDecl = datadecl}
+  use_exception_monad (type_check_rules rule ctxt)
+    
+let start_rule_typechecker (rule:(List<Id*List<NormalizedRule>*List<SymbolDeclaration>>)) 
+  (datadecl:(List<Id*List<SymbolDeclaration>>))
+  :Option<List<Id*List<CodegenInterface.Id*CodegenInterface.rule>>> =
+  opt{
+    let datadecl = Map.ofList datadecl
+    let res = rule |> List.map (fun (id,rule,ruledecl) ->
+      opt{
+        let! datadecl = datadecl.TryFind(id)
+        let! res = use_rule_typechecker (rule,ruledecl,datadecl)
+        return id,res
+      }
+      ) 
+    let! res = try_unpack_list_of_option res
+    return res
+  } |> (timer (sprintf "type checking rules"))
+
 let start_codegen (ctxt:fromTypecheckerWithLove) :Option<_> =
   Codegen.failsafe_codegen ctxt |> (timer (sprintf "Code gen "))
 
@@ -121,8 +145,13 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     let! normalized_rule_res = start_rule_normalizer rule_pars_res
     let! normalized_data_res = 
       start_data_normalizer (List.collect (fun (id,decl,_) -> [id,decl]) decl_pars_res)
+    let data_decl = List.map (fun (id,(decl:DeclParseScope),_) -> (id,decl.DataDecl)) decl_pars_res
+    
+    let! typed_rule_res = start_rule_typechecker normalized_rule_res data_decl
+
     let! code_res = start_codegen balltest.ball_func
-    do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res)) 
+    do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))
+    //return typed_rule_res
     return List.collect(fun (x,y,_) -> [(x,y)]) normalized_rule_res
     //return (List.collect (fun (x,y,z) -> [x,y]) decl_pars_res)
     //return lex_res

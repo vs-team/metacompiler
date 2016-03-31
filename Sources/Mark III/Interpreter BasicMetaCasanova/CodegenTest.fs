@@ -73,9 +73,9 @@ let list_test:fromTypecheckerWithLove =
       input=[Tmp(0)]
       premis=[Destructor({source=Tmp(0); destructor=append_id; args=[Named("x");Named("xs")]})
               FuncClosure({func=length_id; dest=Tmp(1)})
-              ApplicationCall({closure=Tmp(1); argument=Named("xs"); dest=Named("r")})
+              ApplicationCall({closure=Tmp(1); argument=Named("xs"); dest=Named("r"); side_effect=false})
               Literal({value=I32(1); dest=Tmp(2)})
-              DotNetStaticCall({func={Name="+";Namespace=["System";"Int32"]};args=[Named("r");Tmp(2)];dest=Tmp(3)})
+              DotNetStaticCall({func={Name="+";Namespace=["System";"Int32"]};args=[Named("r");Tmp(2)];dest=Tmp(3); side_effect=false})
             ]
       output=Tmp(3)
       typemap=Map.ofSeq [Tmp(0),list_t
@@ -104,7 +104,7 @@ let list_test:fromTypecheckerWithLove =
               Application({closure=Tmp(3); argument=Named("first"); dest=Tmp(4)})
               Application({closure=Tmp(4); argument=Tmp(2); dest=Tmp(5)})
               FuncClosure({func=length_id; dest=Tmp(6)})
-              ApplicationCall({closure=Tmp(6); argument=Tmp(5); dest=Tmp(7)})]
+              ApplicationCall({closure=Tmp(6); argument=Tmp(5); dest=Tmp(7); side_effect=false})]
       typemap=Map.ofSeq [Named("end"),list_t
                          Named("second"),int_t
                          Named("first"),int_t

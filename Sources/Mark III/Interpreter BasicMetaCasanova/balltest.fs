@@ -1,6 +1,8 @@
 ﻿module balltest
 open CodegenInterface
 
+#nowarn "0058" // silences indentation warnings
+
 let ball_func = 
   let vec2_t:Type = DotNetType({Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"})
   let float_t:Type = DotNetType({Namespace=["System"];Name="Single"})
@@ -28,43 +30,45 @@ let ball_func =
         Destructor({source=Named("b");destructor=ball_id;args=[Named("position");Named("velocity")]})
         
         // gety() -> y
-        DotNetProperty({
-                        property="Y"
-                        instance = Named("position")
-                        dest=Named("y")
-                       })
+        DotNetGet({property="Y"
+                   instance = Named("position")
+                   dest=Named("y") })
 
         // y >= 0
         Literal({value=F32(0.0f);dest=Named("zero")})
         Literal({value=F32(500.0f);dest=Named("ground")})
         Conditional({left=Named("y");predicate=LessEqual;right=Named("ground")})
 
-
         // Vector2(0,9.81)
         Literal({value=F32(98.1f);dest=Named("g")})
         DotNetConstructor({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"}
                            args=[Named("zero");Named("g")]
-                           dest=Named("v2")})
+                           dest=Named("v2")
+                           side_effect=false})
 
         // dotproduct
         DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Multiply"}
                           args=[Named("v2");Named("dt")]
-                          dest=Named("outerProduct")})
+                          dest=Named("outerProduct")
+                          side_effect=false})
 
         // sum
         DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Addition"}
                           args=[Named("velocity");Named("outerProduct")]
-                          dest=Named("updatedVelocity")})
+                          dest=Named("updatedVelocity")
+                          side_effect=false})
 
        // dotproduct
         DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="op_Multiply"}
                           args=[Named("updatedVelocity");Named("dt")]
-                          dest=Named("outerProduct2")})
+                          dest=Named("outerProduct2")
+                          side_effect=false})
 
         // sum
         DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework"];Name="op_Addition"}
                           args=[Named("position");Named("outerProduct2")]
-                          dest=Named("updatedPosition")})
+                          dest=Named("updatedPosition")
+                          side_effect=false})
 
         // Ball (updated_position, updated_velocity)
         ConstructorClosure({func=ball_id;dest=next_tmp()})
@@ -103,19 +107,14 @@ let ball_func =
         Destructor({source=Named("b");destructor=ball_id;args=[Named("position");Named("velocity")]})
 
         // gety() -> y
-        DotNetProperty(
-                        {
-                          property="Y"
-                          instance = Named("position")
-                          dest=Named("y")
-                        })
+        DotNetGet({property="Y"
+                   instance = Named("position")
+                   dest=Named("y") })
 
         // gety() -> x
-        DotNetProperty({
-                        property="X"
-                        instance = Named("position")
-                        dest=Named("x")
-                       })
+        DotNetGet({property="X"
+                   instance = Named("position")
+                   dest=Named("x") })
 
         // y >= 0
         Literal({value=F32(500.0f);dest=Named("ground")})
@@ -124,12 +123,14 @@ let ball_func =
         // Vector2(pos.x,zero)
         DotNetConstructor({func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"}
                            args=[Named("x");Named("ground")]
-                           dest=Named("updatedPosition")})
+                           dest=Named("updatedPosition")
+                           side_effect=false})
 
 
         DotNetStaticCall({func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Subtraction"}
                           args=[Named("velocity")]
-                          dest=Named("updatedVelocity")})
+                          dest=Named("updatedVelocity")
+                          side_effect=false})
 
         // Ball (updated_position, updated_velocity)
         ConstructorClosure({func=ball_id;dest=next_tmp()})
@@ -157,13 +158,14 @@ let ball_func =
     input=[]
     output=Named("ret")
     premis=[
-        Literal({dest=Named("x1");value=F32(10.0f)})
-        Literal({dest=Named("y1");value=F32(20.0f)})
-        DotNetConstructor({dest=Named("a");func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x1");Named("y1")]})
-        Literal({dest=Named("x2");value=F32(30.0f)})
-        Literal({dest=Named("y2");value=F32(40.0f)})
-        DotNetConstructor({dest=Named("b");func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x2");Named("y2")]})
-        DotNetStaticCall({dest=Named("ret");func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Addition"};args=[Named("a");Named("b")]})
+        Literal({dest=Named("x1");value=F32(20.0f)})
+        Literal({dest=Named("y1");value=F32(10.0f)})
+        DotNetConstructor({dest=Named("a");func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x1");Named("y1")];side_effect=false})
+        Literal({dest=Named("x2");value=F32(10.0f)})
+        Literal({dest=Named("y2");value=F32(30.0f)})
+        DotNetConstructor({dest=Named("b");func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x2");Named("y2")];side_effect=false})
+        DotNetStaticCall({dest=Named("c");func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Addition"};args=[Named("a");Named("b")];side_effect=false})
+        DotNetCall({dest=Named("ret");instance=Named("c");func="Normalize";args=[];side_effect=false;mutates_instance=true;})
       ]
     typemap=Map.ofList <| [
       Named("x1"),float_t
@@ -172,6 +174,7 @@ let ball_func =
       Named("y2"),float_t
       Named("a"),vec2_t
       Named("b"),vec2_t
+      Named("c"),vec2_t
       Named("ret"),vec2_t
      ]
     side_effect=true
