@@ -1,6 +1,8 @@
 ﻿module balltest
 open CodegenInterface
 
+#nowarn
+
 let ball_func = 
   let vec2_t:Type = DotNetType({Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"})
   let float_t:Type = DotNetType({Namespace=["System"];Name="Single"})
@@ -157,13 +159,14 @@ let ball_func =
     input=[]
     output=Named("ret")
     premis=[
-        Literal({dest=Named("x1");value=F32(10.0f)})
-        Literal({dest=Named("y1");value=F32(20.0f)})
+        Literal({dest=Named("x1");value=F32(20.0f)})
+        Literal({dest=Named("y1");value=F32(10.0f)})
         DotNetConstructor({dest=Named("a");func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x1");Named("y1")]})
-        Literal({dest=Named("x2");value=F32(30.0f)})
-        Literal({dest=Named("y2");value=F32(40.0f)})
+        Literal({dest=Named("x2");value=F32(10.0f)})
+        Literal({dest=Named("y2");value=F32(30.0f)})
         DotNetConstructor({dest=Named("b");func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x2");Named("y2")]})
-        DotNetStaticCall({dest=Named("ret");func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Addition"};args=[Named("a");Named("b")]})
+        DotNetStaticCall({dest=Named("c");func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Addition"};args=[Named("a");Named("b")]})
+        DotNetModify({dest=Named("ret");instance=Named("c");func="Normalize";args=[]})
       ]
     typemap=Map.ofList <| [
       Named("x1"),float_t
@@ -172,6 +175,7 @@ let ball_func =
       Named("y2"),float_t
       Named("a"),vec2_t
       Named("b"),vec2_t
+      Named("c"),vec2_t
       Named("ret"),vec2_t
      ]
     side_effect=true
