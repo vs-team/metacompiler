@@ -167,6 +167,7 @@ let ball_func =
         DotNetConstructor({dest=Named("b");func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x2");Named("y2")];side_effect=false})
         DotNetStaticCall({dest=Named("c");func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Addition"};args=[Named("a");Named("b")];side_effect=false})
         DotNetCall({dest=Named("nil");instance=Named("c");func="Normalize";args=[];side_effect=false;mutates_instance=true;})
+        DotNetSet({src=Named("y2");instance=Named("c");field="X"})
         DotNetGet({dest=Named("ret");instance=Named("c");field="X"})
       ]
     typemap=Map.ofList <| [
