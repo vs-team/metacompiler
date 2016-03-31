@@ -154,8 +154,13 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
     | DotNetGet x -> sprintf "/*NGET*/var %s = %s.%s;\n%s" 
                        (mangle_local_id x.dest)
                        (mangle_local_id x.instance)
-                       x.property
+                       x.field
                        (premisse m (app|>Map.add x.dest 0) ps ret)
+    | DotNetSet x -> sprintf "/*NSET*/var %s.%s = %s;\n%s" 
+                       (mangle_local_id x.instance)
+                       x.field
+                       (mangle_local_id x.src)
+                       (premisse m app ps ret)
     | Application x -> 
       let i = match app|>Map.tryFind x.closure with Some(x)->x | None-> failwith (sprintf "Application failed: %s is not a closure." (mangle_local_id x.closure))
       sprintf "/*APPL*/var %s = %s; %s.%s=%s;\n%s"
@@ -220,7 +225,7 @@ let get_locals (ps:premisse list) :local_id list =
     | DotNetStaticCall    x -> [x.dest]
     | DotNetConstructor   x -> [x.dest]
     | DotNetGet           x -> [x.dest]
-    | DotNetSet           x -> [x.dest]
+    | DotNetSet           x -> [x.src]
     | ConstructorClosure  x -> [x.dest]
     | Application         x -> [x.dest]
     | ApplicationCall     x -> [x.closure;x.dest;x.argument] )
@@ -263,7 +268,7 @@ let validate (input:fromTypecheckerWithLove) :bool =
         | DotNetStaticCall x      -> check (set,success) x.dest
         | DotNetConstructor x     -> check (set,success) x.dest
         | DotNetGet x             -> check (set,success) x.dest
-        | DotNetSet x             -> check (set,success) x.dest
+        | DotNetSet x             -> set,success
         | Application x           -> check (set,success) x.dest
         | ApplicationCall x       -> check (set,success) x.dest
       let _,ret = rule.premis |> foldi per_premisse (Set.empty,success)

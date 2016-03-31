@@ -36,8 +36,8 @@ type premisse = Literal            of Literal           // assign literal to loc
               | DotNetCall         of DotNetCall        // calls .Net method and assigns result to local
               | DotNetStaticCall   of DotNetStaticCall  // calls .Net static method and assigns result to local
               | DotNetConstructor  of DotNetStaticCall  // calls .Net constructor
-              | DotNetGet          of DotNetProperty    // gets property value
-              | DotNetSet          of DotNetProperty    // sets property value
+              | DotNetGet          of DotNetGet         // gets field and assigns it to local
+              | DotNetSet          of DotNetSet         // sets field from local
 and Literal     = {value:lit; dest:local_id}
 and Conditional = {left:local_id; predicate:predicate; right:local_id}
 and Destructor  = {source:local_id; destructor:Id; args:List<local_id>}
@@ -46,7 +46,8 @@ and Application = {closure:local_id; argument:local_id; dest:local_id}
 and ApplicationCall = {closure:local_id; argument:local_id; dest:local_id; side_effect:bool}
 and DotNetStaticCall = {func: Id; args:List<local_id>; dest:local_id; side_effect:bool}
 and DotNetCall       = {instance: local_id; func: string; args:List<local_id>; dest:local_id; side_effect:bool; mutates_instance:bool}
-and DotNetProperty   = {instance: local_id; property: string; dest:local_id}
+and DotNetGet   = {instance: local_id; field: string; dest:local_id}
+and DotNetSet   = {instance: local_id; field: string; src:local_id}
 
 type rule = {
   side_effect :bool
