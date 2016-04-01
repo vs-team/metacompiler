@@ -39,7 +39,7 @@ let construct_tree (input:fromTypecheckerWithLove) :List<NamespacedItem> =
      |> go (Map.toSeq input.funcs) functree 
      |> go input.datas datatree
 
-let print_literal (lit:lit) =
+let print_literal (lit:Literal) =
   match lit with
   | I64 i    -> sprintf "%dL"  i
   | U64 i    -> sprintf "%uUL" i
@@ -93,7 +93,7 @@ let overloadableOps:Map<string,string> =
 
 let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse list) (ret:local_id) =
   match ps with 
-  | [] -> sprintf "_ret.Add(%s);\n" (mangle_local_id ret)
+  | [] -> sprintf "return %s;\n" (mangle_local_id ret)
   | p::ps -> 
     match p with
     | Literal x -> sprintf "/*LITR*/var %s = %s;\n%s"
@@ -173,7 +173,7 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
                          (premisse m (app|>Map.add x.dest (i+1)) ps ret)
     | ApplicationCall x -> 
       let i = match app|>Map.tryFind x.closure with Some(x)->x | None-> failwith (sprintf "ApplicationCall failed: %s is not a closure." (mangle_local_id x.closure))
-      sprintf "/*CALL*/%s.%s=%s;\nforeach(var %s in %s._run()){\n%s}\n"
+      sprintf "/*CALL*/%s.%s=%s; var %s = %s._run();\n%s\n"
         (mangle_local_id  x.closure)
         (sprintf "_arg%d" i)
         (mangle_local_id  x.argument)
@@ -191,8 +191,8 @@ let print_rule_bodies (rules:rule list) =
 
 let print_main (rule:rule) =
   let return_type = mangle_type rule.typemap.[rule.output]
-  let body = sprintf "static System.Collections.Generic.List<%s> body(){var _ret = new System.Collections.Generic.List<%s>();\n%sreturn _ret;\n}" return_type return_type (print_rule_bodies [rule])
-  let main = "static void Main() {\nforeach(var res in body()){System.Console.WriteLine(System.String.Format(\"{0}\", res));\n}\n}"
+  let body = sprintf "static %s body(){\n%s}" return_type (print_rule_bodies [rule])
+  let main = "static void Main() {\nSystem.Console.WriteLine(System.String.Format(\"{0}\", body()));\n}\n}"
   sprintf "class _main{\n%s%s}\n" body main 
 
 let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :string =
@@ -201,7 +201,7 @@ let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :s
     let args = rule.input |> Seq.mapi (fun nr id-> sprintf "public %s _arg%d;\n" (mangle_type rule.typemap.[id]) nr) |> String.concat ""
     let ret_type = mangle_type rule.typemap.[rule.output]
     let rules = print_rule_bodies rules
-    sprintf "class %s{\n%spublic System.Collections.Generic.List<%s> _run(){\nvar _ret = new System.Collections.Generic.List<%s>();\n%sreturn _ret;\n}\n}\n" (CSharpMangle name) args ret_type ret_type rules
+    sprintf "class %s{\n%spublic %s_run(){\n%s}\n}\n" (CSharpMangle name) args ret_type rules
   let print_base_types (ns:List<NamespacedItem>) = 
     let types = ns |> List.fold (fun types item -> match item with Data (_,v) -> v.outputType::types | _ -> types) [] |> List.distinct
     let print t = sprintf "public class %s{}\n" (t|>remove_namespace_of_type|>mangle_type)

@@ -15,7 +15,7 @@ type local_id = Named of string
 
 type predicate = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 
-type premisse = Literal            of LiteralPremisse   // assign literal to local
+type premisse = Literal            of LiteralAssignment // assign literal to local
               | Conditional        of Conditional       // stops evaluation if condition is false
               | Destructor         of Destructor        // destructs Mc data into its constructor arguments
               | ConstructorClosure of closure<Id>       // assigns mc data constructor closure to local
@@ -28,7 +28,7 @@ type premisse = Literal            of LiteralPremisse   // assign literal to loc
               | DotNetConstructor  of DotNetStaticCall  // calls .Net constructor
               | DotNetGet          of DotNetGet         // gets field and assigns it to local
               | DotNetSet          of DotNetSet         // sets field from local
-and LiteralPremisse = {value:Literal; dest:local_id}
+and LiteralAssignment = {value:Literal; dest:local_id}
 and Conditional = {left:local_id; predicate:predicate; right:local_id}
 and Destructor  = {source:local_id; destructor:Id; args:List<local_id>}
 and closure<'a> = {func:'a;dest:local_id}
