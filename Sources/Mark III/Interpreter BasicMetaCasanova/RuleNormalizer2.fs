@@ -81,7 +81,11 @@ let rec Normalize_arguments (sourceid:NormalId) (args:List<ArgId>)
       let! res = Normalize_arguments dest xs output
       return (Apply(sourceid,apply_arg,dest)::res)
     | [] ->
-      return! fail (NormalizeError "Not enough arguments.")
+      let! id = get_local_id_number
+      let arg = TempId(id,Position.Zero)
+      let lit = Literal(Void,arg)
+      let apply_call = ApplyCall(sourceid,arg,output)
+      return [lit;apply_call]
 
   }
 

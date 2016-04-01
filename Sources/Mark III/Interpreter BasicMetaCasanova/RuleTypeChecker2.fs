@@ -33,6 +33,7 @@ let convert_literal (literal:Common.Literal):(Literal*Type) =
   | I64(i) -> I64(int64(i)),DotNetType{Namespace = ["System"] ; Name = "Int64"}
   | Common.String(st) -> String(st),DotNetType{Namespace = ["System"] ; Name = "String"}
   | F32(f) -> F32(f),DotNetType{Namespace = ["System"] ; Name = "Single"}
+  | Void -> Void,DotNetType{Namespace = ["System"] ; Name = "void"}
   | _ -> failwith "Literal not implemented yet."
 
 let convert_predicate (con:RuleParser2.Condition):predicate =
