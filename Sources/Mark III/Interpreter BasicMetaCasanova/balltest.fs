@@ -1,4 +1,5 @@
 ﻿module balltest
+open Common
 open CodegenInterface
 
 #nowarn "0058" // silences indentation warnings

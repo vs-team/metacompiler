@@ -1,4 +1,5 @@
 ﻿module Codegen
+open Common
 open CodegenInterface
 open Mangle
 

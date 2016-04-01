@@ -1,7 +1,6 @@
 ﻿module CodegenInterface
+open Common
 
-type genericId<'a>= {Namespace:List<string>;Name:'a;}
-type Id       = genericId<string>
 type LambdaId = genericId<int>
 type TypeId   = genericId<string>
 
@@ -13,19 +12,10 @@ type Type = DotNetType      of TypeId
 type local_id = Named of string
               | Tmp   of int
 
-type lit = I64 of System.Int64
-         | U64 of System.UInt64
-         | I32 of System.Int32
-         | U32 of System.Int32
-         | F64 of System.Double
-         | F32 of System.Single
-         | String of System.String
-         | Bool of System.Boolean
-         | Void
 
 type predicate = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 
-type premisse = Literal            of Literal           // assign literal to local
+type premisse = Literal            of LiteralPremisse   // assign literal to local
               | Conditional        of Conditional       // stops evaluation if condition is false
               | Destructor         of Destructor        // destructs Mc data into its constructor arguments
               | ConstructorClosure of closure<Id>       // assigns mc data constructor closure to local
@@ -38,7 +28,7 @@ type premisse = Literal            of Literal           // assign literal to loc
               | DotNetConstructor  of DotNetStaticCall  // calls .Net constructor
               | DotNetGet          of DotNetGet         // gets field and assigns it to local
               | DotNetSet          of DotNetSet         // sets field from local
-and Literal     = {value:lit; dest:local_id}
+and LiteralPremisse = {value:Literal; dest:local_id}
 and Conditional = {left:local_id; predicate:predicate; right:local_id}
 and Destructor  = {source:local_id; destructor:Id; args:List<local_id>}
 and closure<'a> = {func:'a;dest:local_id}
