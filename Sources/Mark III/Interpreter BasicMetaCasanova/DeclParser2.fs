@@ -20,8 +20,7 @@ type ArgStructure = LeftArg of DeclType*DeclType
 
 type SymbolDeclaration =
   {
-    Name              : string
-    CurrentNamespace  : Namespace
+    Name              : Id
     Args              : ArgStructure
     Return            : DeclType
     Priority          : int
@@ -31,7 +30,7 @@ type SymbolDeclaration =
 
 type DeclParseScope = 
   {
-    CurrentNamespace : Namespace
+    Name             : Id
     DataDecl         : List<SymbolDeclaration>
     FuncDecl         : List<SymbolDeclaration>
     //ArrowDecl        : List<SymbolDeclaration>
@@ -40,7 +39,7 @@ type DeclParseScope =
   } with 
     static member Zero =
       {
-        CurrentNamespace  = []
+        Name              = {Namespace = []; Name = ""}
         DataDecl          = []
         FuncDecl          = []
         //ArrowDecl         = []
@@ -49,7 +48,7 @@ type DeclParseScope =
       }
     static member add pc1 pc2=
       {
-        CurrentNamespace  = pc2.CurrentNamespace
+        Name              = pc2.Name
         DataDecl          = pc1.DataDecl  @ pc2.DataDecl
         FuncDecl          = pc1.FuncDecl  @ pc2.FuncDecl
         //TypeDecl          = pc1.TypeDecl  @ pc2.TypeDecl
@@ -62,12 +61,16 @@ type DeclParseScope =
 let skip_newline :Parser<Token,_,_> =
   prs{do! (check_keyword() NewLine) |> repeat |> ignore}
 
-let parse_single_arg :Parser<Token,_,DeclType> =
+let parse_single_arg :Parser<Token,DeclParseScope,DeclType> =
   prs{
     let! id,pos = extract_id()
+    let! ctxt = getContext
+    let id = {Namespace = ctxt.Name.Namespace ; Name = id}
     return Id(id,pos)
   } .|| prs{
     let! id,pos = extract_varid()
+    let! ctxt = getContext
+    let id = {Namespace = ctxt.Name.Namespace; Name = id}
     return IdVar(id,pos)
   }
 
@@ -92,6 +95,8 @@ and parse_arg :Parser<Token,DeclParseScope,DeclType> =
     let! before_symbol = parse_round .|| parse_single_arg
     let! symbol,pos = extract_id()
     let! after_symbol = parse_arg
+    let! ctxt = getContext
+    let symbol = {Namespace = ctxt.Name.Namespace;Name = symbol}
     return Application(symbol,before_symbol,after_symbol)
   } .|| parse_round .|| parse_single_arg
 
@@ -108,11 +113,15 @@ let parse_arg_structure :Parser<Token,DeclParseScope,Id*ArgStructure*Position> =
     let! name,pos = extract_string_literal()
     do! check_keyword() SingleArrow
     let! right_arg = parse_small_args
+    let! ctxt = getContext
+    let name = {Namespace=ctxt.Name.Namespace;Name=name}
     return (name,LeftArg(left_arg,right_arg),pos)
   } .|| prs{
     let! name,pos = extract_string_literal()
     do! check_keyword() SingleArrow
     let! right_args = parse_small_args |> repeat
+    let! ctxt = getContext
+    let name = {Namespace=ctxt.Name.Namespace;Name=name}
     return (name,RightArgs(right_args),pos)
   }
 
@@ -132,9 +141,8 @@ let lift_parse_decl (setctxt) :Parser<Token,DeclParseScope,_> =
                         (extract_int_literal() .>>. parse_assosiotivity)) .||
                          prs{return((0,Position.Zero),Left)}
     let! ctxt = getContext
-    let res = {Name = name ; CurrentNamespace = ctxt.CurrentNamespace ; Args = args;
-                Return = result ; Priority = pri ; Associativity = ass;
-                Pos = pos}
+    let res = {Name = name ; Args = args; Return = result ; Priority = pri ; 
+                Associativity = ass; Pos = pos}
     do! setContext (setctxt ctxt res)
   }
 

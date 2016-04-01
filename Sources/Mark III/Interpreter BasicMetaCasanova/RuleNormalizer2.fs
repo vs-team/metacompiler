@@ -5,10 +5,6 @@ open ParserMonad
 open DeclParser2
 open RuleParser2
 
-type StandardId = Id*Namespace
-
-type GlobalId = Id*Namespace
-
 type NormalId = VarId of Id*Position
               | TempId of int*Position
 
@@ -17,17 +13,16 @@ type AliasType = NormalId*NormalId
 type Premisse = Alias              of AliasType
               | Literal            of Literal*NormalId
               | Conditional        of NormalId*Condition*NormalId
-              | Destructor         of NormalId*StandardId*List<NormalId>
-              | McClosure          of GlobalId*NormalId
-              | DotNetClosure      of StandardId*NormalId
-              | ConstructorClosure of StandardId*NormalId
+              | Destructor         of NormalId*Id*List<NormalId>
+              | McClosure          of Id*NormalId
+              | DotNetClosure      of Id*NormalId
+              | ConstructorClosure of Id*NormalId
               | Apply              of NormalId*NormalId*NormalId
               | ApplyCall          of NormalId*NormalId*NormalId
 
 type NormalizedRule =
   {
     Name : Id
-    CurentNamespace : Namespace
     Input : List<NormalId>
     Output : NormalId
     Premis : List<Premisse>
@@ -60,7 +55,7 @@ let normalize_right_premistree (right_prem:PremisFunctionTree)
     | RuleParser2.RuleBranch(x) ->
       return! fail (NormalizeError (sprintf "right of premis may not have a rule%A" x.Pos))
     | RuleParser2.DataBranch(x) ->
-      let destruct = x.Name,x.CurrentNamespace
+      let (destruct:Id) = x.Name
       let! tempid = get_local_id_number
       let sourceid = TempId(tempid,x.Pos)
       let idlist = List.collect (fun arg -> [VarId(arg)]) x.Args
@@ -86,7 +81,7 @@ let rec Normalize_arguments (sourceid:NormalId) (args:List<ArgId>)
       let! res = Normalize_arguments dest xs output
       return (Apply(sourceid,apply_arg,dest)::res)
     | [] ->
-      return! fail (NormalizeError "Normalizer failded at")
+      return! fail (NormalizeError "Not enough arguments.")
 
   }
 
@@ -102,14 +97,14 @@ let normalize_Left_premistree (input:PremisFunctionTree) (output:NormalId)
     | RuleParser2.RuleBranch(x) -> 
       let! cons_id = get_local_id_number
       let construct_id = TempId(cons_id,x.Pos)
-      let construct = McClosure ((x.Name,x.CurrentNamespace), construct_id)
+      let construct = McClosure (x.Name, construct_id)
       let! applypremisses = 
         Normalize_arguments construct_id x.Args output
       return (construct::applypremisses)
     | RuleParser2.DataBranch(x) -> 
       let! cons_id = get_local_id_number
       let construct_id = TempId(cons_id,x.Pos)
-      let construct = ConstructorClosure ((x.Name,x.CurrentNamespace), construct_id)
+      let construct = ConstructorClosure (x.Name, construct_id)
       let! applypremisses = 
         Normalize_arguments construct_id x.Args output
       return (construct::applypremisses)
@@ -139,7 +134,7 @@ let normalize_rule :Parser<RuleDef,NormalizerContext,NormalizedRule> =
     let outputmonad = normalize_Left_premistree next.Output outputnormalid
     let! output = UseDifferentSrc outputmonad []
     let premises = premises @ output
-    let result = {Name = next.Name ; CurentNamespace = next.CurrentNamespace ;
+    let result = {Name = next.Name ;
                   Input = inputs ; Output = outputnormalid ; Premis = premises ;
                   Pos = next.Pos}
     return result
@@ -196,7 +191,7 @@ let change_alias_premis (prem:Premisse) ((lalias,ralias):AliasType) =
     else ApplyCall(l,a,r)
 
 let de_alias_output (output:NormalId) (alias:List<AliasType>) =
-  List.fold (fun ni (l,r) -> if ni |= r then l else ni) output alias
+  List.fold (fun ni (l,r) -> if ni |= r then l else ni) output (List.rev alias)
 
 let de_alias_rule :Parser<NormalizedRule,NormalizerContext,_> =
   prs{
@@ -211,8 +206,8 @@ let de_alias_rule :Parser<NormalizedRule,NormalizerContext,_> =
   }
 
 let normalize_rules 
-  :Parser<Id*List<RuleDef>*List<SymbolDeclaration>,Id
-    ,Id*List<NormalizedRule>*List<SymbolDeclaration>> =
+  :Parser<string*List<RuleDef>*List<SymbolDeclaration>,string
+    ,string*List<NormalizedRule>*List<SymbolDeclaration>> =
   prs{
     let! id,rules,decl = step
     let rule_normalizer = normalize_rule |> itterate

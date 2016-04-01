@@ -19,7 +19,8 @@ let main argv =
                //;"result"
                //;"state"
                //"testforparser"
-               "testfornormalizer"
+               //"testfornormalizer"
+               "testforcodegen"
                //"decltest"
               ]
   let file_paths = ["../../../Content/Metacompiler/StandardLibrary/";

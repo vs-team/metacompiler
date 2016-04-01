@@ -25,14 +25,15 @@ type RuleCheckerCtxt =
 
 let build_local_id (id:NormalId):local_id =
   match id with
-  | VarId(st,pos) -> Named(st)
+  | VarId(st,pos) -> Named(st.Name)
   | TempId(i,pos) -> Tmp(i)
 
-let convert_literal (literal:Common.Literal):(lit*Type) =
+let convert_literal (literal:Common.Literal):(Literal*Type) =
   match literal with
-  | Int(i) -> I64(int64(i)),DotNetType{Namespace = ["System"] ; Name = "Int64"}
+  | I64(i) -> I64(int64(i)),DotNetType{Namespace = ["System"] ; Name = "Int64"}
   | Common.String(st) -> String(st),DotNetType{Namespace = ["System"] ; Name = "String"}
-  | Float32(f) -> F32(f),DotNetType{Namespace = ["System"] ; Name = "Single"}
+  | F32(f) -> F32(f),DotNetType{Namespace = ["System"] ; Name = "Single"}
+  | _ -> failwith "Literal not implemented yet."
 
 let convert_predicate (con:RuleParser2.Condition):predicate =
   match con with
@@ -44,35 +45,35 @@ let convert_predicate (con:RuleParser2.Condition):predicate =
 
 let rec convert_type (datatype:DataType) : Type =
   match datatype with
-  | DataNormalizer2.DotNetType(id,ns) -> DotNetType{Namespace = ns; Name = id}
-  | DataNormalizer2.McType(id,ns) -> DotNetType{Namespace = []; Name = id}
+  | DataNormalizer2.DotNetType(id) -> DotNetType id
+  | DataNormalizer2.McType(id,pos) -> DotNetType id
   | DataNormalizer2.TypeApplication(t,ls) ->
     TypeApplication((convert_type t),(List.collect (fun x -> [convert_type x]) ls))
   | DataNormalizer2.Arrow(l,r) -> Arrow((convert_type l),(convert_type r))
   | _ -> failwith "not implemented in datatype"
 
-let rec convert_decl_to_type (decltype:DeclType)(ns:Namespace) : Type =
+let rec convert_decl_to_type (decltype:DeclType) : Type =
   match decltype with
-  | DeclParser2.Id(id,_) -> McType{Namespace = ns ; Name = id}
-  | DeclParser2.IdVar(id,_) -> McType{Namespace = ns ; Name = id}
+  | DeclParser2.Id(id,_) -> McType id
+  | DeclParser2.IdVar(id,_) -> McType id
   | DeclParser2.Application(id,l,r) ->
-    TypeApplication((McType{Namespace=ns;Name=id})
-      ,[(convert_decl_to_type l ns);(convert_decl_to_type r ns)])
+    TypeApplication((McType id)
+      ,[(convert_decl_to_type l);(convert_decl_to_type r)])
   | DeclParser2.Arrow(l,r) -> 
-    Arrow((convert_decl_to_type l ns),(convert_decl_to_type r ns))
+    Arrow((convert_decl_to_type l),(convert_decl_to_type r))
 
-let convert_arg_structure (argstruct:ArgStructure)(ret:DeclType)(id:local_id)(ns:Namespace) :local_id*Type =
+let convert_arg_structure (argstruct:ArgStructure)(ret:DeclType)(id:local_id) :local_id*Type =
   match argstruct with
   | LeftArg(l,r) -> 
-    let left = convert_decl_to_type l ns
-    let right = convert_decl_to_type r ns
-    let ret = convert_decl_to_type ret ns
+    let left = convert_decl_to_type l
+    let right = convert_decl_to_type r
+    let ret = convert_decl_to_type ret
     id,Arrow(left,Arrow(right,ret)) 
   | RightArgs(ls) -> 
-    let ret = convert_decl_to_type ret ns
-    id,(List.fold (fun state x -> Arrow((convert_decl_to_type x ns),state)) ret (List.rev ls))
+    let ret = convert_decl_to_type ret
+    id,(List.fold (fun state x -> Arrow((convert_decl_to_type x),state)) ret (List.rev ls))
 
-let arg_structure_to_list (argstruct:ArgStructure)(ns:Namespace):List<DeclType> =
+let arg_structure_to_list (argstruct:ArgStructure):List<DeclType> =
   match argstruct with
   | LeftArg(l,r) -> [l;r]
   | RightArgs(ls) -> ls
@@ -88,24 +89,24 @@ let rec bind_id_to_type (args:List<local_id>)(types:List<Type>) =
     | y::ys -> failwith "there are more types than arguments"
     | [] -> []
 
-let build_closure ((id,ns):GlobalId) (normalid:NormalId) (symbol_table:Map<local_id,Type>) 
+let build_closure (id:Id) (normalid:NormalId) (symbol_table:Map<local_id,Type>) 
   (ctxt:List<SymbolDeclaration>) (lift_closure:closure<Id>->premisse) :(premisse*Map<local_id,Type>) =
   let rule_option = 
-    List.tryFind (fun (x:SymbolDeclaration) -> x.Name = id && x.CurrentNamespace = ns) ctxt
+    List.tryFind (fun (x:SymbolDeclaration) -> x.Name = id) ctxt
   match rule_option with
   | Some(rule) -> 
     let dest = build_local_id normalid
-    let symbol = convert_arg_structure rule.Args rule.Return dest rule.CurrentNamespace
+    let symbol = convert_arg_structure rule.Args rule.Return dest 
     let symbol_table = symbol_table.Add(symbol)
-    (lift_closure {func = {Namespace = ns; Name = id} ; dest = dest}),symbol_table
-  | None -> failwithf "can not find symbol in %s" id
+    (lift_closure {func = id ; dest = dest}),symbol_table
+  | None -> failwithf "can not find symbol in %A" id
 
 let add_destructor_map (source:local_id) (destructor:Id) 
   (args:List<local_id>) (symbol_table:Map<local_id,Type>) (ctxt:List<SymbolDeclaration>) =
-  let destr = List.find (fun (x:SymbolDeclaration) -> x.Name = destructor.Name && x.CurrentNamespace = destructor.Namespace) ctxt
-  let symbol_table = symbol_table.Add(source,(convert_decl_to_type destr.Return destr.CurrentNamespace))
-  let destr_arg_list = arg_structure_to_list destr.Args destr.CurrentNamespace
-  let type_list = List.collect (fun x -> [convert_decl_to_type x destr.CurrentNamespace]) destr_arg_list
+  let destr = List.find (fun (x:SymbolDeclaration) -> x.Name = destructor) ctxt
+  let symbol_table = symbol_table.Add(source,(convert_decl_to_type destr.Return))
+  let destr_arg_list = arg_structure_to_list destr.Args 
+  let type_list = List.collect (fun x -> [convert_decl_to_type x]) destr_arg_list
   let arg_list = bind_id_to_type args type_list
   List.fold (fun (state:Map<local_id,Type>) (arg,typ) -> state.Add(arg,typ)) symbol_table arg_list
 
@@ -146,8 +147,8 @@ let type_check_premise (ctxt:Exception<RuleCheckerCtxt>)
         let res = (Conditional{left = left; predicate = convert_predicate c; right = right})
         return {ctxt with Premise = res::ctxt.Premise}
       else return! Exception (sprintf "conditional type mismatch between %A and %A ." type_left type_right)
-    | RuleNormalizer2.Destructor(l,(name,ns),r) -> 
-      let dest_id = {Namespace = ns ; Name = name}
+    | RuleNormalizer2.Destructor(l,name,r) -> 
+      let dest_id = name
       let args = List.collect (fun x -> [build_local_id x]) r
       let symbol_table = add_destructor_map (build_local_id l) dest_id args ctxt.TypeMap ctxt.DataDecl
       let res = (Destructor{source = build_local_id l; destructor = dest_id; args = args})
@@ -173,11 +174,11 @@ let try_get_argument_type (id:Id) (input_args:List<local_id>)
   (ctxt:RuleCheckerCtxt) :Exception<RuleCheckerCtxt> =
   exc{
     let ruleopt = ctxt.RuleDecl |> List.tryFind (fun (x:SymbolDeclaration) -> 
-      x.Name = id.Name && x.CurrentNamespace = id.Namespace)
+      x.Name = id)
     match ruleopt with
     | Some(rule) ->
-      let arg_types = arg_structure_to_list rule.Args rule.CurrentNamespace
-      let arg_types = List.map (fun x -> convert_decl_to_type x rule.CurrentNamespace) arg_types 
+      let arg_types = arg_structure_to_list rule.Args
+      let arg_types = List.map (fun x -> convert_decl_to_type x) arg_types 
       let res = List.zip input_args arg_types
       let symbol_table = res |> List.fold (fun (state:Map<local_id,Type>) (id,typ) -> 
         state.Add (id,typ)) ctxt.TypeMap
@@ -188,14 +189,14 @@ let try_get_argument_type (id:Id) (input_args:List<local_id>)
 let type_check_rule (ctxt:RuleCheckerCtxt) (next:NormalizedRule)
   :Exception<Id*rule> =
   exc{
-    let name = {Namespace = next.CurentNamespace ; Name = next.Name}
+    let name = next.Name
     let input = List.map (fun x -> build_local_id x) next.Input
     let output = build_local_id next.Output
     let! ctxt = try_get_argument_type name input ctxt
     let! premise = fold type_check_premise (Result ctxt) next.Premis
     
     let res = {side_effect = false ; input = input ; output = output ;
-               premis = premise.Premise ; typemap = premise.TypeMap}
+               premis = List.rev premise.Premise ; typemap = premise.TypeMap}
     return (name,res)
     
   }

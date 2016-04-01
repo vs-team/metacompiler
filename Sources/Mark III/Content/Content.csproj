@@ -47,6 +47,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Metacompiler\Casanova\bouncingBall.mc" />
+    <None Include="Metacompiler\Programs\testforcodegen.mc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Metacompiler\Programs\testfornormalizer.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
