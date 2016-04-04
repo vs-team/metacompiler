@@ -124,17 +124,19 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
                            (mangle_lambda x.func)
                            (premisse m (app|>Map.add x.dest 0) ps ret)
     | DotNetCall x -> 
-      sprintf  "/*NDCA*/var %s = %s.%s(%s);\n%s"
-        (mangle_local_id x.dest)
+      let isVoid = m.[x.dest]=Type.DotNetType({Namespace=[];Name="void"})
+      sprintf  "/*NDCA*/%s%s.%s(%s);\n%s"
+        (if isVoid then "" else sprintf "var %s = " (mangle_local_id x.dest))
         (mangle_local_id x.instance)
         x.func
         (x.args |> List.map mangle_local_id|>String.concat ",")
         (premisse m (app|>Map.add x.dest 0) ps ret)
     | DotNetStaticCall x -> 
+          let isVoid = m.[x.dest]=Type.DotNetType({Namespace=[];Name="void"})
           if overloadableOps.ContainsKey(x.func.Name) then 
             let args = x.args |> List.rev
-            sprintf "/*NSCA*/var %s = %s %s %s;\n%s"
-              (mangle_local_id x.dest)
+            sprintf "/*NSCA*/%s%s %s %s;\n%s"
+              (if isVoid then "" else sprintf "var %s = " (mangle_local_id x.dest))
               (match x.args.Length with
                | 1 -> ""
                | 2 -> mangle_local_id args.[1])
@@ -142,8 +144,8 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
               (mangle_local_id args.[0])
               (premisse m (app|>Map.add x.dest 0) ps ret)
           else
-            sprintf "/*NSCA*/var %s = %s(%s);\n%s" 
-              (mangle_local_id x.dest)
+            sprintf "/*NSCA*/%s%s(%s);\n%s" 
+              (if isVoid then "" else sprintf "var %s = " (mangle_local_id x.dest))
               (x.func.Namespace@[x.func.Name]|>String.concat ".")
               (x.args |> List.map mangle_local_id|>String.concat ",")
               (premisse m (app|>Map.add x.dest 0) ps ret)
@@ -157,7 +159,7 @@ let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse lis
                        (mangle_local_id x.instance)
                        x.field
                        (premisse m (app|>Map.add x.dest 0) ps ret)
-    | DotNetSet x -> sprintf "/*NSET*/var %s.%s = %s;\n%s" 
+    | DotNetSet x -> sprintf "/*NSET*/%s.%s = %s;\n%s" 
                        (mangle_local_id x.instance)
                        x.field
                        (mangle_local_id x.src)
@@ -201,7 +203,7 @@ let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :s
     let args = rule.input |> Seq.mapi (fun nr id-> sprintf "public %s _arg%d;\n" (mangle_type rule.typemap.[id]) nr) |> String.concat ""
     let ret_type = mangle_type rule.typemap.[rule.output]
     let rules = print_rule_bodies rules
-    sprintf "class %s{\n%spublic %s _run(){\n%s}\n}\n" (CSharpMangle name) args ret_type rules
+    sprintf "class %s{\n%spublic %s _run(){\n%sthrow new System.MissingMethodException();\n}\n}\n" (CSharpMangle name) args ret_type rules
   let print_base_types (ns:List<NamespacedItem>) = 
     let types = ns |> List.fold (fun types item -> match item with Data (_,v) -> v.outputType::types | _ -> types) [] |> List.distinct
     let print t = sprintf "public class %s{}\n" (t|>remove_namespace_of_type|>mangle_type)

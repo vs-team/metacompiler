@@ -179,8 +179,8 @@ let ball_func =
       Named("a"),vec2_t
       Named("b"),vec2_t
       Named("c"),vec2_t
-      Named("nil"),vec2_t
-      Named("ret"),int_t
+      Named("nil"),void_t
+      Named("ret"),float_t
      ]
     side_effect=true
    }
