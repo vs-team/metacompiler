@@ -2,8 +2,7 @@ import prelude
 import match
 import monad
 
-TypeAlias "List" => * => *
-List 'a => Unit | ('a * (List 'a))
+TypeAlias "List" => #a => Unit | (#a * (List #a))
 
 TypeAlias 'a -> "::" -> List 'a -> Right ('a * (List 'a))
 TypeAlias "empty" -> Left Unit
