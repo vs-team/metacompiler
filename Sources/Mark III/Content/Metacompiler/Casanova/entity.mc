@@ -66,9 +66,7 @@ EntityField => Module{
   -----------------------
   get l rs => res
 
-  FieldType 'l 'rs => ft
-  ----------------------
-  TypeFunc "set" => 'l => 'rs => ft => cons^'rs
+  TypeFunc "set" => 'l => 'rs => * => cons^'rs
 
   (if (l = label^rs) then
     Entity l f rs
