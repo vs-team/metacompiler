@@ -55,9 +55,6 @@ EntityField => Module{
   Func "update" -> Cons -> 'a -> Cons
   update Empty dt -> Empty
 
-  TypeFunc "FieldType" => String => EntityField => *
-  FieldType l r => field^(get l r)
-
   TypeFunc "get" => String => EntityField => EntityField
   (if (l = label^rs) then
     rs
@@ -67,7 +64,6 @@ EntityField => Module{
   get l rs => res
 
   TypeFunc "set" => 'l => 'rs => * => cons^'rs
-
   (if (l = label^rs) then
     Entity l f rs
   else
