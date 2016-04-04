@@ -192,7 +192,7 @@ let print_rule_bodies (rules:rule list) =
 let print_main (rule:rule) =
   let return_type = mangle_type rule.typemap.[rule.output]
   let body = sprintf "static %s body(){\n%s}" return_type (print_rule_bodies [rule])
-  let main = "static void Main() {\nSystem.Console.WriteLine(System.String.Format(\"{0}\", body()));\n}\n}"
+  let main = "static void Main() {\nSystem.Console.WriteLine(System.String.Format(\"{0}\", body()));\n}"
   sprintf "class _main{\n%s%s}\n" body main 
 
 let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :string =
@@ -201,7 +201,7 @@ let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :s
     let args = rule.input |> Seq.mapi (fun nr id-> sprintf "public %s _arg%d;\n" (mangle_type rule.typemap.[id]) nr) |> String.concat ""
     let ret_type = mangle_type rule.typemap.[rule.output]
     let rules = print_rule_bodies rules
-    sprintf "class %s{\n%spublic %s_run(){\n%s}\n}\n" (CSharpMangle name) args ret_type rules
+    sprintf "class %s{\n%spublic %s _run(){\n%s}\n}\n" (CSharpMangle name) args ret_type rules
   let print_base_types (ns:List<NamespacedItem>) = 
     let types = ns |> List.fold (fun types item -> match item with Data (_,v) -> v.outputType::types | _ -> types) [] |> List.distinct
     let print t = sprintf "public class %s{}\n" (t|>remove_namespace_of_type|>mangle_type)
