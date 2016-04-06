@@ -1,4 +1,5 @@
 ﻿module Interpreter
+open Common
 open CodegenInterface
 open ParserMonad
 
@@ -15,53 +16,56 @@ let print_premisse (p:premisse) :string =
   | FuncClosure        x -> sprintf "FUNC %s -> %s" (print_id x.func) (print_loc x.dest)
   | LambdaClosure      x -> sprintf "LAMB %s -> %s" (print_lamb x.func) (print_loc x.dest)
   | Application        x -> sprintf "APPL %s %s -> %s" (print_loc x.closure) (print_loc x.argument) (print_loc x.dest)
-  | ApplicationCall    x -> sprintf "CALL %s %s -> %s" (print_loc x.closure) (print_loc x.argument) (print_loc x.dest)
-  | DotNetConstructor  x -> sprintf "NCON %s(%s) -> %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
-  | DotNetStaticCall   x -> sprintf "NSCA %s(%s) -> %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
-  | DotNetCall         x -> sprintf "NDCA %s.%s(%s) -> %s" (print_loc x.instance) x.func (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)
-  | DotNetGet          x -> sprintf "NGET %s.%s -> %s" (print_loc x.instance) x.property (print_loc x.dest)
-  | DotNetSet          x -> sprintf "NSET %s.%s <- %s" (print_loc x.instance) x.property (print_loc x.dest)
+  | ApplicationCall    x -> sprintf "CALL %s %s -> %s %s" (print_loc x.closure) (print_loc x.argument) (print_loc x.dest) (if x.side_effect then "{SIDE-EFFECT}" else "")
+  | DotNetConstructor  x -> sprintf "NCON %s(%s) -> %s %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)(if x.side_effect then "{SIDE-EFFECT}" else "")
+  | DotNetStaticCall   x -> sprintf "NSCA %s(%s) -> %s %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest) (if x.side_effect then "{SIDE-EFFECT}" else "")
+  | DotNetCall         x -> sprintf "NDCA %s.%s(%s) -> %s %s %s" (print_loc x.instance) x.func (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest) (if x.side_effect then "{SIDE-EFFECT}" else "") (if x.mutates_instance then "{MUTATES-INSTANCE}" else "")
+  | DotNetGet          x -> sprintf "NGET %s.%s -> %s" (print_loc x.instance) x.field (print_loc x.dest)
+  | DotNetSet          x -> sprintf "NSET %s.%s <- %s" (print_loc x.instance) x.field (print_loc x.src)
 
 type global_context = {assemblies:List<System.Reflection.Assembly>;funcs:Map<Id,List<rule>>;lambdas:Map<LambdaId,rule>;datas:List<Id*data>;main:rule;}
 
-let getClass (assemblies) (name:string) :List<System.Type> =
-  assemblies |> List.fold (fun (a:List<System.Type>) (v:System.Reflection.Assembly)->
+let getClass (assemblies) (name:string) :System.Type =
+  let ts = 
+    assemblies |> List.fold (fun (a:List<System.Type>) (v:System.Reflection.Assembly)->
       let t:System.Type = v.GetType(name,false)
       if t=null then a else t::a
     ) []
+  match ts with
+  | [t] -> t
+  | []  -> failwith ("EVAL ERROR: "+name+" not found in assembly")
+  | _   -> failwith ("EVAL ERROR: "+name+" found in multiple assemblies")
 
 let staticCallNonBuiltin (x:DotNetStaticCall) (symbol_table:Map<local_id,obj>) (assemblies:list<System.Reflection.Assembly>) :obj =
-  let ts = getClass assemblies (x.func.Namespace|>String.concat ".")
-  match ts with
-  | [t] -> 
-    let args = x.args |> List.map (fun a->symbol_table.[a]) |> List.toArray
-    let argtypes = System.Type.GetTypeArray(args)
-    let f = t.GetMethod(x.func.Name,argtypes)
-    f.Invoke(null,args)
-  | []  -> failwith (sprintf "function %s not found in assembly" (print_id x.func))
-  | _   -> failwith (sprintf "function %s defined in multiple assemblies" (print_id x.func))
+  let t = getClass assemblies (x.func.Namespace|>String.concat ".")
+  let args = x.args |> List.map (fun a->symbol_table.[a]) |> List.toArray
+  let argtypes = System.Type.GetTypeArray(args)
+  let f = t.GetMethod(x.func.Name,argtypes)
+  f.Invoke(null,args)
 
 let DotNetConstruct (x:DotNetStaticCall) (symbol_table:Map<local_id,obj>) (assemblies:list<System.Reflection.Assembly>) :obj =
-  let ts = getClass assemblies (x.func.Namespace@[x.func.Name]|>String.concat ".")
-  match ts with
-  | [t] -> 
-    let args = x.args |> List.map (fun a->symbol_table.[a]) |> List.toArray
-    let argtypes = System.Type.GetTypeArray(args)
-    let c = t.GetConstructor(argtypes)
-    c.Invoke(args)
-  | []  -> failwith (sprintf "constructor %s not found in assembly" (print_id x.func))
-  | _   -> failwith (sprintf "constructor %s defined in multiple assemblies" (print_id x.func))
+  let t = getClass assemblies (x.func.Namespace@[x.func.Name]|>String.concat ".")
+  let args = x.args |> List.map (fun a->symbol_table.[a]) |> List.toArray
+  let argtypes = System.Type.GetTypeArray(args)
+  let c = t.GetConstructor(argtypes)
+  c.Invoke(args)
 
-let dynamicCallNonBuiltin (x:DotNetCall) (parent:Id) (symbol_table:Map<local_id,obj>) (assemblies:list<System.Reflection.Assembly>) :obj =
-  let ts = getClass assemblies (parent.Namespace@[parent.Name]|>String.concat ".")
-  match ts with
-  | [t] -> 
-    let args = x.args |> List.map (fun a->symbol_table.[a]) |> List.toArray
-    let argtypes = System.Type.GetTypeArray(args)
-    let f = t.GetMethod(x.func,argtypes)
-    f.Invoke(symbol_table.[x.instance],args)
-  | []  -> failwith (sprintf "method %s not found in assembly" (x.func))
-  | _   -> failwith (sprintf "method %s defined in multiple assemblies" (x.func))
+let dynamicCallNonBuiltin (x:DotNetCall) (parent_type:Id) (symbol_table:Map<local_id,obj>) (assemblies:list<System.Reflection.Assembly>) :obj =
+  let t = getClass assemblies (parent_type.Namespace@[parent_type.Name]|>String.concat ".")
+  let args = x.args |> List.map (fun a->symbol_table.[a]) |> List.toArray
+  let argtypes = System.Type.GetTypeArray(args)
+  let f = t.GetMethod(x.func,argtypes)
+  f.Invoke(symbol_table.[x.instance],args)
+
+let dotNetGet (x:DotNetGet) (parent_type:Id) (symbol_table:Map<local_id,obj>) (assemblies:list<System.Reflection.Assembly>) :obj =
+  let t = getClass assemblies (parent_type.Namespace@[parent_type.Name]|>String.concat ".")
+  let field = t.GetField(x.field)
+  field.GetValue(symbol_table.[x.instance])
+
+let dotNetSet (x:DotNetSet) (parent_type:Id) (symbol_table:Map<local_id,obj>) (assemblies:list<System.Reflection.Assembly>) =
+  let t = getClass assemblies (parent_type.Namespace@[parent_type.Name]|>String.concat ".")
+  let field = t.GetField(x.field)
+  field.SetValue(symbol_table.[x.instance],symbol_table.[x.src])
 
 let rec eval_step (p:premisse)
                   (global_context:global_context)
@@ -103,21 +107,38 @@ let rec eval_step (p:premisse)
   | ConstructorClosure x ->
     let ret = x.func,List.empty
     [symbol_table.Add(x.dest,(box ret))]
-  | Application x -> // todo: lambdas (use :?)
-    let id,args = symbol_table.[x.closure] :?> Id*List<obj>
-    let res = id,(args@[symbol_table.[x.argument]])
-    [symbol_table.Add(x.dest,(box res))]
-  | ApplicationCall x -> // todo: lambdas (use :?)
-    let id,args = symbol_table.[x.closure] :?> Id*List<obj>
-    let filled_args = args@[symbol_table.[x.argument]]
-    match global_context.datas |> List.tryFind (fun(x,_)->x=id) with
-    | Some(id,data) ->
-      [symbol_table.Add(x.dest,box filled_args)]
-    | None ->
-      global_context.funcs.[id] |> List.map (fun rule -> // for each rule
-          let results = eval_rule rule global_context filled_args 
-          results |> List.map (fun v->symbol_table.Add(x.dest,v))
-        )|>List.concat
+  | LambdaClosure x ->
+    let ret = x.func,List.empty
+    [symbol_table.Add(x.dest,(box ret))]
+  | Application x ->
+    match symbol_table.[x.closure] with
+    | :? (Id*List<obj>) as foo ->
+      let id,args = foo
+      let res = id,(args@[symbol_table.[x.argument]])
+      [symbol_table.Add(x.dest,(box res))]
+    | :? (LambdaId*List<obj>) as foo ->
+      let id,args = foo
+      let res = id,(args@[symbol_table.[x.argument]])
+      [symbol_table.Add(x.dest,(box res))]
+  | ApplicationCall x -> 
+    match symbol_table.[x.closure] with
+    | :? (Id*List<obj>) as foo ->
+      let id,args = foo
+      let filled_args = args@[symbol_table.[x.argument]]
+      match global_context.datas |> List.tryFind (fun(x,_)->x=id) with
+      | Some(id,data) ->
+        [symbol_table.Add(x.dest,box filled_args)]
+      | None ->
+        global_context.funcs.[id] |> List.map (fun rule -> // for each rule
+            let results = eval_rule rule global_context filled_args 
+            results |> List.map (fun v->symbol_table.Add(x.dest,v))
+          )|>List.concat
+    | :? (LambdaId*List<obj>) as foo ->
+      let id,args = foo
+      let filled_args = args@[symbol_table.[x.argument]]
+      let rule = global_context.lambdas.[id]
+      let results = eval_rule rule global_context filled_args
+      results |> List.map (fun v->symbol_table.Add(x.dest,v))
   | DotNetStaticCall x ->
     let ret:obj = 
       match x.func.Namespace with
@@ -147,6 +168,16 @@ let rec eval_step (p:premisse)
     | DotNetType t -> 
       let ret = dynamicCallNonBuiltin x t symbol_table global_context.assemblies
       [symbol_table.Add(x.dest,ret)]
+  | DotNetGet x ->
+    match type_map.[x.instance] with 
+    | DotNetType t -> 
+      let ret = dotNetGet x t symbol_table global_context.assemblies
+      [symbol_table.Add(x.dest,ret)]
+  | DotNetSet x ->
+    match type_map.[x.instance] with 
+    | DotNetType t -> 
+      do dotNetSet x t symbol_table global_context.assemblies
+      [symbol_table]
    
 and eval_rule (rule:rule)
               (ctxt:global_context)

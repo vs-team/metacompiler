@@ -1,4 +1,5 @@
 ﻿module CodegenTest
+open Common
 open CodegenInterface
 
 let test_data:fromTypecheckerWithLove=

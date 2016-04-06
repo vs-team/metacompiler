@@ -1,10 +1,12 @@
 ﻿module balltest
+open Common
 open CodegenInterface
 
 #nowarn "0058" // silences indentation warnings
 
 let ball_func = 
   let vec2_t:Type = DotNetType({Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"})
+  let int_t:Type = DotNetType({Namespace=["System"];Name="Int32"})
   let float_t:Type = DotNetType({Namespace=["System"];Name="Single"})
   let ball_t:Type = McType({Namespace=["BouncingBall"];Name="Ball"})
   let ball_id:Id  = {Namespace=["BouncingBall"];Name="ball"}
@@ -30,7 +32,7 @@ let ball_func =
         Destructor({source=Named("b");destructor=ball_id;args=[Named("position");Named("velocity")]})
         
         // gety() -> y
-        DotNetGet({property="Y"
+        DotNetGet({field="Y"
                    instance = Named("position")
                    dest=Named("y") })
 
@@ -107,12 +109,12 @@ let ball_func =
         Destructor({source=Named("b");destructor=ball_id;args=[Named("position");Named("velocity")]})
 
         // gety() -> y
-        DotNetGet({property="Y"
+        DotNetGet({field="Y"
                    instance = Named("position")
                    dest=Named("y") })
 
         // gety() -> x
-        DotNetGet({property="X"
+        DotNetGet({field="X"
                    instance = Named("position")
                    dest=Named("x") })
 
@@ -165,7 +167,9 @@ let ball_func =
         Literal({dest=Named("y2");value=F32(30.0f)})
         DotNetConstructor({dest=Named("b");func={Namespace=["Microsoft";"Xna";"Framework"];Name="Vector2"};args=[Named("x2");Named("y2")];side_effect=false})
         DotNetStaticCall({dest=Named("c");func={Namespace=["Microsoft";"Xna";"Framework";"Vector2"];Name="op_Addition"};args=[Named("a");Named("b")];side_effect=false})
-        DotNetCall({dest=Named("ret");instance=Named("c");func="Normalize";args=[];side_effect=false;mutates_instance=true;})
+        DotNetCall({dest=Named("nil");instance=Named("c");func="Normalize";args=[];side_effect=false;mutates_instance=true;})
+        DotNetSet({src=Named("y2");instance=Named("c");field="X"})
+        DotNetGet({dest=Named("ret");instance=Named("c");field="X"})
       ]
     typemap=Map.ofList <| [
       Named("x1"),float_t
@@ -175,7 +179,8 @@ let ball_func =
       Named("a"),vec2_t
       Named("b"),vec2_t
       Named("c"),vec2_t
-      Named("ret"),vec2_t
+      Named("nil"),void_t
+      Named("ret"),float_t
      ]
     side_effect=true
    }

@@ -1,4 +1,5 @@
 ﻿module Mangle
+open Common
 open CodegenInterface
 
 let genericMangle (name:string) :string =

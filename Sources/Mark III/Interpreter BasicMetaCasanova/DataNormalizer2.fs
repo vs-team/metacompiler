@@ -4,7 +4,7 @@ open Common
 open ParserMonad
 open DeclParser2
 
-type DataType =  DotNetType      of Id*Namespace
+type DataType =  DotNetType      of Id
                | McGeneric       of Id*Position
                | McType          of Id*Position
                | TypeApplication of DataType*List<DataType>
@@ -13,7 +13,6 @@ type DataType =  DotNetType      of Id*Namespace
 type NormalizedData =
   {
     Name : Id
-    CurrentNamespace : Namespace
     Args : List<DataType>
     Return : DataType
     Pos : Position
@@ -34,18 +33,18 @@ let normalize_arg_structure (arg:ArgStructure):List<DataType> =
   | LeftArg(l,r) -> (normalize_decl_type l)::(normalize_decl_type r)::[]
   | RightArgs(ls) -> List.collect (fun x -> [normalize_decl_type x]) ls
   
-let normalize_data :Parser<SymbolDeclaration,Id,NormalizedData> =
+let normalize_data :Parser<SymbolDeclaration,string,NormalizedData> =
   prs{
     let! next = step
     let args = normalize_arg_structure next.Args
     let ret = normalize_decl_type next.Return
-    return {Name = next.Name ; CurrentNamespace = next.CurrentNamespace ;
+    return {Name = next.Name ;
             Args = args ; Return = ret ; Pos = next.Pos}
   } 
 
-let normalize_datas :Parser<Id*DeclParseScope,Id,Id*List<NormalizedData>> =
+let normalize_datas :Parser<string*DeclParseScope,string,string*List<NormalizedData>> =
   prs{
     let! id,scp = step
     let! res = UseDifferentSrcAndCtxt (normalize_data |> itterate) scp.DataDecl ""
-    return "",res
+    return id,res
   } 

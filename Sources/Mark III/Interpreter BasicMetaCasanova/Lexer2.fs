@@ -9,8 +9,8 @@ type Keyword =
   | Less | LessEqual | Greater | GreaterEqual | Equal
 
 type Token =
-  | Id of Id * Position
-  | VarId of Id * Position
+  | Id of string * Position
+  | VarId of string * Position
   | Keyword of Keyword * Position
   | Literal of Literal * Position
 
@@ -105,8 +105,8 @@ let int_literal pos :Parser<char,Position,Token> =
     let! min = char '-' .|. nothing
     let! x = unsigned_int_literal
     match min with
-    | A() -> return Literal(Int(-x),pos)
-    | B() -> return Literal(Int(x),pos)
+    | A() -> return Literal(I32(-x),pos)
+    | B() -> return Literal(I32(x),pos)
   }
 
 let float_literal pos :Parser<char,Position,Token> =
@@ -117,8 +117,8 @@ let float_literal pos :Parser<char,Position,Token> =
     let! d = unsigned_int_literal
     let  f = System.Single.Parse(i.ToString() + "." + d.ToString())
     match min with
-    | A() -> return Literal(Float32(-f),pos)
-    | B() -> return Literal(Float32( f),pos)
+    | A() -> return Literal(F32(-f),pos)
+    | B() -> return Literal(F32( f),pos)
   }
 
 let alpha_numeric_id :Parser<char,Position,System.String>=

@@ -3,8 +3,12 @@ Func int -> "sub" -> int -> int
 Func "test" -> int -> int
 
 x add y -> res
+res -> testres
+x -> bla
+y -> bal
+bla sub bal -> dump
 -----
-x sub y -> res
+x sub y -> testres
 
 
 a -> c

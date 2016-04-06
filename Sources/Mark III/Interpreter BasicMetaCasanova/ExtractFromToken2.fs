@@ -19,7 +19,7 @@ let extract_keyword() :Parser<Token,_,Keyword*Position> =
     | _ -> return! fail (MatchError ("Keyword",extract_position_from_token next))
   }
 
-let extract_id() :Parser<Token,_,Id*Position> =
+let extract_id() :Parser<Token,_,string*Position> =
   prs{
     let! next = step
     match next with
@@ -27,7 +27,7 @@ let extract_id() :Parser<Token,_,Id*Position> =
     | _ -> return! fail (MatchError ("Id",extract_position_from_token next))
   }
 
-let extract_varid() :Parser<Token,_,Id*Position> =
+let extract_varid() :Parser<Token,_,string*Position> =
   prs{
     let! next = step
     match next with
@@ -55,7 +55,7 @@ let extract_int_literal() :Parser<Token,_,int*Position> =
   prs{
     let! next = step
     match next with
-    | Lexer2.Literal(Int(i),pos) -> return i,pos
+    | Lexer2.Literal(I32(i),pos) -> return i,pos
     | _ -> return! fail (MatchError ("int literal",extract_position_from_token next))
   }
 
