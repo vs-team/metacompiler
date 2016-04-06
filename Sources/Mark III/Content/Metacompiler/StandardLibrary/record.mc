@@ -2,13 +2,13 @@ import prelude
 
 TypeFunc "Record" => Module
 Record => Module {
-  TypeFunc "cons"   => *
-  TypeFunc "fields" => *
-  TypeFunc "field"  => *
+  TypeFunc "cons"   => #a
+  TypeFunc "fields" => #a
+  TypeFunc "field"  => #a
   TypeFunc "label"  => String
   TypeFunc "rest"   => Record
 
-  TypeFunc "FieldType" => String => Record => *
+  TypeFunc "FieldType" => String => Record => #a
   FieldType l r => field^(get l r)
 
   TypeFunc "get" => String => Record => Record
@@ -19,10 +19,7 @@ Record => Module {
   -----------------------
   get l rs => res
 
-  FieldType 'l 'rs => ft
-  ----------------------
-  TypeFunc "set" => 'l => 'rs => ft => cons^'rs
-
+  TypeFunc "set" => 'l => #a => 'rs => cons^'rs
   (if (l = label^rs) then
     record l f rs
   else
@@ -40,7 +37,7 @@ empty => Record {
   rest   => Unit
 }
 
-TypeFunc "record" => String => * => Record => Record
+TypeFunc "record" => String => #a => Record => Record
 record l f rs => Record {
   cons   => (l,f,rs)
   fields => (f,fields^rs)

@@ -3,17 +3,17 @@ import match
 import monad
 import tryableMonad
 
-TypeAlias "EitherT" => (* => *) => * => * => *
-EitherT 'M 'e 'a => 'M('a | 'e)
+TypeAlias "EitherT" => (#a => #b) => #c => #d => #e
+EitherT 'M ['e] 'a => 'M('a | 'e)
 
-TypeFunc "either" => Monad => * => TryableMonad
-either 'M 'e => TryableMonad(EitherT MCons^'M 'e) {
+TypeFunc "either" => Monad => #a => TryableMonad
+either 'M ['e] => TryableMonad(EitherT MCons^'M ['e]) {
   Func "fail" -> 'e -> MCons 'b
-  fail x -> return^'M(Right (e + x))
+  fail e -> return^'M(Right (Right^'M :: e))
 
   pm >>= k -> try pm k fail
 
-  return x -> either(return^'M(Left x))
+  return x -> (return^'M(Left x))
 
   {pm >>=^'M y
     (do^(match(MCons 'a)) y with
