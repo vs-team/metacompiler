@@ -2,6 +2,7 @@
 
 Data "unit" -> Unit
 TypeAlias #a -> "*" -> #b -> tuple<#a #b>
+TypeAlias #a -> "|" -> #b -> pipe<#a #b>
 Data 'a -> "," -> 'b -> 'a * 'b    #> 5
 Data "Left" -> 'a -> 'a | 'b       #> 5
 Data "Right" -> 'b -> 'a | 'b      #> 5
