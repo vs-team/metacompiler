@@ -9,10 +9,12 @@ let skip_newline :Parser<Token,_,_> =
   prs{do! (check_keyword() NewLine) |> repeat |> ignore}
 
 let check_decl_keyword :Parser<Token,Position,_> =
-  prs{do! check_keyword() Data .|| check_keyword() Func}
+  prs{do! check_keyword() Data .|| check_keyword() Func 
+      .|| check_keyword() TypeFunc .|| check_keyword() TypeAlias}
 
 let check_single_arg :Parser<Token,Position,_> =
-  (extract_id() |> ignore) .|| (extract_varid() |> ignore)
+  (extract_id() |> ignore) .|| (extract_varid() |> ignore) 
+  .|| (extract_kindid() |> ignore) 
 
 let rec check_round :Parser<Token,Position,_> =
   prs{
@@ -21,20 +23,22 @@ let rec check_round :Parser<Token,Position,_> =
     do! check_keyword() (Close Round)
   }
 
-and check_lamda_signature :Parser<Token,Position,_> =
+and check_lamda_signature (arrow:Keyword) :Parser<Token,Position,_> =
   prs{
     do! check_keyword() (Open Round)
     do! check_round .|| check_single_arg .|| check_arg
-    do! check_keyword() SingleArrow
+    do! check_keyword() arrow
     do! check_arg
     do! check_keyword() (Close Round)
   }
 
 and check_arg :Parser<Token,Position,_> =
   prs{
-    do! check_round .|| check_lamda_signature .|| check_single_arg
+    do! check_round .|| check_lamda_signature SingleArrow .|| 
+        check_lamda_signature SingleArrow .|| check_single_arg
     do! check_arg
-  } .|| check_lamda_signature .|| prs{
+  } .|| check_lamda_signature SingleArrow .||
+        check_lamda_signature DoubleArrow .|| prs{
     do! check_round .|| check_single_arg
     do! extract_id() |> ignore
     do! check_arg
@@ -43,7 +47,7 @@ and check_arg :Parser<Token,Position,_> =
 let check_small_args :Parser<Token,Position,_> =
   prs{
     do! check_arg
-    do! check_keyword() SingleArrow
+    do! check_keyword() SingleArrow .|| check_keyword() DoubleArrow
   } |> repeat
 
 let check_assosiotivity :Parser<Token,Position,_> =
@@ -58,7 +62,7 @@ let check_parse_decl :Parser<Token,Position,_> =
   prs{
     do! check_small_args |> ignore
     do! extract_string_literal() |> ignore
-    do! check_keyword() SingleArrow
+    do! check_keyword() SingleArrow .|| check_keyword() DoubleArrow
     do! check_small_args |> ignore
     do! check_arg
     do! (check_keyword() PriorityArrow >>. 

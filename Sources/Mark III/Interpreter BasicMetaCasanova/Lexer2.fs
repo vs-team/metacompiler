@@ -11,6 +11,7 @@ type Keyword =
 type Token =
   | Id of string * Position
   | VarId of string * Position
+  | KindId of string * Position
   | Keyword of Keyword * Position
   | Literal of Literal * Position
 
@@ -134,6 +135,10 @@ let all_id pos :Parser<char,Position,Token> =
       let! str = alpha_numeric_id .|| symbol_id
       let str = "'" + str
       return VarId((str|>System.String.Concat),pos)
+    }) .|| ((char '#') >>. prs{
+      let! str = alpha_numeric_id .|| symbol_id
+      let str = "#" + str
+      return KindId((str|>System.String.Concat),pos)
     }) .|| prs{
       let! str = alpha_numeric_id .|| symbol_id
       let! pos = get_position

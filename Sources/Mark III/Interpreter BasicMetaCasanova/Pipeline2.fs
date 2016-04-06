@@ -8,6 +8,7 @@ open DeclParser2
 open OptionMonad
 open GlobalSyntaxCheck2
 open RuleParser2
+open TypeRuleParser2
 open RuleNormalizer2
 open DataNormalizer2
 open RuleTypeChecker2
@@ -92,8 +93,15 @@ let parse_tokens (tokens:List<string*List<Token>>) :Option<List<string*DeclParse
 let start_rule_parser (ctxt:List<string*DeclParseScope*List<Token>>) 
   :Option<List<string*List<RuleDef>*List<SymbolDeclaration>>> =
   opt{
-    return! use_parser_monad (itterate (parse_rule_scope)) (ctxt,[])
+    return! use_parser_monad (itterate (parse_rule_scope normal_function_parser)) (ctxt,[])
   } |> (timer (sprintf "parsing Rules "))
+
+let start_type_rule_parser (ctxt:List<string*DeclParseScope*List<Token>>) 
+  :Option<List<string*List<RuleDef>*List<SymbolDeclaration>>> =
+  opt{
+    return! use_parser_monad (itterate (parse_rule_scope type_function_parser)) (ctxt,[])
+  } |> (timer (sprintf "parsing type Rules "))
+
 
 let start_rule_normalizer (ctxt:List<string*List<RuleDef>*List<SymbolDeclaration>>)
   :Option<List<string*List<NormalizedRule>*List<SymbolDeclaration>>> = 
@@ -139,19 +147,21 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
   opt{
     t.Start()
     let! lex_res = lex_files paths file_name
-    do! check_tokens lex_res
+    //do! check_tokens lex_res
     let! decl_pars_res = parse_tokens lex_res
     let! rule_pars_res = start_rule_parser decl_pars_res
-    let! normalized_rule_res = start_rule_normalizer rule_pars_res
-    let! normalized_data_res = 
-      start_data_normalizer (List.collect (fun (id,decl,_) -> [id,decl]) decl_pars_res)
-    let data_decl = List.map (fun (id,(decl:DeclParseScope),_) -> (id,decl.DataDecl)) decl_pars_res
-    
-    let! typed_rule_res = start_rule_typechecker normalized_rule_res data_decl
-
+    //let! typerule_pars_res = start_type_rule_parser decl_pars_res
+    //let! normalized_rule_res = start_rule_normalizer rule_pars_res
+    //let! normalized_data_res = 
+    //  start_data_normalizer (List.collect (fun (id,decl,_) -> [id,decl]) decl_pars_res)
+    //let data_decl = List.map (fun (id,(decl:DeclParseScope),_) -> (id,decl.DataDecl)) decl_pars_res
+    //
+    //let! typed_rule_res = start_rule_typechecker normalized_rule_res data_decl
+    //
     let! code_res = start_codegen balltest.ball_func
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))
-    return typed_rule_res
+    //return typed_rule_res
+    return List.collect(fun (_,y,_) -> [(y)]) rule_pars_res
     //return List.collect(fun (x,y,_) -> [(x,y)]) normalized_rule_res
     //return (List.collect (fun (x,y,z) -> [x,y]) decl_pars_res)
     //return lex_res

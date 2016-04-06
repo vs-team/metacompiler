@@ -37,49 +37,6 @@
     <DocumentationFile>bin\Release\Interpreter_BasicMetaCasanova.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="mscorlib" />
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Common.fs" />
-    <Compile Include="ParserMonad.fs" />
-    <Compile Include="ExceptionMonad.fs" />
-    <Compile Include="OptionMonad.fs" />
-    <Compile Include="IncompleteMonad.fs" />
-    <Compile Include="Lexer2.fs" />
-    <Compile Include="ExtractFromToken2.fs" />
-    <Compile Include="GlobalSyntaxCheck2.fs" />
-    <Compile Include="DeclParser2.fs" />
-    <Compile Include="ImportParser2.fs" />
-    <Compile Include="RuleParser2.fs" />
-    <Compile Include="DataNormalizer2.fs" />
-    <Compile Include="RuleNormalizer2.fs" />
-    <Compile Include="CodegenInterface.fs" />
-    <Compile Include="Interpreter.fs" />
-    <Compile Include="RuleTypeChecker2.fs" />
-    <Compile Include="InterfaceBuilder2.fs" />
-    <Compile Include="Mangle.fs" />
-    <Compile Include="Codegen.fs" />
-    <Compile Include="CodegenTest.fs" />
-    <Compile Include="balltest.fs" />
-    <Compile Include="Pipeline2.fs" />
-    <Compile Include="Program.fs" />
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Content\Content.csproj">
-      <Name>Content</Name>
-      <Project>{c91100b8-ce28-43ac-bd50-6f2de7757d0a}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>
@@ -96,6 +53,50 @@
     </Otherwise>
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
+  <ItemGroup>
+    <None Include="TODO.txt" />
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Common.fs" />
+    <Compile Include="ParserMonad.fs" />
+    <Compile Include="ExceptionMonad.fs" />
+    <Compile Include="OptionMonad.fs" />
+    <Compile Include="IncompleteMonad.fs" />
+    <Compile Include="Lexer2.fs" />
+    <Compile Include="ExtractFromToken2.fs" />
+    <Compile Include="GlobalSyntaxCheck2.fs" />
+    <Compile Include="DeclParser2.fs" />
+    <Compile Include="ImportParser2.fs" />
+    <Compile Include="RuleParser2.fs" />
+    <Compile Include="TypeRuleParser2.fs" />
+    <Compile Include="DataNormalizer2.fs" />
+    <Compile Include="RuleNormalizer2.fs" />
+    <Compile Include="CodegenInterface.fs" />
+    <Compile Include="TypeFuncInterface.fs" />
+    <Compile Include="Interpreter.fs" />
+    <Compile Include="RuleTypeChecker2.fs" />
+    <Compile Include="InterfaceBuilder2.fs" />
+    <Compile Include="Mangle.fs" />
+    <Compile Include="Codegen.fs" />
+    <Compile Include="CodegenTest.fs" />
+    <Compile Include="balltest.fs" />
+    <Compile Include="Pipeline2.fs" />
+    <Compile Include="Program.fs" />
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+    <ProjectReference Include="..\Content\Content.csproj">
+      <Name>Content</Name>
+      <Project>{c91100b8-ce28-43ac-bd50-6f2de7757d0a}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

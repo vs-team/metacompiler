@@ -19,7 +19,8 @@ let main argv =
                //;"result"
                //;"state"
                //"testforparser"
-               "testfornormalizer"
+               //"testfornormalizer"
+               "typefunctest"
                //"testforcodegen"
                //"decltest"
               ]

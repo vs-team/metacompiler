@@ -8,6 +8,7 @@ let extract_position_from_token (token:Token) :Position =
   match token with  
   | Lexer2.Id(_,pos) -> pos
   | Lexer2.VarId(_,pos) -> pos
+  | Lexer2.KindId(_,pos) -> pos
   | Lexer2.Keyword(_,pos) -> pos
   | Lexer2.Literal(_,pos) -> pos
 
@@ -33,6 +34,14 @@ let extract_varid() :Parser<Token,_,string*Position> =
     match next with
     | Lexer2.VarId(i,p) -> return i,p
     | _ -> return! fail (MatchError ("VarId",extract_position_from_token next))
+  }
+
+let extract_kindid() :Parser<Token,_,string*Position> =
+  prs{
+    let! next = step
+    match next with
+    | Lexer2.KindId(i,p) -> return i,p
+    | _ -> return! fail (MatchError ("KindId",extract_position_from_token next))
   }
 
 let extract_literal() :Parser<Token,_,Literal*Position> =

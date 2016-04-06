@@ -25,6 +25,8 @@ type IdBranch =
 type PremisFunctionTree = Literal    of Literal*Position
                         | RuleBranch of FunctionBranch 
                         | DataBranch of FunctionBranch 
+                        | TypeRuleBranch  of FunctionBranch 
+                        | TypeAliasBranch of FunctionBranch 
                         | IdBranch   of IdBranch
 
 type Condition = Less | LessEqual | Greater | GreaterEqual | Equal
@@ -41,6 +43,16 @@ type RuleDef =
     Pos               : Position
   }
 
+type ParserRuleFunctions = 
+  {
+     PremiseArrow : Keyword   
+     LeftPremiseParser : DeclParseScope -> Parser<Token,DeclParseScope,PremisFunctionTree>
+     RightPremiseParser : List<SymbolDeclaration> -> Parser<Token,DeclParseScope,PremisFunctionTree>
+     InputDeclList  : DeclParseScope -> List<SymbolDeclaration>
+     InputParser : SymbolDeclaration -> Parser<Token,DeclParseScope,FunctionBranch>
+     OutputDeclList : DeclParseScope -> Parser<Token,DeclParseScope,PremisFunctionTree>
+  } 
+  
 let token_condition_to_condition (key:Keyword)(pos:Position) 
   :Parser<Token,DeclParseScope,Condition> =
   prs{
@@ -84,83 +96,150 @@ let decl_to_parser (decl:SymbolDeclaration):Parser<Token,DeclParseScope,Function
       return! fail (RuleError (name,pos))
   }
 
-let decls_to_parser (funcs:List<SymbolDeclaration>) 
-  (datas:List<SymbolDeclaration>)
-  :Parser<Token,DeclParseScope,PremisFunctionTree> =
-  (prs{
-    let! res = FirstSuccesfullInList funcs decl_to_parser
-    return RuleBranch res
-  }) .|| (prs{
-    let! res = FirstSuccesfullInList datas decl_to_parser
-    return DataBranch res
-  }) .|| prs{
+let id_to_parser :Parser<Token,DeclParseScope,PremisFunctionTree> =
+  prs{
     let! id,pos = extract_id()
     let! ctxt = getContext
     return IdBranch({Name = {Namespace=ctxt.Name.Namespace;Name=id} ; Pos = pos})
-  } .|| prs{
+  }
+
+let datas_to_parser (datas:List<SymbolDeclaration>) 
+  :Parser<Token,DeclParseScope,PremisFunctionTree> =
+  (prs{
+    let! res = FirstSuccesfullInList datas decl_to_parser
+    return DataBranch res
+  }) .|| id_to_parser
+
+let literal_to_parser :Parser<Token,DeclParseScope,PremisFunctionTree> =
+  prs{
     let! lit,pos = extract_literal()
     return Literal(lit,pos)
   }
+let type_alias_to_parser (aliases:List<SymbolDeclaration>) 
+  :Parser<Token,DeclParseScope,PremisFunctionTree> =
+  (prs{
+    let! res = FirstSuccesfullInList aliases decl_to_parser
+    return TypeRuleBranch res
+  }) .|| id_to_parser
 
-let implication_premis :Parser<Token,DeclParseScope,Premises> =
+let type_func_to_parser (ctxt:DeclParseScope) 
+  :Parser<Token,DeclParseScope,PremisFunctionTree> =
+  (prs{
+    let! res = FirstSuccesfullInList ctxt.AliasDecl decl_to_parser
+    return TypeAliasBranch res
+  }) .|| type_alias_to_parser ctxt.AliasDecl .|| literal_to_parser
+
+let decls_to_parser (ctxt:DeclParseScope) 
+  :Parser<Token,DeclParseScope,PremisFunctionTree> =
+  (prs{
+    let! res = FirstSuccesfullInList ctxt.FuncDecl decl_to_parser
+    return RuleBranch res
+  }) .|| datas_to_parser ctxt.DataDecl .|| literal_to_parser
+
+let implication_premis (arrow:Keyword) l r :Parser<Token,DeclParseScope,Premises> =
   prs{
     let! ctxt = getContext
-    let! left = decls_to_parser ctxt.FuncDecl ctxt.DataDecl
-    do! check_keyword() SingleArrow
-    let! right = decls_to_parser [] (ctxt.DataDecl) .>> (check_keyword() NewLine)
+    let! left = l ctxt
+    do! check_keyword() arrow
+    let! right = r ctxt.DataDecl .>> (check_keyword() NewLine)
     //let! right,_ = extract_id() .>> (check_keyword() NewLine)
     return Implication (left,right)
   }
 
-let parse_premis :Parser<Token,DeclParseScope,Premises> =
-   implication_premis .|| prs{
+let parse_premis (arrow:Keyword) 
+  (l:(DeclParseScope -> Parser<Token,DeclParseScope,PremisFunctionTree>)) 
+  r :Parser<Token,DeclParseScope,Premises> =
+  implication_premis arrow l r .|| prs{
     let! ctxt = getContext
-    let! left = decls_to_parser ctxt.FuncDecl ctxt.DataDecl
+    let! left = (l ctxt)
     let! condition,pos = extract_keyword()
-    let! right = decls_to_parser ctxt.FuncDecl ctxt.DataDecl 
+    let! right = r ctxt.DataDecl
     do! check_keyword() NewLine
     let! cond = token_condition_to_condition condition pos
     return Conditional (cond,left,right)
   }
 
-let parse_rule :Parser<Token,DeclParseScope,RuleDef> =
+let parse_rule (pf:ParserRuleFunctions) 
+  :Parser<Token,DeclParseScope,RuleDef> =
   prs{
-    let! premises =  RepeatUntil parse_premis (check_keyword() HorizontalBar)
+    let! premises = RepeatUntil (parse_premis pf.PremiseArrow pf.LeftPremiseParser pf.RightPremiseParser) (check_keyword() HorizontalBar)
     do! (check_keyword() HorizontalBar) >>. (check_keyword() NewLine)
     let! ctxt = getContext
-    let! input = FirstSuccesfullInList ctxt.FuncDecl decl_to_parser
-    do! check_keyword() SingleArrow
-    let! output = decls_to_parser [] ctxt.DataDecl
+    let! input = FirstSuccesfullInList (pf.InputDeclList ctxt) pf.InputParser
+    do! check_keyword() pf.PremiseArrow
+    let! output = pf.OutputDeclList ctxt
     return {Name = input.Name ;
             Input = input.Args ; Output = output ;
             Premises = premises ; Pos = input.Pos}
   }
 
-let parse_rules (decl:DeclParseScope) :Parser<Token,List<RuleDef>,_> =
+
+//let parse_rule (pf:ParserRuleFunctions) 
+//  :Parser<Token,DeclParseScope,RuleDef> =
+//  prs{
+//    let! premises = RepeatUntil (parse_premis SingleArrow decls_to_parser datas_to_parser) (check_keyword() HorizontalBar)
+//    do! (check_keyword() HorizontalBar) >>. (check_keyword() NewLine)
+//    let! ctxt = getContext
+//    let! input = FirstSuccesfullInList ctxt.FuncDecl decl_to_parser
+//    do! check_keyword() SingleArrow
+//    let! output = datas_to_parser ctxt.DataDecl
+//    return {Name = input.Name ;
+//            Input = input.Args ; Output = output ;
+//            Premises = premises ; Pos = input.Pos}
+//  }
+
+
+let parse_rules (decl:DeclParseScope) (parser_functions:ParserRuleFunctions) 
+  :Parser<Token,List<RuleDef>,_> =
   prs{
     let! ctxt = getContext
-    let! res = UseDifferentCtxt parse_rule decl
+    let! res = UseDifferentCtxt (parse_rule parser_functions) decl 
     do! setContext (res::ctxt)
   }
 
-let parse_line (decl:DeclParseScope) :Parser<Token,List<RuleDef>,_> =
+let parse_line (decl:DeclParseScope) (parser_functions:ParserRuleFunctions) 
+  :Parser<Token,List<RuleDef>,_> =
   prs{
     do! (check_keyword() NewLine) |> repeat |> ignore
     do! (UseDifferentCtxt (check_decl_keyword >>. check_parse_decl) Position.Zero) .|| 
-          (parse_rules decl)
+          (parse_rules decl parser_functions)
     do! (check_keyword() NewLine) |> repeat |> ignore
     return ()
   }
 
-let parse_lines (decl:DeclParseScope) :Parser<Token,List<RuleDef>,List<RuleDef>> =
+let parse_lines (decl:DeclParseScope) (parser_functions:ParserRuleFunctions) 
+  :Parser<Token,List<RuleDef>,List<RuleDef>> =
   prs{
-    do! parse_line decl |> itterate |> ignore
+    do! parser_functions |> parse_line decl |> itterate |> ignore
     return! getContext
   }
 
-let parse_rule_scope :Parser<string*DeclParseScope*List<Token>,List<Id>,string*List<RuleDef>*List<SymbolDeclaration>> =
+let parse_rule_scope (parser_functions:ParserRuleFunctions) 
+  :Parser<string*DeclParseScope*List<Token>,List<Id>,string*List<RuleDef>*List<SymbolDeclaration>> =
   prs{
     let! id,decl,tok = step
-    let! res = UseDifferentSrcAndCtxt (parse_lines decl) tok []
+    let! res = UseDifferentSrcAndCtxt (parse_lines decl parser_functions) tok []
     return id,res,decl.FuncDecl
   }
+
+let normal_function_parser =
+  {
+    PremiseArrow        = SingleArrow
+    LeftPremiseParser   = decls_to_parser
+    RightPremiseParser  = datas_to_parser
+    InputDeclList       = (fun ctxt -> ctxt.FuncDecl)
+    InputParser         = decl_to_parser
+    OutputDeclList      = (fun ctxt -> datas_to_parser ctxt.DataDecl)
+  
+  }
+  
+let type_function_parser =
+  {
+    PremiseArrow        = DoubleArrow
+    LeftPremiseParser   = type_func_to_parser
+    RightPremiseParser  = type_alias_to_parser
+    InputDeclList       = (fun ctxt -> ctxt.TypeDecl)
+    InputParser         = decl_to_parser
+    OutputDeclList      = (fun ctxt -> type_alias_to_parser ctxt.AliasDecl)
+  
+  } 
