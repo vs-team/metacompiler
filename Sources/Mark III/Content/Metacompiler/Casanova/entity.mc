@@ -1,6 +1,6 @@
 ﻿import prelude
 
-TypeFunc "Updatable" => * => Module
+TypeFunc "Updatable" => #a => Module
 Updatable t => Module{
   TypeFunc "Cons" => Cons^t
   Func "update" -> Cons -> float^prelude -> Cons
@@ -16,9 +16,9 @@ RuleEntity e r => Updatable {
   update x dt -> update^e(apply^r x dt) dt
 }
 
-TypeFunc "TupleUpdatable" => Updatable t1 => Updatable t2 => Updatable (t1 * t2)
+TypeFunc "TupleUpdatable" => Updatable t1 => Updatable t2 => Updatable (t1 #a t2)
 TupleUpdatable e1 e2 => Updatable{
-  TypeFunc "Cons" => Cons^t1 * Cons^t2
+  TypeFunc "Cons" => Cons^t1 #a Cons^t2
 
   update^e1 x dt -> x1
   update^e2 y dt -> x2
@@ -37,7 +37,7 @@ UnionEntity e1 e2 => Updatable {
   update x dt -> y
 }
 
-TypeFunc "IdUpdatable" => * => Updatable
+TypeFunc "IdUpdatable" => #a => Updatable
 IdUpdatable t => Updatable {
   TypeFunc "Cons" -> Cons^t
 
@@ -46,9 +46,9 @@ IdUpdatable t => Updatable {
 
 TypeFunc "EntityField" => Module
 EntityField => Module{
-  TypeFunc "Cons" => *
-  TypeFunc "Fields" => *
-  TypeFunc "Field" => *
+  TypeFunc "Cons" => #a
+  TypeFunc "Fields" => #a
+  TypeFunc "Field" => #a
   TypeFunc "Label" => String
   TypeFunc "Rest" => EntityField
 
@@ -63,7 +63,7 @@ EntityField => Module{
   -----------------------
   get l rs => res
 
-  TypeFunc "set" => String => * => EntityField => EntityField
+  TypeFunc "set" => String => #a => EntityField => EntityField
   (if (l = label^rs) then
     Entity l f rs
   else
@@ -80,7 +80,7 @@ TypeFunc "Empty" => EntityField {
   Rest => unit
 }
 
-TypeFunc "Entity" => String => * => EntityField => EntityField
+TypeFunc "Entity" => String => #a => EntityField => EntityField
 Entity label field rest => EntityField{
   Cons => (label,field,rest)
   Fields => (field,Fields^rest)
