@@ -7,7 +7,7 @@ TypeAlias "EitherT" => (#a => #b) => #c => #d => #e
 EitherT 'M ['e] 'a => 'M('a | 'e)
 
 TypeFunc "either" => Monad => #a => TryableMonad
-either 'M ['e] => TryableMonad(EitherT MCons^'M 'e) {
+either 'M ['e] => TryableMonad(EitherT MCons^'M ['e]) {
   Func "fail" -> 'e -> MCons 'b
   fail e -> return^'M(Right (Right^'M :: e))
 
