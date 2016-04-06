@@ -11,14 +11,14 @@ Rule e => Module {
   Func "apply" -> Cons^e -> float^prelude -> Cons^e
 }
 
-TypeFunc "RuleEntity" => Updatable t => Rule t => Updatable r
+TypeFunc "RuleEntity" => Updatable => Rule => Updatable
 RuleEntity e r => Updatable {
   update x dt -> update^e(apply^r x dt) dt
 }
 
-TypeFunc "TupleUpdatable" => Updatable t1 => Updatable t2 => Updatable (t1 #a t2)
+TypeFunc "TupleUpdatable" => Updatable => Updatable => Updatable
 TupleUpdatable e1 e2 => Updatable{
-  TypeFunc "Cons" => Cons^t1 #a Cons^t2
+  TypeFunc "Cons" => Cons^e1 * Cons^e2
 
   update^e1 x dt -> x1
   update^e2 y dt -> x2
@@ -26,13 +26,11 @@ TupleUpdatable e1 e2 => Updatable{
   update (x,y) dt -> (x1,x2)
 }
 
-TypeFunc "UnionUpdatable" => Updatable t1 => Updatable t2 => Updatable (t1 | t2)
+TypeFunc "UnionUpdatable" => Updatable => Updatable => Updatable
 UnionEntity e1 e2 => Updatable {
+  TypeFunc "Cons" => Cons^e1 | Cons^e2
 
-  TypeFunc "Cons" => Cons^t1 | Cons^t2
-
-
-  do^match x with (\x -> update^t1 x dt) (\y -> update^t2 y dt) -> y
+  do^match x with (\x -> update^e1 x dt) (\y -> update^e2 y dt) -> y
   ----------------------------------------------------------------------
   update x dt -> y
 }
