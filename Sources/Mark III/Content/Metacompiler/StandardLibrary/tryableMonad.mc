@@ -1,7 +1,7 @@
 import prelude
 import monad
 
-TypeFunc "TryableMonad" => ( * => * ) => Module
+TypeFunc "TryableMonad" => (#a => #a) => Module
 TryableMonad 'M => Monad(MCons^'M) {
   inherit 'M
 
