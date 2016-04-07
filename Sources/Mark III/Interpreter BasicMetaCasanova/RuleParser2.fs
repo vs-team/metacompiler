@@ -43,6 +43,18 @@ type RuleDef =
     Pos               : Position
   }
 
+type RuleContext = 
+  {
+    Rules       : List<RuleDef>
+    TypeRules   : List<RuleDef>
+  }
+  with 
+    static member Zero = 
+      {
+        Rules       = []
+        TypeRules   = []
+      }
+
 type ParserRuleFunctions = 
   {
      PremiseArrow : Keyword   
@@ -51,6 +63,7 @@ type ParserRuleFunctions =
      InputDeclList  : DeclParseScope -> List<SymbolDeclaration>
      InputParser : SymbolDeclaration -> Parser<Token,DeclParseScope,FunctionBranch>
      OutputDeclList : DeclParseScope -> Parser<Token,DeclParseScope,PremisFunctionTree>
+     ContextBuilder : RuleContext -> RuleDef -> RuleContext
   } 
   
 let token_condition_to_condition (key:Keyword)(pos:Position) 
@@ -119,14 +132,15 @@ let type_alias_to_parser (aliases:List<SymbolDeclaration>)
   :Parser<Token,DeclParseScope,PremisFunctionTree> =
   (prs{
     let! res = FirstSuccesfullInList aliases decl_to_parser
-    return TypeRuleBranch res
+    return TypeAliasBranch res
   }) .|| id_to_parser
 
 let type_func_to_parser (ctxt:DeclParseScope) 
   :Parser<Token,DeclParseScope,PremisFunctionTree> =
   (prs{
-    let! res = FirstSuccesfullInList ctxt.AliasDecl decl_to_parser
-    return TypeAliasBranch res
+    let! res = FirstSuccesfullInList ctxt.TypeDecl decl_to_parser
+    return TypeRuleBranch res
+    
   }) .|| type_alias_to_parser ctxt.AliasDecl .|| literal_to_parser
 
 let decls_to_parser (ctxt:DeclParseScope) 
@@ -189,39 +203,6 @@ let parse_rule (pf:ParserRuleFunctions)
 //  }
 
 
-let parse_rules (decl:DeclParseScope) (parser_functions:ParserRuleFunctions) 
-  :Parser<Token,List<RuleDef>,_> =
-  prs{
-    let! ctxt = getContext
-    let! res = UseDifferentCtxt (parse_rule parser_functions) decl 
-    do! setContext (res::ctxt)
-  }
-
-let parse_line (decl:DeclParseScope) (parser_functions:ParserRuleFunctions) 
-  :Parser<Token,List<RuleDef>,_> =
-  prs{
-    do! (check_keyword() NewLine) |> repeat |> ignore
-    do! (UseDifferentCtxt (check_decl_keyword >>. check_parse_decl) Position.Zero) .|| 
-          (parse_rules decl parser_functions)
-    do! (check_keyword() NewLine) |> repeat |> ignore
-    return ()
-  }
-
-let parse_lines (decl:DeclParseScope) (parser_functions:ParserRuleFunctions) 
-  :Parser<Token,List<RuleDef>,List<RuleDef>> =
-  prs{
-    do! parser_functions |> parse_line decl |> itterate |> ignore
-    return! getContext
-  }
-
-let parse_rule_scope (parser_functions:ParserRuleFunctions) 
-  :Parser<string*DeclParseScope*List<Token>,List<Id>,string*List<RuleDef>*List<SymbolDeclaration>> =
-  prs{
-    let! id,decl,tok = step
-    let! res = UseDifferentSrcAndCtxt (parse_lines decl parser_functions) tok []
-    return id,res,decl.FuncDecl
-  }
-
 let normal_function_parser =
   {
     PremiseArrow        = SingleArrow
@@ -230,6 +211,7 @@ let normal_function_parser =
     InputDeclList       = (fun ctxt -> ctxt.FuncDecl)
     InputParser         = decl_to_parser
     OutputDeclList      = (fun ctxt -> datas_to_parser ctxt.DataDecl)
+    ContextBuilder      = (fun ctxt rule -> {ctxt with Rules = rule::ctxt.Rules})
   
   }
   
@@ -241,5 +223,38 @@ let type_function_parser =
     InputDeclList       = (fun ctxt -> ctxt.TypeDecl)
     InputParser         = decl_to_parser
     OutputDeclList      = (fun ctxt -> type_alias_to_parser ctxt.AliasDecl)
-  
+    ContextBuilder      = (fun ctxt rule -> {ctxt with TypeRules = rule::ctxt.TypeRules})
   } 
+
+let parse_rules (decl:DeclParseScope) (parser_functions:ParserRuleFunctions) 
+  :Parser<Token,RuleContext,_> =
+  prs{
+    let! ctxt = getContext
+    let! res = UseDifferentCtxt (parse_rule parser_functions) decl 
+    do! setContext (parser_functions.ContextBuilder ctxt res)
+  }
+
+let parse_line (decl:DeclParseScope) :Parser<Token,RuleContext,_> =
+  prs{
+    do! (check_keyword() NewLine) |> repeat |> ignore
+    do! (UseDifferentCtxt (check_decl_keyword >>. check_parse_decl) Position.Zero) .|| 
+          (parse_rules decl normal_function_parser) .||
+          (parse_rules decl type_function_parser) 
+    do! (check_keyword() NewLine) |> repeat |> ignore
+    return ()
+  }
+
+let parse_lines (decl:DeclParseScope) :Parser<Token,RuleContext,RuleContext> =
+  prs{
+    do! parse_line decl |> itterate |> ignore
+    return! getContext
+  }
+
+let parse_rule_scope
+  :Parser<string*DeclParseScope*List<Token>,List<Id>,string*RuleContext*List<SymbolDeclaration>> =
+  prs{
+    let! id,decl,tok = step
+    let! rules = UseDifferentSrcAndCtxt (parse_lines decl) tok RuleContext.Zero
+    let type_rules = []
+    return id,rules,decl.FuncDecl
+  }

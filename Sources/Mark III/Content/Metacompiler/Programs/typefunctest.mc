@@ -7,6 +7,10 @@ TypeAlias "ali" => #a => #a * #b
 Func "add" -> int -> int -> int
 
 
-add x y  -> res
+test a b => res
+-----
+test a b => res
+
+add x y -> res
 ----
-add x y-> res
+add x y -> res

@@ -99,6 +99,7 @@ let check_premiss_lift (arrow) :Parser<Token,Position,_> =
 
 let check_premis :Parser<Token,Position,_> =
   check_premiss_lift (check_keyword() SingleArrow) .||
+  check_premiss_lift (check_keyword() DoubleArrow) .||
   check_premiss_lift (check_condition)             .||
   prs{do! check_premiss_element_with_literal |> repeat1 |> ignore
       do! check_keyword() NewLine}
@@ -109,11 +110,11 @@ let check_rule :Parser<Token,Position,_> =
     do! check_premis |> repeat |> ignore
     do! check_keyword() HorizontalBar >>. check_keyword() NewLine
     do! check_premiss_element |> repeat1 |> ignore
-    do! check_keyword() SingleArrow
+    do! check_keyword() SingleArrow .|| check_keyword() DoubleArrow
     do! check_premiss_element_with_literal |> repeat1 |> ignore 
   } .|| prs{
     do! check_premiss_element |> repeat |> ignore
-    do! check_keyword() SingleArrow
+    do! check_keyword() SingleArrow .|| check_keyword() DoubleArrow
     do! check_premiss_element_with_literal |> repeat |> ignore 
   }
 

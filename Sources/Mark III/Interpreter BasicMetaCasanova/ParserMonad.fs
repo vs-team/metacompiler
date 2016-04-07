@@ -3,7 +3,7 @@ open Common
 
 type ErrorType =  ParserMonadError    of string
                 | LexerError          of Position
-                | ParserError         of Position
+                | ParserError         of string * Position
                 | LineSplitterError   of Position
                 | ScopeError          of string*Position
                 | TypeError

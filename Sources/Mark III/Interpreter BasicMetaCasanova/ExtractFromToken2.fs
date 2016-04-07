@@ -17,7 +17,19 @@ let extract_keyword() :Parser<Token,_,Keyword*Position> =
     let! next = step
     match next with
     | Keyword(k,p) -> return k,p
-    | _ -> return! fail (MatchError ("Keyword",extract_position_from_token next))
+    | _ -> 
+      let err = sprintf "keyword expected but found: %A" next
+      return! fail (MatchError (err,extract_position_from_token next))
+  }
+
+let extract_keyword_with_error(st:string) :Parser<Token,_,Keyword*Position> =
+  prs{
+    let! next = step
+    match next with
+    | Keyword(k,p) -> return k,p
+    | _ -> 
+      let err = sprintf "keyword expected: %s but found: %A" st next
+      return! fail (MatchError (err,extract_position_from_token next))
   }
 
 let extract_id() :Parser<Token,_,string*Position> =
@@ -70,7 +82,8 @@ let extract_int_literal() :Parser<Token,_,int*Position> =
 
 let check_keyword() (expected:Keyword) :Parser<Token,_,_> =
   prs{
-    let! k,p = extract_keyword()
-    if k = expected then return () else return! fail (ParserError p)
+    let! k,p = extract_keyword_with_error (sprintf "%A" expected)
+    let st = sprintf "Keyword: %A does not match expected: %A" k expected
+    if k = expected then return () else return! fail (ParserError (st,p))
   }
 

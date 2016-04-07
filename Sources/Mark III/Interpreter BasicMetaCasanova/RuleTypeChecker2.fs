@@ -114,11 +114,13 @@ let add_destructor_map (source:local_id) (destructor:Id)
 let Lift_apply s a d ctxt lift :Exception<RuleCheckerCtxt> =
   exc{
     let source = build_local_id s
-    let! type_signature_source = UseOptionMonad (Map.tryFind source ctxt.TypeMap) "Source not found in symboltalbe: apply." 
+    let! type_signature_source = 
+      UseOptionMonad (Map.tryFind source ctxt.TypeMap) "Source not found in symbol table: apply." 
     match type_signature_source with
     | Arrow(l,r) ->
       let argument = build_local_id a
-      let! type_argument = UseOptionMonad (Map.tryFind argument ctxt.TypeMap) "argument not found in symboltalbe: apply." 
+      let err = sprintf "argument not found in symboltable: %A." argument 
+      let! type_argument = UseOptionMonad (Map.tryFind argument ctxt.TypeMap) err
       if type_argument = l then
         let destination = build_local_id d
         let res = lift source argument destination

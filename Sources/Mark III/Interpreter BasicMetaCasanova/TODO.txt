@@ -2,3 +2,4 @@
       Try to parse a TypeRule or a normal rule. 
       Make the rule parser also parse TypeRules.
 
+       

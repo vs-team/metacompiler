@@ -64,9 +64,10 @@ let normalize_right_premistree (right_prem:PremisFunctionTree)
     | RuleParser2.IdBranch(x) -> 
       let sourceid = VarId(x.Name,x.Pos)
       return [],sourceid
+    | _ -> return! fail (NormalizeError "no typefunc premises alowed in normal rules.")
   }
 
-let rec Normalize_arguments (sourceid:NormalId) (args:List<ArgId>) 
+let rec normalize_arguments (sourceid:NormalId) (args:List<ArgId>) 
   (output:NormalId) :Parser<Premises,NormalizerContext,List<Premisse>> =
   prs{
     match args with
@@ -78,15 +79,22 @@ let rec Normalize_arguments (sourceid:NormalId) (args:List<ArgId>)
       let apply_arg = VarId(id,pos)
       let! int_id = get_local_id_number
       let dest = TempId(int_id,pos)
-      let! res = Normalize_arguments dest xs output
+      let! res = normalize_arguments dest xs output
       return (Apply(sourceid,apply_arg,dest)::res)
-    | [] ->
-      let! id = get_local_id_number
-      let arg = TempId(id,Position.Zero)
-      let lit = Literal(Void,arg)
-      let apply_call = ApplyCall(sourceid,arg,output)
-      return [lit;apply_call]
+    | [] -> return [Alias(sourceid,output)]
+  }
 
+let rec normalize_data_arguments (sourceid:NormalId) (args:List<ArgId>) 
+  (output:NormalId) :Parser<Premises,NormalizerContext,List<Premisse>> =
+  prs{
+    match args with
+    | (id,pos)::xs -> 
+      let apply_arg = VarId(id,pos)
+      let! int_id = get_local_id_number
+      let dest = TempId(int_id,pos)
+      let! res = normalize_data_arguments dest xs output
+      return (Apply(sourceid,apply_arg,dest)::res)
+    | [] -> return [Alias(sourceid,output)]
   }
 
 let normalize_Left_premistree (input:PremisFunctionTree) (output:NormalId)
@@ -103,18 +111,19 @@ let normalize_Left_premistree (input:PremisFunctionTree) (output:NormalId)
       let construct_id = TempId(cons_id,x.Pos)
       let construct = McClosure (x.Name, construct_id)
       let! applypremisses = 
-        Normalize_arguments construct_id x.Args output
+        normalize_arguments construct_id x.Args output
       return (construct::applypremisses)
     | RuleParser2.DataBranch(x) -> 
       let! cons_id = get_local_id_number
       let construct_id = TempId(cons_id,x.Pos)
       let construct = ConstructorClosure (x.Name, construct_id)
       let! applypremisses = 
-        Normalize_arguments construct_id x.Args output
+        normalize_data_arguments construct_id x.Args output
       return (construct::applypremisses)
     | RuleParser2.IdBranch(x) -> 
       let normalid = VarId(x.Name,x.Pos)
       return [Alias(normalid,output)]
+    | _ -> return! fail (NormalizeError "no typefunc premises alowed in normal rules.")
   }
 
 let normalize_premis :Parser<Premises,NormalizerContext,List<Premisse>> =
@@ -122,8 +131,9 @@ let normalize_premis :Parser<Premises,NormalizerContext,List<Premisse>> =
     let! nextprem = step
     match nextprem with
     | RuleParser2.Implication(left,right) ->
-      let! premeses,normalid = normalize_right_premistree right
-      return! normalize_Left_premistree left normalid
+      let! prem_right,normalid = normalize_right_premistree right
+      let! prem_left = normalize_Left_premistree left normalid
+      return prem_left@prem_right
     | RuleParser2.Conditional(cond,left,right) -> return []
   }
 
@@ -210,13 +220,13 @@ let de_alias_rule :Parser<NormalizedRule,NormalizerContext,_> =
   }
 
 let normalize_rules 
-  :Parser<string*List<RuleDef>*List<SymbolDeclaration>,string
+  :Parser<string*RuleContext*List<SymbolDeclaration>,string
     ,string*List<NormalizedRule>*List<SymbolDeclaration>> =
   prs{
     let! id,rules,decl = step
     let rule_normalizer = normalize_rule |> itterate
     let! normalized_rules = 
-      UseDifferentSrcAndCtxt rule_normalizer rules NormalizerContext.Zero
+      UseDifferentSrcAndCtxt rule_normalizer rules.Rules NormalizerContext.Zero
     let de_alias = de_alias_rule |> itterate
     let! de_aliased_rules = 
       UseDifferentSrcAndCtxt de_alias normalized_rules NormalizerContext.Zero

@@ -67,7 +67,6 @@
     <Compile Include="DeclParser2.fs" />
     <Compile Include="ImportParser2.fs" />
     <Compile Include="RuleParser2.fs" />
-    <Compile Include="TypeRuleParser2.fs" />
     <Compile Include="DataNormalizer2.fs" />
     <Compile Include="RuleNormalizer2.fs" />
     <Compile Include="CodegenInterface.fs" />

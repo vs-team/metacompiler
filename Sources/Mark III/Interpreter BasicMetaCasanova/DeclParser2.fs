@@ -172,7 +172,9 @@ let parse_assosiotivity :Parser<Token,DeclParseScope,Associativity> =
     let! st,pos = extract_id()
     if st = "L" then return Left
     elif st = "R" then return Right
-    else return! fail (ParserError pos)
+    else 
+      let err = sprintf "expected l or r for assosiotivity but got: %s" st
+      return! fail (ParserError(err,pos))
   }
 
 let lift_parse_decl (setctxt) (arrow:Keyword):Parser<Token,DeclParseScope,_> =
