@@ -44,15 +44,6 @@ let convert_predicate (con:RuleParser2.Condition):predicate =
   | RuleParser2.GreaterEqual -> GreaterEqual
   | RuleParser2.Greater-> Greater
 
-let rec convert_type (datatype:DataType) : Type =
-  match datatype with
-  | DataNormalizer2.DotNetType(id) -> DotNetType id
-  | DataNormalizer2.McType(id,pos) -> DotNetType id
-  | DataNormalizer2.TypeApplication(t,ls) ->
-    TypeApplication((convert_type t),(List.collect (fun x -> [convert_type x]) ls))
-  | DataNormalizer2.Arrow(l,r) -> Arrow((convert_type l),(convert_type r))
-  | _ -> failwith "not implemented in datatype"
-
 let rec convert_decl_to_type (decltype:DeclType) : Type =
   match decltype with
   | DeclParser2.Id(id,_) -> McType id

@@ -13,7 +13,7 @@ type DeclType =
   | IdVar       of Id * Position
   | IdKind      of Id * Position
   | Arrow       of DeclType*DeclType
-  | TypeArrow of DeclType*DeclType
+  | TypeArrow   of DeclType*DeclType
   | Application of Id*DeclType*DeclType
 
 

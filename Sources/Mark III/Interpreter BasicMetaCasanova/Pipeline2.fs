@@ -11,6 +11,7 @@ open RuleParser2
 open RuleNormalizer2
 open DataNormalizer2
 open RuleTypeChecker2
+open InterfaceBuilder2
 
 let t = System.Diagnostics.Stopwatch()
 
@@ -103,7 +104,7 @@ let start_rule_normalizer (ctxt:List<string*RuleContext*List<SymbolDeclaration>>
   } |> (timer (sprintf "Normalizing Rules "))
 
 let start_data_normalizer (ctxt:List<string*DeclParseScope>)
-  :Option<List<string*List<NormalizedData>>> = 
+  :Option<List<string*List<Id*CodegenInterface.data>>> = 
   opt{
     let! res = use_parser_monad (itterate (normalize_datas)) (ctxt,"")
     return res
@@ -148,10 +149,14 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     let data_decl = List.map (fun (id,(decl:DeclParseScope),_) -> (id,decl.DataDecl)) decl_pars_res
     
     let! typed_rule_res = start_rule_typechecker normalized_rule_res data_decl
+    let! interface_res = build_interface typed_rule_res normalized_data_res
     
+    let dump = Interpreter.eval_main interface_res
+
     let! code_res = start_codegen balltest.ball_func
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))
-    return typed_rule_res
+    //return typed_rule_res
+    return normalized_data_res
     //return List.collect(fun (x,y,_) -> [(x,y)]) normalized_rule_res
     //return List.collect(fun (_,y,_) -> [(y)]) rule_pars_res
     //return (List.collect (fun (x,y,z) -> [x,y]) decl_pars_res)

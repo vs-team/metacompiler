@@ -2,7 +2,7 @@
 Data "S" -> pnum -> pnum
 
 Func pnum -> "add" -> pnum -> pnum
-Func "run" -> unit -> pnum
+Func "main" -> pnum
 
 
 x -> Z
@@ -23,4 +23,4 @@ S a1 -> a2
 S a2 -> a3
 a2 add a3 -> res
 -----
-run x -> res
+main -> res

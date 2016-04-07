@@ -3,7 +3,7 @@ open Common
 open ParserMonad
 
 type Keyword = 
-  | Import | Inherit | Func | TypeFunc | ArrowFunc | TypeAlias | Data | HorizontalBar | Instance
+  | Import | Using | Inherit | Func | TypeFunc | ArrowFunc | TypeAlias | Data | HorizontalBar | Instance
   | Open of Bracket| Close of Bracket | NewLine | CommentLine
   | SingleArrow | DoubleArrow | PriorityArrow | Spaces of int
   | Less | LessEqual | Greater | GreaterEqual | Equal
@@ -190,6 +190,7 @@ let token :Parser<char,Position,Token> =
       int_literal     pos .||
       string_literal  pos .||
       !>>. !"import"      (Import,pos)         .||
+      !>>. !"using"       (Using,pos)          .||
       !>>. !"inherit"     (Inherit,pos)        .||
       !>>. !"Func"        (Func,pos)           .||
       !>>. !"TypeFunc"    (TypeFunc,pos)       .||
