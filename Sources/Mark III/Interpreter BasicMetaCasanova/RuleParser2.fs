@@ -127,7 +127,7 @@ let parse_rule (pf:ParserRuleFunctions)
     let! output = pf.OutputDeclList ctxt
     return {Name = input.Name ;
             Input = input.Args ; Output = output ;
-            Premises = premises ; Pos = input.Pos}
+            Modules = None ;Premises = premises ; Pos = input.Pos}
   }
 
 let normal_function_parser =

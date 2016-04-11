@@ -109,7 +109,7 @@ let lift_parse_decl (setctxt) (arrow:Keyword):Parser<Token,DeclParseScope,_> =
                          prs{return((0,Position.Zero),Left)}
     let! ctxt = getContext
     let res = {Name = name ; Args = args; Return = result ; Priority = pri ; 
-               Associativity = ass; Pos = pos}
+               Premises = []; Associativity = ass; Pos = pos}
     do! setContext (setctxt ctxt res)
   }
 
