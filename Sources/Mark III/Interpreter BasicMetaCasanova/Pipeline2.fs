@@ -62,17 +62,11 @@ let lex_files (paths:List<string>) (file_name:List<string>) :Option<List<string*
     return! try_unpack_list_of_option list_of_lexer_results
   }
 
-let start_global_syntax_check (tokens:string*List<Token>) :Option<_> =
-  opt{
-    let id,tok = tokens
-    let! res = use_parser_monad check_syntax (tok,Position.Zero)
-    return () 
-  } |> (timer (sprintf "checking tokens of file: [%s.mc] " ((fun (id,_)->id)tokens)))
-
 let start_parser (tokens:string*List<Token>) :Option<string*ParserScope> =
   opt{
     let id,tok = tokens
-    let scp = {ParserScope.Zero with DeclsScp = {DeclParseScope.Zero with Name = {Namespace = [id]; Name = id}}}
+    let decl_prem_pars = parse_premis DoubleArrow type_func_to_parser type_alias_to_parser
+    let scp = {ParserScope.Zero with DeclsScp = {DeclParseScope.Zero with Name = {Namespace = [id]; Name = id} ; PremisFunctions = Some(decl_prem_pars)}}
     let! res = use_parser_monad parse_full_lines (tok,scp)
     return id,res
   } |> (timer (sprintf "parsing file: [%s.mc] " ((fun (id,_)->id)tokens)))

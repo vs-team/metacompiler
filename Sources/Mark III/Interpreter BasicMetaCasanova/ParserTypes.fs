@@ -55,7 +55,7 @@ type SymbolDeclaration =
     Pos               : Position
   }
 
-type DeclParseScope = 
+and DeclParseScope = 
   {
     Name             : Id
     DataDecl         : List<SymbolDeclaration>
@@ -63,6 +63,7 @@ type DeclParseScope =
     //ArrowDecl        : List<SymbolDeclaration>
     TypeDecl         : List<SymbolDeclaration>
     AliasDecl        : List<SymbolDeclaration>
+    PremisFunctions  : Option<Parser<Token,DeclParseScope,Premises>>
   } with 
     static member Zero =
       {
@@ -72,6 +73,7 @@ type DeclParseScope =
         //ArrowDecl         = []
         TypeDecl          = []
         AliasDecl         = []
+        PremisFunctions   = None
       }
     static member add pc1 pc2=
       {
@@ -81,6 +83,7 @@ type DeclParseScope =
         TypeDecl          = pc1.TypeDecl  @ pc2.TypeDecl
         AliasDecl         = pc1.AliasDecl @ pc2.AliasDecl
         //ArrowDecl         = pc1.ArrowDecl @ pc2.ArrowDecl
+        PremisFunctions   = pc2.PremisFunctions
       }
 
 

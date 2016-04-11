@@ -16,6 +16,7 @@ type ErrorType =  ParserMonadError    of string
                 | MatchError          of string*Position
                 | SyntaxError
                 | EndOfListError
+                | CompilerError       of string
                    
 type Result<'char,'ctxt,'result> = 
   | Done of 'result * List<'char> * 'ctxt

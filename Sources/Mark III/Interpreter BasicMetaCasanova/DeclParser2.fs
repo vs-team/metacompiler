@@ -7,11 +7,6 @@ open ExtractFromToken2
 open GlobalSyntaxCheck2
 open ParserTypes
 
-
-
-let skip_newline :Parser<Token,_,_> =
-  prs{do! (check_keyword() NewLine) |> repeat |> ignore}
-
 let parse_single_arg :Parser<Token,DeclParseScope,DeclType> =
   prs{
     let! id,pos = extract_id()
@@ -100,55 +95,67 @@ let parse_assosiotivity :Parser<Token,DeclParseScope,Associativity> =
       return! fail (ParserError(err,pos))
   }
 
-let lift_parse_decl (setctxt) (arrow:Keyword):Parser<Token,DeclParseScope,_> =
+let lift_parse_decl (setctxt) (arrow:Keyword) (prem:Option<List<Premises>>)
+  :Parser<Token,DeclParseScope,_> =
   prs{
     let! name,args,pos = parse_arg_structure arrow
     let! result = parse_arg
     let! (pri,_),ass = (check_keyword() PriorityArrow >>.
                         (extract_int_literal() .>>. parse_assosiotivity)) .||
                          prs{return((0,Position.Zero),Left)}
-    let! ctxt = getContext
-    let res = {Name = name ; Args = args; Return = result ; Priority = pri ; 
-               Premises = []; Associativity = ass; Pos = pos}
-    do! setContext (setctxt ctxt res)
+    let! ctxt = getContext 
+    match prem with
+    | Some(x) ->
+      let res = {Name = name ; Args = args; Return = result ; Priority = pri ; 
+             Premises = x; Associativity = ass; Pos = pos}
+      do! setContext (setctxt ctxt res)
+    | None -> 
+      let res = {Name = name ; Args = args; Return = result ; Priority = pri ; 
+             Premises = [] ; Associativity = ass; Pos = pos}
+      do! setContext (setctxt ctxt res)
   }
 
-let parse_datadecl :Parser<Token,DeclParseScope,_> =
+let Lift_decl_premises decl_pars :Parser<Token,DeclParseScope,_> =
+  prs{
+    let! ctxt = getContext
+    match ctxt.PremisFunctions with
+    | Some(x) ->
+      return! prs{
+        let! premises = RepeatUntil x (check_keyword() HorizontalBar)
+        do! (check_keyword() HorizontalBar) >>. (check_keyword() NewLine)
+        do! decl_pars (Some(premises))
+        return ()
+      } .|| prs{
+        do! decl_pars None
+        return ()
+      }
+    | None -> return! fail (CompilerError "there is no parser to parse the declaration premises.")
+  }
+
+let parse_datadecl (prem:Option<List<Premises>>) :Parser<Token,DeclParseScope,_> =
   prs{do! check_keyword() Data} >>. 
-  lift_parse_decl (fun ctxt res -> {ctxt with DataDecl = res :: ctxt.DataDecl}) SingleArrow
+  lift_parse_decl (fun ctxt res -> {ctxt with DataDecl = res :: ctxt.DataDecl}) SingleArrow prem
 
-let parse_funcdecl :Parser<Token,DeclParseScope,_> =
+let parse_funcdecl (prem:Option<List<Premises>>) :Parser<Token,DeclParseScope,_> =
   prs{do! check_keyword() Func} >>. 
-  lift_parse_decl (fun ctxt res -> {ctxt with FuncDecl = res :: ctxt.FuncDecl}) SingleArrow
+  lift_parse_decl (fun ctxt res -> {ctxt with FuncDecl = res :: ctxt.FuncDecl}) SingleArrow prem
 
-let parse_typefuncdecl :Parser<Token,DeclParseScope,_> =
+let parse_typefuncdecl (prem:Option<List<Premises>>) :Parser<Token,DeclParseScope,_> =
   prs{do! check_keyword() TypeFunc} >>. 
-  lift_parse_decl (fun ctxt res -> {ctxt with TypeDecl = res :: ctxt.TypeDecl}) DoubleArrow
+  lift_parse_decl (fun ctxt res -> {ctxt with TypeDecl = res :: ctxt.TypeDecl}) DoubleArrow prem
 
-let parse_aliasdecl :Parser<Token,DeclParseScope,_> =
+let parse_aliasdecl (prem:Option<List<Premises>>) :Parser<Token,DeclParseScope,_> =
   prs{do! check_keyword() TypeAlias} >>. 
-  lift_parse_decl (fun ctxt res -> {ctxt with AliasDecl = res :: ctxt.AliasDecl}) DoubleArrow
+  lift_parse_decl (fun ctxt res -> {ctxt with AliasDecl = res :: ctxt.AliasDecl}) DoubleArrow prem
 
 
 let parse_decl_line :Parser<Token,DeclParseScope,ParserContexts> =
   prs{
-    do! parse_datadecl .|| parse_funcdecl .|| parse_typefuncdecl .|| parse_aliasdecl
+    do! (Lift_decl_premises parse_datadecl) .|| 
+        (Lift_decl_premises parse_funcdecl) .|| 
+        (Lift_decl_premises parse_typefuncdecl) .|| 
+        (Lift_decl_premises parse_aliasdecl)
     let! ctxt = getContext
     return DeclCtxt ctxt
-  }
-
-let parse_lines :Parser<Token,DeclParseScope,_> =
-  prs{
-    do! skip_newline
-    do! parse_datadecl .|| parse_funcdecl .|| parse_typefuncdecl .|| parse_aliasdecl .|| 
-         (UseDifferentCtxt check_rule Position.Zero)
-    do! skip_newline
-    return ()
-  }
-
-let parse_scope :Parser<Token,DeclParseScope,_> =
-  prs{
-    do! parse_lines |> itterate |> ignore
-    return! getContext
   }
 
