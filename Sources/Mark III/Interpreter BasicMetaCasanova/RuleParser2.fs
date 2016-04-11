@@ -3,68 +3,11 @@
 open ParserMonad
 open Common
 open Lexer2
+open ParserTypes
 open DeclParser2
 open GlobalSyntaxCheck2
 open ExtractFromToken2
 
-type ArgId = Id*Position
-
-type FunctionBranch = 
-  {
-    Name              : Id
-    Args              : List<ArgId>
-    Pos               : Position
-  }
-
-type IdBranch =
-  {
-    Name              : Id
-    Pos               : Position
-  }
-
-type PremisFunctionTree = Literal    of Literal*Position
-                        | RuleBranch of FunctionBranch 
-                        | DataBranch of FunctionBranch 
-                        | TypeRuleBranch  of FunctionBranch 
-                        | TypeAliasBranch of FunctionBranch 
-                        | IdBranch   of IdBranch
-
-type Condition = Less | LessEqual | Greater | GreaterEqual | Equal
-
-type Premises = Conditional of Condition*PremisFunctionTree*PremisFunctionTree
-              | Implication of PremisFunctionTree*PremisFunctionTree
-
-type RuleDef =
-  {
-    Name              : Id
-    Input             : List<ArgId>
-    Output            : PremisFunctionTree
-    Premises          : List<Premises>
-    Pos               : Position
-  }
-
-type RuleContext = 
-  {
-    Rules       : List<RuleDef>
-    TypeRules   : List<RuleDef>
-  }
-  with 
-    static member Zero = 
-      {
-        Rules       = []
-        TypeRules   = []
-      }
-
-type ParserRuleFunctions = 
-  {
-     PremiseArrow : Keyword   
-     LeftPremiseParser : DeclParseScope -> Parser<Token,DeclParseScope,PremisFunctionTree>
-     RightPremiseParser : List<SymbolDeclaration> -> Parser<Token,DeclParseScope,PremisFunctionTree>
-     InputDeclList  : DeclParseScope -> List<SymbolDeclaration>
-     InputParser : SymbolDeclaration -> Parser<Token,DeclParseScope,FunctionBranch>
-     OutputDeclList : DeclParseScope -> Parser<Token,DeclParseScope,PremisFunctionTree>
-     ContextBuilder : RuleContext -> RuleDef -> RuleContext
-  } 
   
 let token_condition_to_condition (key:Keyword)(pos:Position) 
   :Parser<Token,DeclParseScope,Condition> =
@@ -187,22 +130,6 @@ let parse_rule (pf:ParserRuleFunctions)
             Premises = premises ; Pos = input.Pos}
   }
 
-
-//let parse_rule (pf:ParserRuleFunctions) 
-//  :Parser<Token,DeclParseScope,RuleDef> =
-//  prs{
-//    let! premises = RepeatUntil (parse_premis SingleArrow decls_to_parser datas_to_parser) (check_keyword() HorizontalBar)
-//    do! (check_keyword() HorizontalBar) >>. (check_keyword() NewLine)
-//    let! ctxt = getContext
-//    let! input = FirstSuccesfullInList ctxt.FuncDecl decl_to_parser
-//    do! check_keyword() SingleArrow
-//    let! output = datas_to_parser ctxt.DataDecl
-//    return {Name = input.Name ;
-//            Input = input.Args ; Output = output ;
-//            Premises = premises ; Pos = input.Pos}
-//  }
-
-
 let normal_function_parser =
   {
     PremiseArrow        = SingleArrow
@@ -233,7 +160,7 @@ let parse_rules (decl:DeclParseScope) (parser_functions:ParserRuleFunctions)
     let! res = UseDifferentCtxt (parse_rule parser_functions) decl 
     do! setContext (parser_functions.ContextBuilder ctxt res)
   }
-
+  
 let parse_line (decl:DeclParseScope) :Parser<Token,RuleContext,_> =
   prs{
     do! (check_keyword() NewLine) |> repeat |> ignore
@@ -258,3 +185,33 @@ let parse_rule_scope
     let type_rules = []
     return id,rules,decl.FuncDecl
   }
+
+let parse_rule_line (decl:DeclParseScope) :Parser<Token,RuleContext,ParserContexts> =
+  prs{
+    do! (parse_rules decl normal_function_parser) .||
+        (parse_rules decl type_function_parser) 
+    let! ctxt = getContext
+    return RuleCtxt ctxt
+  }
+
+let parse_full_line :Parser<Token,ParserScope,_> =
+  prs{
+    do! (check_keyword() NewLine) |> repeat |> ignore
+    let! ctxt = getContext
+    let! line = (UseDifferentCtxt (parse_rule_line (ctxt.DeclsScp)) ctxt.RuleScp) .||
+                (UseDifferentCtxt (parse_decl_line) ctxt.DeclsScp)
+    let res = 
+      match line with
+      | RuleCtxt(rc) -> {ctxt with RuleScp = rc}
+      | DeclCtxt(dc) -> {ctxt with DeclsScp = dc}
+    do! setContext res
+    do! (check_keyword() NewLine) |> repeat |> ignore
+    return ()
+  }
+
+let parse_full_lines :Parser<Token,ParserScope,ParserScope> =
+  prs{
+    do! parse_full_line |> itterate |> ignore
+    return! getContext
+  }
+

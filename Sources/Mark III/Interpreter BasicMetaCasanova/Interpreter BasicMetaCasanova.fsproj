@@ -62,6 +62,7 @@
     <Compile Include="OptionMonad.fs" />
     <Compile Include="IncompleteMonad.fs" />
     <Compile Include="Lexer2.fs" />
+    <Compile Include="ParserTypes.fs" />
     <Compile Include="ExtractFromToken2.fs" />
     <Compile Include="GlobalSyntaxCheck2.fs" />
     <Compile Include="DeclParser2.fs" />

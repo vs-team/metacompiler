@@ -2,6 +2,7 @@
 
 open Common
 open ParserMonad
+open ParserTypes
 open DeclParser2
 open RuleParser2
 
@@ -50,18 +51,18 @@ let normalize_right_premistree (right_prem:PremisFunctionTree)
   :Parser<Premises,NormalizerContext,List<Premisse>*NormalId> =
   prs{
     match right_prem with
-    | RuleParser2.Literal(lit,pos) -> 
+    | ParserTypes.Literal(lit,pos) -> 
       return! fail (NormalizeError (sprintf "right of premis may not have literals%A" pos))
-    | RuleParser2.RuleBranch(x) ->
+    | ParserTypes.RuleBranch(x) ->
       return! fail (NormalizeError (sprintf "right of premis may not have a rule%A" x.Pos))
-    | RuleParser2.DataBranch(x) ->
+    | ParserTypes.DataBranch(x) ->
       let (destruct:Id) = x.Name
       let! tempid = get_local_id_number
       let sourceid = TempId(tempid,x.Pos)
       let idlist = List.collect (fun arg -> [VarId(arg)]) x.Args
       let destruct = Destructor(sourceid,destruct,idlist)
       return [destruct],sourceid
-    | RuleParser2.IdBranch(x) -> 
+    | ParserTypes.IdBranch(x) -> 
       let sourceid = VarId(x.Name,x.Pos)
       return [],sourceid
     | _ -> return! fail (NormalizeError "no typefunc premises alowed in normal rules.")
@@ -101,26 +102,26 @@ let normalize_Left_premistree (input:PremisFunctionTree) (output:NormalId)
   :Parser<Premises,NormalizerContext,List<Premisse>> =
   prs{
     match input with
-    | RuleParser2.Literal(lit,pos) -> 
+    | ParserTypes.Literal(lit,pos) -> 
       let! local_id = get_local_id_number
       let normalid = TempId(local_id,pos)
       let res = Literal(lit,normalid)
       return [res]
-    | RuleParser2.RuleBranch(x) -> 
+    | ParserTypes.RuleBranch(x) -> 
       let! cons_id = get_local_id_number
       let construct_id = TempId(cons_id,x.Pos)
       let construct = McClosure (x.Name, construct_id)
       let! applypremisses = 
         normalize_arguments construct_id x.Args output
       return (construct::applypremisses)
-    | RuleParser2.DataBranch(x) -> 
+    | ParserTypes.DataBranch(x) -> 
       let! cons_id = get_local_id_number
       let construct_id = TempId(cons_id,x.Pos)
       let construct = ConstructorClosure (x.Name, construct_id)
       let! applypremisses = 
         normalize_data_arguments construct_id x.Args output
       return (construct::applypremisses)
-    | RuleParser2.IdBranch(x) -> 
+    | ParserTypes.IdBranch(x) -> 
       let normalid = VarId(x.Name,x.Pos)
       return [Alias(normalid,output)]
     | _ -> return! fail (NormalizeError "no typefunc premises alowed in normal rules.")
@@ -130,11 +131,11 @@ let normalize_premis :Parser<Premises,NormalizerContext,List<Premisse>> =
   prs{
     let! nextprem = step
     match nextprem with
-    | RuleParser2.Implication(left,right) ->
+    | ParserTypes.Implication(left,right) ->
       let! prem_right,normalid = normalize_right_premistree right
       let! prem_left = normalize_Left_premistree left normalid
       return prem_left@prem_right
-    | RuleParser2.Conditional(cond,left,right) -> return []
+    | ParserTypes.Conditional(cond,left,right) -> return []
   }
 
 let normalize_rule :Parser<RuleDef,NormalizerContext,NormalizedRule> =
@@ -220,16 +221,16 @@ let de_alias_rule :Parser<NormalizedRule,NormalizerContext,_> =
   }
 
 let normalize_rules 
-  :Parser<string*RuleContext*List<SymbolDeclaration>,string
-    ,string*List<NormalizedRule>*List<SymbolDeclaration>> =
+  :Parser<string*RuleContext,string
+    ,string*List<NormalizedRule>> =
   prs{
-    let! id,rules,decl = step
+    let! id,rules = step
     let rule_normalizer = normalize_rule |> itterate
     let! normalized_rules = 
       UseDifferentSrcAndCtxt rule_normalizer rules.Rules NormalizerContext.Zero
     let de_alias = de_alias_rule |> itterate
     let! de_aliased_rules = 
       UseDifferentSrcAndCtxt de_alias normalized_rules NormalizerContext.Zero
-    return id,de_aliased_rules,decl
+    return id,de_aliased_rules
   }
 

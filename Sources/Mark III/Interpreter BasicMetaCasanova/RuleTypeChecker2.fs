@@ -4,6 +4,7 @@ open Common
 open ExceptionMonad
 open RuleNormalizer2
 open DataNormalizer2
+open ParserTypes
 open DeclParser2
 open CodegenInterface
 
@@ -36,22 +37,22 @@ let convert_literal (literal:Common.Literal):(Literal*Type) =
   | Void -> Void,DotNetType{Namespace = ["System"] ; Name = "void"}
   | _ -> failwith "Literal not implemented yet."
 
-let convert_predicate (con:RuleParser2.Condition):predicate =
+let convert_predicate (con:ParserTypes.Condition):predicate =
   match con with
-  | RuleParser2.Less -> Less
-  | RuleParser2.LessEqual -> LessEqual
-  | RuleParser2.Equal -> Equal
-  | RuleParser2.GreaterEqual -> GreaterEqual
-  | RuleParser2.Greater-> Greater
+  | ParserTypes.Less -> Less
+  | ParserTypes.LessEqual -> LessEqual
+  | ParserTypes.Equal -> Equal
+  | ParserTypes.GreaterEqual -> GreaterEqual
+  | ParserTypes.Greater-> Greater
 
 let rec convert_decl_to_type (decltype:DeclType) : Type =
   match decltype with
-  | DeclParser2.Id(id,_) -> McType id
-  | DeclParser2.IdVar(id,_) -> McType id
-  | DeclParser2.Application(id,l,r) ->
+  | ParserTypes.Id(id,_) -> McType id
+  | ParserTypes.IdVar(id,_) -> McType id
+  | ParserTypes.Application(id,l,r) ->
     TypeApplication((McType id)
       ,[(convert_decl_to_type l);(convert_decl_to_type r)])
-  | DeclParser2.Arrow(l,r) -> 
+  | ParserTypes.Arrow(l,r) -> 
     Arrow((convert_decl_to_type l),(convert_decl_to_type r))
 
 let convert_arg_structure (argstruct:ArgStructure)(ret:DeclType)(id:local_id) :local_id*Type =

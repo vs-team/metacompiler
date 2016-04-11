@@ -5,84 +5,7 @@ open ParserMonad
 open Lexer2
 open ExtractFromToken2
 open GlobalSyntaxCheck2
-
-type Associativity = Left | Right
-
-type DeclType =
-  | Id          of Id * Position
-  | IdVar       of Id * Position
-  | IdKind      of Id * Position
-  | Arrow       of DeclType*DeclType
-  | TypeArrow   of DeclType*DeclType
-  | Application of Id*DeclType*DeclType
-
-
-type ArgStructure = LeftArg of DeclType*DeclType
-                  | RightArgs of List<DeclType>
-
-type ArgId = Id*Position
-
-type FunctionBranch = 
-  {
-    Name              : Id
-    Args              : List<ArgId>
-    Pos               : Position
-  }
-
-type IdBranch =
-  {
-    Name              : Id
-    Pos               : Position
-  }
-
-type PremisFunctionTree = Literal         of Literal*Position
-                        | TypeRuleBranch  of FunctionBranch 
-                        | TypeAliasBranch of FunctionBranch 
-                        | IdBranch        of IdBranch
-
-type Condition = Less | LessEqual | Greater | GreaterEqual | Equal
-
-type Premises = Conditional of Condition*PremisFunctionTree*PremisFunctionTree
-              | Implication of PremisFunctionTree*PremisFunctionTree
-
-type SymbolDeclaration =
-  {
-    Name              : Id
-    Args              : ArgStructure
-    Return            : DeclType
-    Priority          : int
-    Premises          : List<Premises>
-    Associativity     : Associativity
-    Pos               : Position
-  }
-
-type DeclParseScope = 
-  {
-    Name             : Id
-    DataDecl         : List<SymbolDeclaration>
-    FuncDecl         : List<SymbolDeclaration>
-    //ArrowDecl        : List<SymbolDeclaration>
-    TypeDecl         : List<SymbolDeclaration>
-    AliasDecl        : List<SymbolDeclaration>
-  } with 
-    static member Zero =
-      {
-        Name              = {Namespace = []; Name = ""}
-        DataDecl          = []
-        FuncDecl          = []
-        //ArrowDecl         = []
-        TypeDecl          = []
-        AliasDecl         = []
-      }
-    static member add pc1 pc2=
-      {
-        Name              = pc2.Name
-        DataDecl          = pc1.DataDecl  @ pc2.DataDecl
-        FuncDecl          = pc1.FuncDecl  @ pc2.FuncDecl
-        TypeDecl          = pc1.TypeDecl  @ pc2.TypeDecl
-        AliasDecl         = pc1.AliasDecl @ pc2.AliasDecl
-        //ArrowDecl         = pc1.ArrowDecl @ pc2.ArrowDecl
-      }
+open ParserTypes
 
 
 
@@ -186,7 +109,7 @@ let lift_parse_decl (setctxt) (arrow:Keyword):Parser<Token,DeclParseScope,_> =
                          prs{return((0,Position.Zero),Left)}
     let! ctxt = getContext
     let res = {Name = name ; Args = args; Return = result ; Priority = pri ; 
-               Premises = [] ; Associativity = ass; Pos = pos}
+               Associativity = ass; Pos = pos}
     do! setContext (setctxt ctxt res)
   }
 
@@ -206,6 +129,13 @@ let parse_aliasdecl :Parser<Token,DeclParseScope,_> =
   prs{do! check_keyword() TypeAlias} >>. 
   lift_parse_decl (fun ctxt res -> {ctxt with AliasDecl = res :: ctxt.AliasDecl}) DoubleArrow
 
+
+let parse_decl_line :Parser<Token,DeclParseScope,ParserContexts> =
+  prs{
+    do! parse_datadecl .|| parse_funcdecl .|| parse_typefuncdecl .|| parse_aliasdecl
+    let! ctxt = getContext
+    return DeclCtxt ctxt
+  }
 
 let parse_lines :Parser<Token,DeclParseScope,_> =
   prs{

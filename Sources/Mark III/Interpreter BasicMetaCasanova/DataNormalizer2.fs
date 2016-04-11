@@ -2,8 +2,10 @@
 
 open Common
 open ParserMonad
+open ParserTypes
 open DeclParser2
 open CodegenInterface
+
 
 let rec normalize_decl_type (decl:DeclType):Type =
   match decl with
@@ -11,9 +13,9 @@ let rec normalize_decl_type (decl:DeclType):Type =
   | IdVar(id,pos)     -> failwith "not implemented yet"
   | IdKind(id,pos)    -> failwith "not implemented yet"
   | TypeArrow(id,pos) -> failwith "not implemented yet"
-  | DeclParser2.Arrow(l,r) -> 
+  | ParserTypes.Arrow(l,r) -> 
     Arrow((normalize_decl_type l),(normalize_decl_type r))
-  | DeclParser2.Application(id,l,r) -> 
+  | ParserTypes.Application(id,l,r) -> 
     TypeApplication(McType(id),
       ((normalize_decl_type l)::(normalize_decl_type r)::[]))
 
