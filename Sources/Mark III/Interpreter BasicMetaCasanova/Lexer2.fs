@@ -93,11 +93,11 @@ let digits :Parser<char,Position,List<char>> =
 let alpha_numeric :Parser<char,Position,char> =
   prs{ return! digit .|| alpha_char}
 
-let unsigned_int_literal :Parser<char,Position,int> =
+let unsigned_int_literal :Parser<char,Position,int64> =
   prs{
     let! d = digits
-    let mutable x = 0
-    do for i in d do x <- x * 10 + (int i - int '0')
+    let mutable x = 0L
+    do for i in d do x <- x * 10L + int64(int i - int '0')
     return x
   }
 
@@ -106,8 +106,8 @@ let int_literal pos :Parser<char,Position,Token> =
     let! min = char '-' .|. nothing
     let! x = unsigned_int_literal
     match min with
-    | A() -> return Literal(I32(-x),pos)
-    | B() -> return Literal(I32(x),pos)
+    | A() -> return Literal(I64(-x),pos)
+    | B() -> return Literal(I64(x),pos)
   }
 
 let float_literal pos :Parser<char,Position,Token> =

@@ -57,7 +57,7 @@ and parse_arg :Parser<Token,DeclParseScope,DeclType> =
     let! after_symbol = parse_arg
     let! ctxt = getContext
     let symbol = {Namespace = ctxt.Name.Namespace;Name = symbol}
-    return Application(symbol,before_symbol,after_symbol)
+    return Application(symbol,[before_symbol;after_symbol])
   } .|| parse_round .|| parse_single_arg
 
 let parse_small_args (arrow:Keyword) :Parser<Token,DeclParseScope,DeclType> =

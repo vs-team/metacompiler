@@ -11,7 +11,7 @@ type DeclType =
   | IdKind      of Id * Position
   | Arrow       of DeclType*DeclType
   | TypeArrow   of DeclType*DeclType
-  | Application of Id*DeclType*DeclType
+  | Application of Id*List<DeclType>
 
 
 type ArgStructure = LeftArg of DeclType*DeclType
@@ -35,6 +35,7 @@ type IdBranch =
 type PremisFunctionTree = Literal    of Literal*Position
                         | RuleBranch of FunctionBranch 
                         | DataBranch of FunctionBranch 
+                        | DotNetBranch of FunctionBranch 
                         | TypeRuleBranch  of FunctionBranch 
                         | TypeAliasBranch of FunctionBranch 
                         | IdBranch   of IdBranch

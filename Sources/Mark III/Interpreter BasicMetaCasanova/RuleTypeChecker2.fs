@@ -49,11 +49,12 @@ let rec convert_decl_to_type (decltype:DeclType) : Type =
   match decltype with
   | ParserTypes.Id(id,_) -> McType id
   | ParserTypes.IdVar(id,_) -> McType id
-  | ParserTypes.Application(id,l,r) ->
-    TypeApplication((McType id)
-      ,[(convert_decl_to_type l);(convert_decl_to_type r)])
+  | ParserTypes.Application(id,ls) ->
+    let to_type = List.map (fun x -> convert_decl_to_type x) ls
+    TypeApplication((McType id), to_type)
   | ParserTypes.Arrow(l,r) -> 
     Arrow((convert_decl_to_type l),(convert_decl_to_type r))
+  | _ -> failwith "kind id should not be present during typechecking"
 
 let convert_arg_structure (argstruct:ArgStructure)(ret:DeclType)(id:local_id) :local_id*Type =
   match argstruct with

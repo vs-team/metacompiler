@@ -129,9 +129,9 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
       start_data_normalizer (List.map (fun (id,pc) -> id,pc.DeclsScp) parser_res)
     
     let! typed_rule_res = start_rule_typechecker normalized_rule_res parser_res
-    let! interface_res = build_interface typed_rule_res normalized_data_res
+    //let! interface_res = build_interface typed_rule_res normalized_data_res
     
-    let dump = Interpreter.eval_main interface_res
+    //let dump = Interpreter.eval_main interface_res
 
     let! code_res = start_codegen balltest.ball_func
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))

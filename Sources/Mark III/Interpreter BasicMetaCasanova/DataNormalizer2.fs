@@ -15,9 +15,9 @@ let rec normalize_decl_type (decl:DeclType):Type =
   | TypeArrow(id,pos) -> failwith "not implemented yet"
   | ParserTypes.Arrow(l,r) -> 
     Arrow((normalize_decl_type l),(normalize_decl_type r))
-  | ParserTypes.Application(id,l,r) -> 
-    TypeApplication(McType(id),
-      ((normalize_decl_type l)::(normalize_decl_type r)::[]))
+  | ParserTypes.Application(id,ls) -> 
+    let appl = List.map (fun x -> normalize_decl_type x) ls
+    TypeApplication(McType(id),appl)
 
 let normalize_arg_structure (arg:ArgStructure):List<Type> =
   match arg with
