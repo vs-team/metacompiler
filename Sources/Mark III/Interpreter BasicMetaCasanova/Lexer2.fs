@@ -32,7 +32,7 @@ let char (expected:char) :Parser<char,Position,Unit> =
       return () 
     else 
       let! ctxt = getContext
-      do!  fail (LexerError ctxt)
+      do!  fail (ParserError (sprintf "%A" ctxt))
   }
 
 let (!) (str:string) :Parser<char,Position,Unit> =
@@ -51,7 +51,7 @@ let (!) (str:string) :Parser<char,Position,Unit> =
 let skip_comments :Parser<char,Position,unit> =
   let stop (st:System.String) =
     prs{
-      let! halt = (!st >>. ret (fail (LexerError Position.Zero))) .|| 
+      let! halt = (!st >>. ret (fail (ParserError ""))) .|| 
                   ((step |> ignore) >>. ret nothing)
       return! halt
     }
@@ -66,7 +66,7 @@ let char_between (a:char) (b:char) :Parser<char,Position,char> =
       return next_char
     else 
       let! ctxt = getContext
-      return!  fail (LexerError ctxt)
+      return!  fail (ParserError (sprintf "Lexer: %A" ctxt))
   }
 
 let symbol :Parser<char,Position,char> =
@@ -214,7 +214,7 @@ let token :Parser<char,Position,Token> =
     return res
   } .|| prs{
     let! pos = get_position
-    let! er = fail (LexerError pos)
+    let! er = fail (ParserError (sprintf "%A" pos))
     return! er
   }
 
