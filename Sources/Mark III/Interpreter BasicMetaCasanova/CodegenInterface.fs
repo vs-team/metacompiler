@@ -12,9 +12,6 @@ type Type = DotNetType      of TypeId
 type local_id = Named of string
               | Tmp   of int
 
-
-type predicate = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
-
 type premisse = Literal            of LiteralAssignment // assign literal to local
               | Conditional        of Conditional       // stops evaluation if condition is false
               | Destructor         of Destructor        // destructs Mc data into its constructor arguments
@@ -29,7 +26,7 @@ type premisse = Literal            of LiteralAssignment // assign literal to loc
               | DotNetGet          of DotNetGet         // gets field and assigns it to local
               | DotNetSet          of DotNetSet         // sets field from local
 and LiteralAssignment = {value:Literal; dest:local_id}
-and Conditional = {left:local_id; predicate:predicate; right:local_id}
+and Conditional = {left:local_id; predicate:Predicate; right:local_id}
 and Destructor  = {source:local_id; destructor:Id; args:List<local_id>}
 and closure<'a> = {func:'a;dest:local_id}
 and Application = {closure:local_id; argument:local_id; dest:local_id}

@@ -9,6 +9,8 @@ type Position = { File : string; Line : int; Col : int }
 
 type Bracket = Curly | Round | Square | Lambda | Implicit | Comment
 
+type Predicate = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
+
 type genericId<'a>= {Namespace:List<string>;Name:'a;}
 type Id       = genericId<string>
 

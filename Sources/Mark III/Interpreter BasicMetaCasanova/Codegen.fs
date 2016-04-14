@@ -51,7 +51,7 @@ let print_literal (lit:Literal) =
   | Bool b   -> if b then "true" else "false"
   | Void     -> "void"
 
-let print_predicate (p:predicate) :string= 
+let print_predicate (p:Predicate) :string= 
   match p with Less -> "<" | LessEqual -> "<=" | Equal -> "=" | GreaterEqual -> ">=" | Greater -> ">" | NotEqual -> "!="
 
 let field (n:int) (t:Type) :string =
