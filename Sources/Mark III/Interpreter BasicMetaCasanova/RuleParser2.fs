@@ -1,4 +1,4 @@
-﻿ module RuleParser2
+﻿module RuleParser2
 
 open ParserMonad
 open Common
