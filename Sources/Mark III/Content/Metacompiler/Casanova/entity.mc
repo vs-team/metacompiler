@@ -12,12 +12,12 @@ Rule e => Module {
 }
 
 TypeFunc "RuleEntity" => Updatable => Rule => Updatable
-RuleEntity e r => Updatable {
+RuleEntity e r => e{
   update x dt -> update^e(apply^r x dt) dt
 }
 
 TypeFunc "TupleUpdatable" => Updatable => Updatable => Updatable
-TupleUpdatable e1 e2 => Updatable{
+TupleUpdatable e1 e2 => e{
   TypeFunc "Cons" => Cons^e1 * Cons^e2
 
   update^e1 x dt -> x1
@@ -27,7 +27,7 @@ TupleUpdatable e1 e2 => Updatable{
 }
 
 TypeFunc "UnionUpdatable" => Updatable => Updatable => Updatable
-UnionEntity e1 e2 => Updatable {
+UnionEntity e1 e2 => e{
   TypeFunc "Cons" => Cons^e1 | Cons^e2
 
   do^match x with (\x -> update^e1 x dt) (\y -> update^e2 y dt) -> y
@@ -36,7 +36,7 @@ UnionEntity e1 e2 => Updatable {
 }
 
 TypeFunc "IdUpdatable" => #a => Updatable
-IdUpdatable t => Updatable {
+IdUpdatable t => e{
   TypeFunc "Cons" -> Cons^t
 
   update x dt -> x
@@ -88,12 +88,12 @@ Entity label field rest => EntityField{
 }
 
 TypeFunc "UpdatableEntity" => Entity => Entity
-UpdatableEntity e => Entity (Label^e Field^e Rest^e) {
+UpdatableEntity e => e{
 
-  e -> l f r
+  ent -> l f r
   update^f Cons^f dt -> f1
   update^r Cons^r dt -> r1
   Entity label f1 r1 -> res
   -----------------------------------------
-  update e dt -> res
+  update ent dt -> res
 }
