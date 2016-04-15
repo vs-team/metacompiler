@@ -3,6 +3,8 @@ open Common
 open CodegenInterface
 open Mangle
 
+let mutable flags:CompilerFlags={debug=false};
+
 let ice () = 
     do System.Console.BackgroundColor <- System.ConsoleColor.Red
     do System.Console.Write "INTERNAL COMPILER ERROR"
@@ -179,7 +181,11 @@ let print_rule (rule_nr:int) (rule:rule) =
     linegroups |> Seq.map 
       (fun(linenumber,premisses)->
         let _,s = ((Map.empty,""),premisses) ||> Seq.fold fn in s)
-  let breakpointed = lines |> Seq.mapi (fun i s->sprintf "if(_DBUG_breakpoints[%d]){/*HANDLE BREAKPOINT*/}\n%s" i s) |> String.concat ""
+  let breakpointed = 
+    if flags.debug then
+      lines |> Seq.mapi (fun i s->sprintf "if(_DBUG_breakpoints[%d]){/*HANDLE BREAKPOINT*/}\n%s" i s) |> String.concat ""
+    else
+      lines |> String.concat ""
   sprintf "{\n%s%sreturn %s;}\n%s:\n"
     (rule.input|>List.mapi (fun i x->sprintf "var %s=_arg%d;\n" (mangle_local_id x) i) |> String.concat "")
     breakpointed
@@ -190,19 +196,18 @@ let print_rule_bodies (rules:rule list) =
   rules |> List.mapi print_rule |> String.concat ""
 
 let generate_breakpoint_array (rules:rule seq) =
-  //rules |> Seq.map (fun x->x.premis) |> Seq.concat |> Seq.map (fun(a,b)->b) |> Seq.distinct |> Seq.map (sprintf "static bool _DBUG_breakpoint%d;\n") |> String.concat ""
   rules |> Seq.map (fun x->x.premis) |> Seq.concat |> Seq.map (fun(a,b)->b) |> Seq.distinct |> Seq.map (fun _->"false") |> String.concat "," |> sprintf "static bool[] _DBUG_breakpoints = {%s};\n"
 
 let print_main (rule:rule) =
   let return_type = mangle_type rule.typemap.[rule.output]
   let body = sprintf "static %s body(){\n%sthrow new System.MissingMethodException();\n}" return_type (print_rule_bodies [rule])
   let main = "static void Main() {\nSystem.Console.WriteLine(System.String.Format(\"{0}\", body()));\n}"
-  sprintf "class _main{\n%s%s%s}\n" (generate_breakpoint_array [rule]) body main 
+  sprintf "class _main{\n%s%s%s}\n" (if flags.debug then generate_breakpoint_array [rule] else "") body main 
 
 let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :string =
   let build_func (name:string) (rules:rule list) = 
     let breakpoints = 
-      if lookup.flags.debug then 
+      if flags.debug then 
         generate_breakpoint_array rules 
       else ""
     let rule = List.head rules
@@ -291,6 +296,7 @@ let validate (input:fromTypecheckerWithLove) :bool =
       (true,input.main::rules) ||> List.fold (fun (success:bool) (rule:rule) -> if check_typemap id rule then (check_dest_constness id rule success) else false))
 
 let failsafe_codegen(input:fromTypecheckerWithLove) :Option<string>=
+  do flags <- input.flags
   if validate input then
     let foo = input |> construct_tree |> print_tree input
     foo+(print_main input.main) |> Some
