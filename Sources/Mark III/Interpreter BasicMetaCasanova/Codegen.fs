@@ -91,10 +91,10 @@ let overloadableOps:Map<string,string> =
     "op_Decrement","--"
   ] |> Map.ofList
 
-let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse list) (ret:local_id) =
+let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:(premisse*int) list) (ret:local_id) =
   match ps with 
   | [] -> sprintf "return %s;\n" (mangle_local_id ret)
-  | p::ps -> 
+  | (p,i)::ps -> 
     match p with
     | Literal x -> sprintf "/*LITR*/var %s = %s;\n%s"
                      (mangle_local_id x.dest)
@@ -199,11 +199,16 @@ let print_main (rule:rule) =
 
 let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :string =
   let build_func (name:string) (rules:rule list) = 
+    let breakpoints = 
+      if lookup.flags.debug then 
+        //rules |> Seq.map (fun x->x.premis) |> Seq.concat |> Seq.map (fun(a,b)->b) |> Seq.distinct |> Seq.map (sprintf "static bool _DBUG_breakpoint%d;\n") |> String.concat ""
+        rules |> Seq.map (fun x->x.premis) |> Seq.concat |> Seq.map (fun(a,b)->b) |> Seq.distinct |> Seq.map (fun _->"false") |> String.concat "," |> sprintf "static bool[] _DBUG_breakpoints = {%s};\n"
+      else ""
     let rule = List.head rules
     let args = rule.input |> Seq.mapi (fun nr id-> sprintf "public %s _arg%d;\n" (mangle_type rule.typemap.[id]) nr) |> String.concat ""
     let ret_type = mangle_type rule.typemap.[rule.output]
     let rules = print_rule_bodies rules
-    sprintf "class %s{\n%spublic %s _run(){\n%sthrow new System.MissingMethodException();\n}\n}\n" (CSharpMangle name) args ret_type rules
+    sprintf "class %s{\n%s%spublic %s _run(){\n%sthrow new System.MissingMethodException();\n}\n}\n" (CSharpMangle name) args breakpoints ret_type rules
   let print_base_types (ns:List<NamespacedItem>) = 
     let types = ns |> List.fold (fun types item -> match item with Data (_,v) -> v.outputType::types | _ -> types) [] |> List.distinct
     let print t = sprintf "public class %s{}\n" (t|>remove_namespace_of_type|>mangle_type)
@@ -216,8 +221,8 @@ let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :s
     | Lambda(number,rule)  -> build_func (sprintf "_lambda%d" number) [rule]
   (print_base_types ns)@(ns|>List.map go)|>String.concat "\n"
     
-let get_locals (ps:premisse list) :local_id list =
-  ps |> List.collect (fun p ->
+let get_locals (ps:(premisse*int) list) :local_id list =
+  ps |> List.collect (fun (p,_) ->
     match p with
     | Literal             x -> [x.dest]
     | Conditional         x -> [x.left;x.right]
@@ -234,7 +239,7 @@ let get_locals (ps:premisse list) :local_id list =
     | ApplicationCall     x -> [x.closure;x.dest;x.argument] )
 
 let foldi (f:int->'state->'element->'state) (s:'state) (lst:seq<'element>) :'state =
-  let fn ((counter:int),(state:'state)) (element:'element) :'counter*'state = 
+  let fn ((counter:int),(state:'state)) (element:'element) :int*'state = 
     counter+1,(f counter state element)
   let _,ret = lst|>Seq.fold fn (0,s)
   ret 
@@ -253,11 +258,11 @@ let validate (input:fromTypecheckerWithLove) :bool =
       do printf " incorrect typemap in rule %s:\n  missing %A\n  extra: %A\n" (print_id id) missing extra
       false
   let check_dest_constness (id:Id) (rule:rule) (success:bool):bool =
-      let per_premisse (statementnr:int) (set:Set<local_id>,success:bool) (premisse:premisse) :Set<local_id>*bool =
+      let per_premisse (statementnr:int) (set:Set<local_id>,success:bool) (premisse:premisse,i:int) :Set<local_id>*bool =
         let check (set:Set<local_id>,success:bool) (local:local_id) =
           if set.Contains(local) then
             do ice()
-            do printf " %s assigned twice in rule %s, statement %d\n" (print_local_id local) (print_id id) statementnr
+            do printf " %s assigned twice in rule %s, statement %d on line %d\n" (print_local_id local) (print_id id) statementnr i
             set,false
           else set.Add(local),success
         match premisse with

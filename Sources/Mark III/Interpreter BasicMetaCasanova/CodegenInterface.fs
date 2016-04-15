@@ -40,8 +40,10 @@ type rule = {
   side_effect :bool
   input  :List<local_id>
   output :local_id
-  premis :List<premisse>
+  premis :List<premisse*int> // linenumber
   typemap:Map<local_id,Type>
+  declaration: Position
+  definition : Position
 }
 
 type data = {
@@ -49,12 +51,15 @@ type data = {
   outputType :Type
 }
 
+type CompilerFlags = {debug:bool}
+
 type fromTypecheckerWithLove = {
   assemblies : List<string> 
   funcs   : Map<Id,List<rule>>
   lambdas : Map<LambdaId,rule>
   datas   : List<Id*data>
   main    : rule
+  flags   : CompilerFlags
 }
 
 let (-->) t1 t2 =

@@ -6,22 +6,22 @@ open ParserMonad
 let print_loc  (x:local_id) = match x with Named x -> x | Tmp x -> sprintf "_%d" x
 let print_id   (x:Id) = x.Namespace @ [x.Name] |> String.concat "." 
 
-let print_premisse (p:premisse) :string =
+let print_premisse (p:premisse,i:int) :string =
   let print_lamb (x:LambdaId) = x.Namespace @ [sprintf "lambda%d" x.Name] |> String.concat "." 
   match p with
-  | Literal            x -> sprintf "LITR %A -> %s" x.value (print_loc x.dest)
-  | Conditional        x -> sprintf "COND %s %A %s" (print_loc x.left) x.predicate (print_loc x.right)
-  | Destructor         x -> sprintf "DTOR %s %s -> %s" (print_id x.destructor) (print_loc x.source) (x.args|>List.map print_loc|>String.concat " ")
-  | ConstructorClosure x -> sprintf "CTOR %s -> %s" (print_id x.func) (print_loc x.dest)
-  | FuncClosure        x -> sprintf "FUNC %s -> %s" (print_id x.func) (print_loc x.dest)
-  | LambdaClosure      x -> sprintf "LAMB %s -> %s" (print_lamb x.func) (print_loc x.dest)
-  | Application        x -> sprintf "APPL %s %s -> %s" (print_loc x.closure) (print_loc x.argument) (print_loc x.dest)
-  | ApplicationCall    x -> sprintf "CALL %s %s -> %s %s" (print_loc x.closure) (print_loc x.argument) (print_loc x.dest) (if x.side_effect then "{SIDE-EFFECT}" else "")
-  | DotNetConstructor  x -> sprintf "NCON %s(%s) -> %s %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)(if x.side_effect then "{SIDE-EFFECT}" else "")
-  | DotNetStaticCall   x -> sprintf "NSCA %s(%s) -> %s %s" (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest) (if x.side_effect then "{SIDE-EFFECT}" else "")
-  | DotNetCall         x -> sprintf "NDCA %s.%s(%s) -> %s %s %s" (print_loc x.instance) x.func (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest) (if x.side_effect then "{SIDE-EFFECT}" else "") (if x.mutates_instance then "{MUTATES-INSTANCE}" else "")
-  | DotNetGet          x -> sprintf "NGET %s.%s -> %s" (print_loc x.instance) x.field (print_loc x.dest)
-  | DotNetSet          x -> sprintf "NSET %s.%s <- %s" (print_loc x.instance) x.field (print_loc x.src)
+  | Literal            x -> sprintf "%03d: LITR %A -> %s" i x.value (print_loc x.dest)
+  | Conditional        x -> sprintf "%03d: COND %s %A %s" i (print_loc x.left) x.predicate (print_loc x.right)
+  | Destructor         x -> sprintf "%03d: DTOR %s %s -> %s" i (print_id x.destructor) (print_loc x.source) (x.args|>List.map print_loc|>String.concat " ")
+  | ConstructorClosure x -> sprintf "%03d: CTOR %s -> %s" i (print_id x.func) (print_loc x.dest)
+  | FuncClosure        x -> sprintf "%03d: FUNC %s -> %s" i (print_id x.func) (print_loc x.dest)
+  | LambdaClosure      x -> sprintf "%03d: LAMB %s -> %s" i (print_lamb x.func) (print_loc x.dest)
+  | Application        x -> sprintf "%03d: APPL %s %s -> %s" i (print_loc x.closure) (print_loc x.argument) (print_loc x.dest)
+  | ApplicationCall    x -> sprintf "%03d: CALL %s %s -> %s %s" i (print_loc x.closure) (print_loc x.argument) (print_loc x.dest) (if x.side_effect then "{SIDE-EFFECT}" else "")
+  | DotNetConstructor  x -> sprintf "%03d: NCON %s(%s) -> %s %s" i (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest)(if x.side_effect then "{SIDE-EFFECT}" else "")
+  | DotNetStaticCall   x -> sprintf "%03d: NSCA %s(%s) -> %s %s" i (print_id x.func) (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest) (if x.side_effect then "{SIDE-EFFECT}" else "")
+  | DotNetCall         x -> sprintf "%03d: NDCA %s.%s(%s) -> %s %s %s" i (print_loc x.instance) x.func (x.args|>List.map print_loc|>String.concat " ") (print_loc x.dest) (if x.side_effect then "{SIDE-EFFECT}" else "") (if x.mutates_instance then "{MUTATES-INSTANCE}" else "")
+  | DotNetGet          x -> sprintf "%03d: NGET %s.%s -> %s" i (print_loc x.instance) x.field (print_loc x.dest)
+  | DotNetSet          x -> sprintf "%03d: NSET %s.%s <- %s" i (print_loc x.instance) x.field (print_loc x.src)
 
 type global_context = {assemblies:List<System.Reflection.Assembly>;funcs:Map<Id,List<rule>>;lambdas:Map<LambdaId,rule>;datas:List<Id*data>;main:rule;}
 
@@ -67,7 +67,7 @@ let dotNetSet (x:DotNetSet) (parent_type:Id) (symbol_table:Map<local_id,obj>) (a
   let field = t.GetField(x.field)
   field.SetValue(symbol_table.[x.instance],symbol_table.[x.src])
 
-let rec eval_step (p:premisse)
+let rec eval_step (p:premisse,i:int)
                   (global_context:global_context)
                   (type_map:Map<local_id,Type>)
                   (symbol_table:Map<local_id,obj>)
@@ -82,7 +82,7 @@ let rec eval_step (p:premisse)
     )
   *)
   do System.Console.ForegroundColor <- System.ConsoleColor.Yellow
-  do printf "%s\n" (print_premisse p)
+  do printf "%s\n" (print_premisse (p,i))
   do System.Console.ResetColor()
   match p with
   | Literal x ->
