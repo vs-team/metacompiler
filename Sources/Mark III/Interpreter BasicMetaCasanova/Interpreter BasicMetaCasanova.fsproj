@@ -57,6 +57,7 @@
     <None Include="TODO.txt" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Common.fs" />
+    <Compile Include="ParserAST.fs" />
     <Compile Include="ParserMonad.fs" />
     <Compile Include="ExceptionMonad.fs" />
     <Compile Include="OptionMonad.fs" />
