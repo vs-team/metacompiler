@@ -8,8 +8,6 @@ let ice () =
     do System.Console.Write "INTERNAL COMPILER ERROR"
     do System.Console.ResetColor()
 
-// TODO: generate dotnet closures
-
 type NamespacedItem = Ns       of string*List<NamespacedItem>
                     | Data     of string*data
                     | Function of string*List<rule>
@@ -171,31 +169,41 @@ let rec premisse (p:premisse) (m:Map<local_id,Type>) (app:Map<local_id,int>) (ru
       (mangle_local_id  x.dest)
       (mangle_local_id  x.closure)
 
-let print_rule (rule_nr:int) (rule:rule)=
-  let _,src:(Map<local_id,int>*string) = 
-    (rule.premis |> Seq.fold (fun (app:Map<local_id,int>,str:string) (p,i) -> 
-      let a,s = premisse p rule.typemap app rule_nr in a,(str+s) ) (Map.empty,""))
+let print_rule (rule_nr:int) (rule:rule) =
+  let linegroups:seq<int*seq<premisse>> = 
+    rule.premis |> Seq.groupBy (fun(_,x)->x) |> Seq.map (fun(l,p)->l,(p|>Seq.map(fun(x,_)->x)))
+  let fn (app:Map<local_id,int>,str:string) (p:premisse) =
+    let (a:Map<local_id,int>,s:string) = premisse p rule.typemap app rule_nr
+    a,(str+s)
+  let lines =
+    linegroups |> Seq.map 
+      (fun(linenumber,premisses)->
+        let _,s = ((Map.empty,""),premisses) ||> Seq.fold fn in s)
+  let breakpointed = lines |> Seq.mapi (fun i s->sprintf "if(_DBUG_breakpoints[%d]){/*HANDLE BREAKPOINT*/}\n%s" i s) |> String.concat ""
   sprintf "{\n%s%sreturn %s;}\n%s:\n"
     (rule.input|>List.mapi (fun i x->sprintf "var %s=_arg%d;\n" (mangle_local_id x) i) |> String.concat "")
-    src
+    breakpointed
     (mangle_local_id rule.output)
     (print_label rule_nr)
 
 let print_rule_bodies (rules:rule list) =
   rules |> List.mapi print_rule |> String.concat ""
 
+let generate_breakpoint_array (rules:rule seq) =
+  //rules |> Seq.map (fun x->x.premis) |> Seq.concat |> Seq.map (fun(a,b)->b) |> Seq.distinct |> Seq.map (sprintf "static bool _DBUG_breakpoint%d;\n") |> String.concat ""
+  rules |> Seq.map (fun x->x.premis) |> Seq.concat |> Seq.map (fun(a,b)->b) |> Seq.distinct |> Seq.map (fun _->"false") |> String.concat "," |> sprintf "static bool[] _DBUG_breakpoints = {%s};\n"
+
 let print_main (rule:rule) =
   let return_type = mangle_type rule.typemap.[rule.output]
   let body = sprintf "static %s body(){\n%sthrow new System.MissingMethodException();\n}" return_type (print_rule_bodies [rule])
   let main = "static void Main() {\nSystem.Console.WriteLine(System.String.Format(\"{0}\", body()));\n}"
-  sprintf "class _main{\n%s%s}\n" body main 
+  sprintf "class _main{\n%s%s%s}\n" (generate_breakpoint_array [rule]) body main 
 
 let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :string =
   let build_func (name:string) (rules:rule list) = 
     let breakpoints = 
       if lookup.flags.debug then 
-        //rules |> Seq.map (fun x->x.premis) |> Seq.concat |> Seq.map (fun(a,b)->b) |> Seq.distinct |> Seq.map (sprintf "static bool _DBUG_breakpoint%d;\n") |> String.concat ""
-        rules |> Seq.map (fun x->x.premis) |> Seq.concat |> Seq.map (fun(a,b)->b) |> Seq.distinct |> Seq.map (fun _->"false") |> String.concat "," |> sprintf "static bool[] _DBUG_breakpoints = {%s};\n"
+        generate_breakpoint_array rules 
       else ""
     let rule = List.head rules
     let args = rule.input |> Seq.mapi (fun nr id-> sprintf "public %s _arg%d;\n" (mangle_type rule.typemap.[id]) nr) |> String.concat ""
