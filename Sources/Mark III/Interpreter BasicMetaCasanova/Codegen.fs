@@ -171,13 +171,14 @@ let rec premisse (p:premisse) (m:Map<local_id,Type>) (app:Map<local_id,int>) (ru
       (mangle_local_id  x.dest)
       (mangle_local_id  x.closure)
 
-let print_rule (rule_nr:int) (rule:rule)= 
+let print_rule (rule_nr:int) (rule:rule)=
   let _,src:(Map<local_id,int>*string) = 
     (rule.premis |> Seq.fold (fun (app:Map<local_id,int>,str:string) (p,i) -> 
       let a,s = premisse p rule.typemap app rule_nr in a,(str+s) ) (Map.empty,""))
-  sprintf "{\n%s%s}\n%s:\n"
+  sprintf "{\n%s%sreturn %s;}\n%s:\n"
     (rule.input|>List.mapi (fun i x->sprintf "var %s=_arg%d;\n" (mangle_local_id x) i) |> String.concat "")
     src
+    (mangle_local_id rule.output)
     (print_label rule_nr)
 
 let print_rule_bodies (rules:rule list) =
@@ -185,7 +186,7 @@ let print_rule_bodies (rules:rule list) =
 
 let print_main (rule:rule) =
   let return_type = mangle_type rule.typemap.[rule.output]
-  let body = sprintf "static %s body(){\n%s}" return_type (print_rule_bodies [rule])
+  let body = sprintf "static %s body(){\n%sthrow new System.MissingMethodException();\n}" return_type (print_rule_bodies [rule])
   let main = "static void Main() {\nSystem.Console.WriteLine(System.String.Format(\"{0}\", body()));\n}"
   sprintf "class _main{\n%s%s}\n" body main 
 
