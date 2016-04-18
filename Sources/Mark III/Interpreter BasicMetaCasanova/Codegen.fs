@@ -183,7 +183,7 @@ let print_rule (rule_nr:int) (rule:rule) =
         let _,s = ((Map.empty,""),premisses) ||> Seq.fold fn in s)
   let breakpointed = 
     if flags.debug then
-      lines |> Seq.mapi (fun i s->sprintf "if(_DBUG_breakpoints[%d]){/*HANDLE BREAKPOINT*/}\n%s" i s) |> String.concat ""
+      lines |> Seq.mapi (fun i s->sprintf "if(_DBUG_breakpoints[%d]){/*HANDLE BREAKPOINT*/}\n%s" (rule_nr+i) s) |> String.concat ""
     else
       lines |> String.concat ""
   sprintf "{\n%s%sreturn %s;}\n%s:\n"
@@ -192,11 +192,19 @@ let print_rule (rule_nr:int) (rule:rule) =
     (mangle_local_id rule.output)
     (print_label rule_nr)
 
+let fst(x,_)=x
+let snd(_,x)=x
+
+let nr_of_actual_lines (rule:rule):int = 
+  rule.premis |> Seq.map snd |> Seq.distinct |> Seq.length
+
+
 let print_rule_bodies (rules:rule list) =
-  rules |> List.mapi print_rule |> String.concat ""
+  let len = rules |> List.scan (fun s r->s+(nr_of_actual_lines r)-1) 0 |> List.rev |> List.tail |> List.rev |> List.zip rules
+  len |> List.mapi (fun x (a,b)->print_rule (x+b) a) |> String.concat ""
 
 let generate_breakpoint_array (rules:rule seq) =
-  rules |> Seq.map (fun x->x.premis) |> Seq.concat |> Seq.map (fun(a,b)->b) |> Seq.distinct |> Seq.map (fun _->"false") |> String.concat "," |> sprintf "static bool[] _DBUG_breakpoints = {%s};\n"
+  rules |> Seq.map (fun x->x.premis) |> Seq.concat |> Seq.map snd |> Seq.distinct |> Seq.map (fun _->"false") |> String.concat "," |> sprintf "static bool[] _DBUG_breakpoints = {%s};\n"
 
 let print_main (rule:rule) =
   let return_type = mangle_type rule.typemap.[rule.output]
