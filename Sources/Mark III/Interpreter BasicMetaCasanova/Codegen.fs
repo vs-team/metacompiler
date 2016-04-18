@@ -197,23 +197,23 @@ let print_rule (rule_nr:int) (rule:rule) =
     let (a:Map<local_id,int>,s:string) = 
       let l,r = premisse p rule.typemap app rule_nr
       if flags.debug then
-        let foo = p|>get_definitions|>List.map symbol_table_add |> String.concat ""
-        l,(r+foo)
+        let stab_adds = p|>get_definitions|>List.map symbol_table_add |> String.concat ""
+        l,(r+stab_adds)
       else l,r
     a,(str+s)
   let lines =
-    linegroups |> Seq.map 
-      (fun(linenumber,premisses)->
-        let _,s = ((Map.empty,""),premisses) ||> Seq.fold fn in s)
-  let breakpointed = 
-    if flags.debug then
-      lines |> Seq.mapi (fun i s->sprintf "if(_DBUG_breakpoints[%d]){/*HANDLE BREAKPOINT*/}\n%s" (rule_nr+i) s) |> String.concat ""
-    else
-      lines |> String.concat ""
+    linegroups |> Seq.mapi
+      (fun idx (linenumber,premisses)->
+        let breakpoint = 
+          if flags.debug then
+            sprintf "if(_DBUG_breakpoints[%d]){_debug.breakpoint(\"%s\",%d,_DBUG_symbol_table);}\n" (rule_nr+idx) rule.definition.File linenumber
+          else ""
+        let _,s = ((Map.empty,""),premisses) ||> Seq.fold fn
+        s+breakpoint)
   sprintf "{\n%s%s%sreturn %s;}\n%s:\n"
-    (if flags.debug then "var _DBUG_symbol_table = new System.Collections.Generic.Dictionary<string, object>();" else "")
+    (if flags.debug then "var _DBUG_symbol_table = new System.Collections.Generic.Dictionary<string, object>();\n" else "")
     (rule.input|>List.mapi (fun i x->sprintf "var %s=_arg%d;\n%s" (mangle_local_id x) i (if flags.debug then symbol_table_add x else "")) |> String.concat "")
-    breakpointed
+    (lines|>String.concat "")
     (mangle_local_id rule.output)
     (print_label rule_nr)
 
