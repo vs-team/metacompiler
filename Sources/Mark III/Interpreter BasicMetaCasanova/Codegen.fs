@@ -171,11 +171,35 @@ let premisse (p:premisse) (m:Map<local_id,Type>) (app:Map<local_id,int>) (rule_n
       (mangle_local_id  x.dest)
       (mangle_local_id  x.closure)
 
+let get_definitions (p:premisse) :List<local_id> =
+  match p with
+  | Literal            x -> [x.dest]
+  | Conditional        _ -> []
+  | Destructor         x ->  x.args
+  | ConstructorClosure x -> [x.dest]
+  | FuncClosure        x -> [x.dest]
+  | LambdaClosure      x -> [x.dest]
+  | Application        x -> [x.dest]
+  | ApplicationCall    x -> [x.dest]
+  | DotNetCall         x -> [x.dest]
+  | DotNetStaticCall   x -> [x.dest]
+  | DotNetConstructor  x -> [x.dest]
+  | DotNetGet          x -> [x.dest]
+  | DotNetSet          x -> [x.src]
+
 let print_rule (rule_nr:int) (rule:rule) =
+  let symbol_table_add id = 
+    let s=mangle_local_id id
+    if id=Named("nil") then "" else sprintf "_DBUG_symbol_table[\"%s\"]=%s;\n" s s
   let linegroups:seq<int*seq<premisse>> = 
     rule.premis |> Seq.groupBy (fun(_,x)->x) |> Seq.map (fun(l,p)->l,(p|>Seq.map(fun(x,_)->x)))
   let fn (app:Map<local_id,int>,str:string) (p:premisse) =
-    let (a:Map<local_id,int>,s:string) = premisse p rule.typemap app rule_nr
+    let (a:Map<local_id,int>,s:string) = 
+      let l,r = premisse p rule.typemap app rule_nr
+      if flags.debug then
+        let foo = p|>get_definitions|>List.map symbol_table_add |> String.concat ""
+        l,(r+foo)
+      else l,r
     a,(str+s)
   let lines =
     linegroups |> Seq.map 
@@ -186,8 +210,9 @@ let print_rule (rule_nr:int) (rule:rule) =
       lines |> Seq.mapi (fun i s->sprintf "if(_DBUG_breakpoints[%d]){/*HANDLE BREAKPOINT*/}\n%s" (rule_nr+i) s) |> String.concat ""
     else
       lines |> String.concat ""
-  sprintf "{\n%s%sreturn %s;}\n%s:\n"
-    (rule.input|>List.mapi (fun i x->sprintf "var %s=_arg%d;\n" (mangle_local_id x) i) |> String.concat "")
+  sprintf "{\n%s%s%sreturn %s;}\n%s:\n"
+    (if flags.debug then "var _DBUG_symbol_table = new System.Collections.Generic.Dictionary<string, object>();" else "")
+    (rule.input|>List.mapi (fun i x->sprintf "var %s=_arg%d;\n%s" (mangle_local_id x) i (if flags.debug then symbol_table_add x else "")) |> String.concat "")
     breakpointed
     (mangle_local_id rule.output)
     (print_label rule_nr)
