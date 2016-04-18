@@ -190,4 +190,4 @@ let ball_func =
      ]
     side_effect=true
    }
-  {funcs=Funcs;datas=[ball_id,ball_data];lambdas=Map.empty;main=main;assemblies=["Microsoft.Xna.Framework.dll"];flags={debug=true}}
+  {funcs=Funcs;datas=[ball_id,ball_data];lambdas=Map.empty;main=main;assemblies=["Microsoft.Xna.Framework.dll"];flags={debug=false}}

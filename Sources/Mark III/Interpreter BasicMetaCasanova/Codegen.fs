@@ -93,7 +93,7 @@ let overloadableOps:Map<string,string> =
 
 let print_label (i:int) = sprintf "_skip%d" i
 
-let rec premisse (p:premisse) (m:Map<local_id,Type>) (app:Map<local_id,int>) (rule_nr:int) =
+let premisse (p:premisse) (m:Map<local_id,Type>) (app:Map<local_id,int>) (rule_nr:int) =
   match p with
   | Literal x -> app,sprintf "/*LITR*/var %s = %s;\n"
                    (mangle_local_id x.dest)
