@@ -5,6 +5,15 @@ open Mangle
 
 let mutable flags:CompilerFlags={debug=false};
 
+let fst(x,_)=x
+let snd(_,x)=x
+
+let foldi (f:int->'state->'element->'state) (s:'state) (lst:seq<'element>) :'state =
+  let fn ((counter:int),(state:'state)) (element:'element) :int*'state = 
+    counter+1,(f counter state element)
+  let _,ret = lst|>Seq.fold fn (0,s)
+  ret 
+
 let ice () = 
     do System.Console.BackgroundColor <- System.ConsoleColor.Red
     do System.Console.Write "INTERNAL COMPILER ERROR"
@@ -22,9 +31,9 @@ let construct_tree (input:fromTypecheckerWithLove) :List<NamespacedItem> =
     | n::ns -> match s |> List.partition (fun x->match x with Ns(n,_)->true | _->false) with
                | [Ns(n,body)],rest -> Ns(n,datatree body (ns,v))::rest
                | [],list           -> Ns(n,datatree []   (ns,v))::list
-  let rec functree (s:List<NamespacedItem>) (idx:List<string>,v:string*List<rule>) :List<NamespacedItem> =
+  let rec functree (s:List<NamespacedItem>) (idx:List<string>,v:string*(List<rule>*Position)) :List<NamespacedItem> =
     match idx with
-    | []    -> (Function(v))::s
+    | []    -> let (l,(r,_)) = v in (Function(l,r))::s
     | n::ns -> match s |> List.partition (fun x->match x with Ns(n,_)->true | _->false) with
                | [Ns(n,body)],rest -> Ns(n,functree body (ns,v))::rest
                | [],list           -> Ns(n,functree []   (ns,v))::list
@@ -92,6 +101,31 @@ let overloadableOps:Map<string,string> =
   ] |> Map.ofList
 
 let print_label (i:int) = sprintf "_skip%d" i
+
+let print_debug_tree (fromTypeChecker:Map<Id,list<rule>*Position>) (main:rule) =
+  let tree = 
+    // first flatten the hierarchy
+    let rules = fromTypeChecker |> Map.toSeq |> Seq.map (fun(name,(lst,pos))->lst|>Seq.ofList|>Seq.map(fun rule->name,rule,pos)) |> Seq.concat
+    // add main to the flat list
+    let rules = rules |> Seq.append ([{Namespace=[];Name="main"},main,main.definition])
+    // then group by file (that the rule is defined by)
+    let files = rules |> Seq.groupBy (fun(id,rule,pos)->rule.definition.File)
+    // within each file, group by func (and strip info out of rule)
+    files |> Seq.map (fun(filename,rules)->
+      let funcs = rules |> Seq.groupBy (fun(id,rule,pos)->id,pos) 
+                  |> Seq.map (fun((id,pos),rules)->id,pos,rules|>Seq.map(fun(id,rule,pos)->rule))
+      filename,funcs)
+  let per_file = tree|> Seq.mapi (fun filenr (filename,funcs)->
+    let per_func = funcs |> Seq.mapi (fun funcnr (funcname,declposition,rules)->
+      let per_rule = rules |> Seq.mapi (fun rulenr (rule) ->
+        let per_line = rule.premis |> Seq.groupBy snd
+        let per_prem = (per_line|>Seq.rev|>Seq.tail|>Seq.rev) |> Seq.mapi (fun premnr (linenumber,prems)->
+          sprintf "_DBUG.program_tree.Nodes[%d].Nodes[%d].Nodes[%d].Nodes.Add(\"line %d\");\n" filenr funcnr rulenr linenumber )
+        sprintf "_DBUG.program_tree.Nodes[%d].Nodes[%d].Nodes.Add(\"line %d\");\n%s" filenr funcnr (Seq.last per_line|>fst) (String.concat "" per_prem) )
+      sprintf "_DBUG.program_tree.Nodes[%d].Nodes.Add(\"%s\");\n%s" filenr (mangle_id funcname) (String.concat "" per_rule) )
+    sprintf "_DBUG.program_tree.Nodes.Add(\"%s\");\n%s" filename (String.concat "" per_func) )
+  per_file |> String.concat ""
+           
 
 let premisse (p:premisse) (m:Map<local_id,Type>) (app:Map<local_id,int>) (rule_nr:int) =
   match p with
@@ -206,7 +240,7 @@ let print_rule (rule_nr:int) (rule:rule) =
       (fun idx (linenumber,premisses)->
         let breakpoint = 
           if flags.debug then
-            sprintf "if(_DBUG_breakpoints[%d]){_debug.breakpoint(\"%s\",%d,_DBUG_symbol_table);}\n" (rule_nr+idx) rule.definition.File linenumber
+            sprintf "if(_DBUG_breakpoints[%d]){_DBUG.breakpoint(\"%s\",%d,_DBUG_symbol_table);}\n" (rule_nr+idx) rule.definition.File linenumber
           else ""
         let _,s = ((Map.empty,""),premisses) ||> Seq.fold fn
         s+breakpoint)
@@ -217,8 +251,6 @@ let print_rule (rule_nr:int) (rule:rule) =
     (mangle_local_id rule.output)
     (print_label rule_nr)
 
-let fst(x,_)=x
-let snd(_,x)=x
 
 let nr_of_actual_lines (rule:rule):int = 
   rule.premis |> Seq.map snd |> Seq.distinct |> Seq.length
@@ -231,10 +263,11 @@ let print_rule_bodies (rules:rule list) =
 let generate_breakpoint_array (rules:rule seq) =
   rules |> Seq.map (fun x->x.premis) |> Seq.concat |> Seq.map snd |> Seq.distinct |> Seq.map (fun _->"false") |> String.concat "," |> sprintf "static bool[] _DBUG_breakpoints = {%s};\n"
 
-let print_main (rule:rule) =
+let print_main (input:fromTypecheckerWithLove) =
+  let rule = input.main
   let return_type = mangle_type rule.typemap.[rule.output]
   let body = sprintf "static %s body(){\n%sthrow new System.MissingMethodException();\n}" return_type (print_rule_bodies [rule])
-  let main = "static void Main() {\nSystem.Console.WriteLine(System.String.Format(\"{0}\", body()));\n}"
+  let main = sprintf "static void Main() {\n%s\nSystem.Console.WriteLine(System.String.Format(\"{0}\", body()));\n}" (print_debug_tree input.funcs input.main)
   sprintf "class _main{\n%s%s%s}\n" (if flags.debug then generate_breakpoint_array [rule] else "") body main 
 
 let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :string =
@@ -277,12 +310,6 @@ let get_locals (ps:(premisse*int) list) :local_id list =
     | Application         x -> [x.dest]
     | ApplicationCall     x -> [x.closure;x.dest;x.argument] )
 
-let foldi (f:int->'state->'element->'state) (s:'state) (lst:seq<'element>) :'state =
-  let fn ((counter:int),(state:'state)) (element:'element) :int*'state = 
-    counter+1,(f counter state element)
-  let _,ret = lst|>Seq.fold fn (0,s)
-  ret 
-
 let validate (input:fromTypecheckerWithLove) :bool =
   let print_local_id (id:local_id) = match id with Named(x)->x | Tmp(x)->sprintf "temporary(%d)" x
   let print_id (id:Id) = String.concat "^" (id.Name::id.Namespace)
@@ -320,7 +347,7 @@ let validate (input:fromTypecheckerWithLove) :bool =
         | ApplicationCall x       -> check (set,success) x.dest
       let _,ret = rule.premis |> foldi per_premisse (Set.empty,success)
       ret
-  (true,input.funcs) ||> Map.fold (fun (success:bool) (id:Id) (rules:rule list)-> 
+  (true,input.funcs) ||> Map.fold (fun (success:bool) (id:Id) (rules,position)-> 
     if rules.IsEmpty then
       do ice()
       do printf " empty rule: %s\n" (print_id id)
@@ -332,6 +359,6 @@ let failsafe_codegen(input:fromTypecheckerWithLove) :Option<string>=
   do flags <- input.flags
   if validate input then
     let foo = input |> construct_tree |> print_tree input
-    foo+(print_main input.main) |> Some
+    foo+(print_main input) |> Some
 
   else None

@@ -24,7 +24,6 @@ let ball_func =
   let update_t:Type = float_t --> (ball_t --> ball_t)
   let update_fall_down:rule = {
     side_effect = false
-    declaration = { File="notreal.mc"; Line=1337; Col=1}
     definition  = { File="notreal.mc"; Line=9001; Col=1}
     input = [Named("dt");Named("b")]
     output = Named("out")
@@ -103,7 +102,6 @@ let ball_func =
   do reset()
   let update_bounce:rule = {
     side_effect = false
-    declaration = { File="notreal.mc"; Line=1337; Col=2}
     definition  = { File="notreal.mc"; Line=9001; Col=2}
     input = [Named("dt");Named("b")]
     output = Named("out")
@@ -159,9 +157,8 @@ let ball_func =
         next_tmp(),(vec2_t --> ball_t)
       ] |> Map.ofSeq
   } 
-  let Funcs = Map.ofSeq <| [update_id,[update_fall_down;update_bounce]]
+  let Funcs = Map.ofSeq <| [update_id,([update_fall_down;update_bounce],{File="decl.mc";Line=1337;Col=2})]
   let main = {
-    declaration = { File="notreal.mc"; Line=1337; Col=2}
     definition  = { File="notreal.mc"; Line=9001; Col=2}
     input=[]
     output=Named("ret")

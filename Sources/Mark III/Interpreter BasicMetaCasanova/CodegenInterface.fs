@@ -42,8 +42,7 @@ type rule = {
   output :local_id
   premis :List<premisse*int> // linenumber
   typemap:Map<local_id,Type>
-  declaration: Position
-  definition : Position
+  definition: Position
 }
 
 type data = {
@@ -55,7 +54,7 @@ type CompilerFlags = {debug:bool}
 
 type fromTypecheckerWithLove = {
   assemblies : List<string> 
-  funcs   : Map<Id,List<rule>>
+  funcs   : Map<Id,List<rule>*Position>
   lambdas : Map<LambdaId,rule>
   datas   : List<Id*data>
   main    : rule

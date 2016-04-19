@@ -23,7 +23,7 @@ let print_premisse (p:premisse,i:int) :string =
   | DotNetGet          x -> sprintf "%03d: NGET %s.%s -> %s" i (print_loc x.instance) x.field (print_loc x.dest)
   | DotNetSet          x -> sprintf "%03d: NSET %s.%s <- %s" i (print_loc x.instance) x.field (print_loc x.src)
 
-type global_context = {assemblies:List<System.Reflection.Assembly>;funcs:Map<Id,List<rule>>;lambdas:Map<LambdaId,rule>;datas:List<Id*data>;main:rule;}
+type global_context = {assemblies:List<System.Reflection.Assembly>;funcs:Map<Id,List<rule>*Position>;lambdas:Map<LambdaId,rule>;datas:List<Id*data>;main:rule;}
 
 let getClass (assemblies) (name:string) :System.Type =
   let ts = 
@@ -129,7 +129,7 @@ let rec eval_step (p:premisse,i:int)
       | Some(id,data) ->
         [symbol_table.Add(x.dest,box filled_args)]
       | None ->
-        global_context.funcs.[id] |> List.map (fun rule -> // for each rule
+        fst global_context.funcs.[id] |> List.map (fun rule -> // for each rule
             let results = eval_rule rule global_context filled_args 
             results |> List.map (fun v->symbol_table.Add(x.dest,v))
           )|>List.concat
