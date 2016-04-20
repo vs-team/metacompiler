@@ -6,7 +6,7 @@ type Program = List<string> * ProgramDefinition
 and ProgramDefinition = List<Declaration> * List<RuleDefinition>
 
 and OpOrder =
-| Suffix
+| Prefix
 | Infix
 
 and Associativity =
@@ -35,6 +35,18 @@ and SymbolDeclaration =
     Associativity : Associativity
     Premises : List<Premise>
   }
+  with
+    static member Create(name,args,ret,order,priority,pos,ass,prem) =
+      {
+        Name = name
+        Args = args
+        Return = ret
+        Order = order
+        Priority = priority
+        Position = pos
+        Associativity = ass
+        Premises = prem
+      }
 
 and RuleDefinition =
 | Rule of Rule
@@ -58,3 +70,24 @@ and Conclusion =
 
 and Rule = List<Premise> * Conclusion
 
+let symbolTableData : Map<string,SymbolDeclaration> = Map.empty
+let symbolTableFunc : Map<string,SymbolDeclaration> = Map.empty
+let symbolTableTypeFunc : Map<string,SymbolDeclaration> = Map.empty
+let symbolTableTypeAlias : Map<string,SymbolDeclaration> = Map.empty
+
+type SymbolContext =
+  {
+    DataTable             : Map<Id,SymbolDeclaration>
+    FuncTable             : Map<Id,SymbolDeclaration>    
+    TypeFuncTable         : Map<Id,SymbolDeclaration>
+    TypeAliasTable        : Map<Id,SymbolDeclaration>
+  }
+  with
+    static member Empty
+      with get() =
+        {
+          DataTable = Map.empty
+          FuncTable = Map.empty
+          TypeFuncTable = Map.empty
+          TypeAliasTable = Map.empty
+        }

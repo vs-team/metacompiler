@@ -7,6 +7,7 @@ open Lexer2
 //open ParserTypes
 //open DeclParser2
 open OptionMonad
+open TypeChecker
 //open GlobalSyntaxCheck2
 //open RuleParser2
 //open RuleNormalizer2
@@ -132,7 +133,7 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     //let! interface_res = build_interface typed_rule_res normalized_data_res
     
     //let dump = Interpreter.eval_main interface_res
-
+    let testTypeChecker = buildSymbols (tcTest |> snd |> fst) Map.empty
     let! code_res = start_codegen balltest.ball_func
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))
     //return typed_rule_res
