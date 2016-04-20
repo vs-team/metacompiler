@@ -53,6 +53,8 @@ let rec mangle_type(t:Type):string=
   | TypeApplication (fn,lst) -> (mangle_type fn)+"_of"+(lst|>List.map mangle_type_suffix|>String.concat "_t")
 
 let mangle_local_id n = match n with Named x -> CSharpMangle x | Tmp x -> sprintf "_tmp%d" x 
-let mangle_id (id:Id) = (id.Name::id.Namespace) |> List.rev |> List.map (fun x->if x="System" then "_System" else CSharpMangle x) |> String.concat "."
+let mangle_id (id:Id) =
+  if id.Namespace =[] && id.Name="main" then "_main" 
+  else (id.Name::id.Namespace) |> List.rev |> List.map (fun x->if x="System" then "_System" else CSharpMangle x) |> String.concat "."
 let mangle_lambda (id:LambdaId) = sprintf "%s._lambda%d" (id.Namespace|>List.rev|>String.concat ".") id.Name
 

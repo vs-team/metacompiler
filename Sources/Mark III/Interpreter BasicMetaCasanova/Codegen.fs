@@ -115,17 +115,27 @@ let print_debug_tree (fromTypeChecker:Map<Id,list<rule>*Position>) (main:rule) =
       let funcs = rules |> Seq.groupBy (fun(id,rule,pos)->id,pos) 
                   |> Seq.map (fun((id,pos),rules)->id,pos,rules|>Seq.map(fun(id,rule,pos)->rule))
       filename,funcs)
-  let per_file = tree|> Seq.mapi (fun filenr (filename,funcs)->
-    let per_func = funcs |> Seq.mapi (fun funcnr (funcname,declposition,rules)->
-      let per_rule = rules |> Seq.mapi (fun rulenr (rule) ->
-        let per_line = rule.premis |> Seq.groupBy snd
-        let per_prem = (per_line|>Seq.rev|>Seq.tail|>Seq.rev) |> Seq.mapi (fun premnr (linenumber,prems)->
-          sprintf "_DBUG.program_tree.Nodes[%d].Nodes[%d].Nodes[%d].Nodes.Add(\"line %d\");\n" filenr funcnr rulenr linenumber )
-        sprintf "_DBUG.program_tree.Nodes[%d].Nodes[%d].Nodes.Add(\"line %d\");\n%s" filenr funcnr (Seq.last per_line|>fst) (String.concat "" per_prem) )
-      sprintf "_DBUG.program_tree.Nodes[%d].Nodes.Add(\"%s\");\n%s" filenr (mangle_id funcname) (String.concat "" per_rule) )
-    sprintf "_DBUG.program_tree.Nodes.Add(\"%s\");\n%s" filename (String.concat "" per_func) )
-  per_file |> String.concat ""
-           
+  let debug_tree =
+    let per_file = tree  |> Seq.mapi (fun filenr (filename,funcs)->
+      let per_func = funcs |> Seq.mapi (fun funcnr (funcname,declposition,rules)->
+        let per_rule = rules |> Seq.mapi (fun rulenr (rule) ->
+          let per_line = rule.premis |> Seq.groupBy snd
+          let per_prem = (per_line|>Seq.rev|>Seq.tail|>Seq.rev) |> Seq.mapi (fun premnr (linenumber,prems)->
+            sprintf "_DBUG.program_tree.Nodes[%d].Nodes[%d].Nodes[%d].Nodes.Add(\"line %d\");\n" filenr funcnr rulenr linenumber )
+          sprintf "_DBUG.program_tree.Nodes[%d].Nodes[%d].Nodes.Add(\"line %d\");\n" filenr funcnr (Seq.last per_line|>fst)
+          + (String.concat "" per_prem) )
+        sprintf "_DBUG.program_tree.Nodes[%d].Nodes.Add(\"%s\");\n" filenr (mangle_id funcname)
+        + (String.concat "" per_rule) )
+      sprintf "_DBUG.program_tree.Nodes.Add(\"%s\");\n" filename
+      + (String.concat "" per_func) )
+    per_file |> String.concat ""
+  let breakpoint_tree =
+    let per_file = tree |> Seq.map (fun(_,funcs)->
+      let per_func = funcs |> Seq.map (fun(id,_,_)->
+        sprintf "%s._DBUG_breakpoints\n" (mangle_id id) )
+      sprintf "new bool[][][]{%s}\n"  (String.concat "," per_func) )
+    sprintf "new bool[][][][]{%s};\n" (String.concat "," per_file) 
+  ("_DBUG.breakpoints="+breakpoint_tree)+debug_tree
 
 let premisse (p:premisse) (m:Map<local_id,Type>) (app:Map<local_id,int>) (rule_nr:int) =
   match p with
@@ -251,10 +261,8 @@ let print_rule (rule_nr:int) (rule:rule) =
     (mangle_local_id rule.output)
     (print_label rule_nr)
 
-
 let nr_of_actual_lines (rule:rule):int = 
   rule.premis |> Seq.map snd |> Seq.distinct |> Seq.length
-
 
 let print_rule_bodies (rules:rule list) =
   let len = rules |> List.scan (fun s r->s+(nr_of_actual_lines r)-1) 0 |> List.rev |> List.tail |> List.rev |> List.zip rules
