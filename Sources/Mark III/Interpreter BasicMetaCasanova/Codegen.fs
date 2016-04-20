@@ -252,7 +252,7 @@ let print_rule (rule_nr:int) (rule:rule) =
       (fun idx (linenumber,premisses)->
         let breakpoint = 
           if flags.debug then
-            sprintf "if(_DBUG_breakpoints[%d][%d]){_DBUG.breakpoint(\"%s\",%d,_DBUG_symbol_table);}\n" rule_nr idx rule.definition.File linenumber
+            sprintf "if(_DBUG_breakpoints_%d[%d]){_DBUG.breakpoint(\"%s\",%d,_DBUG_symbol_table);}\n" rule_nr idx rule.definition.File linenumber
           else ""
         let _,s = ((Map.empty,""),premisses) ||> Seq.fold fn
         s+breakpoint)
