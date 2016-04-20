@@ -131,10 +131,12 @@ let print_debug_tree (fromTypeChecker:Map<Id,list<rule>*Position>) (main:rule) =
     per_file |> String.concat ""
   let breakpoint_tree =
     let per_file = tree |> Seq.map (fun(_,funcs)->
-      let per_func = funcs |> Seq.map (fun(id,_,_)->
-        sprintf "%s._DBUG_breakpoints\n" (mangle_id id) )
-      sprintf "new bool[][][]{%s}\n"  (String.concat "," per_func) )
-    sprintf "new bool[][][][]{%s};\n" (String.concat "," per_file) 
+      let per_func = funcs |> Seq.map (fun(id,_,rules)->
+        let per_rule = rules |> Seq.mapi (fun i _ ->
+          sprintf "%s._DBUG_breakpoints_%d" (mangle_id id) i)
+        sprintf "        new bool[][]{%s}"  (String.concat "," per_rule) )
+      sprintf "      new bool[][][]{\n%s\n      }"  (String.concat ",\n" per_func) )
+    sprintf "    new bool[][][][]{\n%s\n    };\n" (String.concat "," per_file) 
   ("_DBUG.breakpoints="+breakpoint_tree)+debug_tree
 
 let premisse (p:premisse) (m:Map<local_id,Type>) (app:Map<local_id,int>) (rule_nr:int) =
@@ -269,14 +271,13 @@ let print_rule_bodies (rules:rule list) =
   len |> List.mapi (fun x (a,b)->print_rule x a) |> String.concat ""
 
 let generate_breakpoint_def (funcname:string) (rules:rule seq) =
-  //rules |> Seq.map (fun x->x.premis) |> Seq.concat |> Seq.map snd |> Seq.distinct |> Seq.map (fun _->"false") |> String.concat "," |> sprintf "static bool[] _DBUG_breakpoints = {%s};\n"
   let linenumbers = rules |> Seq.map (fun x->x.premis) |> Seq.map ((Seq.map snd)>>Seq.distinct)
-  let subarrays = linenumbers |> Seq.map (fun x->
+  let subarrays = linenumbers |> Seq.mapi (fun i x->
     let s = x|>Seq.map (fun _->"false") |> String.concat ","
-    sprintf "new bool[]{%s}" s) |> String.concat ",\n"
-  sprintf "%s._DBUG_breakpoints = new bool[][]{\n%s\n};\n" funcname subarrays
+    sprintf "%s._DBUG_breakpoints_%d = new bool[]{%s};\n" funcname i s)
+  subarrays |> String.concat ""
 
-let generate_breakpoint_decl = "public static bool[][] _DBUG_breakpoints;\n"
+let generate_breakpoint_decl (rules:rule seq) = rules |> Seq.mapi (fun i _-> sprintf "public static bool[] _DBUG_breakpoints_%d;\n" i) |> String.concat ""
 
 let print_main (input:fromTypecheckerWithLove) =
   let rule = input.main
@@ -288,11 +289,11 @@ let print_main (input:fromTypecheckerWithLove) =
       foo+(generate_breakpoint_def "_main" [rule])+(print_debug_tree input.funcs input.main)
     else ""
   let main = sprintf "static void Main() {\n%s\nSystem.Console.WriteLine(System.String.Format(\"{0}\", body()));\n}" debug_init
-  sprintf "class _main{\n%s%s%s}\n" (if flags.debug then generate_breakpoint_decl else "") body main 
+  sprintf "class _main{\n%s%s%s}\n" (if flags.debug then generate_breakpoint_decl [rule] else "") body main 
 
 let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :string =
   let build_func (name:string) (rules:rule list) = 
-    let breakpoints = if flags.debug then generate_breakpoint_decl else ""
+    let breakpoints = if flags.debug then generate_breakpoint_decl rules else ""
     let rule = List.head rules
     let args = rule.input |> Seq.mapi (fun nr id-> sprintf "public %s _arg%d;\n" (mangle_type rule.typemap.[id]) nr) |> String.concat ""
     let ret_type = mangle_type rule.typemap.[rule.output]
