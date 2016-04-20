@@ -17,6 +17,14 @@ and TypeDecl =
 | Arrow of TypeDecl * TypeDecl
 | Generic of Id * List<TypeDecl>
 | Arg of CallArg
+with
+  override this.ToString() =
+    match this with
+    | Arrow(t1,t2) ->
+        "(" + t1.ToString() + "->" + t2.ToString() + ")"
+    | Generic(id,innerGeneric) ->
+        "<" + id.Name + (innerGeneric |> List.fold(fun s x -> s + x.ToString()) "") + ">"
+    | Arg(arg) -> arg.ToString()
 
 and Declaration =
 | Data of SymbolDeclaration
@@ -60,6 +68,13 @@ and CallArg =
 | Literal of Literal * Position
 | Id of Id * Position
 | NestedExpression of List<CallArg>
+with
+  override this.ToString() =
+    match this with
+    | Literal(l,_) -> l.ToString()
+    | Id(id,_) -> id.Name
+    | NestedExpression(args) ->
+        "(" + (args |> List.fold(fun s x -> s + x.ToString()) "") + ")"
 
 
 and Call = List<CallArg> * List<Id>
