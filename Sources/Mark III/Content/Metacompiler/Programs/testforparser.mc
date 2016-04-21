@@ -1,28 +1,15 @@
-﻿Func int -> "add" -> int -> int
-Func int -> "sub" -> int -> int
+﻿Data "Z" -> pnum
+Data "S" -> pnum -> pnum
 
-Func int -> "+" -> int -> int
-Func int -> "-" -> int -> int
-
-Func "run" -> int
-
-Data 'a -> "," -> 'b -> 'a * 'b
-
-x + y == x + y
-x + y -> res
----
-x add y -> res
+Func pnum -> "add" -> pnum -> pnum
 
 
-x - y -> res
+a -> Z
+-------
+a add b -> b
+
+a -> S c
+c add b -> d
+S d -> res
 ----
-x sub y -> res
-
-x add y -> res
-res sub c -> res2
---------
-run -> res2
-
-a,b -> c,f
-------
-run -> d,e
+a add b -> res

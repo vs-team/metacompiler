@@ -17,6 +17,7 @@ and TypeDecl =
 | Arrow of TypeDecl * TypeDecl
 | Generic of Id * List<TypeDecl>
 | Arg of CallArg
+| Zero
 with
   override this.ToString() =
     match this with

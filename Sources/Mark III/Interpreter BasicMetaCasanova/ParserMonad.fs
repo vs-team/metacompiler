@@ -65,6 +65,17 @@ let inline (.||) (p1:Parser<_,_,'a>) (p2:Parser<_,_,'a>) : Parser<_,_,'a> =
     | Done(res1,chars',ctxt') ->
        (res1,chars',ctxt') |> Done
 
+let inline (.|) (p1:Parser<_,_,'a>) (p2:Parser<_,_,'a>) : Parser<_,_,'a> = 
+  fun (chars,ctxt) ->
+    match p1(chars,ctxt) with
+    | Error(e1,i1) ->
+      match p2(chars,ctxt) with
+      | Error(e2,i2) -> Error(e2,i2)
+      | Done(res2,chars',ctxt') ->
+        (res2,chars',ctxt') |> Done
+    | Done(res1,chars',ctxt') ->
+       (res1,chars',ctxt') |> Done
+
 let nothing : Parser<_,_,Unit> = 
   fun (chars,ctxt) -> Done((),chars,ctxt)
 
@@ -160,7 +171,7 @@ let (.>>.) (l:Parser<'src,'ctxt,'lr>) (r:Parser<'src,'ctxt,'rr>) :Parser<'src,'c
   }
 
 let rec itterate (p:Parser<_,_,'result>) : Parser<_,_,List<'result>> =
-  prs{return! eof >>. ret []} .||
+  prs{return! eof >>. ret []} .|
   prs{
     let! x  = p
     let! xs = itterate p

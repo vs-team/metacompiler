@@ -8,8 +8,10 @@ open ParserTypes
 open DeclParser2
 open OptionMonad
 open TypeChecker
+open ParserAST
+open Parser
 //open GlobalSyntaxCheck2
-open RuleParser2
+//open RuleParser2
 //open RuleNormalizer2
 //open DataNormalizer2
 //open RuleTypeChecker2
@@ -63,6 +65,19 @@ let lex_files (paths:List<string>) (file_name:List<string>) :Option<List<string*
     return! try_unpack_list_of_option list_of_lexer_results
   }
 
+let start_parser ((st,tok):(string*List<Token>)) :Option<string*Program> =
+  opt{
+    let! res = use_parser_monad parse_tokens (tok,([st],([],([],[]))))
+    return st,res
+  } |> (timer (sprintf "parsing of file: [%s.mc] " st))
+
+let parse_tokens (tokens:List<string*List<Token>>) :Option<List<string*Program>> =
+  opt{
+    let ls = List.map (fun x -> start_parser x) tokens
+    let! res = try_unpack_list_of_option ls
+    return res
+  }
+
 let start_codegen (ctxt:fromTypecheckerWithLove) :Option<_> =
   Codegen.failsafe_codegen ctxt |> (timer (sprintf "Code gen "))
 
@@ -70,11 +85,13 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
   opt{
     t.Start()
     let! lex_res = lex_files paths file_name
-    
+    let! pars_res = parse_tokens lex_res
+
     let! code_res = start_codegen balltest.ball_func
+
     let symbolTable = buildSymbols (fst (snd tcTest)) Map.empty
     do System.IO.File.WriteAllText ("typeCheckerOutput.txt", sprintf "%A" symbolTable)
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))
 
-    return lex_res
+    return pars_res
   }
