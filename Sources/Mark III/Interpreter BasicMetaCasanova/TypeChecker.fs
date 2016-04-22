@@ -16,6 +16,7 @@ let builtInTypes =
 
 let rec checkType (_type : TypeDecl) (symbolTable : SymbolContext) : TypeDecl =
   match _type with
+  | Zero -> _type
   | Arrow(left,right) ->
       let leftType = checkType left symbolTable
       let rightType = checkType right symbolTable
