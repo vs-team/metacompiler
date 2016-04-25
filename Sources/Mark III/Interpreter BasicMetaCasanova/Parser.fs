@@ -87,11 +87,12 @@ let parse_symbol (arrow:Keyword) :Parser<Token,List<string>*Program,SymbolDeclar
     let! ret = parse_arg 
     do! check_keyword() NewLine
     let! ns,_ = getContext
+    let order = if (List.length arg_left) < 1 then Infix else Prefix
     let name = {Namespace = ns ; Name = name}
     let args = arg_list_to_typedecl (arg_left@arg_right)
     let ret = Arg(ret) 
     let res = {Name = name ; Args = args ; Return = ret ;
-               Order = Infix; Priority = 0 ; Position = pos;
+               Order = order; Priority = 0 ; Position = pos;
                Associativity = Left ;Premises = []}
     return res
   }
