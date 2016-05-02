@@ -14,6 +14,52 @@ let builtInTypes =
     "float32"
   ]
 
+let emptyPos = { File = "empty"; Line = 0; Col = 0}
+let (!!) s = Arg(Id({ Namespace = []; Name = s },emptyPos))
+let (~~) s = Id({Namespace = []; Name = s},emptyPos)
+let (!!!) s = {Namespace = []; Name = s}
+let (-->) t1 t2 = Arrow(t1,t2)
+let (.|) ps c = Rule(ps,c)
+
+
+type NormalizedCall =
+  {
+    Name : CallArg option
+    Args : List<NormalizedCall>
+  }
+  with
+    static member Empty = { Name = None; Args = [] }
+
+
+//extract function name from a CallArg and rearrange the term in the form: functioName arg1 arg2 ... argn. The same form data constructors
+let rec normalizeDataOrFunctionCall (_symbolTable : SymbolContext) (args : List<CallArg>) : NormalizedCall =
+  args |> List.fold(fun res arg ->
+                      let addArg (call : NormalizedCall) (arg : CallArg) : NormalizedCall =
+                        { call with Args = call.Args @ [{ Name = Some arg; Args = []}] }
+                      match arg with
+                      | Literal _ ->
+                          addArg res arg 
+                      | Id(s,_) ->
+                          match res.Name with
+                          | None ->
+                              let funcOpt = _symbolTable.FuncTable |> Map.tryFindKey(fun name sym -> name.Name = s.Name)
+                              let dataOpt = _symbolTable.DataTable |> Map.tryFindKey(fun name sym -> name.Name = s.Name)
+                              match funcOpt with
+                              | None ->
+                                  match dataOpt with
+                                  | Some _ ->
+                                      { res with Name = Some arg }
+                                  | None ->
+                                      addArg res arg
+                              | Some _ ->
+                                  { res with Name = Some arg }
+                          | Some _ ->
+                              addArg res arg
+                      | NestedExpression (nestedArgs) ->
+                          { res with Args = res.Args @ [(normalizeDataOrFunctionCall _symbolTable nestedArgs)] }) NormalizedCall.Empty
+
+
+
 let rec checkType (_type : TypeDecl) (symbolTable : SymbolContext) : TypeDecl =
   match _type with
   | Zero -> _type
@@ -60,17 +106,10 @@ let buildSymbols (declarations : List<Declaration>) (symbols : Map<Id,SymbolDecl
                               | TypeAlias(ta) ->
                                   {sym with TypeAliasTable = sym.TypeAliasTable.Add(ta.Name,ta)}) SymbolContext.Empty
 
-
-
-
 //let checkProgram (program : ProgramDefinition) (symbols : Map<Id,SymbolDeclaration>) =
 //  (fst program) |> List.map(fun decl -> checkType decl symbols) |> ignore 
-let emptyPos = { File = "empty"; Line = 0; Col = 0}
-let (!!) s = Arg(Id({ Namespace = []; Name = s },emptyPos))
-let (~~) s = Id({Namespace = []; Name = s},emptyPos)
-let (!!!) s = {Namespace = []; Name = s}
-let (-->) t1 t2 = Arrow(t1,t2)
-let (.|) ps c = Rule(ps,c) 
+
+let conclusionTest = [~~"eval";NestedExpression [NestedExpression [~~"a1";~~"-";~~"b1"];~~"+";~~"b"]]
 
 let (tcTest : Program) =
   let plus =
@@ -87,7 +126,7 @@ let (tcTest : Program) =
   let neg =
     {
       Name = { Namespace = []; Name = "-" }
-      Args = !!"int"
+      Args = !!"int" --> !!"int"
       Return = !!"expr"
       Order = Prefix
       Priority = 0
@@ -113,7 +152,7 @@ let (tcTest : Program) =
         FunctionCall([~~"eval";~~"b"],[!!!"x2"])
       ]
     let conclusion =
-      ValueOutput([~~"eval";NestedExpression [~~"a";~~"+";~~"b"]],[~~"x2"])
+      ValueOutput (conclusionTest,[~~"x2"])
     premises .| conclusion
   [],([Data plus; Data neg; Func eval],[evalPlus])
 

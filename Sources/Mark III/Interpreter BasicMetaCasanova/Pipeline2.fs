@@ -90,8 +90,9 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     let! code_res = start_codegen balltest.ball_func
 
     let! st,prog = List.tryHead pars_res
-    let symbolTable = buildSymbols (fst (snd prog)) Map.empty
-    //let symbolTable = buildSymbols (fst (snd tcTest)) Map.empty
+//    let symbolTable = buildSymbols (fst (snd prog)) Map.empty
+    let symbolTable = buildSymbols (fst (snd tcTest)) Map.empty
+    let normalizedCall = normalizeDataOrFunctionCall symbolTable conclusionTest
     do System.IO.File.WriteAllText ("typeCheckerOutput.txt", sprintf "%A" symbolTable)
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))
 
