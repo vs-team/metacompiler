@@ -5,6 +5,25 @@ open ParserAST
 
 exception TypeError of string
 
+//Type checker AST: move it to a separate file when it is complete
+
+type TypedCallArg = ParserAST.CallArg * TypeDecl
+
+type TypedConclusion = 
+| ValueOutput of List<TypedCallArg> * List<TypedCallArg>
+
+type LocalContext =
+  {
+    Variables : Map<Id,Position * TypeDecl>
+  }
+  with
+    member this.Empty =
+      {
+        Variables = Map.empty
+      }
+
+
+
 //built-in types. Maybe they are not necessary in the end because they are defined in the prelude. Leave them for debugging.
 let builtInTypes =
   [
@@ -21,42 +40,44 @@ let (!!!) s = {Namespace = []; Name = s}
 let (-->) t1 t2 = Arrow(t1,t2)
 let (.|) ps c = Rule(ps,c)
 
-
 type NormalizedCall =
   {
-    Name : CallArg option
+    Name : ParserAST.CallArg option
     Args : List<NormalizedCall>
   }
   with
     static member Empty = { Name = None; Args = [] }
 
-
 //extract function name from a CallArg and rearrange the term in the form: functioName arg1 arg2 ... argn. The same form data constructors
-let rec normalizeDataOrFunctionCall (_symbolTable : SymbolContext) (args : List<CallArg>) : NormalizedCall =
-  args |> List.fold(fun res arg ->
-                      let addArg (call : NormalizedCall) (arg : CallArg) : NormalizedCall =
-                        { call with Args = call.Args @ [{ Name = Some arg; Args = []}] }
-                      match arg with
-                      | Literal _ ->
-                          addArg res arg 
-                      | Id(s,_) ->
-                          match res.Name with
-                          | None ->
-                              let funcOpt = _symbolTable.FuncTable |> Map.tryFindKey(fun name sym -> name.Name = s.Name)
-                              let dataOpt = _symbolTable.DataTable |> Map.tryFindKey(fun name sym -> name.Name = s.Name)
-                              match funcOpt with
-                              | None ->
-                                  match dataOpt with
-                                  | Some _ ->
-                                      { res with Name = Some arg }
-                                  | None ->
-                                      addArg res arg
-                              | Some _ ->
-                                  { res with Name = Some arg }
-                          | Some _ ->
-                              addArg res arg
-                      | NestedExpression (nestedArgs) ->
-                          { res with Args = res.Args @ [(normalizeDataOrFunctionCall _symbolTable nestedArgs)] }) NormalizedCall.Empty
+let rec normalizeDataOrFunctionCall (_symbolTable : SymbolContext) (args : List<ParserAST.CallArg>) : NormalizedCall =
+  let normCall =
+    args |> List.fold(fun res arg ->
+                        let addArg (call : NormalizedCall) (arg : ParserAST.CallArg) : NormalizedCall =
+                          { call with Args = call.Args @ [{ Name = Some arg; Args = []}] }
+                        match arg with
+                        | Literal _ ->
+                            addArg res arg 
+                        | Id(s,_) ->
+                            match res.Name with
+                            | None ->
+                                let funcOpt = _symbolTable.FuncTable |> Map.tryFindKey(fun name sym -> name.Name = s.Name)
+                                let dataOpt = _symbolTable.DataTable |> Map.tryFindKey(fun name sym -> name.Name = s.Name)
+                                match funcOpt with
+                                | None ->
+                                    match dataOpt with
+                                    | Some _ ->
+                                        { res with Name = Some arg }
+                                    | None ->
+                                        addArg res arg
+                                | Some _ ->
+                                    { res with Name = Some arg }
+                            | Some _ ->
+                                addArg res arg
+                        | NestedExpression (nestedArgs) ->
+                            { res with Args = res.Args @ [(normalizeDataOrFunctionCall _symbolTable nestedArgs)] }) NormalizedCall.Empty
+  match normCall.Name with
+  | None -> raise(TypeError("Undefined function or data constructor"))
+  | Some _ -> normCall
 
 
 
@@ -107,7 +128,36 @@ let buildSymbols (declarations : List<Declaration>) (symbols : Map<Id,SymbolDecl
                                   {sym with TypeAliasTable = sym.TypeAliasTable.Add(ta.Name,ta)}) SymbolContext.Empty
 
 //let checkProgram (program : ProgramDefinition) (symbols : Map<Id,SymbolDeclaration>) =
-//  (fst program) |> List.map(fun decl -> checkType decl symbols) |> ignore 
+//  (fst program) |> List.map(fun decl -> checkType decl symbols) |> ignore
+
+//let rec checkNormalizedArgs (args : List<NormalizedCall>) (symbol : SymbolDeclaration) (ctxt : LocalContext) =
+//  args |> List.fold(fun (typedArgs,c) arg ->
+//                      match arg.Name with
+//                      | None -> failwith "After call normalization every normalized call should have a name")
+//                      | Some name ->
+//                          match name with
+//                          | Literal(l,p) -> 
+//                              match l with
+//                              | I64(x) -> )
+//                              
+//                          
+//                   ([],ctxt)
+//
+//let checkNormalizedCall (call : NormalizedCall) (symbols : Map<Id,SymbolDeclaration>) (ctxt : LocalContext) =
+//  match call.Name with
+//  | None -> failwith "Bug in typechecker call normalization: please fix it!"
+//  | Some name ->
+//      match name with
+//      | Id (s,p) ->
+//          let symDecl = symbols.[s]
+//          checkNormalizedArgs call.Args symDecl ctxt
+//      | _ -> failwith "The first argument of a normalized call should be an Id"
+
+//let checkConclusion (conclusion : ParserAST.Conclusion) (symbols : Map<Id,SymbolDeclaration>) (ctxt : LocalContext) =
+//  match conclusion with
+//  | ValueOutput(call,result) ->
+//      let normalizedCall = normalizeDataOrFunctionCall symbols call
+//      let normalizedResult = normalizeDataOrFunctionCall symbols result
 
 let conclusionTest = [~~"eval";NestedExpression [NestedExpression [~~"a1";~~"-";~~"b1"];~~"+";~~"b"]]
 
@@ -151,8 +201,8 @@ let (tcTest : Program) =
         FunctionCall([~~"eval";~~"a"],[!!!"x1"])
         FunctionCall([~~"eval";~~"b"],[!!!"x2"])
       ]
-    let conclusion =
-      ValueOutput (conclusionTest,[~~"x2"])
+    let (conclusion : Conclusion) =
+      ParserAST.ValueOutput (conclusionTest,[~~"x2"])
     premises .| conclusion
   [],([Data plus; Data neg; Func eval],[evalPlus])
 
