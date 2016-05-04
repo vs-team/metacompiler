@@ -14,10 +14,10 @@ type TypedConclusion =
 
 type LocalContext =
   {
-    Variables : Map<Id,Position * TypeDecl>
+    Variables : Map<Id,TypeDecl * Position>
   }
   with
-    member this.Empty =
+    static member Empty =
       {
         Variables = Map.empty
       }
@@ -40,44 +40,41 @@ let (!!!) s = {Namespace = []; Name = s}
 let (-->) t1 t2 = Arrow(t1,t2)
 let (.|) ps c = Rule(ps,c)
 
-type NormalizedCall =
-  {
-    Name : ParserAST.CallArg option
-    Args : List<NormalizedCall>
-  }
-  with
-    static member Empty = { Name = None; Args = [] }
-
 //extract function name from a CallArg and rearrange the term in the form: functioName arg1 arg2 ... argn. The same form data constructors
-let rec normalizeDataOrFunctionCall (_symbolTable : SymbolContext) (args : List<ParserAST.CallArg>) : NormalizedCall =
+let rec normalizeDataOrFunctionCall (_symbolTable : SymbolContext) (args : List<ParserAST.CallArg>) : List<ParserAST.CallArg> =
   let normCall =
-    args |> List.fold(fun res arg ->
-                        let addArg (call : NormalizedCall) (arg : ParserAST.CallArg) : NormalizedCall =
-                          { call with Args = call.Args @ [{ Name = Some arg; Args = []}] }
-                        match arg with
-                        | Literal _ ->
-                            addArg res arg 
-                        | Id(s,_) ->
-                            match res.Name with
-                            | None ->
-                                let funcOpt = _symbolTable.FuncTable |> Map.tryFindKey(fun name sym -> name.Name = s.Name)
-                                let dataOpt = _symbolTable.DataTable |> Map.tryFindKey(fun name sym -> name.Name = s.Name)
-                                match funcOpt with
-                                | None ->
-                                    match dataOpt with
-                                    | Some _ ->
-                                        { res with Name = Some arg }
-                                    | None ->
-                                        addArg res arg
-                                | Some _ ->
-                                    { res with Name = Some arg }
+    args |> 
+    List.fold(fun (fArg,args) arg ->
+                match arg with
+                | Literal _ ->
+                    (fArg,arg :: args)
+                | Id(s,_) ->
+                    match fArg with
+                    | [] ->
+                        let funcOpt = _symbolTable.FuncTable |> Map.tryFindKey(fun name sym -> name.Name = s.Name)
+                        let dataOpt = _symbolTable.DataTable |> Map.tryFindKey(fun name sym -> name.Name = s.Name)
+                        match funcOpt with
+                        | None ->
+                            match dataOpt with
                             | Some _ ->
-                                addArg res arg
-                        | NestedExpression (nestedArgs) ->
-                            { res with Args = res.Args @ [(normalizeDataOrFunctionCall _symbolTable nestedArgs)] }) NormalizedCall.Empty
-  match normCall.Name with
-  | None -> raise(TypeError("Undefined function or data constructor"))
-  | Some _ -> normCall
+                                (arg :: fArg,args)
+                            | None ->
+                                (fArg,arg :: args)
+                        | Some _ ->
+                            (arg :: fArg,args)
+                    | _ ->
+                        (fArg,arg :: args)
+                | NestedExpression (nestedArgs) ->
+                    (fArg,(NestedExpression(normalizeDataOrFunctionCall _symbolTable nestedArgs)) :: args)) ([],[])
+  let argList = snd normCall |> List.rev
+  let fArg = fst normCall
+  match fArg with
+  | [] -> raise(TypeError("Undefined function or data constructor"))
+  | _ ->
+    if fArg.Length > 1 then
+      failwith "Something went wrong when normalizing data or function call: more than a function name found"
+    else
+      (fArg.Head) :: argList
 
 
 
@@ -130,28 +127,88 @@ let buildSymbols (declarations : List<Declaration>) (symbols : Map<Id,SymbolDecl
 //let checkProgram (program : ProgramDefinition) (symbols : Map<Id,SymbolDeclaration>) =
 //  (fst program) |> List.map(fun decl -> checkType decl symbols) |> ignore
 
-//let rec checkNormalizedArgs (args : List<NormalizedCall>) (symbol : SymbolDeclaration) (ctxt : LocalContext) =
-//  args |> List.fold(fun (typedArgs,c) arg ->
-//                      match arg.Name with
-//                      | None -> failwith "After call normalization every normalized call should have a name")
-//                      | Some name ->
-//                          match name with
-//                          | Literal(l,p) -> 
-//                              match l with
-//                              | I64(x) -> )
-//                              
-//                          
-//                   ([],ctxt)
-//
-//let checkNormalizedCall (call : NormalizedCall) (symbols : Map<Id,SymbolDeclaration>) (ctxt : LocalContext) =
-//  match call.Name with
-//  | None -> failwith "Bug in typechecker call normalization: please fix it!"
-//  | Some name ->
-//      match name with
-//      | Id (s,p) ->
-//          let symDecl = symbols.[s]
-//          checkNormalizedArgs call.Args symDecl ctxt
-//      | _ -> failwith "The first argument of a normalized call should be an Id"
+
+//remember to reverse the arguments at the end
+let rec checkNormalizedArgs 
+  (args : List<ParserAST.CallArg>)
+  (symbolTable : SymbolContext)
+  (typeDecl : TypeDecl)
+  (typedArgs : List<TypedCallArg>)
+  (ctxt : LocalContext)
+  (buildLocals : bool) : List<TypedCallArg> * LocalContext =
+
+  match args with
+  | [] -> typedArgs,ctxt
+  | arg :: otherargs ->
+      match typeDecl with
+      | Arrow(left,right) ->
+          match left with
+          | Arg(Id(id,pos)) ->
+              let checkLiteral (typeName : string) (expectedType : Id) (arg : CallArg) (pos : Position) =
+                if id.Name = typeName then
+                  (arg,left) :: typedArgs
+                else
+                  raise(TypeError(sprintf "Type error: given int64, expected %s at %s" (left.ToString()) (pos.ToString())))
+              match arg with
+              | Literal(l,p) ->
+                  match l with
+                  | I64 _ ->
+                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "int64" id arg p) ctxt buildLocals
+                  | U64 _ ->
+                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "uint64" id arg p) ctxt buildLocals
+                  | I32 _ ->
+                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "int" id arg p) ctxt buildLocals
+                  | U32 _ ->
+                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "uint" id arg p) ctxt buildLocals
+                  | F64 _ ->
+                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "float" id arg p) ctxt buildLocals
+                  | F32 _ ->
+                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "float32" id arg p) ctxt buildLocals
+                  | String _ ->
+                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "string" id arg p) ctxt buildLocals
+                  | Bool _ ->
+                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "bool" id arg p) ctxt buildLocals
+                  | Void _ ->
+                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "void" id arg p) ctxt buildLocals
+              | Id(name,p) ->
+                  if buildLocals then
+                    checkNormalizedArgs otherargs symbolTable right typedArgs {ctxt with Variables = ctxt.Variables.Add(id,(left,p))} buildLocals
+                  else
+                    match Map.tryFind id ctxt.Variables with
+                    | None -> raise(TypeError(sprintf "Type Error: Undefined variable %s at %s" id.Name (p.ToString())))
+                    | Some (t,p) ->
+                        match t with
+                        | Arg(Id(id1,pos1)) ->
+                            if id1 = id then
+                              raise(TypeError(sprintf "Type Error: expected %s but given %s at %s" (left.ToString()) (t.ToString()) (pos.ToString())))
+                            else
+                              checkNormalizedArgs otherargs symbolTable right ((arg,left) :: typedArgs) ctxt buildLocals
+              | NestedExpression(expr) ->
+                  let callType,typedArgs,ctxt = checkNormalizedCall expr symbolTable ctxt buildLocals
+                  if callType = left then
+                    checkNormalizedArgs otherargs symbolTable right ((arg,left) :: typedArgs) ctxt buildLocals
+                  else
+                    raise(TypeError(sprintf "Type Error: expected %s but given %s" (left.ToString()) (callType.ToString())))
+
+and checkNormalizedCall 
+  (call : List<ParserAST.CallArg>) 
+  (symbolTable : SymbolContext) 
+  (ctxt : LocalContext)
+  (buildLocals : bool) : TypeDecl * List<TypedCallArg> * LocalContext =
+  match call with
+  | arg :: args ->
+      match arg with
+      | Id(id,pos) ->
+          let funcOpt = symbolTable.FuncTable |> Map.tryFind(id)
+          match funcOpt with
+          | None -> 
+              raise(TypeError(sprintf "Type Error: the argument at %s is not a function" (pos.ToString())))
+          | Some fSym ->
+              let typedArgs,locals = checkNormalizedArgs args symbolTable fSym.Args [] ctxt buildLocals
+              fSym.Return,typedArgs,locals
+      | _ ->
+        failwith "Something went wrong when normalizing the function call in the typechecker. The first argument is not a function name"
+  | [] -> failwith "Something went wrong with the call normalization: there are no arguments in the call"
 
 //let checkConclusion (conclusion : ParserAST.Conclusion) (symbols : Map<Id,SymbolDeclaration>) (ctxt : LocalContext) =
 //  match conclusion with

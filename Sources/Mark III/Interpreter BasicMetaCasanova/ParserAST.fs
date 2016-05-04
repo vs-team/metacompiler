@@ -26,6 +26,7 @@ with
     | Generic(id,innerGeneric) ->
         "<" + id.Name + (innerGeneric |> List.fold(fun s x -> s + x.ToString()) "") + ">"
     | Arg(arg) -> arg.ToString()
+    | Zero -> ""
 
 and Declaration =
 | Data of SymbolDeclaration
