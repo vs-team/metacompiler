@@ -6,12 +6,10 @@ type Keyword =
   | Import | Using | Inherit | Func | TypeFunc | ArrowFunc | TypeAlias | Data | HorizontalBar | Instance
   | Open of Bracket| Close of Bracket | NewLine | CommentLine
   | SingleArrow | DoubleArrow | PriorityArrow | Spaces of int
-  | Less | LessEqual | Greater | GreaterEqual | Equal
+  | Predicate of Predicate
 
 type Token =
   | Id of string * Position
-  | VarId of string * Position
-  | KindId of string * Position
   | Keyword of Keyword * Position
   | Literal of Literal * Position
 
@@ -131,25 +129,16 @@ let alpha_numeric_id :Parser<char,Position,System.String>=
 
 let all_id pos :Parser<char,Position,Token> =
   prs{
-    return! ((char '\'') >>. prs{
-      let! str = alpha_numeric_id .|| symbol_id
-      let str = "'" + str
-      return VarId((str|>System.String.Concat),pos)
-    }) .|| ((char '#') >>. prs{
-      let! str = alpha_numeric_id .|| symbol_id
-      let str = "#" + str
-      return KindId((str|>System.String.Concat),pos)
-    }) .|| prs{
-      let! str = alpha_numeric_id .|| symbol_id
-      let! pos = get_position
-      if str = "==" then return Keyword(Equal,pos)
-      elif str = ">=" then return Keyword(GreaterEqual,pos)
-      elif str = "<=" then return Keyword(LessEqual,pos)
-      elif str = ">" then return Keyword(Greater,pos)
-      elif str = "<" then return Keyword(Less,pos)
-      else return Id((str|>System.String.Concat),pos)
-    } 
-  }
+    let! str = alpha_numeric_id .|| symbol_id
+    let! pos = get_position
+    if   str = "==" then return Keyword(Predicate(Equal),pos)
+    elif str = ">=" then return Keyword(Predicate(GreaterEqual),pos)
+    elif str = "<=" then return Keyword(Predicate(LessEqual),pos)
+    elif str = ">"  then return Keyword(Predicate(Greater),pos)
+    elif str = "<"  then return Keyword(Predicate(Less),pos)
+    elif str = "!=" then return Keyword(Predicate(NotEqual),pos)
+    else return Id((str|>System.String.Concat),pos)
+  } 
 
 let string_literal pos :Parser<char,Position,Token> =
   prs{
@@ -207,6 +196,8 @@ let token :Parser<char,Position,Token> =
       !>>. !"(\\"         (Open Lambda,pos)    .||
       !>>. !"("           (Open Round,pos)     .||
       !>>. !")"           (Close Round,pos)    .||
+      !>>. !"<"           (Open Angle,pos)     .||
+      !>>. !">"           (Close Angle,pos)    .||
       horizontal_bar pos  .||
       new_line pos        .||
       all_id pos          .||

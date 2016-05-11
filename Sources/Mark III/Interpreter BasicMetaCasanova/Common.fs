@@ -9,7 +9,7 @@ type Position = { File : string; Line : int; Col : int }
     override this.ToString() =
       sprintf "File : %s, Line : %d, Column: %d" this.File this.Line this.Col
 
-type Bracket = Curly | Round | Square | Lambda | Implicit | Comment
+type Bracket = Curly | Round | Square | Lambda | Angle
 
 type Predicate = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 

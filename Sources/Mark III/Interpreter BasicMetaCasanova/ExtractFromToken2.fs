@@ -7,8 +7,6 @@ open Common
 let extract_position_from_token (token:Token) :Position =
   match token with  
   | Lexer2.Id(_,pos) -> pos
-  | Lexer2.VarId(_,pos) -> pos
-  | Lexer2.KindId(_,pos) -> pos
   | Lexer2.Keyword(_,pos) -> pos
   | Lexer2.Literal(_,pos) -> pos
 
@@ -39,26 +37,6 @@ let extract_id() :Parser<Token,_,string*Position> =
     | Lexer2.Id(i,p) -> return i,p
     | _ -> 
       let err = sprintf "Id. %A" (extract_position_from_token next)
-      return! fail (ParserError err)
-  }
-
-let extract_varid() :Parser<Token,_,string*Position> =
-  prs{
-    let! next = step
-    match next with
-    | Lexer2.VarId(i,p) -> return i,p
-    | _ -> 
-      let err = sprintf "VarId. %A" (extract_position_from_token next)
-      return! fail (ParserError "VarId")
-  }
-
-let extract_kindid() :Parser<Token,_,string*Position> =
-  prs{
-    let! next = step
-    match next with
-    | Lexer2.KindId(i,p) -> return i,p
-    | _ -> 
-      let err = sprintf "KindId. %A" (extract_position_from_token next)
       return! fail (ParserError err)
   }
 
@@ -102,3 +80,15 @@ let check_keyword() (expected:Keyword) :Parser<Token,_,_> =
       return! fail (ParserError err)
   }
 
+let check_condition() :Parser<Token,_,Predicate> =
+  prs{
+    let! exp,pos = extract_keyword()
+    match exp with
+    | Predicate Less         -> return Less        
+    | Predicate LessEqual    -> return LessEqual   
+    | Predicate Greater      -> return Greater     
+    | Predicate GreaterEqual -> return GreaterEqual
+    | Predicate Equal        -> return Equal       
+    | Predicate NotEqual     -> return NotEqual    
+    | _ -> return! fail (ParserError (sprintf "expected condition but got: %A" (exp,pos)))
+  }
