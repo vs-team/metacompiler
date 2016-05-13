@@ -30,8 +30,8 @@ let use_parser_monad (pars:Parser<'char,'ctxt,'res>)(input:List<'char>*'ctxt) :O
   let convert = 
     match pars (input) with
     | Done(res,_,_) -> Some(res)
-    | Error e ->
-      printfn "%A" e
+    | Error (e,i) ->
+      printfn "%A" (e,i)
       None 
   opt{return! convert}
 
@@ -52,9 +52,9 @@ let react_to_parser_error
   let convert = 
     match pars (input) with
     | Done(res,_,_) -> Some(res)
-    | Error err -> f
-    | Error e ->
-      printfn "%A" e
+    | Error (err,_) -> f
+    | Error (e,i) ->
+      printfn "%A" (e,i)
       None 
   opt{return! convert}
 

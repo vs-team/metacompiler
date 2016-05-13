@@ -3,14 +3,13 @@ open Common
 open ParserMonad
 
 type Keyword = 
-  | Import | Inherit | Func | TypeFunc | ArrowFunc | TypeAlias | Data | HorizontalBar | Instance
+  | Import | Using | Inherit | Func | TypeFunc | ArrowFunc | TypeAlias | Data | HorizontalBar | Instance
   | Open of Bracket| Close of Bracket | NewLine | CommentLine
   | SingleArrow | DoubleArrow | PriorityArrow | Spaces of int
-  | Less | LessEqual | Greater | GreaterEqual | Equal
+  | Predicate of Predicate
 
 type Token =
   | Id of string * Position
-  | VarId of string * Position
   | Keyword of Keyword * Position
   | Literal of Literal * Position
 
@@ -31,7 +30,7 @@ let char (expected:char) :Parser<char,Position,Unit> =
       return () 
     else 
       let! ctxt = getContext
-      do!  fail (LexerError ctxt)
+      do!  fail (ParserError (sprintf "%A" ctxt))
   }
 
 let (!) (str:string) :Parser<char,Position,Unit> =
@@ -50,7 +49,7 @@ let (!) (str:string) :Parser<char,Position,Unit> =
 let skip_comments :Parser<char,Position,unit> =
   let stop (st:System.String) =
     prs{
-      let! halt = (!st >>. ret (fail (LexerError Position.Zero))) .|| 
+      let! halt = (!st >>. ret (fail (ParserError ""))) .|| 
                   ((step |> ignore) >>. ret nothing)
       return! halt
     }
@@ -65,7 +64,7 @@ let char_between (a:char) (b:char) :Parser<char,Position,char> =
       return next_char
     else 
       let! ctxt = getContext
-      return!  fail (LexerError ctxt)
+      return!  fail (ParserError (sprintf "Lexer: %A" ctxt))
   }
 
 let symbol :Parser<char,Position,char> =
@@ -92,11 +91,11 @@ let digits :Parser<char,Position,List<char>> =
 let alpha_numeric :Parser<char,Position,char> =
   prs{ return! digit .|| alpha_char}
 
-let unsigned_int_literal :Parser<char,Position,int> =
+let unsigned_int_literal :Parser<char,Position,int64> =
   prs{
     let! d = digits
-    let mutable x = 0
-    do for i in d do x <- x * 10 + (int i - int '0')
+    let mutable x = 0L
+    do for i in d do x <- x * 10L + int64(int i - int '0')
     return x
   }
 
@@ -105,8 +104,8 @@ let int_literal pos :Parser<char,Position,Token> =
     let! min = char '-' .|. nothing
     let! x = unsigned_int_literal
     match min with
-    | A() -> return Literal(I32(-x),pos)
-    | B() -> return Literal(I32(x),pos)
+    | A() -> return Literal(I64(-x),pos)
+    | B() -> return Literal(I64(x),pos)
   }
 
 let float_literal pos :Parser<char,Position,Token> =
@@ -130,21 +129,16 @@ let alpha_numeric_id :Parser<char,Position,System.String>=
 
 let all_id pos :Parser<char,Position,Token> =
   prs{
-    return! ((char '\'') >>. prs{
-      let! str = alpha_numeric_id .|| symbol_id
-      let str = "'" + str
-      return VarId((str|>System.String.Concat),pos)
-    }) .|| prs{
-      let! str = alpha_numeric_id .|| symbol_id
-      let! pos = get_position
-      if str = "==" then return Keyword(Equal,pos)
-      elif str = ">=" then return Keyword(GreaterEqual,pos)
-      elif str = "<=" then return Keyword(LessEqual,pos)
-      elif str = ">" then return Keyword(Greater,pos)
-      elif str = "<" then return Keyword(Less,pos)
-      else return Id((str|>System.String.Concat),pos)
-    } 
-  }
+    let! str = alpha_numeric_id .|| symbol_id
+    let! pos = get_position
+    if   str = "==" then return Keyword(Predicate(Equal),pos)
+    elif str = ">=" then return Keyword(Predicate(GreaterEqual),pos)
+    elif str = "<=" then return Keyword(Predicate(LessEqual),pos)
+    elif str = ">"  then return Keyword(Predicate(Greater),pos)
+    elif str = "<"  then return Keyword(Predicate(Less),pos)
+    elif str = "!=" then return Keyword(Predicate(NotEqual),pos)
+    else return Id((str|>System.String.Concat),pos)
+  } 
 
 let string_literal pos :Parser<char,Position,Token> =
   prs{
@@ -185,6 +179,7 @@ let token :Parser<char,Position,Token> =
       int_literal     pos .||
       string_literal  pos .||
       !>>. !"import"      (Import,pos)         .||
+      !>>. !"using"       (Using,pos)          .||
       !>>. !"inherit"     (Inherit,pos)        .||
       !>>. !"Func"        (Func,pos)           .||
       !>>. !"TypeFunc"    (TypeFunc,pos)       .||
@@ -201,6 +196,8 @@ let token :Parser<char,Position,Token> =
       !>>. !"(\\"         (Open Lambda,pos)    .||
       !>>. !"("           (Open Round,pos)     .||
       !>>. !")"           (Close Round,pos)    .||
+      !>>. !"<"           (Open Angle,pos)     .||
+      !>>. !">"           (Close Angle,pos)    .||
       horizontal_bar pos  .||
       new_line pos        .||
       all_id pos          .||
@@ -208,7 +205,7 @@ let token :Parser<char,Position,Token> =
     return res
   } .|| prs{
     let! pos = get_position
-    let! er = fail (LexerError pos)
+    let! er = fail (ParserError (sprintf "%A" pos))
     return! er
   }
 

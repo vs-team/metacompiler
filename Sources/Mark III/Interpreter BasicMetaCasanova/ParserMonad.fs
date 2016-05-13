@@ -1,25 +1,12 @@
 ﻿module ParserMonad
 open Common
 
-type ErrorType =  ParserMonadError    of string
-                | LexerError          of Position
-                | ParserError         of Position
-                | LineSplitterError   of Position
-                | ScopeError          of string*Position
-                | TypeError
-                | NormalizeError      of string
-                | RuleError           of string*Position
-                | PipeLineError
-                | EofError
-                | ImportError
-                | SatisfyError
-                | MatchError          of string*Position
-                | SyntaxError
-                | EndOfListError
+type ErrorType = ParserError of string
+               | ExitStatus  of string
                    
 type Result<'char,'ctxt,'result> = 
   | Done of 'result * List<'char> * 'ctxt
-  | Error of ErrorType
+  | Error of ErrorType*int 
 
 type Parser<'char,'ctxt,'result> =
   List<'char> * 'ctxt -> Result<'char,'ctxt,'result>
@@ -32,7 +19,7 @@ type ParserBuilder() =
   member this.Bind(p:Parser<'char,'ctxt,'result>, k:'result->Parser<'char,'ctxt,'result'>) =
     fun (chars,ctxt) ->
       match p (chars, ctxt) with
-      | Error(p) -> Error(p)
+      | Error(e,p) -> Error(e,p)
       | Done(res,chars',ctxt') ->
         let out = k res (chars',ctxt')
         out
@@ -43,10 +30,9 @@ type Or<'a,'b> = A of 'a | B of 'b
 let (.|.) (p1:Parser<_,_,'a>) (p2:Parser<_,_,'b>) : Parser<_,_,Or<'a,'b>> = 
   fun (chars,ctxt) ->
     match p1(chars,ctxt) with
-    | Error(p1) ->
+    | Error(e1,i1) ->
       match p2(chars,ctxt) with
-      | Error(p2) ->
-        Error(p1)
+      | Error(e2,i2) -> if i1 > i2 then Error(e1,i1+1) else Error(e2,i2+1)  
       | Done(res2,chars',ctxt') ->
         (B(res2),chars',ctxt') |> Done
     | Done(res1,chars',ctxt') ->
@@ -61,7 +47,7 @@ let inline (>>) p k =
 let rec first_successful (ps:List<Parser<_,_,'a>>) : Parser<_,_,'a> = 
   fun (chars,ctxt) ->
     match ps with
-    | [] -> Error (ParserMonadError "first_successful")
+    | [] -> Error ((ParserError "ParserMonad: first_succesful. End of list."),0)
     | p :: ps ->
       match p(chars,ctxt) with
       | Error(_) ->
@@ -71,10 +57,20 @@ let rec first_successful (ps:List<Parser<_,_,'a>>) : Parser<_,_,'a> =
 let inline (.||) (p1:Parser<_,_,'a>) (p2:Parser<_,_,'a>) : Parser<_,_,'a> = 
   fun (chars,ctxt) ->
     match p1(chars,ctxt) with
-    | Error(p1) ->
+    | Error(e1,i1) ->
       match p2(chars,ctxt) with
-      | Error(p2) ->
-        Error(p2)
+      | Error(e2,i2) -> if i1 > i2 then Error(e1,i1+1) else Error(e2,i2+1)
+      | Done(res2,chars',ctxt') ->
+        (res2,chars',ctxt') |> Done
+    | Done(res1,chars',ctxt') ->
+       (res1,chars',ctxt') |> Done
+
+let inline (.|) (p1:Parser<_,_,'a>) (p2:Parser<_,_,'a>) : Parser<_,_,'a> = 
+  fun (chars,ctxt) ->
+    match p1(chars,ctxt) with
+    | Error(e1,i1) ->
+      match p2(chars,ctxt) with
+      | Error(e2,i2) -> Error(e2,i2)
       | Done(res2,chars',ctxt') ->
         (res2,chars',ctxt') |> Done
     | Done(res1,chars',ctxt') ->
@@ -106,31 +102,31 @@ let step =
   fun (chars,ctxt) ->
     match chars with
     | c::cs -> Done(c, cs, ctxt)
-    | _ -> Error (ParserMonadError "step")
+    | _ -> Error (ParserError "ParserMonad: step. No chars left.",0)
 
 let eof = 
   fun (chars,ctxt) ->
     match chars with
     | [] -> Done((), [], ctxt)
-    | _ -> Error EofError
+    | _ -> Error (ParserError "End of file.",0)
 
 let ignore (p:Parser<_,_,'res>) : Parser<_,_,Unit> = 
   fun (chars,ctxt) -> 
     match p(chars,ctxt) with
-    | Error(p) -> Error(p)
+    | Error(e,i) -> Error(e,i)
     | Done(res,chars',ctxt') ->
       ((),chars',ctxt') |> Done
 
 let lookahead (p:Parser<_,_,_>) : Parser<_,_,_> =
   fun (chars,ctxt) -> 
     match p(chars,ctxt) with
-    | Error(p) -> Error(p)
+    | Error(e,i) -> Error(e,i)
     | Done(res,chars',ctxt') ->
       (res,chars,ctxt) |> Done
 
 let fail (msg:ErrorType) : Parser<_,_,_> =
   fun (_,_) ->
-    Error msg
+    Error (msg,0)
 
 let getBuffer =
   fun (chars,ctxt) -> (chars,chars,ctxt) |> Done
@@ -175,7 +171,7 @@ let (.>>.) (l:Parser<'src,'ctxt,'lr>) (r:Parser<'src,'ctxt,'rr>) :Parser<'src,'c
   }
 
 let rec itterate (p:Parser<_,_,'result>) : Parser<_,_,List<'result>> =
-  prs{return! eof >>. ret []} .||
+  prs{return! eof >>. ret []} .|
   prs{
     let! x  = p
     let! xs = itterate p
@@ -185,8 +181,8 @@ let rec itterate (p:Parser<_,_,'result>) : Parser<_,_,List<'result>> =
 let satisfy (f:'char->bool) :Parser<'char,'ctxt,_> =
   fun(lst,ctxt)->
     match lst with
-    | x::xs -> if f x then Done((),xs,ctxt) else Error SatisfyError
-    | _ -> Error EofError
+    | x::xs -> if f x then Done((),xs,ctxt) else Error (ParserError "Not satisfied.",0)
+    | _ -> Error (ParserError "End of file error.",0)
 
 let rec getFirstInstanceOf (f:'char->bool) :Parser<'char,'ctxt,'char> =
   prs{
@@ -201,7 +197,7 @@ let contextSatisfies (f:'ctxt->bool) :Parser<'char,'ctxt,Unit> =
     if f context then
       return! nothing
     else
-      return! fail SatisfyError
+      return! fail (ParserError "Not satisfied.")
   }
 
 let updateContext (f:'ctxt->'ctxt) :Parser<'char,'ctxt,Unit> =
@@ -215,33 +211,33 @@ let UseDifferentSrc (p:Parser<'char2,'ctxt,'res>) (char':List<'char2>):Parser<'c
   fun (char,ctxt) ->
     match p (char',ctxt) with
     | Done(res,char',ctxt) -> Done(res,char,ctxt)
-    | Error p -> Error p
+    | Error (e,i) -> Error (e,i)
 
 let UseDifferentCtxt (p:Parser<'char,'ctxt2,'res>) (ctxt':'ctxt2):Parser<'char,'ctxt,'res> =
   fun (char,ctxt) ->
     match p (char,ctxt') with
     | Done(res,char',_) -> Done(res,char',ctxt)
-    | Error p -> Error p
+    | Error (e,i) -> Error (e,i)
 
 let UseDifferentSrcAndCtxt (p:Parser<'char2,'ctxt2,'res>)(char':List<'char2>)(ctxt':'ctxt2):Parser<'char,'ctxt,'res> =
   fun (char,ctxt) ->
     match p (char',ctxt') with
     | Done(res,char'',_) -> Done(res,char,ctxt)
-    | Error p -> Error p
+    | Error (e,i) -> Error (e,i)
 
 let rec IterateTroughGivenList (ls:List<'item>)(p:'item -> Parser<'char,'ctxt,'res>) 
       :Parser<'char,'ctxt,List<'res>> =
   prs{
     match ls with
     | [] -> return []
-    | _  -> return! fail EndOfListError
+    | _  -> return! fail (ParserError "End of list Error.")
   } .|| prs{
     match ls with
     | x::xs -> 
       let! y = p x
       let! ys = IterateTroughGivenList xs p
       return y::ys
-    | [] -> return! fail EndOfListError
+    | [] -> return! fail (ParserError "End of list Error.")
   }
 
 let rec FirstSuccesfullInList (ls:List<'item>)(p:'item -> Parser<'char,'ctxt,'res>) 
@@ -250,7 +246,7 @@ let rec FirstSuccesfullInList (ls:List<'item>)(p:'item -> Parser<'char,'ctxt,'re
     match ls with
     | x::xs -> 
       return! (p x) .|| FirstSuccesfullInList xs p
-    | [] -> return! fail (EndOfListError) 
+    | [] -> return! fail (ParserError "End of list Error.")
   }
 
 let CatchError (p1:Parser<'char,'ctxt,'res>) (e:ErrorType) 
@@ -261,7 +257,7 @@ let CatchError (p1:Parser<'char,'ctxt,'res>) (e:ErrorType)
     | e -> 
       match p2 (char,ctxt) with
       | x -> x
-    | Error err -> Error err
+    | Error (er,i) -> Error (er,i)
 
 let rec RepeatUntil (pb:Parser<_,_,'result>) (pe:Parser<_,_,_>) 
   : Parser<_,_,List<'result>> =

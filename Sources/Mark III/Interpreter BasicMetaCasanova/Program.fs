@@ -3,35 +3,42 @@ open Lexer2
 open Pipeline2
 open System
 open System.IO
+open TypeChecker
 
 open Common
 
 [<EntryPoint>]
-let main argv = 
-  let input = [// "prelude"
-               //;"number"
-               //;"monad"
-               //;"match"
-               //;"either"
-               //;"id"
-               //;"list"
-               //;"option"
-               //;"result"
-               //;"state"
-               //"testforparser"
-               "testfornormalizer"
-               //"testforcodegen"
-               //"decltest"
-              ]
-  let file_paths = ["../../../Content/Metacompiler/StandardLibrary/";
-                    "../../../Content/Metacompiler/BasicMonads/";
-                    "../../../Content/Metacompiler/Programs/"]
+let main argv =
+  try 
+    let input = [// "prelude"
+                 //;"number"
+                 //;"monad"
+                 //;"match"
+                 //;"either"
+                 //;"id"
+                 //;"list"
+                 //;"option"
+                 //;"result"
+                 //;"state"
+                 "testforparser"
+                 //"testfornormalizer"
+                 //"typefunctest"
+                 //"testforcodegen"
+                 //"decltest"
+                ]
+    let file_paths = ["../../../Content/Metacompiler/StandardLibrary/";
+                      "../../../Content/Metacompiler/BasicMonads/";
+                      "../../../Content/Metacompiler/Programs/"]
   
 
-  let res = 
-    match start file_paths input with
-    | Some(x) -> File.WriteAllText ("parser_output.txt",(sprintf "%A" x)) 
-    | None    ->  printfn "The whole damn compiler failed."
+    let res = 
+      match start file_paths input with
+      | Some(x) -> File.WriteAllText ("parser_output.txt",(sprintf "%A" x)) 
+      | None    ->  printfn "The whole damn compiler failed."
 
-  res
-  0
+    res
+    0
+  with
+  | TypeError(msg) ->
+      do printfn "%s" msg
+      1

@@ -1,50 +1,40 @@
 ﻿module DataNormalizer2
-
-open Common
-open ParserMonad
-open DeclParser2
-
-type DataType =  DotNetType      of Id
-               | McGeneric       of Id*Position
-               | McType          of Id*Position
-               | TypeApplication of DataType*List<DataType>
-               | Arrow           of DataType*DataType
-
-type NormalizedData =
-  {
-    Name : Id
-    Args : List<DataType>
-    Return : DataType
-    Pos : Position
-  }
-
-let rec normalize_decl_type (decl:DeclType):DataType =
-  match decl with
-  | Id(id,pos)        -> McType (id,pos)
-  | IdVar(id,pos)     -> McGeneric (id,pos)
-  | DeclParser2.Arrow(l,r) -> 
-    Arrow((normalize_decl_type l),(normalize_decl_type r))
-  | Application(id,l,r) -> 
-    TypeApplication(McType(id,Position.Zero),
-      ((normalize_decl_type l)::(normalize_decl_type r)::[]))
-
-let normalize_arg_structure (arg:ArgStructure):List<DataType> =
-  match arg with
-  | LeftArg(l,r) -> (normalize_decl_type l)::(normalize_decl_type r)::[]
-  | RightArgs(ls) -> List.collect (fun x -> [normalize_decl_type x]) ls
-  
-let normalize_data :Parser<SymbolDeclaration,string,NormalizedData> =
-  prs{
-    let! next = step
-    let args = normalize_arg_structure next.Args
-    let ret = normalize_decl_type next.Return
-    return {Name = next.Name ;
-            Args = args ; Return = ret ; Pos = next.Pos}
-  } 
-
-let normalize_datas :Parser<string*DeclParseScope,string,string*List<NormalizedData>> =
-  prs{
-    let! id,scp = step
-    let! res = UseDifferentSrcAndCtxt (normalize_data |> itterate) scp.DataDecl ""
-    return id,res
-  } 
+//
+//open Common
+//open ParserMonad
+//open ParserTypes
+//open DeclParser2
+//open CodegenInterface
+//
+//
+//let rec normalize_decl_type (decl:DeclType):Type =
+//  match decl with
+//  | Id(id,pos)        -> McType id
+//  | IdVar(id,pos)     -> failwith "not implemented yet"
+//  | IdKind(id,pos)    -> failwith "not implemented yet"
+//  | TypeArrow(id,pos) -> failwith "not implemented yet"
+//  | ParserTypes.Arrow(l,r) -> 
+//    Arrow((normalize_decl_type l),(normalize_decl_type r))
+//  | ParserTypes.Application(id,ls) -> 
+//    let appl = List.map (fun x -> normalize_decl_type x) ls
+//    TypeApplication(McType(id),appl)
+//
+//let normalize_arg_structure (arg:ArgStructure):List<Type> =
+//  match arg with
+//  | LeftArg(l,r) -> (normalize_decl_type l)::(normalize_decl_type r)::[]
+//  | RightArgs(ls) -> List.collect (fun x -> [normalize_decl_type x]) ls
+//  
+//let normalize_data :Parser<SymbolDeclaration,string,Id*data> =
+//  prs{
+//    let! next = step
+//    let args = normalize_arg_structure next.Args
+//    let ret = normalize_decl_type next.Return
+//    return next.Name,{args = args ; outputType = ret}
+//  } 
+//
+//let normalize_datas :Parser<string*DeclParseScope,string,string*List<Id*data>> =
+//  prs{
+//    let! id,scp = step
+//    let! res = UseDifferentSrcAndCtxt (normalize_data |> itterate) scp.DataDecl ""
+//    return id,res
+//  } 

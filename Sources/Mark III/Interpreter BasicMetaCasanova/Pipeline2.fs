@@ -4,13 +4,18 @@ open CodegenInterface
 open Common
 open ParserMonad
 open Lexer2
+open ParserTypes
 open DeclParser2
 open OptionMonad
-open GlobalSyntaxCheck2
-open RuleParser2
-open RuleNormalizer2
-open DataNormalizer2
-open RuleTypeChecker2
+open TypeChecker
+open ParserAST
+open Parser
+//open GlobalSyntaxCheck2
+//open RuleParser2
+//open RuleNormalizer2
+//open DataNormalizer2
+//open RuleTypeChecker2
+//open InterfaceBuilder2
 
 let t = System.Diagnostics.Stopwatch()
 
@@ -51,7 +56,7 @@ let start_lexer (paths:List<string>) (file_name:string) :Option<string*List<Toke
     let! chars = read_file correct_path
     let! tokens = use_parser_monad (tokenize2 correct_path) (chars,Position.Zero)
     return (file_name,tokens)
-  }// |> (timer (sprintf "tokenization of file: [%s.mc] " file_name))
+  } |> (timer (sprintf "tokenization of file: [%s.mc] " file_name))
 
 let lex_files (paths:List<string>) (file_name:List<string>) :Option<List<string*List<Token>>> =   
   opt{
@@ -60,77 +65,18 @@ let lex_files (paths:List<string>) (file_name:List<string>) :Option<List<string*
     return! try_unpack_list_of_option list_of_lexer_results
   }
 
-let start_global_syntax_check (tokens:string*List<Token>) :Option<_> =
+let start_parser ((st,tok):(string*List<Token>)) :Option<string*Program> =
   opt{
-    let id,tok = tokens
-    let! res = use_parser_monad check_syntax (tok,Position.Zero)
-    return () 
-  } |> (timer (sprintf "checking tokens of file: [%s.mc] " ((fun (id,_)->id)tokens)))
+    let! res = use_parser_monad parse_tokens (tok,([st],([],([],[]))))
+    return st,res
+  } |> (timer (sprintf "parsing of file: [%s.mc] " st))
 
-let check_tokens (tokens:List<string*List<Token>>) : Option<_> =
+let parse_tokens (tokens:List<string*List<Token>>) :Option<List<string*Program>> =
   opt{
-    let list_of_checks =
-       List.collect (fun x -> [start_global_syntax_check x]) tokens
-    let! res = try_unpack_list_of_option list_of_checks
-    return ()
+    let ls = List.map (fun x -> start_parser x) tokens
+    let! res = try_unpack_list_of_option ls
+    return res
   }
-
-let start_decl_parser (tokens:string*List<Token>) :Option<string*DeclParseScope*List<Token>> =
-  opt{
-    let id,tok = tokens
-    let! res = use_parser_monad parse_scope (tok,{DeclParseScope.Zero with Name = {Namespace=[];Name=id}})
-    return id,res,tok
-  } |> (timer (sprintf "parsing decls of file: [%s.mc] " ((fun (id,_)->id)tokens)))
-
-let parse_tokens (tokens:List<string*List<Token>>) :Option<List<string*DeclParseScope*List<Token>>> =
-  opt{
-    let list_of_decl_res = 
-      List.collect (fun x -> [start_decl_parser x]) tokens
-    return! try_unpack_list_of_option list_of_decl_res
-  }
-
-let start_rule_parser (ctxt:List<string*DeclParseScope*List<Token>>) 
-  :Option<List<string*List<RuleDef>*List<SymbolDeclaration>>> =
-  opt{
-    return! use_parser_monad (itterate (parse_rule_scope)) (ctxt,[])
-  } |> (timer (sprintf "parsing Rules "))
-
-let start_rule_normalizer (ctxt:List<string*List<RuleDef>*List<SymbolDeclaration>>)
-  :Option<List<string*List<NormalizedRule>*List<SymbolDeclaration>>> = 
-  opt{
-    let! res = use_parser_monad (itterate (normalize_rules)) (ctxt,"")
-    return res
-  } |> (timer (sprintf "Normalizing Rules "))
-
-let start_data_normalizer (ctxt:List<string*DeclParseScope>)
-  :Option<List<string*List<NormalizedData>>> = 
-  opt{
-    let! res = use_parser_monad (itterate (normalize_datas)) (ctxt,"")
-    return res
-  } |> (timer (sprintf "Normalizing Datas "))
-
-let use_rule_typechecker 
-  (set:List<NormalizedRule>*List<SymbolDeclaration>*List<SymbolDeclaration>)
-  :Option<List<Id*CodegenInterface.rule>> =
-  let (rule,ruledecl,datadecl) = set
-  let ctxt = {RuleCheckerCtxt.Zero with RuleDecl = ruledecl; DataDecl = datadecl}
-  use_exception_monad (type_check_rules rule ctxt)
-    
-let start_rule_typechecker (rule:(List<string*List<NormalizedRule>*List<SymbolDeclaration>>)) 
-  (datadecl:(List<string*List<SymbolDeclaration>>))
-  :Option<List<string*List<Id*CodegenInterface.rule>>> =
-  opt{
-    let datadecl = Map.ofList datadecl
-    let res = rule |> List.map (fun (id,rule,ruledecl) ->
-      opt{
-        let! datadecl = datadecl.TryFind(id)
-        let! res = use_rule_typechecker (rule,ruledecl,datadecl)
-        return id,res
-      }
-      ) 
-    let! res = try_unpack_list_of_option res
-    return res
-  } |> (timer (sprintf "type checking rules"))
 
 let start_codegen (ctxt:fromTypecheckerWithLove) :Option<_> =
   Codegen.failsafe_codegen ctxt |> (timer (sprintf "Code gen "))
@@ -139,20 +85,16 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
   opt{
     t.Start()
     let! lex_res = lex_files paths file_name
-    do! check_tokens lex_res
-    let! decl_pars_res = parse_tokens lex_res
-    let! rule_pars_res = start_rule_parser decl_pars_res
-    let! normalized_rule_res = start_rule_normalizer rule_pars_res
-    let! normalized_data_res = 
-      start_data_normalizer (List.collect (fun (id,decl,_) -> [id,decl]) decl_pars_res)
-    let data_decl = List.map (fun (id,(decl:DeclParseScope),_) -> (id,decl.DataDecl)) decl_pars_res
-    
-    let! typed_rule_res = start_rule_typechecker normalized_rule_res data_decl
+    let! pars_res = parse_tokens lex_res
 
     let! code_res = start_codegen balltest.ball_func
+
+    let! st,prog = List.tryHead pars_res
+//    let symbolTable = buildSymbols (fst (snd prog)) Map.empty
+    let symbolTable = buildSymbols (fst (snd tcTest)) Map.empty
+    let normalizedCall = normalizeDataOrFunctionCall symbolTable conclusionTest
+    do System.IO.File.WriteAllText ("typeCheckerOutput.txt", sprintf "%A" symbolTable)
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))
-    return typed_rule_res
-    //return List.collect(fun (x,y,_) -> [(x,y)]) normalized_rule_res
-    //return (List.collect (fun (x,y,z) -> [x,y]) decl_pars_res)
-    //return lex_res
+
+    return pars_res
   }

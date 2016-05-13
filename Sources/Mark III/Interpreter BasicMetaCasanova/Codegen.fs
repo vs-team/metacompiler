@@ -3,12 +3,12 @@ open Common
 open CodegenInterface
 open Mangle
 
+let mutable flags:CompilerFlags={debug=false};
+
 let ice () = 
     do System.Console.BackgroundColor <- System.ConsoleColor.Red
     do System.Console.Write "INTERNAL COMPILER ERROR"
     do System.Console.ResetColor()
-
-// TODO: generate dotnet closures
 
 type NamespacedItem = Ns       of string*List<NamespacedItem>
                     | Data     of string*data
@@ -51,7 +51,7 @@ let print_literal (lit:Literal) =
   | Bool b   -> if b then "true" else "false"
   | Void     -> "void"
 
-let print_predicate (p:predicate) :string= 
+let print_predicate (p:Predicate) :string= 
   match p with Less -> "<" | LessEqual -> "<=" | Equal -> "=" | GreaterEqual -> ">=" | Greater -> ">" | NotEqual -> "!="
 
 let field (n:int) (t:Type) :string =
@@ -91,119 +91,130 @@ let overloadableOps:Map<string,string> =
     "op_Decrement","--"
   ] |> Map.ofList
 
-let rec premisse (m:Map<local_id,Type>) (app:Map<local_id,int>) (ps:premisse list) (ret:local_id) =
-  match ps with 
-  | [] -> sprintf "return %s;\n" (mangle_local_id ret)
-  | p::ps -> 
-    match p with
-    | Literal x -> sprintf "/*LITR*/var %s = %s;\n%s"
-                     (mangle_local_id x.dest)
-                     (print_literal x.value)
-                     (premisse m app ps ret)
-    | Conditional x -> sprintf "/*COND*/if(%s %s %s){\n%s}"
-                         (mangle_local_id x.left)
-                         (print_predicate x.predicate)
-                         (mangle_local_id x.right)
-                         (premisse m app ps ret)
-    | Destructor x ->
-      let new_id  = (Tmp(1+(highest_tmp m)))
-      sprintf "/*DTOR*/var %s = %s as %s;\nif(%s!=null){\n%s%s}\n"
-        (mangle_local_id new_id)
-        (mangle_local_id x.source)
-        (mangle_id       x.destructor)
-        (mangle_local_id new_id)
-        (x.args|>List.mapi(fun nr arg->sprintf "var %s=%s._arg%d;\n" (mangle_local_id arg) (mangle_local_id new_id) nr)|>String.concat "")
-        (premisse (m|>Map.add new_id (McType(x.destructor))) app ps ret)
-    | ConstructorClosure x
-    | FuncClosure x -> sprintf "/*FUNC*/var %s = new %s();\n%s" 
-                         (mangle_local_id x.dest)
-                         (mangle_id x.func)
-                         (premisse m (app|>Map.add x.dest 0) ps ret)
-    | LambdaClosure x -> sprintf "/*LAMB*/var %s = new %s();\n%s" 
-                           (mangle_local_id x.dest)
-                           (mangle_lambda x.func)
-                           (premisse m (app|>Map.add x.dest 0) ps ret)
-    | DotNetCall x -> 
-      let isVoid = m.[x.dest]=Type.DotNetType({Namespace=[];Name="void"})
-      sprintf  "/*NDCA*/%s%s.%s(%s);\n%s"
-        (if isVoid then "" else sprintf "var %s = " (mangle_local_id x.dest))
-        (mangle_local_id x.instance)
-        x.func
-        (x.args |> List.map mangle_local_id|>String.concat ",")
-        (premisse m (app|>Map.add x.dest 0) ps ret)
-    | DotNetStaticCall x -> 
-          let isVoid = m.[x.dest]=Type.DotNetType({Namespace=[];Name="void"})
-          if overloadableOps.ContainsKey(x.func.Name) then 
-            let args = x.args |> List.rev
-            sprintf "/*NSCA*/%s%s %s %s;\n%s"
-              (if isVoid then "" else sprintf "var %s = " (mangle_local_id x.dest))
-              (match x.args.Length with
-               | 1 -> ""
-               | 2 -> mangle_local_id args.[1])
-              overloadableOps.[x.func.Name]
-              (mangle_local_id args.[0])
-              (premisse m (app|>Map.add x.dest 0) ps ret)
-          else
-            sprintf "/*NSCA*/%s%s(%s);\n%s" 
-              (if isVoid then "" else sprintf "var %s = " (mangle_local_id x.dest))
-              (x.func.Namespace@[x.func.Name]|>String.concat ".")
-              (x.args |> List.map mangle_local_id|>String.concat ",")
-              (premisse m (app|>Map.add x.dest 0) ps ret)
-    | DotNetConstructor x -> sprintf "/*NCON*/var %s = new %s(%s);\n%s" 
-                               (mangle_local_id x.dest)
-                               (x.func.Namespace@[x.func.Name]|>String.concat ".")
-                               (x.args |> List.map mangle_local_id|>String.concat ",")
-                               (premisse m (app|>Map.add x.dest 0) ps ret)
-    | DotNetGet x -> sprintf "/*NGET*/var %s = %s.%s;\n%s" 
-                       (mangle_local_id x.dest)
-                       (mangle_local_id x.instance)
-                       x.field
-                       (premisse m (app|>Map.add x.dest 0) ps ret)
-    | DotNetSet x -> sprintf "/*NSET*/%s.%s = %s;\n%s" 
-                       (mangle_local_id x.instance)
-                       x.field
-                       (mangle_local_id x.src)
-                       (premisse m app ps ret)
-    | Application x -> 
-      let i = match app|>Map.tryFind x.closure with Some(x)->x | None-> failwith (sprintf "Application failed: %s is not a closure." (mangle_local_id x.closure))
-      sprintf "/*APPL*/var %s = %s; %s.%s=%s;\n%s"
-                         (mangle_local_id  x.dest)
-                         (mangle_local_id  x.closure)
-                         (mangle_local_id  x.dest)
-                         (sprintf "_arg%d" i)
-                         (mangle_local_id  x.argument)
-                         (premisse m (app|>Map.add x.dest (i+1)) ps ret)
-    | ApplicationCall x -> 
-      let i = match app|>Map.tryFind x.closure with Some(x)->x | None-> failwith (sprintf "ApplicationCall failed: %s is not a closure." (mangle_local_id x.closure))
-      sprintf "/*CALL*/%s.%s=%s; var %s = %s._run();\n%s\n"
-        (mangle_local_id  x.closure)
-        (sprintf "_arg%d" i)
-        (mangle_local_id  x.argument)
-        (mangle_local_id  x.dest)
-        (mangle_local_id  x.closure)
-        (premisse m (app|>Map.add x.dest (i+1)) ps ret)
+let print_label (i:int) = sprintf "_skip%d" i
 
-let print_rule (rule:rule) = 
-  sprintf "{\n%s%s}\n"
+let rec premisse (p:premisse) (m:Map<local_id,Type>) (app:Map<local_id,int>) (rule_nr:int) =
+  match p with
+  | Literal x -> app,sprintf "/*LITR*/var %s = %s;\n"
+                   (mangle_local_id x.dest)
+                   (print_literal x.value)
+  | Conditional x -> app,sprintf "/*COND*/if(!(%s %s %s)){goto %s;}\n"
+                       (mangle_local_id x.left)
+                       (print_predicate x.predicate)
+                       (mangle_local_id x.right)
+                       (print_label rule_nr)
+  | Destructor x ->
+    let new_id  = (Tmp(1+(highest_tmp m)))
+    app,sprintf "/*DTOR*/var %s = %s as %s;\nif(%s==null){goto %s;}\n%s"
+      (mangle_local_id new_id)
+      (mangle_local_id x.source)
+      (mangle_id       x.destructor)
+      (mangle_local_id new_id)
+      (print_label rule_nr)
+      (x.args|>List.mapi(fun nr arg->sprintf "var %s=%s._arg%d;\n" (mangle_local_id arg) (mangle_local_id new_id) nr)|>String.concat "")
+  | ConstructorClosure x
+  | FuncClosure x -> (app|>Map.add x.dest 0),sprintf "/*FUNC*/var %s = new %s();\n" 
+                       (mangle_local_id x.dest)
+                       (mangle_id x.func)
+  | LambdaClosure x -> (app|>Map.add x.dest 0),sprintf "/*LAMB*/var %s = new %s();\n" 
+                         (mangle_local_id x.dest)
+                         (mangle_lambda x.func)
+  | DotNetCall x -> 
+    let isVoid = m.[x.dest]=Type.DotNetType({Namespace=[];Name="void"})
+    app,sprintf  "/*NDCA*/%s%s.%s(%s);\n"
+      (if isVoid then "" else sprintf "var %s = " (mangle_local_id x.dest))
+      (mangle_local_id x.instance)
+      x.func
+      (x.args |> List.map mangle_local_id|>String.concat ",")
+  | DotNetStaticCall x -> 
+        let isVoid = m.[x.dest]=Type.DotNetType({Namespace=[];Name="void"})
+        if overloadableOps.ContainsKey(x.func.Name) then 
+          let args = x.args |> List.rev
+          app,sprintf "/*NSCA*/%s%s %s %s;\n"
+            (if isVoid then "" else sprintf "var %s = " (mangle_local_id x.dest))
+            (match x.args.Length with
+             | 1 -> ""
+             | 2 -> mangle_local_id args.[1])
+            overloadableOps.[x.func.Name]
+            (mangle_local_id args.[0])
+        else
+          app,sprintf "/*NSCA*/%s%s(%s);\n" 
+            (if isVoid then "" else sprintf "var %s = " (mangle_local_id x.dest))
+            (x.func.Namespace@[x.func.Name]|>String.concat ".")
+            (x.args |> List.map mangle_local_id|>String.concat ",")
+  | DotNetConstructor x -> app,sprintf "/*NCON*/var %s = new %s(%s);\n" 
+                             (mangle_local_id x.dest)
+                             (x.func.Namespace@[x.func.Name]|>String.concat ".")
+                             (x.args |> List.map mangle_local_id|>String.concat ",")
+  | DotNetGet x -> app,sprintf "/*NGET*/var %s = %s.%s;\n" 
+                     (mangle_local_id x.dest)
+                     (mangle_local_id x.instance)
+                     x.field
+  | DotNetSet x -> app,sprintf "/*NSET*/%s.%s = %s;\n" 
+                     (mangle_local_id x.instance)
+                     x.field
+                     (mangle_local_id x.src)
+  | Application x -> 
+    let i = match app|>Map.tryFind x.closure with Some(x)->x | None-> failwith (sprintf "Application failed: %s is not a closure." (mangle_local_id x.closure))
+    (app|>Map.add x.dest (i+1)),sprintf "/*APPL*/var %s = %s; %s.%s=%s;\n"
+                       (mangle_local_id  x.dest)
+                       (mangle_local_id  x.closure)
+                       (mangle_local_id  x.dest)
+                       (sprintf "_arg%d" i)
+                       (mangle_local_id  x.argument)
+  | ApplicationCall x -> 
+    let i = match app|>Map.tryFind x.closure with Some(x)->x | None-> failwith (sprintf "ApplicationCall failed: %s is not a closure." (mangle_local_id x.closure))
+    (app|>Map.add x.dest (i+1)),sprintf "/*CALL*/%s.%s=%s; var %s = %s._run();\n"
+      (mangle_local_id  x.closure)
+      (sprintf "_arg%d" i)
+      (mangle_local_id  x.argument)
+      (mangle_local_id  x.dest)
+      (mangle_local_id  x.closure)
+
+let print_rule (rule_nr:int) (rule:rule) =
+  let linegroups:seq<int*seq<premisse>> = 
+    rule.premis |> Seq.groupBy (fun(_,x)->x) |> Seq.map (fun(l,p)->l,(p|>Seq.map(fun(x,_)->x)))
+  let fn (app:Map<local_id,int>,str:string) (p:premisse) =
+    let (a:Map<local_id,int>,s:string) = premisse p rule.typemap app rule_nr
+    a,(str+s)
+  let lines =
+    linegroups |> Seq.map 
+      (fun(linenumber,premisses)->
+        let _,s = ((Map.empty,""),premisses) ||> Seq.fold fn in s)
+  let breakpointed = 
+    if flags.debug then
+      lines |> Seq.mapi (fun i s->sprintf "if(_DBUG_breakpoints[%d]){/*HANDLE BREAKPOINT*/}\n%s" i s) |> String.concat ""
+    else
+      lines |> String.concat ""
+  sprintf "{\n%s%sreturn %s;}\n%s:\n"
     (rule.input|>List.mapi (fun i x->sprintf "var %s=_arg%d;\n" (mangle_local_id x) i) |> String.concat "")
-    (premisse rule.typemap Map.empty rule.premis rule.output)
+    breakpointed
+    (mangle_local_id rule.output)
+    (print_label rule_nr)
 
 let print_rule_bodies (rules:rule list) =
-  rules |> List.map print_rule |> String.concat ""
+  rules |> List.mapi print_rule |> String.concat ""
+
+let generate_breakpoint_array (rules:rule seq) =
+  rules |> Seq.map (fun x->x.premis) |> Seq.concat |> Seq.map (fun(a,b)->b) |> Seq.distinct |> Seq.map (fun _->"false") |> String.concat "," |> sprintf "static bool[] _DBUG_breakpoints = {%s};\n"
 
 let print_main (rule:rule) =
   let return_type = mangle_type rule.typemap.[rule.output]
-  let body = sprintf "static %s body(){\n%s}" return_type (print_rule_bodies [rule])
+  let body = sprintf "static %s body(){\n%sthrow new System.MissingMethodException();\n}" return_type (print_rule_bodies [rule])
   let main = "static void Main() {\nSystem.Console.WriteLine(System.String.Format(\"{0}\", body()));\n}"
-  sprintf "class _main{\n%s%s}\n" body main 
+  sprintf "class _main{\n%s%s%s}\n" (if flags.debug then generate_breakpoint_array [rule] else "") body main 
 
 let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :string =
   let build_func (name:string) (rules:rule list) = 
+    let breakpoints = 
+      if flags.debug then 
+        generate_breakpoint_array rules 
+      else ""
     let rule = List.head rules
     let args = rule.input |> Seq.mapi (fun nr id-> sprintf "public %s _arg%d;\n" (mangle_type rule.typemap.[id]) nr) |> String.concat ""
     let ret_type = mangle_type rule.typemap.[rule.output]
     let rules = print_rule_bodies rules
-    sprintf "class %s{\n%spublic %s _run(){\n%sthrow new System.MissingMethodException();\n}\n}\n" (CSharpMangle name) args ret_type rules
+    sprintf "class %s{\n%s%spublic %s _run(){\n%sthrow new System.MissingMethodException();\n}\n}\n" (CSharpMangle name) args breakpoints ret_type rules
   let print_base_types (ns:List<NamespacedItem>) = 
     let types = ns |> List.fold (fun types item -> match item with Data (_,v) -> v.outputType::types | _ -> types) [] |> List.distinct
     let print t = sprintf "public class %s{}\n" (t|>remove_namespace_of_type|>mangle_type)
@@ -216,8 +227,8 @@ let rec print_tree (lookup:fromTypecheckerWithLove) (ns:List<NamespacedItem>) :s
     | Lambda(number,rule)  -> build_func (sprintf "_lambda%d" number) [rule]
   (print_base_types ns)@(ns|>List.map go)|>String.concat "\n"
     
-let get_locals (ps:premisse list) :local_id list =
-  ps |> List.collect (fun p ->
+let get_locals (ps:(premisse*int) list) :local_id list =
+  ps |> List.collect (fun (p,_) ->
     match p with
     | Literal             x -> [x.dest]
     | Conditional         x -> [x.left;x.right]
@@ -234,7 +245,7 @@ let get_locals (ps:premisse list) :local_id list =
     | ApplicationCall     x -> [x.closure;x.dest;x.argument] )
 
 let foldi (f:int->'state->'element->'state) (s:'state) (lst:seq<'element>) :'state =
-  let fn ((counter:int),(state:'state)) (element:'element) :'counter*'state = 
+  let fn ((counter:int),(state:'state)) (element:'element) :int*'state = 
     counter+1,(f counter state element)
   let _,ret = lst|>Seq.fold fn (0,s)
   ret 
@@ -253,11 +264,11 @@ let validate (input:fromTypecheckerWithLove) :bool =
       do printf " incorrect typemap in rule %s:\n  missing %A\n  extra: %A\n" (print_id id) missing extra
       false
   let check_dest_constness (id:Id) (rule:rule) (success:bool):bool =
-      let per_premisse (statementnr:int) (set:Set<local_id>,success:bool) (premisse:premisse) :Set<local_id>*bool =
+      let per_premisse (statementnr:int) (set:Set<local_id>,success:bool) (premisse:premisse,i:int) :Set<local_id>*bool =
         let check (set:Set<local_id>,success:bool) (local:local_id) =
           if set.Contains(local) then
             do ice()
-            do printf " %s assigned twice in rule %s, statement %d\n" (print_local_id local) (print_id id) statementnr
+            do printf " %s assigned twice in rule %s, statement %d on line %d\n" (print_local_id local) (print_id id) statementnr i
             set,false
           else set.Add(local),success
         match premisse with
@@ -285,6 +296,7 @@ let validate (input:fromTypecheckerWithLove) :bool =
       (true,input.main::rules) ||> List.fold (fun (success:bool) (rule:rule) -> if check_typemap id rule then (check_dest_constness id rule success) else false))
 
 let failsafe_codegen(input:fromTypecheckerWithLove) :Option<string>=
+  do flags <- input.flags
   if validate input then
     let foo = input |> construct_tree |> print_tree input
     foo+(print_main input.main) |> Some

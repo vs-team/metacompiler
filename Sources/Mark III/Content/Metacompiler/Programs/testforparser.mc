@@ -1,28 +1,17 @@
-﻿Func int -> "add" -> int -> int
-Func int -> "sub" -> int -> int
+﻿Data "A" -> int -> int 
 
-Func int -> "+" -> int -> int
-Func int -> "-" -> int -> int
+Data "B" -> gen<a b> -> gen<c d>
 
-Func "run" -> int
+Func "C" -> (lama -> lamb) -> (lamc -> lamd)
 
-Data 'a -> "," -> 'b -> 'a * 'b
+Func "D" -> (lam<a b> -> lam<c d>) -> test<e f>
 
-x + y == x + y
-x + y -> res
----
-x add y -> res
+TypeAlias test => "A" => int => int 
 
+TypeAlias "B" => gen<a b> => gen<c d>
 
-x - y -> res
-----
-x sub y -> res
+TypeFunc "C" => (lama -> lamb) => (lamc -> lamd)
 
-x add y -> res
-res sub c -> res2
---------
-run -> res2
-
-a,b -> c,f
-------
-run -> d,e
+bla => test
+------------
+TypeFunc "D" => (lam<a b> -> lam<c d>) => test<e f>

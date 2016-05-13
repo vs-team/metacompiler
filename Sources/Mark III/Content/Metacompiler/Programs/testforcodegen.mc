@@ -1,26 +1,44 @@
-﻿Data "Z" -> pnum
-Data "S" -> pnum -> pnum
+﻿Data "Z" -> int
+Data "S" -> int -> int
 
-Func pnum -> "add" -> pnum -> pnum
-Func "run" -> unit -> pnum
+Func int -> "add" -> int -> int
+Func int -> "sub" -> int -> int
 
+Func "main" -> int
 
-x -> Z
+test => bla
+
+a -> Z
 -------
-x add y -> y
+a add b -> b
 
+a -> S c
+c add b -> d
+S d -> res
+----
+a add b -> res
 
-x -> S a 
-a add y -> b
-S b -> res
+b -> Z
 ------
-x add y -> res
+a sub b -> a
+
+a -> Z
+----
+a sub b -> Z
+
+a -> S c
+b -> S d
+c sub d -> res
+------
+a sub b -> res
 
 
-Z -> a0
-S a0 -> a1
-S a1 -> a2
-S a2 -> a3
-a2 add a3 -> res
------
-run x -> res
+Z -> n0
+S n0 -> n1
+S n1 -> n2
+S n2 -> n3
+S n3 -> n4
+n2 add n4 -> a6
+a6 sub n3 -> s3
+-------
+main -> s3

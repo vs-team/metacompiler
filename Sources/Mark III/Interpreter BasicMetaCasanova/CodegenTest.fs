@@ -1,4 +1,5 @@
 ﻿module CodegenTest
+(*
 open Common
 open CodegenInterface
 
@@ -123,3 +124,4 @@ let list_test:fromTypecheckerWithLove =
 
 
 
+*)
