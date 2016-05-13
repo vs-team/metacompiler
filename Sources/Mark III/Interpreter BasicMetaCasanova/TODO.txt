@@ -2,4 +2,12 @@
       Try to parse a TypeRule or a normal rule. 
       Make the rule parser also parse TypeRules.
 
+
+
+Francesco:
+  1. Test function call with nested constructors.
+  2. Implement the check of a full premise and conclusion. The former should check the function call and check that the returned value matches
+     the function return type. The latter should run the function check with the flag to generate the local variables and check that the returned
+     expression matches the function return type.
+
        

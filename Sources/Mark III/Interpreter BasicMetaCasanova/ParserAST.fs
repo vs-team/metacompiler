@@ -18,7 +18,17 @@ and TypeDecl =
 | Generic of Id * List<TypeDecl>
 | Arg of CallArg
 | Zero
-with
+  static member op_Equality(t1 : TypeDecl,t2 : TypeDecl) =
+    match t1,t2 with
+    | Arg(Id(id1,_)),Arg(Id(id2,_)) ->
+        id1 = id2
+    | Arrow(l1,r1),Arrow(l2,r2) ->
+        if l1 <> l2 then
+          false
+        else
+          r1 = r2
+    | Zero, Zero -> true
+    | _ -> failwith "You are using type equality improperly"
   override this.ToString() =
     match this with
     | Arrow(t1,t2) ->
