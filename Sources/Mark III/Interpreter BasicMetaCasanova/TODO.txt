@@ -1,6 +1,7 @@
 ﻿Jarno: comments dont work.
       Try to parse a TypeRule or a normal rule. 
       Make the rule parser also parse TypeRules.
+      Add a List<Id * Id> as thrid component of ProgramDefinition for subtyping (to support statements such as Expr is Value)
 
 
 

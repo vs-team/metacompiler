@@ -117,46 +117,58 @@ let buildSymbols (declarations : List<Declaration>) (symbols : Map<Id,SymbolDecl
   declarations |> List.fold(fun sym decl ->
                               match decl with
                               | Data(data) ->
-                                  do checkType data.Args sym |> ignore
+                                  //do checkType data.Args sym |> ignore
                                   match data.Return with
                                   | Arg(Id(arg,_)) ->
                                     {sym with DataTable = sym.DataTable.Add(data.Name,data)}
                                   | _ -> raise(TypeError(sprintf "Type Error: invalid type %s for the data %s" (data.Return.ToString()) data.Name.Name))
                               | Func(func) ->
-                                  do checkType func.Args sym |> ignore
+                                  //do checkType func.Args sym |> ignore
                                   {sym with FuncTable = sym.FuncTable.Add(func.Name,func)}
                               | TypeFunc(tf) ->
                                   {sym with TypeFuncTable = sym.TypeFuncTable.Add(tf.Name,tf)}
                               | TypeAlias(ta) ->
                                   {sym with TypeAliasTable = sym.TypeAliasTable.Add(ta.Name,ta)}) SymbolContext.Empty
 
+let checkSymbols (declarations : List<Declaration>) (symbolTable : SymbolContext) =
+  for decl in declarations do
+    match decl with
+    | Data(data) ->
+        do checkType data.Args symbolTable |> ignore
+    | Func(func) ->
+        do checkType func.Args symbolTable |> ignore
+    | TypeFunc(tf) ->
+        failwith "TypeFunctions not implemented yet..."
+    | TypeAlias(ta) ->
+        failwith "TypeAliases not implemented yet..."
 
-let checkTypeEquality (t1: TypeDecl) (t2 : TypeDecl) (p : Position) =
-  if t1 = t2 then
+
+let checkTypeEquivalence (t1: TypeDecl) (t2 : TypeDecl) (p : Position) (ctxt : SymbolContext)  =
+  if t1 = t2 || (TypeDecl.SubtypeOf t1 t2 ctxt.Subtyping) then
     ()
   else
     raise(TypeError(sprintf "Type Error: given %s but expected %s at %s" (t1.ToString()) (t2.ToString()) (p.ToString())))
     
-let checkLiteral (l : Literal) (typeDecl : TypeDecl) (p : Position) =
+let checkLiteral (l : Literal) (typeDecl : TypeDecl) (p : Position) (ctxt : SymbolContext) =
   match l with
   | I64(_) ->
-    checkTypeEquality !!"int64" typeDecl p
+    checkTypeEquivalence !!"int64" typeDecl p ctxt
   | I32(_) ->
-    checkTypeEquality !!"int" typeDecl p
+    checkTypeEquivalence !!"int" typeDecl p ctxt
   | U64(_) ->
-    checkTypeEquality  !!"uint64" typeDecl p
+    checkTypeEquivalence  !!"uint64" typeDecl p ctxt
   | U32(_) ->
-    checkTypeEquality  !!"uint32" typeDecl p
+    checkTypeEquivalence  !!"uint32" typeDecl p ctxt
   | F64(_) ->
-    checkTypeEquality  !!"double" typeDecl p
+    checkTypeEquivalence  !!"double" typeDecl p ctxt
   | F32(_) ->
-    checkTypeEquality  !!"float" typeDecl p
+    checkTypeEquivalence  !!"float" typeDecl p ctxt
   | String(_) ->
-    checkTypeEquality  !!"string" typeDecl p
+    checkTypeEquivalence  !!"string" typeDecl p ctxt
   | Bool(_) ->
-    checkTypeEquality  !!"bool" typeDecl p
+    checkTypeEquivalence  !!"bool" typeDecl p ctxt
   | Void ->
-    checkTypeEquality  !!"void" typeDecl p
+    checkTypeEquivalence  !!"void" typeDecl p ctxt
 
 
 let rec checkSingleArg
@@ -170,7 +182,7 @@ let rec checkSingleArg
   | Literal(l,p) ->
       match typeDecl with
       | Arg(Id(id,_)) ->
-          checkLiteral l typeDecl p
+          checkLiteral l typeDecl p symbolTable
           ctxt
       | Generic(_) ->
           failwith "Generics not supported yet..."
@@ -183,7 +195,7 @@ let rec checkSingleArg
         let idOpt = ctxt.Variables |> Map.tryFind id
         match idOpt with
         | Some (t,_) ->
-            checkTypeEquality t typeDecl p
+            checkTypeEquivalence t typeDecl p symbolTable
             ctxt             
         | None ->
             raise(TypeError(sprintf "Type Error: undefined variable %s at %s" id.Name (p.ToString())))    
@@ -194,13 +206,13 @@ let rec checkSingleArg
           let dataOpt = symbolTable.DataTable |> Map.tryFind(id)
           match dataOpt with
           | Some decl ->
-              checkTypeEquality decl.Return typeDecl p
+              checkTypeEquivalence decl.Return typeDecl p symbolTable
               nestedCtxt
           | None -> 
               let funcOpt = symbolTable.FuncTable |> Map.tryFind(id)
               match funcOpt with
               | Some decl ->
-                checkTypeEquality decl.Return typeDecl p
+                checkTypeEquivalence decl.Return typeDecl p symbolTable
                 nestedCtxt
               | None ->
                   failwith "Something went wrong: apparently the term is neither a data constructor nor a function call"
@@ -256,11 +268,16 @@ and checkNormalizedCall
 //      let normalizedResult = normalizeDataOrFunctionCall symbols result
 
 let conclusionTest = [~~"eval";NestedExpression [NestedExpression [~~"a1";~~"-";~~"b1"];~~"+";~~"b"]]
+let subtypingTest =
+  [
+    !!"int",[!!"expr"]
+    !!"float",[!!"expr"]
+  ] |> Map.ofList
 let testLocals =
   {
     Variables =
       [
-        !!!"a1",(!!"int",Position.Zero)
+        !!!"a1",(!!"float",Position.Zero)
         !!!"b1",(!!"int",Position.Zero)
         !!!"b",(!!"int",Position.Zero)
       ] |> Map.ofList
@@ -270,7 +287,7 @@ let (tcTest : Program) =
   let plus =
     {
       Name = { Namespace = []; Name = "+" }
-      Args = !!"int" --> !!"int"
+      Args = !!"expr" --> !!"expr"
       Return = !!"expr"
       Order = Infix
       Priority = 0
@@ -281,7 +298,7 @@ let (tcTest : Program) =
   let neg =
     {
       Name = { Namespace = []; Name = "-" }
-      Args = !!"int" --> !!"int"
+      Args = !!"expr" --> !!"expr"
       Return = !!"expr"
       Order = Prefix
       Priority = 0
@@ -293,7 +310,7 @@ let (tcTest : Program) =
     {
       Name = { Namespace = []; Name = "eval" }
       Args = !!"expr"
-      Return = !!"int"
+      Return = !!"expr"
       Order = Prefix
       Priority = 0
       Position = emptyPos

@@ -29,6 +29,26 @@ and TypeDecl =
           r1 = r2
     | Zero, Zero -> true
     | _ -> failwith "You are using type equality improperly"
+  static member op_Inequality (t1 : TypeDecl,t2 : TypeDecl) =
+    not (t1 = t2)
+  static member SubtypeOf (t1 : TypeDecl) (t2 : TypeDecl) (subtypeDefinitions : Map<TypeDecl,List<TypeDecl>>) =
+    match t1,t2 with
+    | Arg(Id(id1,p1)),Arg(Id(id2,p2)) ->
+        let subtypesOpt = subtypeDefinitions.TryFind t1
+        match subtypesOpt with
+        | Some subtypes ->
+            subtypes |> List.exists(fun t -> 
+                                      match t with
+                                      | Arg(Id(tid,_)) ->
+                                          tid = id2
+                                      | _ -> failwith "Error in subtyping list format")
+        | None -> false
+    | Arrow(l1,r1),Arrow(l2,r2) ->
+        if (l1 <> l2 && TypeDecl.SubtypeOf l1 l2 subtypeDefinitions) |> not then
+          false
+        else
+          TypeDecl.SubtypeOf r1 r2 subtypeDefinitions
+    | _ -> failwith "You are using type equality improperly"
   override this.ToString() =
     match this with
     | Arrow(t1,t2) ->
@@ -108,6 +128,7 @@ type SymbolContext =
     FuncTable             : Map<Id,SymbolDeclaration>    
     TypeFuncTable         : Map<Id,SymbolDeclaration>
     TypeAliasTable        : Map<Id,SymbolDeclaration>
+    Subtyping             : Map<TypeDecl,List<TypeDecl>>
   }
   with
     static member Empty
@@ -117,4 +138,5 @@ type SymbolContext =
           FuncTable = Map.empty
           TypeFuncTable = Map.empty
           TypeAliasTable = Map.empty
+          Subtyping = Map.empty
         }

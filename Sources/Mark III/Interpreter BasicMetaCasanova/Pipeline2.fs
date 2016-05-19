@@ -92,8 +92,10 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     let! st,prog = List.tryHead pars_res
 //    let symbolTable = buildSymbols (fst (snd prog)) Map.empty
     let symbolTable = buildSymbols (fst (snd tcTest)) Map.empty
+    do checkSymbols (fst (snd tcTest)) symbolTable
+    let symbolTable = { symbolTable with Subtyping = subtypingTest }
     let normalizedCall = normalizeDataOrFunctionCall symbolTable conclusionTest
-    let locals = checkNormalizedCall normalizedCall symbolTable testLocals true 
+    let locals = checkNormalizedCall normalizedCall symbolTable testLocals false 
     do System.IO.File.WriteAllText ("typeCheckerOutput.txt", sprintf "%A" symbolTable)
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))
 
