@@ -3,7 +3,7 @@ open Common
 open ParserMonad
 
 type Keyword = 
-  | Import | Using | Inherit | Func | TypeFunc | ArrowFunc | TypeAlias | Data | HorizontalBar | Instance
+  | Import | Using | Inherit | Func | TypeFunc | ArrowFunc | TypeAlias | Data | HorizontalBar | Instance | Is
   | Open of Bracket| Close of Bracket | NewLine | CommentLine
   | SingleArrow | DoubleArrow | PriorityArrow | Spaces of int
   | Predicate of Predicate
@@ -186,6 +186,7 @@ let token :Parser<char,Position,Token> =
       !>>. !"ArrowFunc"   (ArrowFunc,pos)      .||
       !>>. !"TypeAlias"   (TypeAlias,pos)      .||
       !>>. !"Data"        (Data,pos)           .||
+      !>>. !"is"          (Is,pos)             .||
       !>>. !"=>"          (DoubleArrow,pos)    .||
       !>>. !"->"          (SingleArrow,pos)    .||
       !>>. !"#>"          (PriorityArrow,pos)  .||

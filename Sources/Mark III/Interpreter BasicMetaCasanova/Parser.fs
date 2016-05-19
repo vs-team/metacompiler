@@ -176,10 +176,22 @@ let parse_rule (arrow:Keyword) :Parser<Token,List<string>*Program,_> =
     return! lift_parse_rule arrow prem
   } .|| (skip_newlines >>. lift_parse_rule arrow [])
 
+let parse_is :Parser<Token,List<string>*Program,_> =
+  prs{
+    do! skip_newlines
+    let! left = parse_typearg
+    do! check_keyword() Is
+    let! right = parse_typearg
+    do! check_keyword() NewLine
+    let! (ns,(im,(decl,def,is))) = getContext
+    do! setContext (ns,(im,(decl,def,((left,right)::is))))
+  }
+
 let parse_tokens :Parser<Token,List<string>*Program,Program> =
   prs{
-    let pars = parse_imports .|| parse_decl .|| 
-               parse_rule SingleArrow .|| parse_rule DoubleArrow
+    let pars = parse_imports .|| parse_decl .|| parse_is .||
+               parse_rule SingleArrow .|| parse_rule DoubleArrow .|| 
+               skip_newlines
     do! pars |> itterate |> ignore
     do! check_keyword() NewLine |> repeat |> ignore
     let! _,ctxt = getContext
