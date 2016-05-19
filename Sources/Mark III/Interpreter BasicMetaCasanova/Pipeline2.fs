@@ -95,7 +95,7 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     do checkSymbols (fst (snd tcTest)) symbolTable
     let symbolTable = { symbolTable with Subtyping = subtypingTest }
     let normalizedCall = normalizeDataOrFunctionCall symbolTable conclusionTest
-    let locals = checkNormalizedCall normalizedCall symbolTable testLocals false 
+    let _type,locals = checkNormalizedCall normalizedCall symbolTable testLocals false 
     do System.IO.File.WriteAllText ("typeCheckerOutput.txt", sprintf "%A" symbolTable)
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))
 

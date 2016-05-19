@@ -5,13 +5,6 @@ open ParserAST
 
 exception TypeError of string
 
-//Type checker AST: move it to a separate file when it is complete
-
-type TypedCallArg = List<ParserAST.CallArg * TypeDecl>
-
-type TypedConclusion = 
-| ValueOutput of List<TypedCallArg> * List<TypedCallArg>
-
 type LocalContext =
   {
     Variables : Map<Id,TypeDecl * Position>
@@ -149,26 +142,35 @@ let checkTypeEquivalence (t1: TypeDecl) (t2 : TypeDecl) (p : Position) (ctxt : S
   else
     raise(TypeError(sprintf "Type Error: given %s but expected %s at %s" (t1.ToString()) (t2.ToString()) (p.ToString())))
     
-let checkLiteral (l : Literal) (typeDecl : TypeDecl) (p : Position) (ctxt : SymbolContext) =
+let checkLiteral (l : Literal) (typeDecl : TypeDecl) (p : Position) (ctxt : SymbolContext) : TypeDecl =
   match l with
   | I64(_) ->
-    checkTypeEquivalence !!"int64" typeDecl p ctxt
+    do checkTypeEquivalence !!"int64" typeDecl p ctxt
+    !!"int64"
   | I32(_) ->
-    checkTypeEquivalence !!"int" typeDecl p ctxt
+    do checkTypeEquivalence !!"int" typeDecl p ctxt
+    !!"int"
   | U64(_) ->
-    checkTypeEquivalence  !!"uint64" typeDecl p ctxt
+    do checkTypeEquivalence  !!"uint64" typeDecl p ctxt
+    !!"uint64"
   | U32(_) ->
-    checkTypeEquivalence  !!"uint32" typeDecl p ctxt
+    do checkTypeEquivalence  !!"uint32" typeDecl p ctxt
+    !!"uint32"
   | F64(_) ->
-    checkTypeEquivalence  !!"double" typeDecl p ctxt
+    do checkTypeEquivalence  !!"double" typeDecl p ctxt
+    !!"double"
   | F32(_) ->
-    checkTypeEquivalence  !!"float" typeDecl p ctxt
+    do checkTypeEquivalence  !!"float" typeDecl p ctxt
+    !!"float"
   | String(_) ->
-    checkTypeEquivalence  !!"string" typeDecl p ctxt
+    do checkTypeEquivalence  !!"string" typeDecl p ctxt
+    !!"string"
   | Bool(_) ->
-    checkTypeEquivalence  !!"bool" typeDecl p ctxt
+    do checkTypeEquivalence  !!"bool" typeDecl p ctxt
+    !!"bool"
   | Void ->
-    checkTypeEquivalence  !!"void" typeDecl p ctxt
+    do checkTypeEquivalence  !!"void" typeDecl p ctxt
+    !!"void"
 
 
 let rec checkSingleArg
@@ -176,44 +178,43 @@ let rec checkSingleArg
   (symbolTable : SymbolContext)
   (typeDecl : TypeDecl)
   (ctxt : LocalContext)
-  (buildLocals : bool) : LocalContext =
+  (buildLocals : bool) : TypeDecl * LocalContext =
 
   match arg with
   | Literal(l,p) ->
       match typeDecl with
-      | Arg(Id(id,_)) ->
-          checkLiteral l typeDecl p symbolTable
-          ctxt
+      | Arg(Id(id,_)) ->        
+          checkLiteral l typeDecl p symbolTable, ctxt
       | Generic(_) ->
           failwith "Generics not supported yet..."
       | _ ->
           failwith "Something went wrong: the type definition has an invalid structure"
   | Id(id,p) ->
       if buildLocals then
-        {ctxt with Variables = ctxt.Variables |> Map.add id (typeDecl,p)}
+        Arg(Id(id,p)),{ctxt with Variables = ctxt.Variables |> Map.add id (typeDecl,p)}
       else
         let idOpt = ctxt.Variables |> Map.tryFind id
         match idOpt with
         | Some (t,_) ->
-            checkTypeEquivalence t typeDecl p symbolTable
-            ctxt             
+            do checkTypeEquivalence t typeDecl p symbolTable
+            t,ctxt             
         | None ->
             raise(TypeError(sprintf "Type Error: undefined variable %s at %s" id.Name (p.ToString())))    
   | NestedExpression(call) ->
-      let nestedCtxt = checkNormalizedCall call symbolTable ctxt buildLocals
+      let nestedType,nestedCtxt = checkNormalizedCall call symbolTable ctxt buildLocals
       match call.Head with
       | Id(id,p) ->
           let dataOpt = symbolTable.DataTable |> Map.tryFind(id)
           match dataOpt with
           | Some decl ->
-              checkTypeEquivalence decl.Return typeDecl p symbolTable
-              nestedCtxt
+              checkTypeEquivalence nestedType typeDecl p symbolTable
+              nestedType,nestedCtxt
           | None -> 
               let funcOpt = symbolTable.FuncTable |> Map.tryFind(id)
               match funcOpt with
               | Some decl ->
-                checkTypeEquivalence decl.Return typeDecl p symbolTable
-                nestedCtxt
+                checkTypeEquivalence nestedType typeDecl p symbolTable
+                nestedType,nestedCtxt
               | None ->
                   failwith "Something went wrong: apparently the term is neither a data constructor nor a function call"
       | _ ->
@@ -224,23 +225,36 @@ and checkNormalizedArgs
   (symbolTable : SymbolContext)
   (typeDecl : TypeDecl)
   (ctxt : LocalContext)
-  (buildLocals : bool) : LocalContext =
+  (currentType : TypeDecl)
+  (returnType: TypeDecl)
+  (buildLocals : bool) : TypeDecl * LocalContext =
+
+  let rec appendToArrow (a : TypeDecl) (t : TypeDecl) : TypeDecl =
+    match a with
+    | Arrow(left,right) -> Arrow(left,appendToArrow right t)
+    | _ -> Arrow(a,t)
+
   match args with
-  | [] -> ctxt
+  | [] ->
+    match currentType with
+    | Arrow(_) -> (appendToArrow currentType returnType),ctxt
+    | _ -> currentType,ctxt
   | x :: xs ->
       match typeDecl with
       | Arrow(left,right) ->
-          let newCtxt = checkSingleArg x symbolTable left ctxt buildLocals
-          checkNormalizedArgs xs symbolTable right newCtxt buildLocals
+          let t,newCtxt = checkSingleArg x symbolTable left ctxt buildLocals
+          checkNormalizedArgs xs symbolTable right newCtxt right returnType buildLocals
       | Zero ->
           raise(TypeError("Type Error: the function expects no arguments"))
-      | _ -> checkSingleArg x symbolTable typeDecl ctxt buildLocals
+      | _ -> 
+          let t,newCtxt = checkSingleArg x symbolTable typeDecl ctxt buildLocals
+          returnType, newCtxt
 
 and checkNormalizedCall 
   (call : List<ParserAST.CallArg>) 
   (symbolTable : SymbolContext) 
   (ctxt : LocalContext)
-  (buildLocals : bool) : LocalContext =
+  (buildLocals : bool) : TypeDecl * LocalContext =
 
   match call with
   | arg :: args ->
@@ -254,18 +268,27 @@ and checkNormalizedCall
             | None ->
                 failwith "You are checking arguments that are not data constructors or functions with checkNormalizedCall"
             | Some dSym ->
-              checkNormalizedArgs args symbolTable dSym.Args ctxt buildLocals
+              checkNormalizedArgs args symbolTable dSym.Args ctxt (dSym.Return) (dSym.Return) buildLocals
         | Some fSym ->
-            checkNormalizedArgs args symbolTable fSym.Args ctxt buildLocals
+            checkNormalizedArgs args symbolTable fSym.Args ctxt (fSym.Return) (fSym.Return) buildLocals
       | _ ->
         failwith "Something went wrong when normalizing the function call in the typechecker. The first argument is not a function name"
   | [] -> failwith "Something went wrong with the call normalization: there are no arguments in the call"
 
-//let checkConclusion (conclusion : ParserAST.Conclusion) (symbols : Map<Id,SymbolDeclaration>) (ctxt : LocalContext) =
-//  match conclusion with
-//  | ValueOutput(call,result) ->
-//      let normalizedCall = normalizeDataOrFunctionCall symbols call
-//      let normalizedResult = normalizeDataOrFunctionCall symbols result
+and checkConclusion (conclusion : Conclusion) (symbolTable : SymbolContext) =
+  match conclusion with
+  | ValueOutput(call,result) ->
+      let normalizedCall = normalizeDataOrFunctionCall symbolTable call
+      let callType,locals = checkNormalizedCall normalizedCall symbolTable LocalContext.Empty true
+      match result with
+      | [arg] ->
+          checkSingleArg arg symbolTable callType locals false
+      | x :: xs ->
+          let normalizedRes = normalizeDataOrFunctionCall symbolTable result
+          checkNormalizedCall normalizedRes symbolTable locals false 
+      | _ -> failwith "Why is the result of a conclusion empty?"          
+  | ModuleOutput(_) -> failwith "Module generation not supported yet..."
+
 
 let conclusionTest = [~~"eval";NestedExpression [NestedExpression [~~"a1";~~"-";~~"b1"];~~"+";~~"b"]]
 let subtypingTest =
@@ -277,7 +300,7 @@ let testLocals =
   {
     Variables =
       [
-        !!!"a1",(!!"float",Position.Zero)
+        !!!"a1",(!!"int",Position.Zero)
         !!!"b1",(!!"int",Position.Zero)
         !!!"b",(!!"int",Position.Zero)
       ] |> Map.ofList
