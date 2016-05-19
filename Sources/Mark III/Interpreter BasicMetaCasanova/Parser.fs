@@ -83,31 +83,51 @@ let insert_decl_into_ctxt (key:Keyword) (sym:SymbolDeclaration)
     | err -> return! fail (ParserError (sprintf "expected a decl keyword but got: %A" err))
   }
 
-let parse_call (arrow:Keyword) :Parser<Token,List<string>*Program,Premise> =
+let rec parse_lambda_and_arg :Parser<Token,List<string>*Program,CallArg> =
+  parse_arg .|| prs{
+    do! check_keyword() (Open Common.Lambda)
+    let! l_concl = parse_arg |> repeat
+    do! check_keyword() SingleArrow
+    let! r_concl = parse_arg |> repeat
+    do! check_keyword() (Close Round)
+    return Lambda(ValueOutput(l_concl,r_concl),[])
+  } .|| prs{
+    do! check_keyword() (Open Common.Lambda)
+    let! l_concl = parse_arg |> repeat
+    do! check_keyword() SingleArrow
+    do! check_keyword() NewLine
+    let! prem = (parse_call SingleArrow .|| parse_condition) |> repeat
+    let! r_concl = parse_arg |> repeat
+    do! check_keyword() (Close Round) 
+      .|| (check_keyword() NewLine .>> check_keyword() (Close Round))
+    return Lambda(ValueOutput(l_concl,r_concl),prem)
+  }
+
+and parse_call (arrow:Keyword) :Parser<Token,List<string>*Program,Premise> =
   prs{
-    let! l_id = parse_arg |> repeat
+    let! l_id = parse_lambda_and_arg |> repeat
     do! check_keyword() arrow
     let! r_id = parse_id |> repeat
     do! check_keyword() NewLine
     return FunctionCall(l_id,r_id)
   }
 
-let parse_condition :Parser<Token,List<string>*Program,Premise> =
+and parse_condition :Parser<Token,List<string>*Program,Premise> =
   prs{
-    let! l_id = parse_arg |> repeat
+    let! l_id = parse_lambda_and_arg |> repeat
     let! con = check_condition() 
-    let! r_id = parse_arg |> repeat
+    let! r_id = parse_lambda_and_arg |> repeat
     do! check_keyword() NewLine
     return Conditional(l_id,con,r_id)
   }
 
-let parse_premises (arrow:Keyword) :Parser<Token,List<string>*Program,List<Premise>> =
+and parse_premises (arrow:Keyword) :Parser<Token,List<string>*Program,List<Premise>> =
   prs{
     let! prem = RepeatUntil (parse_call arrow .|| parse_condition) (check_keyword() HorizontalBar)
     return prem
   }
 
-let parse_conclusion (arrow:Keyword) :Parser<Token,List<string>*Program,_> =
+and parse_conclusion (arrow:Keyword) :Parser<Token,List<string>*Program,Conclusion> =
   prs{
     let! l_id = parse_arg |> repeat
     do! check_keyword() arrow
@@ -190,8 +210,7 @@ let parse_is :Parser<Token,List<string>*Program,_> =
 let parse_tokens :Parser<Token,List<string>*Program,Program> =
   prs{
     let pars = parse_imports .|| parse_decl .|| parse_is .||
-               parse_rule SingleArrow .|| parse_rule DoubleArrow .|| 
-               skip_newlines
+               parse_rule SingleArrow .|| parse_rule DoubleArrow
     do! pars |> itterate |> ignore
     do! check_keyword() NewLine |> repeat |> ignore
     let! _,ctxt = getContext

@@ -100,6 +100,7 @@ and CallArg =
 | Literal of Literal * Position
 | Id of Id * Position
 | NestedExpression of List<CallArg>
+| Lambda of Conclusion*List<Premise>
 with
   override this.ToString() =
     match this with

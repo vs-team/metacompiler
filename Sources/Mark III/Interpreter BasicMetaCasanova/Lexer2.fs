@@ -210,8 +210,17 @@ let token :Parser<char,Position,Token> =
     return! er
   }
 
+let rec trim_newlines (tok:List<Token>) : List<Token> =
+  match tok with
+  | Keyword(NewLine,_)::xs -> trim_newlines xs
+  | x -> x
+
 let token_lines :Parser<char,Position,List<Token>> =
-  prs{ return! token |> itterate} 
+  prs{ 
+    let! tok = token |> itterate
+    let tok = List.rev (Keyword(NewLine,Position.Zero)::(trim_newlines (List.rev tok)))
+    return tok
+  } 
 
 let tokenize2 (file_path:string) :Parser<char,Position,List<Token>> = 
   prs{ 
