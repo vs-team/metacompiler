@@ -349,6 +349,6 @@ let (tcTest : Program) =
     let (conclusion : Conclusion) =
       ParserAST.ValueOutput (conclusionTest,[~~"x2"])
     premises .| conclusion
-  [],([Data plus; Data neg; Func eval],[evalPlus])
+  [],([Data plus; Data neg; Func eval],[evalPlus],[])
 
 

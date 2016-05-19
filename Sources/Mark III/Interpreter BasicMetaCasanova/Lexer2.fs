@@ -3,7 +3,7 @@ open Common
 open ParserMonad
 
 type Keyword = 
-  | Import | Using | Inherit | Func | TypeFunc | ArrowFunc | TypeAlias | Data | HorizontalBar | Instance
+  | Import | Using | Inherit | Func | TypeFunc | ArrowFunc | TypeAlias | Data | HorizontalBar | Instance | Is
   | Open of Bracket| Close of Bracket | NewLine | CommentLine
   | SingleArrow | DoubleArrow | PriorityArrow | Spaces of int
   | Predicate of Predicate
@@ -186,6 +186,7 @@ let token :Parser<char,Position,Token> =
       !>>. !"ArrowFunc"   (ArrowFunc,pos)      .||
       !>>. !"TypeAlias"   (TypeAlias,pos)      .||
       !>>. !"Data"        (Data,pos)           .||
+      !>>. !"is"          (Is,pos)             .||
       !>>. !"=>"          (DoubleArrow,pos)    .||
       !>>. !"->"          (SingleArrow,pos)    .||
       !>>. !"#>"          (PriorityArrow,pos)  .||
@@ -209,8 +210,17 @@ let token :Parser<char,Position,Token> =
     return! er
   }
 
+let rec trim_newlines (tok:List<Token>) : List<Token> =
+  match tok with
+  | Keyword(NewLine,_)::xs -> trim_newlines xs
+  | x -> x
+
 let token_lines :Parser<char,Position,List<Token>> =
-  prs{ return! token |> itterate} 
+  prs{ 
+    let! tok = token |> itterate
+    let tok = List.rev (Keyword(NewLine,Position.Zero)::(trim_newlines (List.rev tok)))
+    return tok
+  } 
 
 let tokenize2 (file_path:string) :Parser<char,Position,List<Token>> = 
   prs{ 

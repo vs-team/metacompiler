@@ -67,7 +67,7 @@ let lex_files (paths:List<string>) (file_name:List<string>) :Option<List<string*
 
 let start_parser ((st,tok):(string*List<Token>)) :Option<string*Program> =
   opt{
-    let! res = use_parser_monad parse_tokens (tok,([st],([],([],[]))))
+    let! res = use_parser_monad parse_tokens (tok,([st],([],([],[],[]))))
     return st,res
   } |> (timer (sprintf "parsing of file: [%s.mc] " st))
 
@@ -90,9 +90,10 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     let! code_res = start_codegen balltest.ball_func
 
     let! st,prog = List.tryHead pars_res
+    let FST (a,b,c) = a 
 //    let symbolTable = buildSymbols (fst (snd prog)) Map.empty
-    let symbolTable = buildSymbols (fst (snd tcTest)) Map.empty
-    do checkSymbols (fst (snd tcTest)) symbolTable
+    let symbolTable = buildSymbols (FST (snd tcTest)) Map.empty
+    do checkSymbols (FST (snd tcTest)) symbolTable
     let symbolTable = { symbolTable with Subtyping = subtypingTest }
     let normalizedCall = normalizeDataOrFunctionCall symbolTable conclusionTest
     let _type,locals = checkNormalizedCall normalizedCall symbolTable testLocals false 
