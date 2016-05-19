@@ -3,7 +3,7 @@
 open Common
 
 type Program = List<string> * ProgramDefinition
-and ProgramDefinition = List<Declaration> * List<RuleDefinition>
+and ProgramDefinition = List<Declaration> * List<RuleDefinition> * List<TypeDecl*TypeDecl>
 
 and OpOrder =
 | Prefix

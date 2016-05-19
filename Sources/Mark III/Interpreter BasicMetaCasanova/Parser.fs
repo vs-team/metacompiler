@@ -74,12 +74,12 @@ and parse_arg_and_arrow (arrow:Keyword):Parser<Token,List<string>*Program,TypeDe
 let insert_decl_into_ctxt (key:Keyword) (sym:SymbolDeclaration)
   :Parser<Token,List<string>*Program,_> =
   prs{
-    let! ns,(imp,(decl,def)) = getContext
+    let! ns,(imp,(decl,def,is)) = getContext
     match key with
-    | Lexer2.Data -> do! setContext (ns,(imp,((Data(sym)::decl),def))) 
-    | Lexer2.Func -> do! setContext (ns,(imp,((Func(sym)::decl),def))) 
-    | Lexer2.TypeFunc -> do! setContext (ns,(imp,((TypeFunc(sym)::decl),def))) 
-    | Lexer2.TypeAlias -> do! setContext (ns,(imp,((TypeAlias(sym)::decl),def)))
+    | Lexer2.Data -> do! setContext (ns,(imp,((Data(sym)::decl),def,is))) 
+    | Lexer2.Func -> do! setContext (ns,(imp,((Func(sym)::decl),def,is))) 
+    | Lexer2.TypeFunc -> do! setContext (ns,(imp,((TypeFunc(sym)::decl),def,is))) 
+    | Lexer2.TypeAlias -> do! setContext (ns,(imp,((TypeAlias(sym)::decl),def,is)))
     | err -> return! fail (ParserError (sprintf "expected a decl keyword but got: %A" err))
   }
 
@@ -160,10 +160,10 @@ let parse_decl :Parser<Token,List<string>*Program,_> =
 let lift_parse_rule (arrow:Keyword) (prem:List<Premise>) :Parser<Token,List<string>*Program,_> =
   prs{
     let! concl = parse_conclusion arrow
-    let! (ns,(im,(decl,def))) = getContext
+    let! (ns,(im,(decl,def,is))) = getContext
     match arrow with
-    | SingleArrow -> do! setContext (ns,(im,(decl,((Rule(prem,concl))::def))))
-    | DoubleArrow -> do! setContext (ns,(im,(decl,((TypeRule(prem,concl))::def))))
+    | SingleArrow -> do! setContext (ns,(im,(decl,((Rule(prem,concl))::def),is)))
+    | DoubleArrow -> do! setContext (ns,(im,(decl,((TypeRule(prem,concl))::def),is)))
     | _ -> return! fail (ParserError (sprintf "you can't use %A in the ruleparser as a arrow." arrow))
   }
 
