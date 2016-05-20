@@ -15,6 +15,24 @@ type LocalContext =
         Variables = Map.empty
       }
 
+type TypedProgramDefinition =
+  {
+    Declarations      : List<Declaration>
+    TypedRules        : List<TypedRuleDefinition>
+    SymbolTable       : SymbolContext
+  }
+
+and TypedRuleDefinition =
+| TypedRule of TypedRule
+| TypedTypeRule of TypedRule
+
+and TypedRule = 
+  {
+    Premises        : List<Premise>
+    Conclusion      : Conclusion
+    Locals          : LocalContext
+    ReturnType      : TypeDecl
+  }
 
 
 //built-in types. Maybe they are not necessary in the end because they are defined in the prelude. Leave them for debugging.
@@ -325,13 +343,43 @@ and checkRule (rule : RuleDefinition) (symbolTable : SymbolContext) =
   | TypeRule(premises,conclusion) -> failwith "type rules not supported yet..."
 
 
-let conclusionTest = [~~"eval";NestedExpression [NestedExpression [~~"a1";~~"-";~~"b1"];~~"+";~~"b"]]
-let fullConclusionTest = ValueOutput(conclusionTest,[~~"eval";~~"a1"])
+and buildSubTypes (subTypesDef : List<TypeDecl * TypeDecl>) : Map<TypeDecl,List<TypeDecl>> =
+  subTypesDef |> List.fold(fun sts (t,alias) ->
+                              let subTypeOpt = sts |> Map.tryFind t
+                              match subTypeOpt with
+                              | Some _ -> 
+                                  sts |> Map.add t (alias :: (sts.[t]))
+                              | None ->
+                                  sts |> Map.add t [alias]) Map.empty
+
+and checkProgramDefinition ((decls,rules,subtypes) : ProgramDefinition) : TypedProgramDefinition = 
+  let symbolTable = buildSymbols decls Map.empty
+  do checkSymbols decls symbolTable
+  let symbolTable = { symbolTable with Subtyping = buildSubTypes subtypes }
+  let typedRules =
+    [for r in rules do
+        match r with
+        | Rule(r1) ->
+            let _type,locals = checkRule r symbolTable
+            let typedRule = { Premises = fst r1; Conclusion = snd r1; Locals = locals; ReturnType = _type }
+            yield TypedRule(typedRule)
+        | TypeRule(r) -> failwith "Type rule not supported yet..."]
+  {
+    Declarations = decls
+    TypedRules = typedRules
+    SymbolTable = symbolTable
+  }
+
+and checkProgram ((imports,def) : Program) : TypedProgramDefinition =
+  //missing support for imports
+  checkProgramDefinition def
+
+
 let subtypingTest =
   [
-    !!"int",[!!"expr"]
-    !!"float",[!!"expr"]
-  ] |> Map.ofList
+    !!"int",!!"expr"
+    !!"float",!!"expr"
+  ]
 let testLocals =
   {
     Variables =
@@ -385,6 +433,6 @@ let (tcTest : Program) =
     let (conclusion : Conclusion) =
       ParserAST.ValueOutput ([~~"eval";NestedExpression [~~"a";~~"+";~~"b"]],[~~"x2"])
     premises .| conclusion
-  [],([Data plus; Data neg; Func eval],[evalPlus],[])
+  [],([Data plus; Data neg; Func eval],[evalPlus],subtypingTest)
 
 

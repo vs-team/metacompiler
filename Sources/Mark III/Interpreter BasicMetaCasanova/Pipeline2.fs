@@ -90,17 +90,7 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     let! code_res = start_codegen balltest.ball_func
 
     let! st,prog = List.tryHead pars_res
-    let FST (a,b,c) = a
-    let SND (a,b,c) = b
-//    let symbolTable = buildSymbols (fst (snd prog)) Map.empty
-    let symbolTable = buildSymbols (FST (snd tcTest)) Map.empty
-    do checkSymbols (FST (snd tcTest)) symbolTable
-    let symbolTable = { symbolTable with Subtyping = subtypingTest }
-//    let normalizedCall = normalizeDataOrFunctionCall symbolTable conclusionTest
-//    let _type,locals = checkNormalizedCall normalizedCall symbolTable testLocals false
-    let _,rules,_ = snd tcTest
-    let _type,locals = checkRule rules.Head symbolTable
-    do System.IO.File.WriteAllText ("typeCheckerOutput.txt", sprintf "%A" symbolTable)
+    let typedProgram = checkProgram tcTest
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))
 
     return pars_res
