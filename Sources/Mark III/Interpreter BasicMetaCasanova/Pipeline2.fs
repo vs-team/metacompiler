@@ -67,7 +67,8 @@ let lex_files (paths:List<string>) (file_name:List<string>) :Option<List<string*
 
 let start_parser ((st,tok):(string*List<Token>)) :Option<string*Program> =
   opt{
-    let! res = use_parser_monad parse_tokens (tok,([st],([],([],[],[]))))
+    let parserctxt = (tok,{ns = [st] ; prog = ([],([],[],[])); prog_parser = parse_module})
+    let! res = use_parser_monad parse_tokens parserctxt
     return st,res
   } |> (timer (sprintf "parsing of file: [%s.mc] " st))
 
