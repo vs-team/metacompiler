@@ -15,6 +15,24 @@ type LocalContext =
         Variables = Map.empty
       }
 
+type TypedProgramDefinition =
+  {
+    Declarations      : List<Declaration>
+    TypedRules        : List<TypedRuleDefinition>
+    SymbolTable       : SymbolContext
+  }
+
+and TypedRuleDefinition =
+| TypedRule of TypedRule
+| TypedTypeRule of TypedRule
+
+and TypedRule = 
+  {
+    Premises        : List<Premise>
+    Conclusion      : Conclusion
+    Locals          : LocalContext
+    ReturnType      : TypeDecl
+  }
 
 
 //built-in types. Maybe they are not necessary in the end because they are defined in the prelude. Leave them for debugging.
@@ -275,27 +293,93 @@ and checkNormalizedCall
         failwith "Something went wrong when normalizing the function call in the typechecker. The first argument is not a function name"
   | [] -> failwith "Something went wrong with the call normalization: there are no arguments in the call"
 
-and checkConclusion (conclusion : Conclusion) (symbolTable : SymbolContext) =
-  match conclusion with
-  | ValueOutput(call,result) ->
-      let normalizedCall = normalizeDataOrFunctionCall symbolTable call
-      let callType,locals = checkNormalizedCall normalizedCall symbolTable LocalContext.Empty true
+//We need to add the position to premise calls and conclusion calls
+and checkPremise (premise : Premise) (symbolTable : SymbolContext) (locals : LocalContext) =
+  match premise with
+  | FunctionCall(func,result) ->
+      let normFunc = normalizeDataOrFunctionCall symbolTable func
+      let funcType,_ = checkNormalizedCall normFunc symbolTable locals false
       match result with
-      | [arg] ->
-          checkSingleArg arg symbolTable callType locals false
-      | x :: xs ->
-          let normalizedRes = normalizeDataOrFunctionCall symbolTable result
-          checkNormalizedCall normalizedRes symbolTable locals false 
-      | _ -> failwith "Why is the result of a conclusion empty?"          
-  | ModuleOutput(_) -> failwith "Module generation not supported yet..."
+      | [r] -> 
+          let localVarOpt = locals.Variables |> Map.tryFind(r)
+          match localVarOpt with
+          | Some (_,p) ->
+              raise(TypeError(sprintf "Type Error: the variable %s is already defined at %s" r.Name (p.ToString())))
+          | None ->
+              { locals with Variables = locals.Variables |> Map.add r (funcType,Position.Zero) }
+      | id :: ids ->
+          let normalizedData = normalizeDataOrFunctionCall symbolTable (result |> List.map(fun x -> Id(id,Position.Zero)))
+          let normIds = normalizedData |> List.map(fun x -> match x with
+                                                            | Id(id,_) -> id
+                                                            | _ -> failwith "Invalid premise result format")
+          let funcOpt = symbolTable.FuncTable |> Map.tryFind (normIds.Head)
+          match funcOpt with
+          | Some _ -> raise(TypeError(sprintf "Type Error: It is not allowed to call a function in the return part of a premise: %s" id.Name))
+          | None ->
+              let dataType,newLocals = checkNormalizedCall normalizedData symbolTable locals true
+              do checkTypeEquivalence dataType funcType Position.Zero symbolTable
+              newLocals
+      | _ -> failwith "Something went wrong: the return argument of a premise is empty"
+  | Conditional(conditional) -> failwith "Conditionals not implemented yet..."
+
+and checkRule (rule : RuleDefinition) (symbolTable : SymbolContext) =
+  match rule with
+  | Rule(premises,conclusion) ->
+    match conclusion with
+    | ValueOutput(call,result) ->
+        let normalizedCall = normalizeDataOrFunctionCall symbolTable call
+        let callType,locals = checkNormalizedCall normalizedCall symbolTable LocalContext.Empty true
+        let localsAfterPremises =
+          premises |> List.fold(fun l p -> checkPremise p symbolTable l) locals
+        match result with
+        | [arg] ->
+            checkSingleArg arg symbolTable callType localsAfterPremises false
+        | x :: xs ->
+            let normalizedRes = normalizeDataOrFunctionCall symbolTable result
+            checkNormalizedCall normalizedRes symbolTable localsAfterPremises false 
+        | _ -> failwith "Why is the result of a conclusion empty?"          
+    | ModuleOutput(_) ->
+        raise(TypeError("You can only output modules in a type rule"))
+  | TypeRule(premises,conclusion) -> failwith "type rules not supported yet..."
 
 
-let conclusionTest = [~~"eval";NestedExpression [NestedExpression [~~"a1";~~"-";~~"b1"];~~"+";~~"b"]]
+and buildSubTypes (subTypesDef : List<TypeDecl * TypeDecl>) : Map<TypeDecl,List<TypeDecl>> =
+  subTypesDef |> List.fold(fun sts (t,alias) ->
+                              let subTypeOpt = sts |> Map.tryFind t
+                              match subTypeOpt with
+                              | Some _ -> 
+                                  sts |> Map.add t (alias :: (sts.[t]))
+                              | None ->
+                                  sts |> Map.add t [alias]) Map.empty
+
+and checkProgramDefinition ((decls,rules,subtypes) : ProgramDefinition) : TypedProgramDefinition = 
+  let symbolTable = buildSymbols decls Map.empty
+  do checkSymbols decls symbolTable
+  let symbolTable = { symbolTable with Subtyping = buildSubTypes subtypes }
+  let typedRules =
+    [for r in rules do
+        match r with
+        | Rule(r1) ->
+            let _type,locals = checkRule r symbolTable
+            let typedRule = { Premises = fst r1; Conclusion = snd r1; Locals = locals; ReturnType = _type }
+            yield TypedRule(typedRule)
+        | TypeRule(r) -> failwith "Type rule not supported yet..."]
+  {
+    Declarations = decls
+    TypedRules = typedRules
+    SymbolTable = symbolTable
+  }
+
+and checkProgram ((imports,def) : Program) : TypedProgramDefinition =
+  //missing support for imports
+  checkProgramDefinition def
+
+
 let subtypingTest =
   [
-    !!"int",[!!"expr"]
-    !!"float",[!!"expr"]
-  ] |> Map.ofList
+    !!"int",!!"expr"
+    !!"float",!!"expr"
+  ]
 let testLocals =
   {
     Variables =
@@ -347,8 +431,8 @@ let (tcTest : Program) =
         FunctionCall([~~"eval";~~"b"],[!!!"x2"])
       ]
     let (conclusion : Conclusion) =
-      ParserAST.ValueOutput (conclusionTest,[~~"x2"])
+      ParserAST.ValueOutput ([~~"eval";NestedExpression [~~"a";~~"+";~~"b"]],[~~"x2"])
     premises .| conclusion
-  [],([Data plus; Data neg; Func eval],[evalPlus],[])
+  [],([Data plus; Data neg; Func eval],[evalPlus],subtypingTest)
 
 
