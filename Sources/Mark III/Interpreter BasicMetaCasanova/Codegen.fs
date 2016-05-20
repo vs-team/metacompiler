@@ -120,7 +120,7 @@ let print_debug_tree (fromTypeChecker:Map<Id,list<rule>*Position>) (main:rule) =
       let per_func = funcs |> Seq.mapi (fun funcnr (funcname,declposition,rules)->
         let per_rule = rules |> Seq.mapi (fun rulenr (rule) ->
           let per_line = rule.premis |> Seq.groupBy snd
-          let per_prem = (per_line|>Seq.rev|>Seq.tail|>Seq.rev) |> Seq.mapi (fun premnr (linenumber,prems)->
+          let per_prem = (per_line(*|>Seq.rev|>Seq.tail|>Seq.rev*)) |> Seq.mapi (fun premnr (linenumber,prems)->
             sprintf "_DBUG.program_tree.Nodes[%d].Nodes[%d].Nodes[%d].Nodes.Add(\"line %d\");\n" filenr funcnr rulenr linenumber )
           sprintf "_DBUG.program_tree.Nodes[%d].Nodes[%d].Nodes.Add(\"line %d\");\n" filenr funcnr (Seq.last per_line|>fst)
           + (String.concat "" per_prem) )
@@ -273,7 +273,11 @@ let print_rule_bodies (rules:rule list) =
 let generate_breakpoint_def (funcname:string) (rules:rule seq) =
   let linenumbers = rules |> Seq.map (fun x->x.premis) |> Seq.map ((Seq.map snd)>>Seq.distinct)
   let subarrays = linenumbers |> Seq.mapi (fun i x->
-    let s = x|>Seq.map (fun _->"false") |> String.concat ","
+    let s = 
+      if funcname="_main" then 
+        x |>Seq.mapi (fun i _->if i=0 then "true" else "false") |> String.concat ","
+      else
+        x|>Seq.map (fun _->"false") |> String.concat ","
     sprintf "%s._DBUG_breakpoints_%d = new bool[]{%s};\n" funcname i s)
   subarrays |> String.concat ""
 
@@ -377,6 +381,7 @@ let failsafe_codegen(input:fromTypecheckerWithLove) :Option<string>=
   do flags <- input.flags
   if validate input then
     let foo = input |> construct_tree |> print_tree input
-    foo+(print_main input) |> Some
+    let dbug = if flags.debug then System.IO.File.ReadAllText("_DBUG.cs.txt") else ""
+    dbug+foo+(print_main input) |> Some
 
   else None
