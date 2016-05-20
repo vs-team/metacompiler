@@ -6,6 +6,9 @@ open Lexer2
 open ParserAST
 open ExtractFromToken2
 
+type Priass = Pri of int
+            | Ass of Associativity
+
 let skip_newlines :Parser<Token,List<string>*Program,_> =
   prs{
     do! check_keyword() NewLine |> repeat |> ignore
@@ -136,6 +139,32 @@ and parse_conclusion (arrow:Keyword) :Parser<Token,List<string>*Program,Conclusi
     return ValueOutput(l_id,r_id)
   }
 
+let rec priass_list_to_priass ((pri,ass):int*Associativity) (pa:List<Priass>) :int*Associativity =
+  match pa with
+  | (Pri x)::xs -> priass_list_to_priass (x,ass) xs
+  | (Ass x)::xs -> priass_list_to_priass (pri,x) xs
+  | [] -> (pri,ass)
+
+let parse_priority :Parser<Token,List<string>*Program,int*Associativity> =
+  prs{
+    return! pifelse (check_keyword() PriorityArrow)(
+      prs{
+        let parse_pri_and_ass = (
+          prs{
+            let! pri,_ = extract_int_literal() 
+            return Pri pri
+          } .|| prs{
+            let! ass,_ = extract_id()
+            if ass = "L" then return Ass Left 
+            elif ass = "R" then return Ass Right
+            else return! fail (ParserError "Not L or R as associotivity.")
+          })
+        let! priass_list =  RepeatUntil parse_pri_and_ass (check_keyword() NewLine)
+        return priass_list_to_priass (0,Left) priass_list
+      }) (prs{return 0,Left}
+    )
+  }
+
 let parse_symbol (arrow:Keyword) (prem:List<Premise>) :Parser<Token,List<string>*Program,SymbolDeclaration> =
   prs{
     let! arg_left = parse_arg_and_arrow arrow |> repeat
@@ -143,14 +172,15 @@ let parse_symbol (arrow:Keyword) (prem:List<Premise>) :Parser<Token,List<string>
     do! check_keyword() arrow
     let! arg_right = parse_arg_and_arrow arrow |> repeat
     let! ret = parse_typearg 
+    let! pri,ass = parse_priority
     do! check_keyword() NewLine
     let! ns,_ = getContext
     let order = if (List.length arg_left) < 1 then Infix else Prefix
     let name = {Namespace = ns ; Name = name}
     let args = arg_list_to_typedecl (arg_left@arg_right)
     let res = {Name = name ; Args = args ; Return = ret ;
-               Order = order; Priority = 0 ; Position = pos;
-               Associativity = Left ;Premises = prem}
+               Order = order; Priority = pri ; Position = pos;
+               Associativity = ass ;Premises = prem}
     return res
   }
 

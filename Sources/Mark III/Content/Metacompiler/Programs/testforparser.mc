@@ -1,27 +1,11 @@
-﻿Data "A" -> int -> int 
+﻿
+Func "lambdatest" -> a -> res #> R 123
 
-Data "B" -> gen<a b> -> gen<c d>
+Func "priass" -> a -> res #> 123 R
+Func "ass" -> a -> res #> R
+Func "pri" -> a -> res #> 456
 
-Func "C" -> (lama -> lamb) -> (lamc -> lamd)
-
-Func "D" -> (lam<a b> -> lam<c d>) -> test<e f>
-
-TypeAlias test => "A" => int => int 
-
-TypeAlias "B" => gen<a b> => gen<c d>
-
-TypeFunc "C" => (lama -> lamb) => (lamc -> lamd)
-
-bla is flo
-zet is tra
-
-
-bla => test
-------------
-TypeFunc "D" => (lam<a b> -> lam<c d>) => test<e f>
-
-
-Func "lambdatest" -> a -> res
+Func "none" -> a -> res
 
 a -> b
 (\ a -> b) -> lama
