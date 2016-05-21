@@ -65,7 +65,8 @@ EntityField => Module{
   set l f' rs => res
 }
 
-TypeFunc "Empty" => EntityField {
+TypeFunc "Empty" => EntityField
+Empty => EntityField{
   Field => unit
   Label => unit
   Rest => unit
