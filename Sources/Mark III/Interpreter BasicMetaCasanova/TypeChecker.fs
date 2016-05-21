@@ -5,13 +5,6 @@ open ParserAST
 
 exception TypeError of string
 
-//Type checker AST: move it to a separate file when it is complete
-
-type TypedCallArg = ParserAST.CallArg * TypeDecl
-
-type TypedConclusion = 
-| ValueOutput of List<TypedCallArg> * List<TypedCallArg>
-
 type LocalContext =
   {
     Variables : Map<Id,TypeDecl * Position>
@@ -22,15 +15,39 @@ type LocalContext =
         Variables = Map.empty
       }
 
+type TypedProgramDefinition =
+  {
+    Declarations      : List<Declaration>
+    TypedRules        : List<TypedRuleDefinition>
+    SymbolTable       : SymbolContext
+  }
+
+and TypedRuleDefinition =
+| TypedRule of TypedRule
+| TypedTypeRule of TypedRule
+
+and TypedRule = 
+  {
+    Premises        : List<Premise>
+    Conclusion      : Conclusion
+    Locals          : LocalContext
+    ReturnType      : TypeDecl
+  }
 
 
 //built-in types. Maybe they are not necessary in the end because they are defined in the prelude. Leave them for debugging.
 let builtInTypes =
   [
+    "int64"
     "int"
+    "unint64"
+    "uint32"
     "string"
+    "double"
     "float"
-    "float32"
+    "string"
+    "bool"
+    "void"
   ]
 
 let emptyPos = { File = "empty"; Line = 0; Col = 0}
@@ -111,118 +128,273 @@ let buildSymbols (declarations : List<Declaration>) (symbols : Map<Id,SymbolDecl
   declarations |> List.fold(fun sym decl ->
                               match decl with
                               | Data(data) ->
-                                  do checkType data.Args sym |> ignore
+                                  //do checkType data.Args sym |> ignore
                                   match data.Return with
                                   | Arg(Id(arg,_)) ->
                                     {sym with DataTable = sym.DataTable.Add(data.Name,data)}
                                   | _ -> raise(TypeError(sprintf "Type Error: invalid type %s for the data %s" (data.Return.ToString()) data.Name.Name))
                               | Func(func) ->
-                                  do checkType func.Args sym |> ignore
+                                  //do checkType func.Args sym |> ignore
                                   {sym with FuncTable = sym.FuncTable.Add(func.Name,func)}
                               | TypeFunc(tf) ->
                                   {sym with TypeFuncTable = sym.TypeFuncTable.Add(tf.Name,tf)}
                               | TypeAlias(ta) ->
                                   {sym with TypeAliasTable = sym.TypeAliasTable.Add(ta.Name,ta)}) SymbolContext.Empty
 
-//let checkProgram (program : ProgramDefinition) (symbols : Map<Id,SymbolDeclaration>) =
-//  (fst program) |> List.map(fun decl -> checkType decl symbols) |> ignore
+let checkSymbols (declarations : List<Declaration>) (symbolTable : SymbolContext) =
+  for decl in declarations do
+    match decl with
+    | Data(data) ->
+        do checkType data.Args symbolTable |> ignore
+    | Func(func) ->
+        do checkType func.Args symbolTable |> ignore
+    | TypeFunc(tf) ->
+        failwith "TypeFunctions not implemented yet..."
+    | TypeAlias(ta) ->
+        failwith "TypeAliases not implemented yet..."
 
 
-//remember to reverse the arguments at the end
-let rec checkNormalizedArgs 
+let checkTypeEquivalence (t1: TypeDecl) (t2 : TypeDecl) (p : Position) (ctxt : SymbolContext)  =
+  if t1 = t2 || (TypeDecl.SubtypeOf t1 t2 ctxt.Subtyping) then
+    ()
+  else
+    raise(TypeError(sprintf "Type Error: given %s but expected %s at %s" (t1.ToString()) (t2.ToString()) (p.ToString())))
+    
+let checkLiteral (l : Literal) (typeDecl : TypeDecl) (p : Position) (ctxt : SymbolContext) : TypeDecl =
+  match l with
+  | I64(_) ->
+    do checkTypeEquivalence !!"int64" typeDecl p ctxt
+    !!"int64"
+  | I32(_) ->
+    do checkTypeEquivalence !!"int" typeDecl p ctxt
+    !!"int"
+  | U64(_) ->
+    do checkTypeEquivalence  !!"uint64" typeDecl p ctxt
+    !!"uint64"
+  | U32(_) ->
+    do checkTypeEquivalence  !!"uint32" typeDecl p ctxt
+    !!"uint32"
+  | F64(_) ->
+    do checkTypeEquivalence  !!"double" typeDecl p ctxt
+    !!"double"
+  | F32(_) ->
+    do checkTypeEquivalence  !!"float" typeDecl p ctxt
+    !!"float"
+  | String(_) ->
+    do checkTypeEquivalence  !!"string" typeDecl p ctxt
+    !!"string"
+  | Bool(_) ->
+    do checkTypeEquivalence  !!"bool" typeDecl p ctxt
+    !!"bool"
+  | Void ->
+    do checkTypeEquivalence  !!"void" typeDecl p ctxt
+    !!"void"
+
+
+let rec checkSingleArg
+  (arg : ParserAST.CallArg)
+  (symbolTable : SymbolContext)
+  (typeDecl : TypeDecl)
+  (ctxt : LocalContext)
+  (buildLocals : bool) : TypeDecl * LocalContext =
+
+  match arg with
+  | Literal(l,p) ->
+      match typeDecl with
+      | Arg(Id(id,_)) ->        
+          checkLiteral l typeDecl p symbolTable, ctxt
+      | Generic(_) ->
+          failwith "Generics not supported yet..."
+      | _ ->
+          failwith "Something went wrong: the type definition has an invalid structure"
+  | Id(id,p) ->
+      if buildLocals then
+        Arg(Id(id,p)),{ctxt with Variables = ctxt.Variables |> Map.add id (typeDecl,p)}
+      else
+        let idOpt = ctxt.Variables |> Map.tryFind id
+        match idOpt with
+        | Some (t,_) ->
+            do checkTypeEquivalence t typeDecl p symbolTable
+            t,ctxt             
+        | None ->
+            raise(TypeError(sprintf "Type Error: undefined variable %s at %s" id.Name (p.ToString())))    
+  | NestedExpression(call) ->
+      let nestedType,nestedCtxt = checkNormalizedCall call symbolTable ctxt buildLocals
+      match call.Head with
+      | Id(id,p) ->
+          let dataOpt = symbolTable.DataTable |> Map.tryFind(id)
+          match dataOpt with
+          | Some decl ->
+              checkTypeEquivalence nestedType typeDecl p symbolTable
+              nestedType,nestedCtxt
+          | None -> 
+              let funcOpt = symbolTable.FuncTable |> Map.tryFind(id)
+              match funcOpt with
+              | Some decl ->
+                checkTypeEquivalence nestedType typeDecl p symbolTable
+                nestedType,nestedCtxt
+              | None ->
+                  failwith "Something went wrong: apparently the term is neither a data constructor nor a function call"
+      | _ ->
+          failwith "Something went wrong when checking the nested expression"
+
+and checkNormalizedArgs 
   (args : List<ParserAST.CallArg>)
   (symbolTable : SymbolContext)
   (typeDecl : TypeDecl)
-  (typedArgs : List<TypedCallArg>)
   (ctxt : LocalContext)
-  (buildLocals : bool) : List<TypedCallArg> * LocalContext =
+  (currentType : TypeDecl)
+  (returnType: TypeDecl)
+  (buildLocals : bool) : TypeDecl * LocalContext =
+
+  let rec appendToArrow (a : TypeDecl) (t : TypeDecl) : TypeDecl =
+    match a with
+    | Arrow(left,right) -> Arrow(left,appendToArrow right t)
+    | _ -> Arrow(a,t)
 
   match args with
-  | [] -> typedArgs,ctxt
-  | arg :: otherargs ->
+  | [] ->
+    match currentType with
+    | Arrow(_) -> (appendToArrow currentType returnType),ctxt
+    | _ -> currentType,ctxt
+  | x :: xs ->
       match typeDecl with
       | Arrow(left,right) ->
-          match left with
-          | Arg(Id(id,pos)) ->
-              let checkLiteral (typeName : string) (expectedType : Id) (arg : CallArg) (pos : Position) =
-                if id.Name = typeName then
-                  (arg,left) :: typedArgs
-                else
-                  raise(TypeError(sprintf "Type error: given int64, expected %s at %s" (left.ToString()) (pos.ToString())))
-              match arg with
-              | Literal(l,p) ->
-                  match l with
-                  | I64 _ ->
-                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "int64" id arg p) ctxt buildLocals
-                  | U64 _ ->
-                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "uint64" id arg p) ctxt buildLocals
-                  | I32 _ ->
-                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "int" id arg p) ctxt buildLocals
-                  | U32 _ ->
-                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "uint" id arg p) ctxt buildLocals
-                  | F64 _ ->
-                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "float" id arg p) ctxt buildLocals
-                  | F32 _ ->
-                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "float32" id arg p) ctxt buildLocals
-                  | String _ ->
-                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "string" id arg p) ctxt buildLocals
-                  | Bool _ ->
-                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "bool" id arg p) ctxt buildLocals
-                  | Void _ ->
-                      checkNormalizedArgs  otherargs symbolTable right (checkLiteral "void" id arg p) ctxt buildLocals
-              | Id(name,p) ->
-                  if buildLocals then
-                    checkNormalizedArgs otherargs symbolTable right typedArgs {ctxt with Variables = ctxt.Variables.Add(id,(left,p))} buildLocals
-                  else
-                    match Map.tryFind id ctxt.Variables with
-                    | None -> raise(TypeError(sprintf "Type Error: Undefined variable %s at %s" id.Name (p.ToString())))
-                    | Some (t,p) ->
-                        match t with
-                        | Arg(Id(id1,pos1)) ->
-                            if id1 = id then
-                              raise(TypeError(sprintf "Type Error: expected %s but given %s at %s" (left.ToString()) (t.ToString()) (pos.ToString())))
-                            else
-                              checkNormalizedArgs otherargs symbolTable right ((arg,left) :: typedArgs) ctxt buildLocals
-              | NestedExpression(expr) ->
-                  let callType,typedArgs,ctxt = checkNormalizedCall expr symbolTable ctxt buildLocals
-                  if callType = left then
-                    checkNormalizedArgs otherargs symbolTable right ((arg,left) :: typedArgs) ctxt buildLocals
-                  else
-                    raise(TypeError(sprintf "Type Error: expected %s but given %s" (left.ToString()) (callType.ToString())))
+          let t,newCtxt = checkSingleArg x symbolTable left ctxt buildLocals
+          checkNormalizedArgs xs symbolTable right newCtxt right returnType buildLocals
+      | Zero ->
+          raise(TypeError("Type Error: the function expects no arguments"))
+      | _ -> 
+          let t,newCtxt = checkSingleArg x symbolTable typeDecl ctxt buildLocals
+          returnType, newCtxt
 
 and checkNormalizedCall 
   (call : List<ParserAST.CallArg>) 
   (symbolTable : SymbolContext) 
   (ctxt : LocalContext)
-  (buildLocals : bool) : TypeDecl * List<TypedCallArg> * LocalContext =
+  (buildLocals : bool) : TypeDecl * LocalContext =
+
   match call with
   | arg :: args ->
       match arg with
       | Id(id,pos) ->
-          let funcOpt = symbolTable.FuncTable |> Map.tryFind(id)
-          match funcOpt with
-          | None -> 
-              raise(TypeError(sprintf "Type Error: the argument at %s is not a function" (pos.ToString())))
-          | Some fSym ->
-              let typedArgs,locals = checkNormalizedArgs args symbolTable fSym.Args [] ctxt buildLocals
-              fSym.Return,typedArgs,locals
+        let funcOpt = symbolTable.FuncTable |> Map.tryFind(id)
+        let dataOpt = symbolTable.DataTable |> Map.tryFind(id)            
+        match funcOpt with
+        | None ->
+            match dataOpt with
+            | None ->
+                failwith "You are checking arguments that are not data constructors or functions with checkNormalizedCall"
+            | Some dSym ->
+              checkNormalizedArgs args symbolTable dSym.Args ctxt (dSym.Return) (dSym.Return) buildLocals
+        | Some fSym ->
+            checkNormalizedArgs args symbolTable fSym.Args ctxt (fSym.Return) (fSym.Return) buildLocals
       | _ ->
         failwith "Something went wrong when normalizing the function call in the typechecker. The first argument is not a function name"
   | [] -> failwith "Something went wrong with the call normalization: there are no arguments in the call"
 
-//let checkConclusion (conclusion : ParserAST.Conclusion) (symbols : Map<Id,SymbolDeclaration>) (ctxt : LocalContext) =
-//  match conclusion with
-//  | ValueOutput(call,result) ->
-//      let normalizedCall = normalizeDataOrFunctionCall symbols call
-//      let normalizedResult = normalizeDataOrFunctionCall symbols result
+//We need to add the position to premise calls and conclusion calls
+and checkPremise (premise : Premise) (symbolTable : SymbolContext) (locals : LocalContext) =
+  match premise with
+  | FunctionCall(func,result) ->
+      let normFunc = normalizeDataOrFunctionCall symbolTable func
+      let funcType,_ = checkNormalizedCall normFunc symbolTable locals false
+      match result with
+      | [r] -> 
+          let localVarOpt = locals.Variables |> Map.tryFind(r)
+          match localVarOpt with
+          | Some (_,p) ->
+              raise(TypeError(sprintf "Type Error: the variable %s is already defined at %s" r.Name (p.ToString())))
+          | None ->
+              { locals with Variables = locals.Variables |> Map.add r (funcType,Position.Zero) }
+      | id :: ids ->
+          let normalizedData = normalizeDataOrFunctionCall symbolTable (result |> List.map(fun x -> Id(id,Position.Zero)))
+          let normIds = normalizedData |> List.map(fun x -> match x with
+                                                            | Id(id,_) -> id
+                                                            | _ -> failwith "Invalid premise result format")
+          let funcOpt = symbolTable.FuncTable |> Map.tryFind (normIds.Head)
+          match funcOpt with
+          | Some _ -> raise(TypeError(sprintf "Type Error: It is not allowed to call a function in the return part of a premise: %s" id.Name))
+          | None ->
+              let dataType,newLocals = checkNormalizedCall normalizedData symbolTable locals true
+              do checkTypeEquivalence dataType funcType Position.Zero symbolTable
+              newLocals
+      | _ -> failwith "Something went wrong: the return argument of a premise is empty"
+  | Conditional(conditional) -> failwith "Conditionals not implemented yet..."
 
-let conclusionTest = [~~"eval";NestedExpression [NestedExpression [~~"a1";~~"-";~~"b1"];~~"+";~~"b"]]
+and checkRule (rule : RuleDefinition) (symbolTable : SymbolContext) =
+  match rule with
+  | Rule(premises,conclusion) ->
+    match conclusion with
+    | ValueOutput(call,result) ->
+        let normalizedCall = normalizeDataOrFunctionCall symbolTable call
+        let callType,locals = checkNormalizedCall normalizedCall symbolTable LocalContext.Empty true
+        let localsAfterPremises =
+          premises |> List.fold(fun l p -> checkPremise p symbolTable l) locals
+        match result with
+        | [arg] ->
+            checkSingleArg arg symbolTable callType localsAfterPremises false
+        | x :: xs ->
+            let normalizedRes = normalizeDataOrFunctionCall symbolTable result
+            checkNormalizedCall normalizedRes symbolTable localsAfterPremises false 
+        | _ -> failwith "Why is the result of a conclusion empty?"          
+    | ModuleOutput(_) ->
+        raise(TypeError("You can only output modules in a type rule"))
+  | TypeRule(premises,conclusion) -> failwith "type rules not supported yet..."
+
+
+and buildSubTypes (subTypesDef : List<TypeDecl * TypeDecl>) : Map<TypeDecl,List<TypeDecl>> =
+  subTypesDef |> List.fold(fun sts (t,alias) ->
+                              let subTypeOpt = sts |> Map.tryFind t
+                              match subTypeOpt with
+                              | Some _ -> 
+                                  sts |> Map.add t (alias :: (sts.[t]))
+                              | None ->
+                                  sts |> Map.add t [alias]) Map.empty
+
+and checkProgramDefinition ((decls,rules,subtypes) : ProgramDefinition) : TypedProgramDefinition = 
+  let symbolTable = buildSymbols decls Map.empty
+  do checkSymbols decls symbolTable
+  let symbolTable = { symbolTable with Subtyping = buildSubTypes subtypes }
+  let typedRules =
+    [for r in rules do
+        match r with
+        | Rule(r1) ->
+            let _type,locals = checkRule r symbolTable
+            let typedRule = { Premises = fst r1; Conclusion = snd r1; Locals = locals; ReturnType = _type }
+            yield TypedRule(typedRule)
+        | TypeRule(r) -> failwith "Type rule not supported yet..."]
+  {
+    Declarations = decls
+    TypedRules = typedRules
+    SymbolTable = symbolTable
+  }
+
+and checkProgram ((imports,def) : Program) : TypedProgramDefinition =
+  //missing support for imports
+  checkProgramDefinition def
+
+
+let subtypingTest =
+  [
+    !!"int",!!"expr"
+    !!"float",!!"expr"
+  ]
+let testLocals =
+  {
+    Variables =
+      [
+        !!!"a1",(!!"int",Position.Zero)
+        !!!"b1",(!!"int",Position.Zero)
+        !!!"b",(!!"int",Position.Zero)
+      ] |> Map.ofList
+  }
 
 let (tcTest : Program) =
   let plus =
     {
       Name = { Namespace = []; Name = "+" }
-      Args = !!"int" --> !!"int"
+      Args = !!"expr" --> !!"expr"
       Return = !!"expr"
       Order = Infix
       Priority = 0
@@ -233,7 +405,7 @@ let (tcTest : Program) =
   let neg =
     {
       Name = { Namespace = []; Name = "-" }
-      Args = !!"int" --> !!"int"
+      Args = !!"expr" --> !!"expr"
       Return = !!"expr"
       Order = Prefix
       Priority = 0
@@ -245,7 +417,7 @@ let (tcTest : Program) =
     {
       Name = { Namespace = []; Name = "eval" }
       Args = !!"expr"
-      Return = !!"int"
+      Return = !!"expr"
       Order = Prefix
       Priority = 0
       Position = emptyPos
@@ -259,8 +431,8 @@ let (tcTest : Program) =
         FunctionCall([~~"eval";~~"b"],[!!!"x2"])
       ]
     let (conclusion : Conclusion) =
-      ParserAST.ValueOutput (conclusionTest,[~~"x2"])
+      ParserAST.ValueOutput ([~~"eval";NestedExpression [~~"a";~~"+";~~"b"]],[~~"x2"])
     premises .| conclusion
-  [],([Data plus; Data neg; Func eval],[evalPlus])
+  [],([Data plus; Data neg; Func eval],[evalPlus],subtypingTest)
 
 

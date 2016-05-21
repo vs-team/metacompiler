@@ -267,3 +267,24 @@ let rec RepeatUntil (pb:Parser<_,_,'result>) (pe:Parser<_,_,_>)
     let! xs = RepeatUntil pb pe
     return x::xs 
   }
+
+let pifelse (pif:Parser<'char,'ctxt,_>) (pthen:Parser<'char,'ctxt,'res>)
+  (pelse:Parser<'char,'ctxt,'res>) :Parser<'char,'ctxt,'res> =
+  fun (char,ctxt) ->
+    match pif (char,ctxt) with
+    | Done(res,char',ctxt') -> pthen (char',ctxt')
+    | Error _ -> pelse (char,ctxt)
+
+let AddPriority (ep:int) (p1:Parser<'char,'ctxt,'res>) :Parser<'char,'ctxt,'res> =
+  fun (char,ctxt) -> 
+    match p1 (char,ctxt) with
+    | Error (er,i) -> Error (er,i + ep)
+    | x -> x 
+
+let PrintPosibleError (p1:Parser<'char,'ctxt,'res>) :Parser<'char,'ctxt,'res> =
+  fun (char,ctxt) ->
+    match p1 (char,ctxt)  with
+    | Error (er,i) -> 
+      printfn "%A" (er,i)
+      Error (er,i)
+    | x -> x

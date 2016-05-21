@@ -1,5 +1,14 @@
 ﻿Jarno: comments dont work.
       Try to parse a TypeRule or a normal rule. 
       Make the rule parser also parse TypeRules.
+      Add a List<Id * Id> as thrid component of ProgramDefinition for subtyping (to support statements such as Expr is Value)
+
+
+
+Francesco:
+  1. Test function call with nested constructors.
+  2. Implement the check of a full premise and conclusion. The former should check the function call and check that the returned value matches
+     the function return type. The latter should run the function check with the flag to generate the local variables and check that the returned
+     expression matches the function return type.
 
        

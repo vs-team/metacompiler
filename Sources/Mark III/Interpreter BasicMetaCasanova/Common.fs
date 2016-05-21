@@ -14,6 +14,11 @@ type Bracket = Curly | Round | Square | Lambda | Angle
 type Predicate = Less | LessEqual | Equal | GreaterEqual | Greater | NotEqual
 
 type genericId<'a>= {Namespace:List<string>;Name:'a;}
+with
+  static member op_Equality (id1,id2) =
+    id1.Name = id2.Name
+  static member (==) (id,s : string) =
+    id.Name = s
 type Id       = genericId<string>
 
 type Literal = I64 of System.Int64

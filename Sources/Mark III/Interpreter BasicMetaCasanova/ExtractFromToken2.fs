@@ -65,6 +65,7 @@ let extract_int_literal() :Parser<Token,_,int*Position> =
     let! next = step
     match next with
     | Lexer2.Literal(I32(i),pos) -> return i,pos
+    | Lexer2.Literal(I64(i),pos) -> return (int(i),pos)
     | _ -> 
       let err = sprintf "int literal. %A" (extract_position_from_token next)
       return! fail (ParserError err)
