@@ -10,12 +10,12 @@ match ('a | 'b) => Module ('a | 'b) {
   TypeFunc "Tail" => #a
   Tail => 'b
 
-  Func "do" -> 'c -> With -> (Head -> 'd) -> (Tail -> 'd) -> 'd
-  do (Left x) with f g -> f x
+  Func "doMatch" -> 'c -> With -> (Head -> 'd) -> (Tail -> 'd) -> 'd
+  doMatch (Left x) with f g -> f x
 
-  do y with g h -> res
+  doMatch y with g h -> res
   --------------------
-  do (Right y) with f (g h) -> res
+  doMatch (Right y) with f (g h) -> res
 
-  do (Right y) with f g -> g y
+  doMatch (Right y) with f g -> g y
 }
