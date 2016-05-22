@@ -1,7 +1,7 @@
 import prelude
 import monad
 
-TypeFunc "TryableMonad" => (#a => #a) => Module
+TypeFunc "TryableMonad" => (#a => #b) => Module
 TryableMonad 'M => Monad(MCons^'M) {
   inherit 'M
 
@@ -12,8 +12,4 @@ TryableMonad 'M => Monad(MCons^'M) {
   $$ return the monad of the tryable monad, this way you can use the tryable monad as a the normal monad
   Func "getMonad" -> MCons^'M
   getMonad -> 'M
-
-  $$ return the tryable monad, this way you can use the tryable monad
-  Func "Tryable" -> 'a -> 'a
-  Tryable -> a -> a
 }
