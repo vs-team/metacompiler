@@ -3,7 +3,7 @@ import prelude
 TypeFunc "Record" => Module
 Record => Module {
   TypeFunc "Label"  => String
-  TypeFunc "Field"  => *
+  TypeFunc "Field"  => Type
   TypeFunc "Rest"   => Record
 
   TypeFunc "get" => String => Record => Record
@@ -14,7 +14,7 @@ Record => Module {
   -----------------------
   get l rs => res
 
-  TypeFunc "set" => String => * => Record => Record
+  TypeFunc "set" => String => Type => Record => Record
   (if (l = label^rs) then
     record l f rs
   else
@@ -30,7 +30,7 @@ EmptyRecord => Record{
   Rest => Unit
 }
 
-TypeFunc "RecordEntry" => String => * => Record => Record
+TypeFunc "RecordEntry" => String => Type => Record => Record
 RecordEntry label field rest => Record{
   Field => field
   Label => label
