@@ -1,6 +1,6 @@
 import monad
 
-TypeAlias "SystemIOT" => (#a => #b) => #c
+TypeAlias "SystemIOT" => (Type => Type) => Type
 SystemIOT => 'M => IO => 'M
 
 TypeFunc "systemIO" => Monad => IO => Monad
