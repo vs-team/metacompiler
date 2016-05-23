@@ -1,12 +1,11 @@
 ﻿import prelude
-import match
 import monad
 import tryableMonad
 
-TypeAlias "EitherT" => (#a => #b) => #c => #d => #e
+TypeAlias "EitherT" => (Type => Type) => Type => Type => Type
 EitherT 'M ['e] 'a => 'M('a | 'e)
 
-TypeFunc "either" => Monad => #a => TryableMonad
+TypeFunc "either" => Monad => Type => TryableMonad
 either 'M ['e] => TryableMonad(EitherT MCons^'M ['e]) {
   Func "fail" -> 'e -> MCons 'b
   fail e -> return^'M(Right (Right^'M :: e))
@@ -16,7 +15,7 @@ either 'M ['e] => TryableMonad(EitherT MCons^'M ['e]) {
   return x -> (return^'M(Left x))
 
   {pm >>=^'M y
-    (do^(match(MCons 'a)) y with
+    (match y with
       (\x -> k x)
       (\e -> err e)) -> z
     return^'M z} -> res
