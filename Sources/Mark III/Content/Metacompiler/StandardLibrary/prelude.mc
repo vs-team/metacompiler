@@ -1,9 +1,9 @@
 ﻿import System
 
 Data "unit" -> Unit
-TypeAlias #a => "*" => #b => #c
+TypeAlias Type => "*" => Type => Type
 'a * 'b => tuple<'a 'b>
-TypeAlias #a => "|" => #b => #c
+TypeAlias Type => "|" => Type => Type
 'a | 'b => pipe<'a 'b>
 Data 'a -> "," -> 'b -> 'a * 'b    #> 5
 Data "Left" -> 'a -> 'a | 'b       #> 5
