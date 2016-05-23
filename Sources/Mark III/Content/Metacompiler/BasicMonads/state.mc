@@ -1,14 +1,14 @@
 ﻿import prelude
 import monad
 
-TypeAlias "StateT" => (#a => #b) => #c => #d => #e
+TypeAlias "StateT" => (Type => Type) => Type => Type => Type
 StateT 'M 's 'a => ('s -> 'M('a * 's))
 
-TypeFunc "state" => Monad => #a => Monad
+TypeFunc "state" => Monad => Type => Monad
 state 'M 's => Monad(StateT MCons^'M 's) {
   (\ s ->
     {p s >>=^'M x
-      lift x -> (x',s')
+      x -> (x',s')
       k x' s'}) -> res
   ---------------------
   p >>= k -> res
