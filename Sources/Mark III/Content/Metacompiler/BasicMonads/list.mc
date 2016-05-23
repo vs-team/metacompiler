@@ -1,10 +1,9 @@
 import prelude
-import match
 import monad
 
-TypeAlias "List" => #a => Unit | (#a * (List #a))
+TypeAlias "List" => Type => Unit | (Type * (List Type))
 
-TypeAlias #a -> "::" -> List #a -> Right (#a * (List #a))
+TypeAlias Type -> "::" -> List Type -> Right (Type * (List Type))
 TypeAlias "empty" -> Left Unit
 
 
@@ -29,13 +28,13 @@ filter empty p -> empty
 filter (x :: xs) p -> res
 
 
-TypeAlias "ListT" => (#a => #b) => #c => #d
+TypeAlias "ListT" => (Type => Type) => Type => Type
 ListT 'M 'a => 'M(List 'a)
 
 TypeFunc "list" => Monad => Monad
 list 'M => Monad(ListT MCons^'M) {
   {lm >>= l
-    (do^(match(List)) l with
+    (match l with
       (\empty -> return^'M empty)
       (\(x :: xs) ->
         {x >>=^'M y
