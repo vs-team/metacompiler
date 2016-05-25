@@ -101,6 +101,7 @@ and CallArg =
 | Id of Id * Position
 | NestedExpression of List<CallArg>
 | Lambda of LambdaConclusion * List<Premise>
+| Caret of List<CallArg>
 with
   override this.ToString() =
     match this with
