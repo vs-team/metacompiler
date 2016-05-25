@@ -117,11 +117,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Metacompiler\StandardLibrary\match.mc">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Metacompiler\parser_monad.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
