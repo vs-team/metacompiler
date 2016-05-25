@@ -81,6 +81,7 @@ let rec normalizeDataOrFunctionCall (_symbolTable : SymbolContext) (args : List<
                             (arg :: fArg,args)
                     | _ ->
                         (fArg,arg :: args)
+                | Lambda(_) -> failwith "Anonymous functions not supported yet"
                 | NestedExpression (nestedArgs) ->
                     (fArg,(NestedExpression(normalizeDataOrFunctionCall _symbolTable nestedArgs)) :: args)) ([],[])
   let argList = snd normCall |> List.rev
@@ -217,7 +218,8 @@ let rec checkSingleArg
             do checkTypeEquivalence t typeDecl p symbolTable
             t,ctxt             
         | None ->
-            raise(TypeError(sprintf "Type Error: undefined variable %s at %s" id.Name (p.ToString())))    
+            raise(TypeError(sprintf "Type Error: undefined variable %s at %s" id.Name (p.ToString())))
+  | Lambda(_) -> failwith "Anonymous functions not supported yet"   
   | NestedExpression(call) ->
       let nestedType,nestedCtxt = checkNormalizedCall call symbolTable ctxt buildLocals
       match call.Head with
@@ -380,15 +382,6 @@ let subtypingTest =
     !!"int",!!"expr"
     !!"float",!!"expr"
   ]
-let testLocals =
-  {
-    Variables =
-      [
-        !!!"a1",(!!"int",Position.Zero)
-        !!!"b1",(!!"int",Position.Zero)
-        !!!"b",(!!"int",Position.Zero)
-      ] |> Map.ofList
-  }
 
 let (tcTest : Program) =
   let plus =

@@ -100,7 +100,7 @@ and CallArg =
 | Literal of Literal * Position
 | Id of Id * Position
 | NestedExpression of List<CallArg>
-| Lambda of Conclusion*List<Premise>
+| Lambda of Conclusion * List<Premise>
 with
   override this.ToString() =
     match this with
@@ -108,6 +108,7 @@ with
     | Id(id,_) -> id.Name
     | NestedExpression(args) ->
         "(" + (args |> List.fold(fun s x -> s + x.ToString()) "") + ")"
+    | Lambda(_) -> failwith "Anonymous functions not supported yet"
 
 
 and Call = List<CallArg> * List<Id>
