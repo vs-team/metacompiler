@@ -8,6 +8,7 @@ open ParserTypes
 open DeclParser2
 open OptionMonad
 open TypeChecker
+open TypeCheckerTest
 open ParserAST
 open Parser
 //open GlobalSyntaxCheck2
@@ -91,7 +92,8 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     let! code_res = start_codegen balltest.ball_func
 
     let! st,prog = List.tryHead pars_res
-    let typedProgram = checkProgram tcTest
+//    let typedTcTest = checkProgram tcTest
+    let typedTest1 = checkProgram test1
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))
 
     return pars_res

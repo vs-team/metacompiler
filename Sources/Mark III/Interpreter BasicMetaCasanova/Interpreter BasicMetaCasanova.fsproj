@@ -61,6 +61,7 @@
     <Compile Include="ParserMonad.fs" />
     <Compile Include="ExceptionMonad.fs" />
     <Compile Include="TypeChecker.fs" />
+    <Compile Include="TypeCheckerTest.fs" />
     <Compile Include="OptionMonad.fs" />
     <Compile Include="IncompleteMonad.fs" />
     <Compile Include="Lexer2.fs" />
