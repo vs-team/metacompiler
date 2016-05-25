@@ -1,12 +1,10 @@
-﻿Data "Z" -> int
-Data "S" -> int -> int
+﻿Data "Z" -> pnum
+Data "S" -> pnum -> pnum
 
-Func int -> "add" -> int -> int
-Func int -> "sub" -> int -> int
+Func pnum -> "add" -> pnum -> pnum
+Func pnum -> "sub" -> pnum -> pnum
 
-Func "main" -> int
-
-test => bla
+Func "main" -> pnum
 
 a -> Z
 -------
