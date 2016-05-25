@@ -71,6 +71,16 @@ let extract_int_literal() :Parser<Token,_,int*Position> =
       return! fail (ParserError err)
   }
 
+let check_id() (expected:string) :Parser<Token,_,_> =
+  prs{
+    let! id,pos = extract_id()
+    if id = expected then return ()
+    else
+      let err = sprintf "id error. expected: %s but got %s" expected id
+      return! fail (ParserError err) 
+
+  }
+  
 let check_keyword() (expected:Keyword) :Parser<Token,_,_> =
   prs{
     let! k,p = extract_keyword_with_error (sprintf "%A" expected)

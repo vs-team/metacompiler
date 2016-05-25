@@ -95,24 +95,34 @@ let insert_decl_into_ctxt (key:Keyword) (sym:SymbolDeclaration)
     | err -> return! fail (ParserError (sprintf "expected a decl keyword but got: %A" err))
   }
 
+let parse_left_lambda_conclusion_arg :Parser<Token,ParserCtxt,CallArg*TypeDecl> =
+  prs{
+    do! check_keyword() (Open Round)
+    let! concl = parse_arg
+    do! check_keyword() (Close Round)
+    do! check_id() ":"
+    let! concl_type = parse_typearg
+    return (concl, concl_type)
+  }
+
 let rec parse_lambda_and_arg :Parser<Token,ParserCtxt,CallArg> =
   parse_arg .|| prs{
     do! check_keyword() (Open Common.Lambda)
-    let! l_concl = parse_arg |> repeat
+    let! l_concl = parse_left_lambda_conclusion_arg |> repeat
     do! check_keyword() SingleArrow
     let! r_concl = parse_arg |> repeat
     do! check_keyword() (Close Round)
-    return Lambda(ValueOutput(l_concl,r_concl),[])
+    return Lambda((l_concl,r_concl),[])
   } .|| prs{
     do! check_keyword() (Open Common.Lambda)
-    let! l_concl = parse_arg |> repeat
+    let! l_concl = parse_left_lambda_conclusion_arg |> repeat
     do! check_keyword() SingleArrow
     do! check_keyword() NewLine
     let! prem = (parse_call SingleArrow .|| parse_condition) |> repeat
     let! r_concl = parse_arg |> repeat
     do! check_keyword() (Close Round) 
       .|| (check_keyword() NewLine .>> check_keyword() (Close Round))
-    return Lambda(ValueOutput(l_concl,r_concl),prem)
+    return Lambda((l_concl,r_concl),prem)
   }
 
 and parse_call (arrow:Keyword) :Parser<Token,ParserCtxt,Premise> =

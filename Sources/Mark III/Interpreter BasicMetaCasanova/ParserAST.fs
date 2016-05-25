@@ -100,7 +100,8 @@ and CallArg =
 | Literal of Literal * Position
 | Id of Id * Position
 | NestedExpression of List<CallArg>
-| Lambda of Conclusion * List<Premise>
+| Lambda of LambdaConclusion * List<Premise>
+| Caret of List<CallArg>
 with
   override this.ToString() =
     match this with
@@ -116,6 +117,8 @@ and Conditional = List<CallArg> *  Predicate * List<CallArg>
 and Conclusion = 
 | ValueOutput of List<CallArg> * List<CallArg>
 | ModuleOutput of List<CallArg> * List<CallArg> * Program
+
+and LambdaConclusion = List<CallArg*TypeDecl> * List<CallArg>
 
 and Rule = List<Premise> * Conclusion
 
