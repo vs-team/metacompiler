@@ -6,7 +6,7 @@ type Keyword =
   | Import | Using | Inherit | Func | TypeFunc | ArrowFunc | TypeAlias | Data | HorizontalBar | Instance
   | Open of Bracket| Close of Bracket | NewLine | CommentLine
   | SingleArrow | DoubleArrow | PriorityArrow | Spaces of int
-  | Less | LessEqual | Greater | GreaterEqual | Equal
+  | Conditional of Predicate
 
 type Token =
   | Id of string * Position
@@ -142,11 +142,11 @@ let all_id pos :Parser<char,Position,Token> =
     }) .|| prs{
       let! str = alpha_numeric_id .|| symbol_id
       let! pos = get_position
-      if str = "==" then return Keyword(Equal,pos)
-      elif str = ">=" then return Keyword(GreaterEqual,pos)
-      elif str = "<=" then return Keyword(LessEqual,pos)
-      elif str = ">" then return Keyword(Greater,pos)
-      elif str = "<" then return Keyword(Less,pos)
+      if str = "==" then return Keyword(Conditional Equal,pos)
+      elif str = ">=" then return Keyword(Conditional GreaterEqual,pos)
+      elif str = "<=" then return Keyword(Conditional LessEqual,pos)
+      elif str = ">" then return Keyword(Conditional Greater,pos)
+      elif str = "<" then return Keyword(Conditional Less,pos)
       else return Id((str|>System.String.Concat),pos)
     } 
   }

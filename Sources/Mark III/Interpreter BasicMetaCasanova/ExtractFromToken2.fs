@@ -102,3 +102,13 @@ let check_keyword() (expected:Keyword) :Parser<Token,_,_> =
       return! fail (ParserError err)
   }
 
+let extract_predicate() :Parser<Token,_,Predicate*Position> =
+  prs{
+    let! next = extract_keyword()
+    match next with
+    | Conditional x,pos -> return x,pos
+    | _ -> 
+      let err = sprintf "Predecate does not match with: %A" next
+      return! fail (ParserError err)
+      
+  }

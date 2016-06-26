@@ -7,12 +7,13 @@ open Lexer2
 open ParserTypes
 open DeclParser2
 open OptionMonad
-//open GlobalSyntaxCheck2
+open GlobalSyntaxCheck2
 open RuleParser2
-//open RuleNormalizer2
-//open DataNormalizer2
-//open RuleTypeChecker2
-//open InterfaceBuilder2
+open RuleNormalizer2
+open DataNormalizer2
+open RuleTypeChecker2
+open InterfaceBuilder2
+open ParserTypes
 
 let t = System.Diagnostics.Stopwatch()
 
@@ -62,14 +63,40 @@ let lex_files (paths:List<string>) (file_name:List<string>) :Option<List<string*
     return! try_unpack_list_of_option list_of_lexer_results
   }
 
+let start_parser ((id,tokens):string*List<Token>) :Option<string*ParseScope> =
+  opt{
+    let name = {Namespace = [id]; Name = id}
+    let! res = use_parser_monad (parse_full_lines) (tokens,{ParseScope.Zero with Name = name})
+    return (id,res)
+  } |> (timer (sprintf "parseing of file: [%s.mc] " id))
+
+let start_normalizer ((id,scp):string*ParseScope) :Option<string*List<NormalizedRule>*_> =
+  opt{
+    let! _,norrule = use_parser_monad (normalize_rules) ([id,scp],"")
+    let! _,nordata = use_parser_monad (normalize_datas) ([id,scp],"")
+    return (id,norrule,nordata)
+  } |> (timer (sprintf "normalizing of file: [%s.mc] " id))
+
+let start_typechecker ((id,norrule,parscp):string*List<NormalizedRule>*ParseScope) :Option<string*List<Id*rule>> =
+  opt{
+    let typctxt = {RuleCheckerCtxt.Zero with RuleDecl = parscp.FuncDecl; DataDecl = parscp.DataDecl}
+    let! typedrules = use_exception_monad (type_check_rules norrule typctxt) 
+    return (id,typedrules)
+  } |> (timer (sprintf "rule type checking of file: [%s.mc] " id))
+
+
 let start_codegen (ctxt:fromTypecheckerWithLove) :Option<_> =
   Codegen.failsafe_codegen ctxt |> (timer (sprintf "Code gen "))
 
 let start (paths:List<string>) (file_name:List<string>) :Option<_> =
   opt{
     t.Start()
-    let! lex_res = lex_files paths file_name
-    
+    let! lex_res = start_lexer paths (List.head file_name)
+    let! st,pars_res = start_parser lex_res
+    let! _,norrule,nordata = start_normalizer (st,pars_res)
+    let! type_res = start_typechecker (st,norrule,pars_res)
+
+    //let interp = Interpreter.eval_main balltest.ball_func
     let! code_res = start_codegen balltest.ball_func
     do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))
 
