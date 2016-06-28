@@ -96,9 +96,12 @@ let start (paths:List<string>) (file_name:List<string>) :Option<_> =
     let! _,norrule,nordata = start_normalizer (st,pars_res)
     let! _,type_res = start_typechecker (st,norrule,pars_res)
     let! inter = build_interface [st,type_res] [st,nordata]
-    //let interp = Interpreter.eval_main inter
-    let! code_res = start_codegen balltest.ball_func
-    do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))
 
-    return lex_res
+    if Codegen.validate inter then 
+      let interp = Interpreter.eval_main inter
+      let! code_res = start_codegen balltest.ball_func
+      do System.IO.File.WriteAllText ("out.cs",(sprintf "%s" code_res))
+
+      return inter
+    else return! None
   }

@@ -1,26 +1,21 @@
-﻿Data "Z" -> pnum
-Data "S" -> pnum -> pnum
+﻿Data "bla" -> System.Int64 -> num
+Func "main" -> string
+Func "con" -> System.Int64 -> System.Int64 -> string
 
-Func pnum -> "add" -> pnum -> pnum
-Func "main" -> pnum
+a < b
+"less" -> r
+----------
+con a b -> r
 
-
-x -> Z
--------
-x add y -> y
-
-
-x -> S a 
-a add y -> b
-S b -> res
-------
-x add y -> res
+a > b
+"greater" -> r
+----------
+con a b -> r
 
 
-Z -> a0
-S a0 -> a1
-S a1 -> a2
-S a2 -> a3
-a2 add a3 -> res
+1 -> a
+2 -> b
+System.Int64. + a b -> c
+con c b -> r
 -----
-main -> res
+main -> r

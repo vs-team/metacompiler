@@ -59,6 +59,27 @@ let literal_to_parser :Parser<Token,ParseScope,PremisFunctionTree> =
     let! lit,pos = extract_literal()
     return Literal(lit,pos)
   }
+
+let check_end_of_dotnet :Parser<Token,ParseScope,_> =
+  prs{
+    let! name = extract_id()
+    let! notdot,pos = extract_id()
+    if notdot = "." then return! fail (ParserError "dot not allowed here.") 
+    else return ()
+  }
+
+let dotnet_to_parser :Parser<Token,ParseScope,PremisFunctionTree> =
+  prs{
+    let! dnns = repeat1 (extract_id() .>> check_id() ".")
+    let dnns = List.map (fun (id,pos) -> id) dnns
+    let! dnname,pos = extract_id()
+    let! args = RepeatUntil (extract_id()) (check_keyword() SingleArrow)
+    let! ctxt = getContext
+    let args = List.map (fun (st,pos) -> {Namespace = ctxt.Name.Namespace; Name = st},pos ) args
+    let dotnet:FunctionBranch = {Name = {Namespace = dnns; Name = dnname} ; Args = args ; Pos = pos}
+    return DotNetBranch(dotnet)
+  }
+
 let type_alias_to_parser (aliases:List<SymbolDeclaration>) 
   :Parser<Token,ParseScope,PremisFunctionTree> =
   (prs{
@@ -76,10 +97,11 @@ let type_func_to_parser (ctxt:ParseScope)
 
 let decls_to_parser (ctxt:ParseScope) 
   :Parser<Token,ParseScope,PremisFunctionTree> =
+  dotnet_to_parser .||
   (prs{
     let! res = FirstSuccesfullInList ctxt.FuncDecl decl_to_parser
     return RuleBranch res
-  }) .|| datas_to_parser ctxt.DataDecl .|| literal_to_parser
+  }) .|| datas_to_parser ctxt.DataDecl .|| literal_to_parser 
 
 let implication_premis (arrow:Keyword) l r :Parser<Token,ParseScope,Premises> =
   prs{

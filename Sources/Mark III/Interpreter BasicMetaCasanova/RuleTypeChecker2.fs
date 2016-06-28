@@ -37,13 +37,26 @@ let convert_literal (literal:Common.Literal):(Literal*Type) =
   | Void -> Void,DotNetType{Namespace = ["System"] ; Name = "void"}
   | _ -> failwith "Literal not implemented yet."
 
+let decltype_app_to_namespace (dt:List<DeclType>) :Type =
+  match dt with
+  | x::xs::[] -> 
+    match x with
+    | Id(a,posa)->
+      match xs with
+      | Id(b,posb) -> 
+         DotNetType({Namespace = [a.Name]; Name = b.Name})
+
+
 let rec convert_decl_to_type (decltype:DeclType) : Type =
   match decltype with
   | ParserTypes.Id(id,_) -> McType id
   | ParserTypes.IdVar(id,_) -> McType id
   | ParserTypes.Application(id,ls) ->
-    let to_type = List.map (fun x -> convert_decl_to_type x) ls
-    TypeApplication((McType id), to_type)
+    if id.Name = "." then 
+      decltype_app_to_namespace ls
+    else
+      let to_type = List.map (fun x -> convert_decl_to_type x) ls
+      TypeApplication((McType id), to_type)
   | ParserTypes.Arrow(l,r) -> 
     Arrow((convert_decl_to_type l),(convert_decl_to_type r))
   | _ -> failwith "kind id should not be present during typechecking"
@@ -153,7 +166,17 @@ let type_check_premise (ctxt:Exception<RuleCheckerCtxt>)
     | RuleNormalizer2.ApplyCall (s,a,d) -> 
       return! Lift_apply s a d ctxt (fun c a d ->
          ApplicationCall {closure = c; argument = a; dest = d; side_effect = false})
-    | _ -> return! Exception "not implemented yet."
+    | StaticDotNetCall(id,args,d) ->
+      let dest = build_local_id d
+      let hack_type_ns = List.head id.Namespace
+      let hack_type_name = List.last id.Namespace
+      let hack_type = DotNetType{Namespace = [hack_type_ns]; Name = hack_type_name}
+      let symbol_table = ctxt.TypeMap.Add(dest,hack_type)
+      let local_args = List.map (fun x -> build_local_id x) args
+      let dotnet = DotNetStaticCall({func = id ; args = local_args ; dest = dest ; side_effect = false})
+      return {ctxt with Premise = dotnet::ctxt.Premise; TypeMap = symbol_table}
+      
+    | _ -> return! Exception "not implemented yet in type checker."
     //| RuleNormalizer2.DotNetClosure(s,r) -> 
   
   }

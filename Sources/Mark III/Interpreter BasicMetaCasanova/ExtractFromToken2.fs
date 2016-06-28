@@ -102,6 +102,15 @@ let check_keyword() (expected:Keyword) :Parser<Token,_,_> =
       return! fail (ParserError err)
   }
 
+let check_id() (expected:string) :Parser<Token,_,_> =
+  prs{
+    let! id,pos = extract_id()
+    if expected = id then return ()
+    else
+      let err = sprintf "Expected id: %s does not match : %s" expected id
+      return! fail (ParserError err)
+  }
+
 let extract_predicate() :Parser<Token,_,Predicate*Position> =
   prs{
     let! next = extract_keyword()

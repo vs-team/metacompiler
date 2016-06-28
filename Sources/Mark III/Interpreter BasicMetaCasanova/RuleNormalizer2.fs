@@ -16,6 +16,7 @@ type Premisse = Alias              of AliasType
               | Conditional        of NormalId*Predicate*NormalId
               | Destructor         of NormalId*Id*List<NormalId>
               | McClosure          of Id*NormalId
+              | StaticDotNetCall   of Id*List<NormalId>*NormalId
               | DotNetClosure      of Id*NormalId
               | ConstructorClosure of Id*NormalId
               | Apply              of NormalId*NormalId*NormalId
@@ -105,7 +106,8 @@ let normalize_Left_premistree (input:PremisFunctionTree) (output:NormalId)
     | ParserTypes.Literal(lit,pos) -> 
       let! local_id = get_local_id_number
       let normalid = TempId(local_id,pos)
-      let res = Literal(lit,normalid)
+      //let res = Literal(lit,normalid)
+      let res = Literal(lit,output)
       return [res]
     | ParserTypes.RuleBranch(x) -> 
       let! cons_id = get_local_id_number
@@ -124,6 +126,9 @@ let normalize_Left_premistree (input:PremisFunctionTree) (output:NormalId)
     | ParserTypes.IdBranch(x) -> 
       let normalid = VarId(x.Name,x.Pos)
       return [Alias(normalid,output)]
+    | DotNetBranch(x) ->
+      let args = List.map (fun (id,pos) -> VarId(id,pos)) x.Args
+      return [StaticDotNetCall(x.Name,args,output)]
     | _ -> return! fail (ParserError "no typefunc premises alowed in normal rules.")
   }
 
@@ -135,7 +140,15 @@ let normalize_premis :Parser<Premises,NormalizerContext,List<Premisse>> =
       let! prem_right,normalid = normalize_right_premistree right
       let! prem_left = normalize_Left_premistree left normalid
       return prem_left@prem_right
-    | ParserTypes.Conditional(cond,left,right) -> return []
+    | ParserTypes.Conditional(cond,left,right) ->
+      let! lnum = get_local_id_number
+      let lid = TempId(lnum,Position.Zero)
+      let! rnum = get_local_id_number
+      let rid = TempId(rnum,Position.Zero)
+      let! prem_right = normalize_Left_premistree right rid 
+      let! prem_left = normalize_Left_premistree left lid
+      let prem_cond = Conditional(lid,cond,rid)
+      return prem_left@prem_right@[prem_cond]
   }
 
 let normalize_rule :Parser<RuleDef,NormalizerContext,NormalizedRule> =
@@ -204,6 +217,8 @@ let change_alias_premis (prem:Premisse) ((lalias,ralias):AliasType) =
     if a |= ralias then ApplyCall(l,lalias,r)
     elif r |= ralias then ApplyCall(l,a,lalias)
     else ApplyCall(l,a,r)
+  | StaticDotNetCall(id,args,r) ->
+    if r |= ralias then StaticDotNetCall(id,args,lalias) else StaticDotNetCall(id,args,r)
 
 let de_alias_output (output:NormalId) (alias:List<AliasType>) =
   List.fold (fun ni (l,r) -> if ni |= r then l else ni) output (List.rev alias)

@@ -24,10 +24,14 @@ let main argv =
                "testforcodegen"
                //"decltest"
               ]
-  let file_paths = ["Metacompiler/StandardLibrary/";
-                    "Metacompiler/BasicMonads/";
-                    "Metacompiler/Programs/"]
-  
+  //let file_paths = ["Metacompiler/StandardLibrary/";
+  //                  "Metacompiler/BasicMonads/";
+  //                  "Metacompiler/Programs/"]
+  //
+
+  let file_paths = ["../../../Content/Metacompiler/StandardLibrary/";
+                    "../../../Content/Metacompiler/BasicMonads/";
+                    "../../../Content/Metacompiler/Programs/"]
 
   let res = 
     match start file_paths input with
