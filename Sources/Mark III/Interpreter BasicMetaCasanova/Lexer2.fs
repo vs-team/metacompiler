@@ -154,7 +154,8 @@ let all_id pos :Parser<char,Position,Token> =
 let string_literal pos :Parser<char,Position,Token> =
   prs{
     do! char '\"'
-    let! chars = (alpha_numeric .|| symbol) |> repeat
+    //let! chars = (alpha_numeric .|| symbol) |> repeat
+    let! chars = RepeatUntil step (char '\"')
     do! char '\"'
     return (String (chars|>Array.ofList|>System.String.Concat),pos) |> Literal
   }

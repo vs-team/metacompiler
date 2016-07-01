@@ -82,7 +82,7 @@ let rec eval_step (p:premisse,i:int)
     )
   *)
   do System.Console.ForegroundColor <- System.ConsoleColor.Yellow
-  do printf "%s\n" (print_premisse (p,i))
+  //do printf "%s\n" (print_premisse (p,i))
   do System.Console.ResetColor()
   match p with
   | Literal x ->
@@ -153,11 +153,23 @@ let rec eval_step (p:premisse,i:int)
       | ["System";"Single"] when x.args.Length=2 ->
         let l = symbol_table.[x.args.[0]] :?> System.Single
         let r = symbol_table.[x.args.[1]] :?> System.Single
-        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table global_context.assemblies
+        match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | "print" ->box(printf "%A %A" l r) | _ ->staticCallNonBuiltin x symbol_table global_context.assemblies
       | ["System";"Double"] when x.args.Length=2 ->
         let l = symbol_table.[x.args.[0]] :?> System.Double
         let r = symbol_table.[x.args.[1]] :?> System.Double
         match x.func.Name with "+"->box(l+r) | "/"->box(l/r) | "*"->box(l*r) | "%"->box(l%r) | "-"->box(l-r) | _ ->staticCallNonBuiltin x symbol_table global_context.assemblies
+      | ["System";"String"] when x.args.Length=1 ->
+        let st = symbol_table.[x.args.[0]] :?> System.String
+        match x.func.Name with 
+        | "print"->box(printf "%s" st) 
+        | "printnl"->box(printf "\n") 
+        | _ ->staticCallNonBuiltin x symbol_table global_context.assemblies
+      //| ["System";"String"] when x.args.Length=2 ->
+      //  let st = symbol_table.[x.args.[0]] :?> System.String
+      //  let st = symbol_table.[x.args.[1]] :?> System.String
+      //  match x.func.Name with 
+      //  //| "concat"->box(System.String.Concat) 
+      //  | _ ->staticCallNonBuiltin x symbol_table global_context.assemblies
       | _ -> staticCallNonBuiltin x symbol_table global_context.assemblies
     [symbol_table.Add(x.dest,ret)]
   | DotNetConstructor x ->
