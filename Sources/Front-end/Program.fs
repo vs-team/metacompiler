@@ -20,7 +20,7 @@ let main argv =
   let samples = 
     [
 //      "CNV3/Statements.mc", "run"
-        "CNV3/Traverse.mc", "run 0.1"
+//        "CNV3/Traverse.mc", "run 0.1"
 //        "CNV3/SlidingCube.mc", "run 0.1"
 //        "CNV3/Statements.mc", "testStatement"
 //        "CNV3/Imported.mc", "testImported"
@@ -30,6 +30,7 @@ let main argv =
 //      "CNV3/Basics.mc", "test"
 
 //      "CodegenTest/ListTest.mc", "length 5::(4::(3::(2::(1::nil))))"
+        "Cmm/cmm.mc", "runProgram"
 
 //      "Boolean expressions/transform.mc", "run"
 //      "Boolean expressions fast/transform.mc", "run"

@@ -44,7 +44,7 @@ let runDeduction path =
       match expr().Parse (input |> Seq.toList) ctxt Position.Zero with
       | First(y,_,ctxt',pos') ->
         try
-        let customDlls = [(*"UnityEngine.dll"; "WrapperTest.dll";*) "System.Collections.Immutable.dll"]
+        let customDlls = ["UnityEngine.dll"; "WrapperTest.dll"; "System.Collections.Immutable.dll"]
         let defaultDlls = [ "mscorlib.dll"; "System.dll"; "System.Runtime.dll"; "System.Core.dll"] 
         let dllParam = Array.append (List.toArray defaultDlls) (List.toArray customDlls)
         let ctxt = { ctxt with AssemblyInfo = assemblyPrecache defaultDlls customDlls }

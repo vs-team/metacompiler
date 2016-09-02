@@ -1,89 +1,86 @@
 ﻿import System.Collections.Immutable
 
-Keyword [] "emptyDictionary" [] Priority 100 Class DictionaryOp
-Keyword [SymbolTable] "add" [Id Value] Priority 100 Class DictionaryOp
-Keyword [SymbolTable] "lookup" [Id] Priority 100 Class DictionaryOp
-Keyword [SymbolTable] "contains" [Id] Priority 100 Class DictionaryOp
-Keyword [] "$m" [<< System.Collections.Immutable.ImmutableDictionary<Id, Value> >>] Priority 300 Class SymbolTable
+Func "emptyDictionary" : DictionaryOp => SymbolTable
+Func SymbolTable -> "add" -> Id -> Value : DictionaryOp => SymbolTable   Priority 100
+Func SymbolTable -> "lookup" -> Id : DicitonaryOp => Value   Priority 100
+Func SymbolTable -> "contains" -> Id : DictionaryOp => Answer Priority 100
+Func "eval" -> TableList -> Expr : RuntimeOp => EvaluationResult Priority 0
+Func SymbolTable -> "defineVariable" -> Id : MemoryOp => SymbolTable Priority 300
+Func "updateTables" -> TableList -> TableList -> Id -> Expr : MemoryOp => EvaluationResult Priority 0
+Func "program" -> SymbolTable -> ExprList : Program => SymbolTable  Priority 0
+Func "runProgram" : Test => SymbolTable Priority -10000
+Func "loopFor" -> TableList -> Expr -> Expr -> Expr : RuntimeOp => EvaluationResult Priority 0
 
-Keyword [SymbolTable] "nextTable" [TableList] Priority 10 Class TableList
-Keyword [] "nilTable" [] Priority 500 Class TableList
 
-Keyword [SymbolTable] "defineVariable" [Id] Priority 300 Class MemoryOp
-Keyword [] "updateTables" [TableList TableList Id Expr] Priority 0 Class MemoryOp
+Data "$i" -> <<int>> : Value Priority 300
+Data "$d" -> <<double>> : Value Priority 300
+Data "$s" -> <<string>> : Value Priority 300
+Data "$b" -> <<bool>> : Value Priority 300
+Data "$void" : Value Priority 300
 
-Keyword [] "$i" [<<int>>] Priority 300 Class Value
-Keyword [] "$d" [<<double>>] Priority 300 Class Value
-Keyword [] "$s" [<<string>>] Priority 300 Class Value
-Keyword [] "$b" [<<bool>>] Priority 300 Class Value
-Keyword [] "$void" [] Priority 300 Class Value
+Data "$" -> <<string>> : Id Priority 300
 
-Keyword [] "$" [<<string>>] Priority 300 Class Id
+Data Expr -> "+" -> Expr : Expr Priority 100
+Data Expr -> "-" -> Expr : Expr Priority 100
+Data Expr -> "*" -> Expr : Expr Priority 100
+Data Expr -> "/" -> Expr : Expr Priority 100
 
-Keyword [Expr] "+" [Expr] Priority 100 Class Expr
-Keyword [Expr] "-" [Expr] Priority 100 Class Expr
-Keyword [Expr] "*" [Expr] Priority 100 Class Expr
-Keyword [Expr] "/" [Expr] Priority 100 Class Expr
+Data Expr -> "&&" -> Expr : Expr Priority 100
+Data Expr -> "||" -> Expr : Expr Priority 100
+Data "!" -> Expr : Expr Priority 100
+Data Expr -> "equals" -> Expr : Expr Priority 100
+Data Expr -> "neq" -> Expr: Expr Priority 100
+Data Expr -> "ls" -> Expr : Expr Priority 100
+Data Expr -> "leq" -> Expr : Expr Priority 100
+Data Expr -> "grt" -> Expr : Expr Priority 100
+Data Expr -> "geq" -> Expr : Expr Priority 100
 
-Keyword [Expr] "&&" [Expr] Priority 100 Class Expr
-Keyword [Expr] "||" [Expr] Priority 100 Class Expr
-Keyword [] "!" [Expr] Priority 100 Class Expr
-Keyword [Expr] "equals" [Expr] Priority 100 Class Expr
-Keyword [Expr] "neq" [Expr] Priority 100 Class Expr
-Keyword [Expr] "ls" [Expr] Priority 100 Class Expr
-Keyword [Expr] "leq" [Expr] Priority 100 Class Expr
-Keyword [Expr] "grt" [Expr] Priority 100 Class Expr
-Keyword [Expr] "geq" [Expr] Priority 100 Class Expr
+Data "t_int" : Type Priority 500
+Data "t_double" : Type Priority 500
+Data "t_string" : Type Priority 500
+Data "t_bool" : Type Priority 500
 
-Keyword [] "t_int" [] Priority 500 Class Type
-Keyword [] "t_double" [] Priority 500 Class Type
-Keyword [] "t_string" [] Priority 500 Class Type
-Keyword [] "t_bool" [] Priority 500 Class Type
+Data "variable" -> Type -> Id : Expr Priority 10
+Data Id -> "=" -> Expr : Expr Priority 10
+Data "then" : Then Priority 10
+Data "else" : Else Priority 10
+Data "if" -> Expr -> Then -> Expr -> Else -> Expr : Expr Priority 10
+Data "while" -> Expr -> Expr : Expr Priority 10
+Data "for" -> Expr -> Expr -> Expr -> Expr : Expr Priority 10
 
-Keyword [] "variable" [Type Id] Priority 10 Class Expr
-Keyword [Id] "=" [Expr] Priority 10 Class Expr
-Keyword [] "then" [] Priority 10 Class Then
-Keyword [] "else" [] Priority 10 Class Else
-Keyword [] "if" [Expr Then Expr Else Expr] Priority 10 Class Expr
-Keyword [] "while" [Expr Expr] Priority 10 Class Expr
-Keyword [] "for" [Expr Expr Expr Expr] Priority 10 Class Expr
-Keyword [] "loopFor" [TableList Expr Expr Expr] Priority 0 Class RuntimeOp
 
-Keyword [] "Yes" [] Priority 100 Class Answer
-Keyword [] "No" [] Priority 100 Class Answer
+Data Expr -> ";" -> ExprList : ExprList Priority 5
+Data "nop" : ExprList Priority 500
 
-Keyword [Expr] ";" [ExprList] Priority 5 Class ExprList
-Keyword [] "nop" [] Priority 500 Class ExprList
+Data "evalResult" -> TableList -> Value : EvaluationResult Priority 0
 
-Keyword [] "eval" [TableList Expr] Priority 0 Class RuntimeOp
-Keyword [] "evalResult" [TableList Value] Priority 0 Class EvaluationResult
+Data "error" -> <<string>> : Error Priority 300
 
-Keyword [] "error" [<<string>>] Priority 300 Class Error
-
-Keyword [] "program" [SymbolTable ExprList] Priority 0 Class Program
-Keyword [] "runProgram" [] Priority -10000 Class Test
+Data "Yes" : Answer                                                                                                         Priority 100
+Data "No"  : Answer                                                                                                         Priority 100
+Data "$m" << ImmutableDictionary<Id, Value> >> : SymbolTable                                                                      Priority 300
+Data SymbolTable -> "nextTable" -> TableList : TableList              Priority 10
+Data "nilTable" : TableList  Priority 500 
 
 Value is Expr
 Id is Expr
 Error is Value
 ExprList is Expr
 
+-------------------------------------------
+emptyDictionary => $m << ImmutableDictionary<Id,Value>.Empty >>
 
-M := $m <<System.Collections.Immutable.ImmutableDictionary<Id, Value>.Empty>>
-----------------------------------------------------------------------------
-emptyDictionary => M
-
-v := <<M.GetKey(k)>>
+<<M.GetKey(k)>> => v
 ---------------------
 ($m M) lookup k => v
 
 <<M.ContainsKey(k)>> == false
-M' := <<M.Add(k,v)>>
+<<M.Add(k,v)>> => M'
 ------------------------
 ($m M) add k v => $m M'
 
 <<M.ContainsKey(k)>> == true
-M' := <<M.SetItem(k,v)>>
+<<M.SetItem(k,v)>> => M'
 ------------------------
 ($m M) add k v => $m M'
 
@@ -94,6 +91,7 @@ M' := <<M.SetItem(k,v)>>
 <<M.ContainsKey(k)>> == false
 ---------------------------
 ($m M) contains k => No
+
 
 emptyDictionary => M
 decl_fact := variable t_int $"fact"
@@ -109,7 +107,6 @@ code := decl_fact ; (decl_n ; (decl_j ; (assign1 ; (assign2 ; (assign3 ; (f ;nop
 program M code => M'
 ---------------------------------------------------------------------
 runProgram => M'
-
 
 
 eval (memory nextTable nilTable) code => evalResult (memory' nextTable nilTable) $void
@@ -134,83 +131,81 @@ symbols lookup ($name) => val
 ------------------------------------------------------------------------------------
 eval (symbols nextTable tables) ($name) => evalResult (symbols nextTable tables) val
 
-
 symbols contains ($name) => No
 eval tables ($name) => evalResult tables' val
 ------------------------------------------------------------------------------------
 eval (symbols nextTable tables) ($name) => evalResult (symbols nextTable tables') val
 
-
 eval tables expr1 => evalResult tables' ($i val1)
 eval tables' expr2 => evalResult tables'' ($i val2)
-arithmeticResult := <<val1 + val2>>
+<<val1 + val2>> => arithmeticResult
 ----------------------------------------------------------------------
 eval tables expr1 + expr2 => evalResult tables'' ($i arithmeticResult)
 
 eval tables expr1 => evalResult tables' ($i val1)
 eval tables' expr2 => evalResult tables'' ($i val2)
-arithmeticResult := <<val1 - val2>>
+<<val1 - val2>> => arithmeticResult
 ----------------------------------------------------------------------
 eval tables expr1 - expr2 => evalResult tables'' ($i arithmeticResult)
 
 eval tables expr1 => evalResult tables' ($i val1)
 eval tables' expr2 => evalResult tables'' ($i val2)
-arithmeticResult := <<val1 * val2>>
+<<val1 * val2>> => arithmeticResult
 ----------------------------------------------------------------------
 eval tables expr1 * expr2 => evalResult tables'' ($i arithmeticResult)
 
 eval tables expr1 => evalResult tables' ($i val1)
 eval tables' expr2 => evalResult tables'' ($i val2)
-arithmeticResult := <<val1 / val2>>
+<<val1 / val2>> => arithmeticResult
 ----------------------------------------------------------------------
 eval tables expr1 / expr2 => evalResult tables'' ($i arithmeticResult)
 
 eval tables expr1 => evalResult tables' ($d val1)
 eval tables' expr2 => evalResult tables'' ($d val2)
-arithmeticResult := <<val1 + val2>>
+<<val1 + val2>> => arithmeticResult
 ----------------------------------------------------------------------
 eval tables expr1 + expr2 => evalResult tables'' ($d arithmeticResult)
 
 eval tables expr1 => evalResult tables' ($d val1)
 eval tables' expr2 => evalResult tables'' ($d val2)
-arithmeticResult := <<val1 - val2>>
+<<val1 - val2>> => arithmeticResult
 ----------------------------------------------------------------------
 eval tables expr1 - expr2 => evalResult tables'' ($d arithmeticResult)
 
 eval tables expr1 => evalResult tables' ($d val1)
 eval tables' expr2 => evalResult tables'' ($d val2)
-arithmeticResult := <<val1 * val2>>
+<<val1 * val2>> => arithmeticResult
 ----------------------------------------------------------------------
 eval tables expr1 * expr2 => evalResult tables'' ($d arithmeticResult)
 
 eval tables expr1 => evalResult tables' ($d val1)
 eval tables' expr2 => evalResult tables'' ($d val2)
-arithmeticResult := <<val1 / val2>>
+<<val1 / val2>> => arithmeticResult
 ----------------------------------------------------------------------
 eval tables expr1 / expr2 => evalResult tables'' ($d arithmeticResult)
 
 eval tables expr1 => evalResult tables' ($s val1)
 eval tables' expr2 => evalResult tables'' ($s val2)
-arithmeticResult := <<val1 + val2>>
+<<val1 + val2>> => arithmeticResult
 ----------------------------------------------------------------------
 eval tables expr1 + expr2 => evalResult tables'' ($s arithmeticResult)
 
 
 eval tables expr1 => evalResult tables' ($b val1)
 eval tables' expr2 => evalResult tables'' ($b val2)
-boolResult := <<val1 && val2>>
+<<val1 && val2>> => boolResult
 ----------------------------------------------------------------------
 eval tables expr1 && expr2 => evalResult tables'' ($b boolResult)
 
 eval tables expr1 => evalResult tables' ($b val1)
 eval tables' expr2 => evalResult tables'' ($b val2)
-boolResult := <<val1 || val2>>
+<<val1 || val2>> => boolResult
 ----------------------------------------------------------------------
 eval tables expr1 || expr2 => evalResult tables'' ($b boolResult)
 
 
 eval tables expr => evalResult tables' ($b val)
-boolResult := << !val >>
+<< !val >> => boolResult
 --------------------------------------------------------
 eval tables (!expr) => evalResult tables' ($b boolResult)
 
@@ -228,56 +223,56 @@ eval tables (expr1 equals expr2) => evalResult tables' ($b false)
 
 
 eval tables (expr1 equals expr2) => evalResult tables' ($b res)
-boolResult := << !res >>
+<< !res >> => boolResult
 -------------------------------------------------------------------
 eval tables (expr1 neq expr2) => evalResult tables' ($b boolResult)
 
 
 eval tables expr1 => evalResult tables' ($i val1)
 eval tables' expr2 => evalResult tables'' ($i val2)
-boolResult := << val1 < val2 >>
+<< val1 < val2 >> => boolResult
 ---------------------------------------------------------
 eval tables (expr1 ls expr2) => evalResult tables' ($b boolResult)
 
 eval tables expr1 => evalResult tables' ($i val1)
 eval tables' expr2 => evalResult tables'' ($i val2)
-boolResult := << val1 <= val2 >>
+<< val1 <= val2 >> => boolResult
 ---------------------------------------------------------
 eval tables (expr1 leq expr2) => evalResult tables' ($b boolResult)
 
 eval tables expr1 => evalResult tables' ($i val1)
 eval tables' expr2 => evalResult tables'' ($i val2)
-boolResult := << val1 > val2 >>
+<< val1 > val2 >> => boolResult
 ---------------------------------------------------------
 eval tables (expr1 grt expr2) => evalResult tables' ($b boolResult)
 
 eval tables expr1 => evalResult tables' ($i val1)
 eval tables' expr2 => evalResult tables'' ($i val2)
-boolResult := << val1 >= val2 >>
+<< val1 >= val2 >> => boolResult
 ---------------------------------------------------------
 eval tables (expr1 geq expr2) => evalResult tables' ($b boolResult)
 
 eval tables expr1 => evalResult tables' ($d val1)
 eval tables' expr2 => evalResult tables'' ($d val2)
-boolResult := << val1 < val2 >>
+<< val1 < val2 >> => boolResult
 ---------------------------------------------------------
 eval tables (expr1 ls expr2) => evalResult tables' ($b boolResult)
 
 eval tables expr1 => evalResult tables' ($d val1)
 eval tables' expr2 => evalResult tables'' ($d val2)
-boolResult := << val1 <= val2 >>
+<< val1 <= val2 >> => boolResult
 ---------------------------------------------------------
 eval tables (expr1 leq expr2) => evalResult tables' ($b boolResult)
 
 eval tables expr1 => evalResult tables' ($d val1)
 eval tables' expr2 => evalResult tables'' ($d val2)
-boolResult := << val1 > val2 >>
+<< val1 > val2 >> => boolResult
 ---------------------------------------------------------
 eval tables (expr1 grt expr2) => evalResult tables' ($b boolResult)
 
 eval tables expr1 => evalResult tables' ($d val1)
 eval tables' expr2 => evalResult tables'' ($d val2)
-boolResult := << val1 >= val2 >>
+<< val1 >= val2 >> => boolResult
 ---------------------------------------------------------
 eval tables (expr1 geq expr2) => evalResult tables' ($b boolResult)
 
@@ -290,7 +285,6 @@ eval (symbols nextTable tables) (variable t id) => evalResult (symbols' nextTabl
   symbols add id $void => symbols'
   -------------------------------------
   symbols defineVariable id => symbols'
-
 
 symbols contains id => Yes
 eval globals expr => evalResult globals' val
@@ -307,7 +301,6 @@ updateTables globals (symbols nextTable tables) id expr => evalResult (symbols n
 updateTables tables tables id expr => res
 ----------------------------------------
 eval tables (id = expr) => res
-
 
 eval tables condition => evalResult tables' ($b true)
 emptyDictionary => table
@@ -332,7 +325,6 @@ eval tables condition => evalResult tables' ($b false)
 -----------------------------------------------------------
 eval tables (while condition expr) => evalResult tables' $void
 
-
 eval tables init => evalResult tables' $void
 loopFor tables' condition step expr => res
 -------------------------------------------------------
@@ -354,7 +346,6 @@ eval tables (for init condition step expr) => res
 eval tables nop => evalResult tables $void
 
 eval tables a => evalResult tables' $void
-tables1 := tables'
 eval tables' b => res
 ----------------------------------------
 eval tables (a;b) => res

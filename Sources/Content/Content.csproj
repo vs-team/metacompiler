@@ -62,6 +62,7 @@
     <None Include="Content\Cmm Type Checker\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Content\Cmm\cmm.mc" />
     <None Include="Content\Cmm\transform.mc">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
