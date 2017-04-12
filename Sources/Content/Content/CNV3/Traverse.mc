@@ -51,7 +51,6 @@ traverse (entity nil fields original rs) globals dt => traverseResult (entity ni
 
 tick original rs fields globals dt => State nrs newFields newGlobals
 debug := State nrs newFields newGlobals
-<<Console.WriteLine(debug)>>
 <<newFields.GetKey(f)>> => v
 traverse v newGlobals dt => traverseResult v1 g1
 newFields add f v1 => updatedFields
@@ -73,11 +72,13 @@ traverse w <<ImmutableDictionary<string, Value>.Empty>> dt => res
 -------------------------------------
 loopTraverse w dt 0 => res
 
-<<ImmutableDictionary<string, Value>.Empty>> add "Position" ($f 3.5) => dict
+<<ImmutableDictionary<string, Value>.Empty>> add "Position" ($f 3.5) => dict1
+dict1 add "Velocity" ($f 100.0) => dict
 s1 := yield (($"Position" + ($f 0.5))::nil)
 s2 := yield (($"Velocity" - ($f 1.5))::nil)
 r1 := rule ("Position"::nil) s1 nop <<ImmutableDictionary<string, Value>.Empty>> dt
-w := entity ("Position"::nil) dict (r1::nil) (r1::nil)
+r2 := rule ("Velocity"::nil) s2 nop <<ImmutableDictionary<string, Value>.Empty>> dt
+w := entity ("Position"::"Velocity"::nil) dict (r1::r2::nil) (r1::r2::nil)
 loopTraverse w dt 4 => res
 ------------------------------------------------------------------------------------------
 runTraverse dt => res
