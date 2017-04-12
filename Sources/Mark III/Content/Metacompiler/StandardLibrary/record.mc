@@ -6,21 +6,21 @@ Record => Module {
   TypeFunc "Field"  => Type
   TypeFunc "Rest"   => Record
 
-  TypeFunc "get" => String => Record => Record
-  (if (l = label^rs) then
-    rs
+  TypeFunc "getType" => String => Record => Type
+  (if (l = Label^rs) then
+    Field^rs
   else
-    get l rest^rs) => res
+    getType l rest^rs) => res
   -----------------------
-  get l rs => res
+  getType l rs => res
 
-  TypeFunc "set" => String => Type => Record => Record
+  TypeFunc "setType" => String => Type => Record => Record
   (if (l = label^rs) then
-    record l f rs
+    setType l f rs
   else
-    set l f rest^rs) => res
+    setType l f rest^rs) => res
   -------------------------
-  set l f rs => res
+  setType l f rs => res
 }
 
 TypeFunc "EmptyRecord" => Record
@@ -31,8 +31,25 @@ EmptyRecord => Record{
 }
 
 TypeFunc "RecordEntry" => String => Type => Record => Record
-RecordEntry label field rest => Record{
+RecordEntry label field rest => Record {
   Field => field
   Label => label
   Rest => rest
-}
+
+  TypeFunc "Repr" => Field * Repr^Rest
+  TypeFunc "get" => s:String => (Repr -> (GetType s this))
+  Func "cons" -> Field -> Repr^Rest -> Repr
+  cons x xs -> (x,xs)
+
+  (if (l = rs^Label) then
+    x
+  else
+    get^rest l xs)
+  -------------------
+  get l (x,xs)
+ }
+
+
+
+ ------------------------------
+ get^ship "Shield" ship => res
